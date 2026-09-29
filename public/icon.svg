@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F59E0B" />
+      <stop offset="50%" stop-color="#D97706" />
+      <stop offset="100%" stop-color="#B45309" />
+    </linearGradient>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A" />
+      <stop offset="50%" stop-color="#1E293B" />
+      <stop offset="100%" stop-color="#090D16" />
+    </linearGradient>
+  </defs>
+  <!-- Background Shield -->
+  <rect width="512" height="512" rx="100" fill="url(#bgGrad)"/>
+  <rect x="16" y="16" width="480" height="480" rx="88" fill="none" stroke="url(#goldGrad)" stroke-width="6" opacity="0.6"/>
+  
+  <!-- Outer Crest Embellishment -->
+  <circle cx="256" cy="256" r="210" fill="none" stroke="#38BDF8" stroke-width="2" stroke-dasharray="8 6" opacity="0.4"/>
+  
+  <!-- Arch / Dome Motif (Islamic & University Architecture) -->
+  <path d="M160 380 V 260 C 160 170, 256 120, 256 120 C 256 120, 352 170, 352 260 V 380 Z" fill="none" stroke="url(#goldGrad)" stroke-width="12" stroke-linejoin="round"/>
+  
+  <!-- Open Book of Knowledge -->
+  <path d="M180 340 Q 256 310 256 350 Q 256 310 332 340 V 270 Q 256 240 256 280 Q 256 240 180 270 Z" fill="#F8FAFC" opacity="0.95"/>
+  <path d="M256 280 V 350" stroke="#0F172A" stroke-width="4"/>
+  
+  <!-- Scales of Justice / Governance Balance (Trust Deed & Legal Affairs) -->
+  <path d="M256 150 V 230" stroke="url(#goldGrad)" stroke-width="6" stroke-linecap="round"/>
+  <path d="M210 180 H 302" stroke="url(#goldGrad)" stroke-width="5" stroke-linecap="round"/>
+  <path d="M210 180 L 195 210 H 225 Z" fill="none" stroke="url(#goldGrad)" stroke-width="4"/>
+  <path d="M302 180 L 287 210 H 317 Z" fill="none" stroke="url(#goldGrad)" stroke-width="4"/>
+  
+  <!-- Stars of Excellence & 3 Founding Pillars -->
+  <polygon points="256,70 263,88 282,88 266,100 272,118 256,106 240,118 246,100 230,88 249,88" fill="url(#goldGrad)"/>
+  <circle cx="130" cy="130" r="10" fill="#38BDF8"/>
+  <circle cx="382" cy="130" r="10" fill="#38BDF8"/>
+  
+  <!-- Monogram text -->
+  <text x="256" y="440" font-family="system-ui, -apple-system, sans-serif" font-size="34" font-weight="800" fill="#F8FAFC" text-anchor="middle" letter-spacing="4">MIU · AUTK</text>
+  <text x="256" y="470" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="600" fill="#94A3B8" text-anchor="middle" letter-spacing="2">MOMBASA, KENYA</text>
+</svg>

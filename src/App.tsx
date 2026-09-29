@@ -1,0 +1,119 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import React, { useState, Suspense, lazy } from 'react';
+import { BrowserRouter as Router, Routes, Route, Outlet } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AppProvider, useApp } from './context/AppContext';
+import { Navbar } from './components/Navbar';
+import { Sidebar } from './components/Sidebar';
+import { DeadlineAlertBanner } from './components/DeadlineAlertBanner';
+import { OfflineIndicator } from './components/OfflineIndicator';
+import { GlobalSearchModal } from './components/GlobalSearchModal';
+import { MobileBottomNav } from './components/MobileBottomNav';
+import { MobileMoreSheet } from './components/MobileMoreSheet';
+
+const DashboardView = lazy(() => import('./views/DashboardView').then(m => ({ default: m.DashboardView })));
+const ProjectInfoView = lazy(() => import('./views/ProjectInfoView').then(m => ({ default: m.ProjectInfoView })));
+const LegalAffairsView = lazy(() => import('./views/LegalAffairsView').then(m => ({ default: m.LegalAffairsView })));
+const ConstructionView = lazy(() => import('./views/ConstructionView').then(m => ({ default: m.ConstructionView })));
+const GovernanceCharterView = lazy(() => import('./views/GovernanceCharterView').then(m => ({ default: m.GovernanceCharterView })));
+const FinanceAccountingView = lazy(() => import('./views/FinanceAccountingView').then(m => ({ default: m.FinanceAccountingView })));
+const DocumentVaultView = lazy(() => import('./views/DocumentVaultView').then(m => ({ default: m.DocumentVaultView })));
+const CommunicationView = lazy(() => import('./views/CommunicationView').then(m => ({ default: m.CommunicationView })));
+
+const MainLayout: React.FC = () => {
+  const { language } = useApp();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
+      {/* Offline Alert */}
+      <OfflineIndicator />
+
+      {/* Global Search Dialog */}
+      <GlobalSearchModal />
+
+      {/* Mobile Menu Drawer (Single, Unified) */}
+      <MobileMoreSheet isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
+
+      {/* Top Navigation */}
+      <Navbar onOpenMenu={() => setIsMobileMenuOpen(true)} />
+
+      {/* Critical Legal / Project Deadlines Banner */}
+      <DeadlineAlertBanner />
+
+      <div className="flex-1 flex max-w-7xl w-full mx-auto">
+        {/* Desktop Sidebar */}
+        <Sidebar />
+
+        {/* Dynamic Main View with mobile safe bottom spacing */}
+        <main className="flex-1 p-3 sm:p-6 lg:p-8 pb-24 md:pb-8 overflow-y-auto relative">
+          <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="w-8 h-8 border-4 border-amber-600 border-t-transparent rounded-full animate-spin"></div></div>}>
+            <Outlet />
+          </Suspense>
+
+          {/* Footer note */}
+          <footer className="mt-12 pt-6 border-t border-slate-200 text-[11px] text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div>
+              <span className="font-semibold text-slate-700">
+                {language === 'tr' ? 'Mombasa Uluslararası Üniversitesi Projesi' : 'Mombasa International University Project'}
+              </span> ·{' '}
+              <span>{language === 'tr' ? 'Kenya Afrika Üniversitesi Vakfı (AUTK)' : 'African University Trust of Kenya (AUTK)'}</span> ·{' '}
+              <span>{language === 'tr' ? 'Parsel No: MN/I/5141 (84 Dönüm), Utange/Majaoni' : 'Plot No. MN/I/5141 (84 Acres), Utange/Majaoni'}</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span>{language === 'tr' ? 'Fasıl 164 Kenya Kanunları' : 'Cap 164 Laws of Kenya'}</span>
+              <span>·</span>
+              <span className="text-emerald-600 font-mono font-medium">{language === 'tr' ? 'PWA Etkin' : 'PWA Enabled'}</span>
+              <span>·</span>
+              <span>{language === 'tr' ? '807.3M KShs Yatırım' : 'KShs 807.3M Invested'}</span>
+            </div>
+          </footer>
+        </main>
+      </div>
+
+      {/* Mobile Fixed Bottom Navigation Bar */}
+      <MobileBottomNav
+        onOpenMore={() => setIsMobileMenuOpen(true)}
+        isMoreOpen={isMobileMenuOpen}
+      />
+    </div>
+  );
+};
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: true,
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      gcTime: 1000 * 60 * 60 * 24, // 24 hours
+    },
+  },
+});
+
+export default function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <Router>
+        <AppProvider>
+          <Routes>
+            <Route element={<MainLayout />}>
+              <Route path="/" element={<DashboardView />} />
+              <Route path="/project_info" element={<ProjectInfoView />} />
+              <Route path="/legal" element={<LegalAffairsView />} />
+              <Route path="/construction" element={<ConstructionView />} />
+              <Route path="/governance" element={<GovernanceCharterView />} />
+              <Route path="/finance" element={<FinanceAccountingView />} />
+              <Route path="/documents" element={<DocumentVaultView />} />
+              <Route path="/communication" element={<CommunicationView />} />
+            </Route>
+          </Routes>
+        </AppProvider>
+      </Router>
+    </QueryClientProvider>
+  );
+}

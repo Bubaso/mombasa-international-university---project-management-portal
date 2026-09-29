@@ -1,0 +1,94 @@
+@import "tailwindcss";
+
+@theme {
+  --color-solar-base03: #002b36;
+  --color-solar-base02: #073642;
+  --color-solar-base01: #586e75;
+  --color-solar-base00: #657b83;
+  --color-solar-base0: #839496;
+  --color-solar-base1: #93a1a1;
+  --color-solar-base2: #eee8d5;
+  --color-solar-base3: #fdf6e3;
+  --color-solar-yellow: #b58900;
+  --color-solar-orange: #cb4b16;
+  --color-solar-red: #dc322f;
+  --color-solar-magenta: #d33682;
+  --color-solar-violet: #6c71c4;
+  --color-solar-blue: #268bd2;
+  --color-solar-cyan: #2aa198;
+  --color-solar-green: #859900;
+
+  /* Solarized Light palette mapping */
+  --color-slate-50: #fdf6e3;
+  --color-slate-100: #eee8d5;
+  --color-slate-200: #dfd7c2;
+  --color-slate-300: #d3c9b0;
+  --color-slate-400: #93a1a1;
+  --color-slate-500: #839496;
+  --color-slate-600: #657b83;
+  --color-slate-700: #586e75;
+  --color-slate-800: #073642;
+  --color-slate-900: #002b36;
+
+  /* Solarized accents */
+  --color-amber-50: #fbf5df;
+  --color-amber-100: #f7ebc3;
+  --color-amber-200: #eed692;
+  --color-amber-500: #b58900;
+  --color-amber-600: #b58900;
+  --color-amber-700: #9e7500;
+  --color-amber-800: #805e00;
+
+  --color-emerald-50: #f1f6e0;
+  --color-emerald-100: #e2ecc1;
+  --color-emerald-600: #859900;
+  --color-emerald-700: #718200;
+  --color-emerald-800: #5c6b00;
+
+  --color-blue-50: #eaf3fa;
+  --color-blue-100: #d4e7f5;
+  --color-blue-600: #268bd2;
+  --color-blue-700: #1f74b0;
+  --color-blue-800: #185c8d;
+
+  --color-rose-50: #faeceb;
+  --color-rose-100: #f5d4d3;
+  --color-rose-600: #dc322f;
+  --color-rose-700: #ba2825;
+  --color-rose-800: #961e1c;
+
+  --color-purple-50: #f1f0f9;
+  --color-purple-600: #6c71c4;
+  --color-purple-700: #575cb0;
+
+  /* Solarized warm card surface instead of stark #fff */
+  --color-white: #fcf9ee;
+}
+
+body {
+  background-color: #fdf6e3;
+  color: #586e75;
+}
+
+::selection {
+  background-color: #eee8d5;
+  color: #073642;
+}
+
+/* Subtle Solarized Light scrollbar */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: #fdf6e3;
+}
+::-webkit-scrollbar-thumb {
+  background: #dfd7c2;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #c7bc9f;
+}
+
+
