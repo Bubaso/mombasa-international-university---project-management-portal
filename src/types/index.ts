@@ -1,12 +1,12 @@
 export type Language = 'en' | 'tr';
 
 export type UserRole =
-  | 'trustee'           // Board of Trustees (Shahbal, UEF, Afrika Vakfı)
-  | 'executive'         // Board of Directors & Project Execs
-  | 'legal_counsel'     // Advocates (Simon Karina, Khatib & Co, SC)
-  | 'contractor_qs'     // Site Engineers, QS Stephen Ndibui Kamau, Contractors
-  | 'auditor_finance'   // Audit Committee, Financial Officers
-  | 'regulatory_cue';   // CUE, Land Registrar, County Government
+  | 'trustee' // Board of Trustees (Shahbal, UEF, Afrika Vakfı)
+  | 'executive' // Board of Directors & Project Execs
+  | 'legal_counsel' // Advocates (Simon Karina, Khatib & Co, SC)
+  | 'contractor_qs' // Site Engineers, QS Stephen Ndibui Kamau, Contractors
+  | 'auditor_finance' // Audit Committee, Financial Officers
+  | 'regulatory_cue'; // CUE, Land Registrar, County Government
 
 export interface CurrentUser {
   id: string;
@@ -82,7 +82,14 @@ export interface ConstructionBlock {
 export interface DocumentItem {
   id: string;
   title: string;
-  category: 'legal_pleadings' | 'trust_deed' | 'court_order' | 'architectural' | 'boq_finance' | 'accreditation_cue' | 'site_survey';
+  category:
+    | 'legal_pleadings'
+    | 'trust_deed'
+    | 'court_order'
+    | 'architectural'
+    | 'boq_finance'
+    | 'accreditation_cue'
+    | 'site_survey';
   version: string;
   fileFormat: string;
   fileSize: string;
@@ -102,7 +109,13 @@ export interface FinancialTransaction {
   id: string;
   referenceNo: string;
   date: string;
-  category: 'civil_construction' | 'architectural_qs' | 'legal_defence' | 'site_security' | 'land_administration' | 'statutory_compliance';
+  category:
+    | 'civil_construction'
+    | 'architectural_qs'
+    | 'legal_defence'
+    | 'site_security'
+    | 'land_administration'
+    | 'statutory_compliance';
   description: string;
   amountKShs: number;
   payee: string;
@@ -160,7 +173,10 @@ export interface TrusteeMember {
   id: string;
   name: string;
   nationalId: string;
-  appointedBy: 'Suleiman Shahbal Foundation' | 'Universal Education Foundation' | 'Africa Foundation (Afrika Vakfı)';
+  appointedBy:
+    | 'Suleiman Shahbal Foundation'
+    | 'Universal Education Foundation'
+    | 'Africa Foundation (Afrika Vakfı)';
   origin: 'Mombasa/Kenya' | 'Ankara/Türkiye' | 'İstanbul/Türkiye';
   roleInTrust: string;
   activeStatus: boolean;
@@ -213,6 +229,12 @@ export interface EvidenceExhibit {
   sourceDeponent: string;
   legalRelevanceEn: string;
   legalRelevanceTr: string;
-  category: 'root_title' | 'lease' | 'squatter_agreement' | 'nlc_ruling' | 'police_bond' | 'qs_valuation' | 'court_order';
+  category:
+    | 'root_title'
+    | 'lease'
+    | 'squatter_agreement'
+    | 'nlc_ruling'
+    | 'police_bond'
+    | 'qs_valuation'
+    | 'court_order';
 }
-

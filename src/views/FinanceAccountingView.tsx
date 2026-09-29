@@ -1,14 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import * as queries from '../api/hooks';
-import {
-  Receipt,
-  CheckCircle2,
-  Plus,
-  ShieldCheck,
-  TrendingUp,
-  CreditCard
-} from 'lucide-react';
+import { Receipt, CheckCircle2, Plus, ShieldCheck, TrendingUp, CreditCard } from 'lucide-react';
 import { ContextualAIAssistant } from '../components/ContextualAIAssistant';
 
 export const FinanceAccountingView: React.FC = () => {
@@ -21,7 +14,9 @@ export const FinanceAccountingView: React.FC = () => {
   const [payee, setPayee] = useState('');
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState<number>(0);
-  const [category, setCategory] = useState<'civil_construction' | 'architectural_qs' | 'legal_defence' | 'site_security'>('civil_construction');
+  const [category, setCategory] = useState<
+    'civil_construction' | 'architectural_qs' | 'legal_defence' | 'site_security'
+  >('civil_construction');
 
   const handleCreateVoucher = (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,7 +25,7 @@ export const FinanceAccountingView: React.FC = () => {
       payee,
       description,
       amountKShs: Number(amount),
-      category
+      category,
     });
     setPayee('');
     setDescription('');
@@ -45,7 +40,11 @@ export const FinanceAccountingView: React.FC = () => {
         <div>
           <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700 uppercase tracking-wider">
             <Receipt className="w-4 h-4 text-emerald-600" />
-            <span>{language === 'tr' ? 'Mali Denetim & Muhasebe Entegrasyonu' : 'Capital Expenditure & Accounting API Sync'}</span>
+            <span>
+              {language === 'tr'
+                ? 'Mali Denetim & Muhasebe Entegrasyonu'
+                : 'Capital Expenditure & Accounting API Sync'}
+            </span>
           </div>
           <h1 className="text-xl font-bold text-slate-900 mt-1">
             {language === 'tr' ? 'Finans ve Muhasebe' : 'Finance & Accounting'}
@@ -63,14 +62,17 @@ export const FinanceAccountingView: React.FC = () => {
         </div>
       </div>
 
-
       {/* Capital Expenditure Breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-6 bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-amber-600" />
-              <span>{language === 'tr' ? '807.3M KShs Sermaye Harcama Dağılımı' : 'KShs 807.3M Capital Expenditure'}</span>
+              <span>
+                {language === 'tr'
+                  ? '807.3M KShs Sermaye Harcama Dağılımı'
+                  : 'KShs 807.3M Capital Expenditure'}
+              </span>
             </h2>
             <span className="text-[11px] font-mono text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
               {language === 'tr' ? 'Resmi Kayıtlı Veri' : 'Verified Official Data'}
@@ -104,7 +106,11 @@ export const FinanceAccountingView: React.FC = () => {
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
               <CreditCard className="w-4 h-4 text-purple-600" />
-              <span>{language === 'tr' ? 'Bağışçı Fonu ve 1. Aşama Bütçesi' : 'Donor Tranches & 1st Phase Budget'}</span>
+              <span>
+                {language === 'tr'
+                  ? 'Bağışçı Fonu ve 1. Aşama Bütçesi'
+                  : 'Donor Tranches & 1st Phase Budget'}
+              </span>
             </h2>
             <span className="text-[11px] font-mono text-purple-700 font-medium bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
               {language === 'tr' ? 'Türk & Kenyalı Hayırseverler' : 'Turkish & Kenyan Donors'}
@@ -113,26 +119,36 @@ export const FinanceAccountingView: React.FC = () => {
 
           <div className="grid grid-cols-2 gap-3 text-xs">
             <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-              <span className="text-slate-500 text-[11px]">{language === 'tr' ? '1. Aşama Toplam Bütçe' : 'Phase 1 Total Budget'}</span>
+              <span className="text-slate-500 text-[11px]">
+                {language === 'tr' ? '1. Aşama Toplam Bütçe' : 'Phase 1 Total Budget'}
+              </span>
               <div className="font-mono text-lg font-bold text-slate-900 mt-1">KShs 1.25B</div>
             </div>
             <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-              <span className="text-slate-500 text-[11px]">{language === 'tr' ? 'Taahhüt Edilen Bağış' : 'Committed Funds'}</span>
+              <span className="text-slate-500 text-[11px]">
+                {language === 'tr' ? 'Taahhüt Edilen Bağış' : 'Committed Funds'}
+              </span>
               <div className="font-mono text-lg font-bold text-purple-700 mt-1">KShs 980M</div>
             </div>
             <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-              <span className="text-slate-500 text-[11px]">{language === 'tr' ? 'Fiili Kullanılan (Hakediş)' : 'Disbursed to Date'}</span>
+              <span className="text-slate-500 text-[11px]">
+                {language === 'tr' ? 'Fiili Kullanılan (Hakediş)' : 'Disbursed to Date'}
+              </span>
               <div className="font-mono text-lg font-bold text-emerald-700 mt-1">KShs 807.3M</div>
             </div>
             <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-              <span className="text-slate-500 text-[11px]">{language === 'tr' ? 'Kalan Taahhüt' : 'Remaining Commitment'}</span>
+              <span className="text-slate-500 text-[11px]">
+                {language === 'tr' ? 'Kalan Taahhüt' : 'Remaining Commitment'}
+              </span>
               <div className="font-mono text-lg font-bold text-amber-800 mt-1">KShs 172.6M</div>
             </div>
           </div>
 
           <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600 space-y-1">
             <div className="font-semibold text-slate-800">
-              {language === 'tr' ? 'Vergi Muafiyet Avantajı (KRA Tax Status):' : 'Tax-Exempt Donor Advantage:'}
+              {language === 'tr'
+                ? 'Vergi Muafiyet Avantajı (KRA Tax Status):'
+                : 'Tax-Exempt Donor Advantage:'}
             </div>
             <p className="text-[11px] leading-relaxed">
               {language === 'tr'
@@ -148,7 +164,11 @@ export const FinanceAccountingView: React.FC = () => {
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-emerald-600" />
-            <span>{language === 'tr' ? 'Denetlenmiş Sermaye Ödeme Fişleri (Payment Vouchers - PV)' : 'Audited Payment Vouchers Ledger'}</span>
+            <span>
+              {language === 'tr'
+                ? 'Denetlenmiş Sermaye Ödeme Fişleri (Payment Vouchers - PV)'
+                : 'Audited Payment Vouchers Ledger'}
+            </span>
           </h2>
           <span className="text-[11px] font-mono text-slate-500">
             {transactions.length} {language === 'tr' ? 'Kayıt' : 'Records'}
@@ -162,7 +182,9 @@ export const FinanceAccountingView: React.FC = () => {
             </div>
             <div className="space-y-1 max-w-md mx-auto">
               <h3 className="text-sm font-bold text-slate-800">
-                {language === 'tr' ? 'Senkronize Edilmiş Ödeme Fişi Bulunmuyor' : 'No Payment Vouchers Synchronized Yet'}
+                {language === 'tr'
+                  ? 'Senkronize Edilmiş Ödeme Fişi Bulunmuyor'
+                  : 'No Payment Vouchers Synchronized Yet'}
               </h3>
               <p className="text-xs text-slate-500 leading-relaxed">
                 {language === 'tr'
@@ -175,7 +197,9 @@ export const FinanceAccountingView: React.FC = () => {
               className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer shadow-xs"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>{language === 'tr' ? 'İlk Ödeme Fişini Gir' : 'Log First Payment Voucher'}</span>
+              <span>
+                {language === 'tr' ? 'İlk Ödeme Fişini Gir' : 'Log First Payment Voucher'}
+              </span>
             </button>
           </div>
         ) : (
@@ -217,7 +241,9 @@ export const FinanceAccountingView: React.FC = () => {
           <div className="w-full sm:max-w-md bg-white border border-slate-200 rounded-t-2xl sm:rounded-2xl p-5 sm:p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-bold text-slate-900 text-sm">
-                {language === 'tr' ? 'Yeni Ödeme Fişi (Payment Voucher - PV) Düzenle' : 'Create Payment Voucher (PV)'}
+                {language === 'tr'
+                  ? 'Yeni Ödeme Fişi (Payment Voucher - PV) Düzenle'
+                  : 'Create Payment Voucher (PV)'}
               </h3>
               <button
                 onClick={() => setShowNewVoucherModal(false)}
@@ -237,7 +263,9 @@ export const FinanceAccountingView: React.FC = () => {
                   required
                   value={payee}
                   onChange={(e) => setPayee(e.target.value)}
-                  placeholder={language === 'tr' ? 'Örn: Yapı Mühendisliği Ltd.' : 'e.g. Coast Engineering Ltd'}
+                  placeholder={
+                    language === 'tr' ? 'Örn: Yapı Mühendisliği Ltd.' : 'e.g. Coast Engineering Ltd'
+                  }
                   className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-900 focus:outline-none focus:border-emerald-500 focus:bg-white"
                 />
               </div>
@@ -252,16 +280,24 @@ export const FinanceAccountingView: React.FC = () => {
                   className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-900 focus:outline-none focus:border-emerald-500 focus:bg-white"
                 >
                   <option value="civil_construction">
-                    {language === 'tr' ? 'İnşaat & Karkas İşleri (Civil Construction)' : 'Civil & Structural Works'}
+                    {language === 'tr'
+                      ? 'İnşaat & Karkas İşleri (Civil Construction)'
+                      : 'Civil & Structural Works'}
                   </option>
                   <option value="architectural_qs">
-                    {language === 'tr' ? 'Mimari, Mühendislik & Metraj (QS)' : 'Architectural, Engineering & QS'}
+                    {language === 'tr'
+                      ? 'Mimari, Mühendislik & Metraj (QS)'
+                      : 'Architectural, Engineering & QS'}
                   </option>
                   <option value="legal_defence">
-                    {language === 'tr' ? 'Hukuki Savunma & Dava Giderleri (Legal Defense)' : 'Legal Defense & Filings'}
+                    {language === 'tr'
+                      ? 'Hukuki Savunma & Dava Giderleri (Legal Defense)'
+                      : 'Legal Defense & Filings'}
                   </option>
                   <option value="site_security">
-                    {language === 'tr' ? 'Saha Güvenliği & Çevre Koruma (Site Security)' : 'Site Security & Perimeter Watch'}
+                    {language === 'tr'
+                      ? 'Saha Güvenliği & Çevre Koruma (Site Security)'
+                      : 'Site Security & Perimeter Watch'}
                   </option>
                 </select>
               </div>
@@ -283,13 +319,19 @@ export const FinanceAccountingView: React.FC = () => {
 
               <div>
                 <label className="block text-slate-700 font-semibold mb-1">
-                  {language === 'tr' ? 'Açıklama / Fatura Referansı:' : 'Description / Invoice Ref:'}
+                  {language === 'tr'
+                    ? 'Açıklama / Fatura Referansı:'
+                    : 'Description / Invoice Ref:'}
                 </label>
                 <textarea
                   rows={2}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder={language === 'tr' ? 'Hakediş detayı veya iş açıklaması...' : 'Work detail or payment rationale...'}
+                  placeholder={
+                    language === 'tr'
+                      ? 'Hakediş detayı veya iş açıklaması...'
+                      : 'Work detail or payment rationale...'
+                  }
                   className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-900 focus:outline-none focus:border-emerald-500 focus:bg-white"
                 />
               </div>
@@ -313,13 +355,12 @@ export const FinanceAccountingView: React.FC = () => {
           </div>
         </div>
       )}
-    
-      <ContextualAIAssistant 
+
+      <ContextualAIAssistant
         contextData={JSON.stringify({ transactions })}
         systemInstruction="You are an expert financial auditor AI. Analyze transactions, calculate totals, and identify suspicious spending or trends based ONLY on the provided financial data."
         title={language === 'tr' ? 'Finans AI Asistanı' : 'Finance AI Assistant'}
       />
-    
-</div>
+    </div>
   );
 };

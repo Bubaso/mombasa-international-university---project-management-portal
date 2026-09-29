@@ -1,14 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import * as queries from '../api/hooks';
-import {
-  Users2,
-  FileCheck2,
-  Landmark,
-  CheckCircle,
-  MapPin,
-  Plus
-} from 'lucide-react';
+import { Users2, FileCheck2, Landmark, CheckCircle, MapPin, Plus } from 'lucide-react';
 
 export const GovernanceCharterView: React.FC = () => {
   const { language } = useApp();
@@ -24,7 +17,7 @@ export const GovernanceCharterView: React.FC = () => {
       organ: 'Board of Trustees',
       titleEn: 'Approval of Appeal Litigation Strategy & Status Quo Enforcement Protocol',
       titleTr: 'Temyiz Dava Stratejisi ve Mevcut Durum Protokolünün Onaylanması',
-      status: 'Enacted'
+      status: 'Enacted',
     },
     {
       id: 'res-2',
@@ -32,7 +25,7 @@ export const GovernanceCharterView: React.FC = () => {
       organ: 'Board of Trustees',
       titleEn: 'Allocation of KShs 34.3M Emergency Weatherproofing Preservation Fund',
       titleTr: '34.3M KShs Acil Çatı ve Yalıtım Koruma Fonunun Tahsis Edilmesi',
-      status: 'Enacted'
+      status: 'Enacted',
     },
     {
       id: 'res-3',
@@ -40,8 +33,8 @@ export const GovernanceCharterView: React.FC = () => {
       organ: 'General Meeting of Trustees',
       titleEn: 'Execution of Amended Trust Deed under Cap 164 with 12 Institutional Trustees',
       titleTr: '12 Kurumsal Mütevelli ile Fasıl 164 Kapsamında Tadil Edilmiş Vakıf Senedi İmzası',
-      status: 'Registered'
-    }
+      status: 'Registered',
+    },
   ]);
 
   const filteredTrustees = trustees.filter((t) => {
@@ -62,9 +55,9 @@ export const GovernanceCharterView: React.FC = () => {
         organ: 'Board of Trustees',
         titleEn: resolutionTitle,
         titleTr: resolutionTitle,
-        status: 'Enacted'
+        status: 'Enacted',
       },
-      ...resolutions
+      ...resolutions,
     ]);
     setResolutionTitle('');
     setResolutionDetail('');
@@ -78,7 +71,11 @@ export const GovernanceCharterView: React.FC = () => {
         <div>
           <div className="flex items-center gap-2 text-xs font-semibold text-purple-700 uppercase tracking-wider">
             <Landmark className="w-4 h-4 text-purple-600" />
-            <span>{language === 'tr' ? 'Vakıf Yönetişimi & Yükseköğretim Beratı' : 'Trust Governance & University Charter'}</span>
+            <span>
+              {language === 'tr'
+                ? 'Vakıf Yönetişimi & Yükseköğretim Beratı'
+                : 'Trust Governance & University Charter'}
+            </span>
           </div>
           <h1 className="text-xl font-bold text-slate-900 mt-1">
             {language === 'tr' ? 'Yönetişim' : 'Governance'}
@@ -106,19 +103,25 @@ export const GovernanceCharterView: React.FC = () => {
             <li className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
               <span className="font-medium">
-                {language === 'tr' ? 'a) Mütevelli Heyeti (En Yüksek Karar Organı)' : 'a) Board of Trustees (Highest Decision Body)'}
+                {language === 'tr'
+                  ? 'a) Mütevelli Heyeti (En Yüksek Karar Organı)'
+                  : 'a) Board of Trustees (Highest Decision Body)'}
               </span>
             </li>
             <li className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
               <span>
-                {language === 'tr' ? 'b) Yönetim Kurulu (İcra Organı)' : 'b) Board of Directors (Executive Body)'}
+                {language === 'tr'
+                  ? 'b) Yönetim Kurulu (İcra Organı)'
+                  : 'b) Board of Directors (Executive Body)'}
               </span>
             </li>
             <li className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
               <span>
-                {language === 'tr' ? 'c) Denetim Komitesi (Mali Denetim Organı)' : 'c) Audit Committee (Financial Review)'}
+                {language === 'tr'
+                  ? 'c) Denetim Komitesi (Mali Denetim Organı)'
+                  : 'c) Audit Committee (Financial Review)'}
               </span>
             </li>
           </ul>
@@ -134,19 +137,25 @@ export const GovernanceCharterView: React.FC = () => {
             <div className="flex items-center gap-2 text-emerald-700 font-medium">
               <CheckCircle className="w-3.5 h-3.5 shrink-0 text-emerald-600" />
               <span>
-                {language === 'tr' ? 'Vakıf Senedi Tescili & Resmî Gazete İlanı (2025)' : 'Trust Deed Gazetted & Registered (2025)'}
+                {language === 'tr'
+                  ? 'Vakıf Senedi Tescili & Resmî Gazete İlanı (2025)'
+                  : 'Trust Deed Gazetted & Registered (2025)'}
               </span>
             </div>
             <div className="flex items-center gap-2 text-amber-700 font-medium">
               <span className="w-3.5 h-3.5 rounded-full border-2 border-amber-500 shrink-0" />
               <span>
-                {language === 'tr' ? 'Müfredat ve Tesis İncelemesi (Devam Ediyor)' : 'Curriculum & Facility Review (Ongoing)'}
+                {language === 'tr'
+                  ? 'Müfredat ve Tesis İncelemesi (Devam Ediyor)'
+                  : 'Curriculum & Facility Review (Ongoing)'}
               </span>
             </div>
             <div className="flex items-center gap-2 text-slate-400">
               <span className="w-3.5 h-3.5 rounded-full border-2 border-slate-300 shrink-0" />
               <span>
-                {language === 'tr' ? 'Cumhurbaşkanlığı Üniversite Beratı (2027 Hedefi)' : 'Presidential Charter Grant (Target 2027)'}
+                {language === 'tr'
+                  ? 'Cumhurbaşkanlığı Üniversite Beratı (2027 Hedefi)'
+                  : 'Presidential Charter Grant (Target 2027)'}
               </span>
             </div>
           </div>
@@ -155,7 +164,9 @@ export const GovernanceCharterView: React.FC = () => {
         {/* 20% Scholarship Guarantee */}
         <div className="bg-white border border-slate-200 p-4 rounded-xl shadow-xs space-y-2">
           <div className="flex items-center justify-between text-amber-800 font-bold uppercase text-[11px]">
-            <span>{language === 'tr' ? '%20 Gençlik Bursu Taahhüdü' : '20% Scholarship Guarantee'}</span>
+            <span>
+              {language === 'tr' ? '%20 Gençlik Bursu Taahhüdü' : '20% Scholarship Guarantee'}
+            </span>
             <span className="font-mono text-purple-700">~1,000 Seats</span>
           </div>
           <p className="text-slate-600 leading-relaxed text-[11px]">
@@ -172,7 +183,11 @@ export const GovernanceCharterView: React.FC = () => {
           <div>
             <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
               <Users2 className="w-4 h-4 text-purple-600" />
-              <span>{language === 'tr' ? 'Tescilli Mütevelli Heyeti (12 Üye)' : 'Board of Registered Trustees (12 Members)'}</span>
+              <span>
+                {language === 'tr'
+                  ? 'Tescilli Mütevelli Heyeti (12 Üye)'
+                  : 'Board of Registered Trustees (12 Members)'}
+              </span>
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
               {language === 'tr'
@@ -186,7 +201,9 @@ export const GovernanceCharterView: React.FC = () => {
             <button
               onClick={() => setFilterFoundation('all')}
               className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
-                filterFoundation === 'all' ? 'bg-white text-slate-900 font-semibold shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                filterFoundation === 'all'
+                  ? 'bg-white text-slate-900 font-semibold shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               {language === 'tr' ? 'Tümü (12)' : 'All (12)'}
@@ -194,7 +211,9 @@ export const GovernanceCharterView: React.FC = () => {
             <button
               onClick={() => setFilterFoundation('shahbal')}
               className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
-                filterFoundation === 'shahbal' ? 'bg-white text-amber-800 font-semibold shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                filterFoundation === 'shahbal'
+                  ? 'bg-white text-amber-800 font-semibold shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               Shahbal (3)
@@ -202,7 +221,9 @@ export const GovernanceCharterView: React.FC = () => {
             <button
               onClick={() => setFilterFoundation('uef')}
               className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
-                filterFoundation === 'uef' ? 'bg-white text-blue-800 font-semibold shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                filterFoundation === 'uef'
+                  ? 'bg-white text-blue-800 font-semibold shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               Universal (3)
@@ -210,7 +231,9 @@ export const GovernanceCharterView: React.FC = () => {
             <button
               onClick={() => setFilterFoundation('afrika')}
               className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
-                filterFoundation === 'afrika' ? 'bg-white text-purple-800 font-semibold shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                filterFoundation === 'afrika'
+                  ? 'bg-white text-purple-800 font-semibold shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               Afrika Vakfı (6)
@@ -226,7 +249,9 @@ export const GovernanceCharterView: React.FC = () => {
               className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 hover:border-slate-300 transition-colors space-y-1.5"
             >
               <div className="flex items-center justify-between">
-                <span className="font-mono text-purple-700 font-bold text-[11px]">{t.nationalId}</span>
+                <span className="font-mono text-purple-700 font-bold text-[11px]">
+                  {t.nationalId}
+                </span>
                 <span className="flex items-center gap-1 text-[10px] text-emerald-700 font-medium bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
                   <CheckCircle className="w-3 h-3 text-emerald-600" />
                   {language === 'tr' ? 'Aktif' : 'Active'}
@@ -250,7 +275,11 @@ export const GovernanceCharterView: React.FC = () => {
       <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-4">
         <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
           <FileCheck2 className="w-4 h-4 text-emerald-600" />
-          <span>{language === 'tr' ? 'Mütevelli Heyeti Resmî Kararlar Kütüğü' : 'Trustee Resolutions & Minute Book'}</span>
+          <span>
+            {language === 'tr'
+              ? 'Mütevelli Heyeti Resmî Kararlar Kütüğü'
+              : 'Trustee Resolutions & Minute Book'}
+          </span>
         </h2>
 
         <div className="space-y-2 text-xs">
@@ -273,8 +302,12 @@ export const GovernanceCharterView: React.FC = () => {
               </div>
               <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-300 shrink-0 self-start sm:self-center font-medium">
                 {res.status === 'Registered'
-                  ? (language === 'tr' ? 'Tescil Edildi' : 'Registered')
-                  : (language === 'tr' ? 'Yürürlükte' : 'Enacted')}
+                  ? language === 'tr'
+                    ? 'Tescil Edildi'
+                    : 'Registered'
+                  : language === 'tr'
+                    ? 'Yürürlükte'
+                    : 'Enacted'}
               </span>
             </div>
           ))}
@@ -324,7 +357,11 @@ export const GovernanceCharterView: React.FC = () => {
                   rows={3}
                   value={resolutionDetail}
                   onChange={(e) => setResolutionDetail(e.target.value)}
-                  placeholder={language === 'tr' ? 'Resmi karar metni ve gerekçesi...' : 'Official resolution body...'}
+                  placeholder={
+                    language === 'tr'
+                      ? 'Resmi karar metni ve gerekçesi...'
+                      : 'Official resolution body...'
+                  }
                   className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-900 focus:outline-none focus:border-purple-500 focus:bg-white"
                 />
               </div>

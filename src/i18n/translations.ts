@@ -23,7 +23,7 @@ export const translations = {
       scholarship: 'Local Youth Scholarships',
       scholarshipSub: 'Targeted to coastal youth',
       documentsCount: 'Secured Documents',
-      documentsCountSub: 'Encrypted & versioned'
+      documentsCountSub: 'Encrypted & versioned',
     },
     nav: {
       dashboard: 'Executive Dashboard',
@@ -34,7 +34,7 @@ export const translations = {
       finance: 'Financials & Accounting API',
       documents: 'Document Vault & Audit',
       communication: 'Stakeholder Comms',
-      clarifications: 'System Q&A & Setup'
+      clarifications: 'System Q&A & Setup',
     },
     roles: {
       trustee: 'Board of Trustees (AUTK)',
@@ -42,35 +42,44 @@ export const translations = {
       legal_counsel: 'Legal Defense & Appellate Counsel',
       contractor_qs: 'Contractors & Quantity Surveyors',
       auditor_finance: 'Audit Committee & Finance',
-      regulatory_cue: 'Regulatory & CUE Accreditation'
+      regulatory_cue: 'Regulatory & CUE Accreditation',
     },
     legalSection: {
       title: 'Legal Affairs',
       subtitle: '',
       newCaseBtn: 'Log Legal Filing / Motion',
       statusQuoTitle: 'Current Status Quo Summary (9 Feb 2026)',
-      statusQuo1: '1. Boundary Protection: Claimants strictly restricted to the 5 acres they occupy.',
-      statusQuo2: '2. Prohibition of Sale: No party may transfer, subdivide or deal with third parties.',
+      statusQuo1:
+        '1. Boundary Protection: Claimants strictly restricted to the 5 acres they occupy.',
+      statusQuo2:
+        '2. Prohibition of Sale: No party may transfer, subdivide or deal with third parties.',
       statusQuo3: '3. Priority Hearing: Expedited queue before Court of Appeal judges.',
-      statusQuo4: '4. Construction Suspension: Active development paused; preservation motions permitted.',
+      statusQuo4:
+        '4. Construction Suspension: Active development paused; preservation motions permitted.',
       keyGroundsTitle: 'Core Grounds in the Memorandum of Appeal',
-      ground1: 'Contradiction with Site Visit: Judge noted 5-acre occupation but awarded all 84 acres.',
-      ground2: 'Procedural Defect: Failure to attach mandatory Certified Extract of Title (Order 37 Rule 7).',
-      ground3: 'Material Non-Disclosure: 2012 vacation agreement and KShs 779,980 compensation concealed.',
-      ground4: 'Permissive Occupation: Land was occupied under consent, defeating adverse possession.',
+      ground1:
+        'Contradiction with Site Visit: Judge noted 5-acre occupation but awarded all 84 acres.',
+      ground2:
+        'Procedural Defect: Failure to attach mandatory Certified Extract of Title (Order 37 Rule 7).',
+      ground3:
+        'Material Non-Disclosure: 2012 vacation agreement and KShs 779,980 compensation concealed.',
+      ground4:
+        'Permissive Occupation: Land was occupied under consent, defeating adverse possession.',
       whoIsWhoTitle: 'Key Stakeholders, Advocates & Judicial Panel',
-      urgentActionNotice: 'Action Plan: File urgent variation for Block A1 roofing to prevent irreparable monsoon destruction.',
+      urgentActionNotice:
+        'Action Plan: File urgent variation for Block A1 roofing to prevent irreparable monsoon destruction.',
       filterAll: 'All Files',
       filterAppeals: 'Court of Appeal',
       filterELC: 'High Court / ELC',
-      filterNLC: 'National Land Commission'
+      filterNLC: 'National Land Commission',
     },
     constructionSection: {
       title: 'Construction',
       subtitle: '',
       totalProgress: 'Overall Phase 1 Progress',
       urgentActionBadge: 'Urgent Weatherproofing Needed',
-      urgentActionDetail: 'Exposed reinforced concrete and steel trusses require immediate roof encapsulation before the rains.',
+      urgentActionDetail:
+        'Exposed reinforced concrete and steel trusses require immediate roof encapsulation before the rains.',
       requestVariationBtn: 'Prepare Court Variation Affidavit',
       inspectLogBtn: 'Log Site Inspection',
       blocksTitle: 'Monitored Campus Facilities',
@@ -78,19 +87,22 @@ export const translations = {
       viewBoQBtn: 'View QS Bill of Quantities',
       floors: 'Floors',
       budget: 'Approved Budget',
-      spent: 'Actual Spent'
+      spent: 'Actual Spent',
     },
     governanceSection: {
       title: 'Governance',
       subtitle: '',
       trusteeCompositionTitle: 'Board of Registered Trustees (12 Members)',
-      trusteeCompositionDesc: 'Pursuant to Amended Trust Deed dated 27 May 2025: 3 Appointed by Suleiman Shahbal Foundation, 3 by Universal Education Foundation, 6 by Africa Foundation (Afrika Vakfı, Turkey).',
+      trusteeCompositionDesc:
+        'Pursuant to Amended Trust Deed dated 27 May 2025: 3 Appointed by Suleiman Shahbal Foundation, 3 by Universal Education Foundation, 6 by Africa Foundation (Afrika Vakfı, Turkey).',
       charterRoadmapTitle: 'University Charter & Statutory Accreditations',
       charterStep1: '1. Trust Deed Gazette & Registration (Completed Aug 2025)',
       charterStep2: '2. CUE Infrastructure Readiness & Academic Curriculum Review (In Progress)',
-      charterStep3: '3. Presidential University Charter Grant & Authority to Confer Degrees (Target 2027)',
+      charterStep3:
+        '3. Presidential University Charter Grant & Authority to Confer Degrees (Target 2027)',
       taxExemptionTitle: 'Kenya Revenue Authority (KRA) Tax-Exempt Status',
-      taxExemptionDesc: 'Charitable trust designation allows corporate donors and international benefactors to claim tax write-offs.'
+      taxExemptionDesc:
+        'Charitable trust designation allows corporate donors and international benefactors to claim tax write-offs.',
     },
     financeSection: {
       title: 'Finance & Accounting',
@@ -102,7 +114,7 @@ export const translations = {
       transactionsTitle: 'Recent Audited Capital Disbursements',
       breakdownTitle: 'Capital Expenditure by Category',
       verifiedAuditBadge: 'Audited by Committee',
-      testWebhook: 'Test API Webhook Endpoint'
+      testWebhook: 'Test API Webhook Endpoint',
     },
     documentsSection: {
       title: 'Document Vault',
@@ -113,7 +125,7 @@ export const translations = {
       encryptedBadge: 'Securely Stored',
       allCategories: 'All Categories',
       versionHistory: 'Version History',
-      downloadBtn: 'Download'
+      downloadBtn: 'Download',
     },
     communicationSection: {
       title: 'Communications',
@@ -124,18 +136,19 @@ export const translations = {
         legal: 'Legal & Appellate Strategy',
         construction: 'Construction & Site Engineering',
         trustees: 'Board of Trustees & Directors',
-        finance: 'Financial Audit & Donor Reporting'
+        finance: 'Financial Audit & Donor Reporting',
       },
       replyPlaceholder: 'Type a message or internal update...',
-      sendBtn: 'Send Message'
+      sendBtn: 'Send Message',
     },
     clarificationSection: {
       title: 'Setup & Q&A',
       subtitle: '',
-      noticeText: 'To integrate seamlessly with your existing accounting system, legal calendar, and cloud storage, please review these key items:',
+      noticeText:
+        'To integrate seamlessly with your existing accounting system, legal calendar, and cloud storage, please review these key items:',
       submitAnswer: 'Save Configuration',
-      answerPlaceholder: 'Enter your preferred details or leave as standard default...'
-    }
+      answerPlaceholder: 'Enter your preferred details or leave as standard default...',
+    },
   },
   tr: {
     appTitle: 'Mombasa Uluslararası Üniversitesi',
@@ -161,7 +174,7 @@ export const translations = {
       scholarship: 'Yerel Gençlik Bursu',
       scholarshipSub: 'Kıyı bölgesi gençlerine tahsis',
       documentsCount: 'Güvenli Belgeler',
-      documentsCountSub: 'Şifreli ve versiyon kontrollü'
+      documentsCountSub: 'Şifreli ve versiyon kontrollü',
     },
     nav: {
       dashboard: 'Yönetici Gösterge Paneli',
@@ -172,7 +185,7 @@ export const translations = {
       finance: 'Mali Yönetim & Muhasebe API',
       documents: 'Belge Kasası ve Versiyonlar',
       communication: 'Paydaş İletişimi',
-      clarifications: 'Sistem Kurulumu & Sorular'
+      clarifications: 'Sistem Kurulumu & Sorular',
     },
     roles: {
       trustee: 'Mütevelli Heyeti (AUTK)',
@@ -180,35 +193,44 @@ export const translations = {
       legal_counsel: 'Hukuk Müşavirliği ve Temyiz Heyeti',
       contractor_qs: 'Müteahhitler ve Metraj/Maliyet (QS)',
       auditor_finance: 'Denetim Kurulu ve Finans',
-      regulatory_cue: 'Düzenleyici Kurumlar & CUE'
+      regulatory_cue: 'Düzenleyici Kurumlar & CUE',
     },
     legalSection: {
       title: 'Hukuk İşleri',
       subtitle: '',
       newCaseBtn: 'Yeni Dava / Dilekçe Kaydet',
       statusQuoTitle: 'Mevcut Durum (Status Quo) Karar Özeti (9 Şubat 2026)',
-      statusQuo1: '1. Sınırların Korunması: Davacılar kesinlikle fiilen oturdukları 5 dönüm ile sınırlıdır.',
-      statusQuo2: '2. Satış ve Devir Yasağı: Hiçbir taraf araziyi 3. kişilere satamaz veya bölemez.',
+      statusQuo1:
+        '1. Sınırların Korunması: Davacılar kesinlikle fiilen oturdukları 5 dönüm ile sınırlıdır.',
+      statusQuo2:
+        '2. Satış ve Devir Yasağı: Hiçbir taraf araziyi 3. kişilere satamaz veya bölemez.',
       statusQuo3: '3. Öncelikli Yargılama: Temyiz davası mahkemede öncelikli sıraya alınmıştır.',
-      statusQuo4: '4. İnşaatların Durdurulması: Yeni inşaat durdu; ancak koruma başvuruları mümkündür.',
+      statusQuo4:
+        '4. İnşaatların Durdurulması: Yeni inşaat durdu; ancak koruma başvuruları mümkündür.',
       keyGroundsTitle: 'Temyiz İtiraznamesindeki (Memorandum of Appeal) Temel Hukuki Dayanaklar',
-      ground1: 'Keşif Raporu Çelişkisi: Hâkim sahada 5 dönüm işgal gördü ancak 84 dönümün tamamını verdi.',
-      ground2: 'Ölümcül Usul Hatası: Olumsuz zilyetlik için zorunlu olan Onaylı Tapu Sureti (Order 37 Rule 7) sunulmadı.',
-      ground3: 'Maddi Delil Gizleme: 2012 yılında 779.980 KShs alınarak imzalanan tahliye anlaşması mahkemeden saklandı.',
-      ground4: 'Rızaya Dayalı Yerleşim: Aile araziye izinle girmiştir; rızaya dayalı yerleşim hasmane zilyetlik sayılamaz.',
+      ground1:
+        'Keşif Raporu Çelişkisi: Hâkim sahada 5 dönüm işgal gördü ancak 84 dönümün tamamını verdi.',
+      ground2:
+        'Ölümcül Usul Hatası: Olumsuz zilyetlik için zorunlu olan Onaylı Tapu Sureti (Order 37 Rule 7) sunulmadı.',
+      ground3:
+        'Maddi Delil Gizleme: 2012 yılında 779.980 KShs alınarak imzalanan tahliye anlaşması mahkemeden saklandı.',
+      ground4:
+        'Rızaya Dayalı Yerleşim: Aile araziye izinle girmiştir; rızaya dayalı yerleşim hasmane zilyetlik sayılamaz.',
       whoIsWhoTitle: 'Kilit Taraflar, Avukatlar ve Hâkimler Heyeti',
-      urgentActionNotice: 'Acil Eylem Planı: Açıkta kalan betonarme karkası muson yağmurlarından korumak için çatı kaplama izni başvurusu yapılmalıdır.',
+      urgentActionNotice:
+        'Acil Eylem Planı: Açıkta kalan betonarme karkası muson yağmurlarından korumak için çatı kaplama izni başvurusu yapılmalıdır.',
       filterAll: 'Tüm Dosyalar',
       filterAppeals: 'Yargıtay (Court of Appeal)',
       filterELC: 'Çevre ve Toprak Mahkemesi (ELC)',
-      filterNLC: 'Ulusal Toprak Komisyonu (NLC)'
+      filterNLC: 'Ulusal Toprak Komisyonu (NLC)',
     },
     constructionSection: {
       title: 'İnşaat İşleri',
       subtitle: '',
       totalProgress: 'Genel 1. Aşama İlerlemesi',
       urgentActionBadge: 'Acil Çatı ve Yalıtım Tedbiri Gerekli',
-      urgentActionDetail: 'Açıkta kalan betonarme kolonlar ve çelik donatılar yağmurlar öncesi kapatılmazsa telafisi imkansız çürüme riski taşımaktadır.',
+      urgentActionDetail:
+        'Açıkta kalan betonarme kolonlar ve çelik donatılar yağmurlar öncesi kapatılmazsa telafisi imkansız çürüme riski taşımaktadır.',
       requestVariationBtn: 'Mahkeme Tedbir Esnetme Dilekçesi Hazırla',
       inspectLogBtn: 'Saha Denetim Kaydı Ekle',
       blocksTitle: 'İzlenen Yerleşke Binaları',
@@ -216,19 +238,21 @@ export const translations = {
       viewBoQBtn: 'Metraj ve Maliyet (BoQ) Listesi',
       floors: 'Kat Sayısı',
       budget: 'Onaylı Bütçe',
-      spent: 'Fiili Harcama'
+      spent: 'Fiili Harcama',
     },
     governanceSection: {
       title: 'Yönetişim',
       subtitle: '',
       trusteeCompositionTitle: 'Tescilli Mütevelli Heyeti (12 Üye)',
-      trusteeCompositionDesc: '27 Mayıs 2025 tarihli tadil edilmiş vakıf senedi uyarınca: 3 üye Süleyman Shahbal Vakfı, 3 üye Universal Education Foundation, 6 üye Afrika Vakfı (Ankara/Türkiye) tarafından atanmıştır.',
+      trusteeCompositionDesc:
+        '27 Mayıs 2025 tarihli tadil edilmiş vakıf senedi uyarınca: 3 üye Süleyman Shahbal Vakfı, 3 üye Universal Education Foundation, 6 üye Afrika Vakfı (Ankara/Türkiye) tarafından atanmıştır.',
       charterRoadmapTitle: 'Üniversite Beratı ve Yasal Akreditasyon Yol Haritası',
       charterStep1: '1. Vakıf Senedi Tescili ve Resmî Gazete İlanı (Ağustos 2025’te Tamamlandı)',
       charterStep2: '2. CUE Altyapı Denetimi ve Akademik Müfredat İncelemesi (Devam Ediyor)',
       charterStep3: '3. Cumhurbaşkanlığı Üniversite Beratı ve Diploma Verme Yetkisi (2027 Hedefi)',
       taxExemptionTitle: 'Kenya Gelirler İdaresi (KRA) Vergi Muafiyet Statüsü',
-      taxExemptionDesc: 'Hayırseverlik statüsü kurumsal ve bireysel bağışçıların katkılarını vergiden düşmelerini sağlamaktadır.'
+      taxExemptionDesc:
+        'Hayırseverlik statüsü kurumsal ve bireysel bağışçıların katkılarını vergiden düşmelerini sağlamaktadır.',
     },
     financeSection: {
       title: 'Finans ve Muhasebe',
@@ -240,7 +264,7 @@ export const translations = {
       transactionsTitle: 'Son Denetlenmiş Sermaye Harcamaları',
       breakdownTitle: 'Kategori Bazlı Sermaye Harcama Dağılımı',
       verifiedAuditBadge: 'Denetim Kurulu Onaylı',
-      testWebhook: 'API Webhook Test Et'
+      testWebhook: 'API Webhook Test Et',
     },
     documentsSection: {
       title: 'Belge Kasası',
@@ -251,7 +275,7 @@ export const translations = {
       encryptedBadge: 'Güvenli Belge',
       allCategories: 'Tüm Kategoriler',
       versionHistory: 'Versiyon Geçmişi',
-      downloadBtn: 'İndir'
+      downloadBtn: 'İndir',
     },
     communicationSection: {
       title: 'İletişim',
@@ -262,17 +286,18 @@ export const translations = {
         legal: 'Hukuk ve Temyiz Stratejisi',
         construction: 'İnşaat ve Saha Mühendisliği',
         trustees: 'Mütevelli ve Yönetim Kurulu',
-        finance: 'Mali Denetim ve Bağışçı Raporları'
+        finance: 'Mali Denetim ve Bağışçı Raporları',
       },
       replyPlaceholder: 'Mesajınızı veya dahili güncellemeyi yazın...',
-      sendBtn: 'Gönder'
+      sendBtn: 'Gönder',
     },
     clarificationSection: {
       title: 'Sistem Kurulumu',
       subtitle: '',
-      noticeText: 'Mevcut muhasebe yazılımınız, dava takviminiz ve bulut sağlayıcınızla kusursuz entegrasyon için lütfen aşağıdaki maddeleri gözden geçirin:',
+      noticeText:
+        'Mevcut muhasebe yazılımınız, dava takviminiz ve bulut sağlayıcınızla kusursuz entegrasyon için lütfen aşağıdaki maddeleri gözden geçirin:',
       submitAnswer: 'Yapılandırmayı Kaydet',
-      answerPlaceholder: 'Bilgilerinizi girin veya varsayılan kurulumu onaylayın...'
-    }
-  }
+      answerPlaceholder: 'Bilgilerinizi girin veya varsayılan kurulumu onaylayın...',
+    },
+  },
 };

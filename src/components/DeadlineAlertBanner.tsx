@@ -12,7 +12,10 @@ export const DeadlineAlertBanner: React.FC = () => {
 
   // Filter deadlines relevant to current user role or general
   const relevantDeadlines = deadlines.filter(
-    (d) => d.targetRole.includes(currentUser.role) || currentUser.role === 'trustee' || currentUser.role === 'executive'
+    (d) =>
+      d.targetRole.includes(currentUser.role) ||
+      currentUser.role === 'trustee' ||
+      currentUser.role === 'executive',
   );
 
   if (relevantDeadlines.length === 0) return null;
@@ -42,7 +45,9 @@ export const DeadlineAlertBanner: React.FC = () => {
                   : 'bg-amber-100/70 border-amber-300 text-amber-900'
               }`}
             >
-              <AlertTriangle className={`w-3.5 h-3.5 shrink-0 ${item.urgency === 'critical' ? 'text-rose-600' : 'text-amber-600'}`} />
+              <AlertTriangle
+                className={`w-3.5 h-3.5 shrink-0 ${item.urgency === 'critical' ? 'text-rose-600' : 'text-amber-600'}`}
+              />
               <span className="font-medium truncate max-w-[160px] sm:max-w-xs md:max-w-md text-[11px] sm:text-xs">
                 {language === 'tr' ? item.titleTr : item.titleEn}
               </span>

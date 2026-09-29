@@ -1,17 +1,9 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
 import * as queries from '../api/hooks';
-import {
-  Scale,
-  Building2,
-  Receipt,
-  Flame,
-  Server,
-  Compass,
-  ArrowUpRight
-} from 'lucide-react';
+import { Scale, Building2, Receipt, Flame, Server, Compass, ArrowUpRight } from 'lucide-react';
 
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from 'react-router-dom';
 import { ContextualAIAssistant } from '../components/ContextualAIAssistant';
 
 export const DashboardView: React.FC = () => {
@@ -25,9 +17,13 @@ export const DashboardView: React.FC = () => {
 
   // Calculate overall construction progress
   const totalBlocks = constructionBlocks.length;
-  const avgProgress = totalBlocks > 0
-    ? Math.round(constructionBlocks.reduce((acc: number, b: any) => acc + b.progressPercent, 0) / totalBlocks)
-    : 52;
+  const avgProgress =
+    totalBlocks > 0
+      ? Math.round(
+          constructionBlocks.reduce((acc: number, b: any) => acc + b.progressPercent, 0) /
+            totalBlocks,
+        )
+      : 52;
 
   return (
     <div className="space-y-6">
@@ -42,7 +38,6 @@ export const DashboardView: React.FC = () => {
             {language === 'tr' ? 'Yönetici Gösterge Paneli' : 'Executive Dashboard'}
           </h1>
         </div>
-
       </div>
 
       {/* 1. GÜNDEMDEKİLER (CURRENT AGENDA & PRIORITY TOPICS) */}
@@ -54,7 +49,9 @@ export const DashboardView: React.FC = () => {
             </div>
             <div>
               <h2 className="text-sm font-bold text-slate-900">
-                {language === 'tr' ? 'Gündemdekiler & Öncelikli Mevzular' : 'Current Agenda & Priority Matters'}
+                {language === 'tr'
+                  ? 'Gündemdekiler & Öncelikli Mevzular'
+                  : 'Current Agenda & Priority Matters'}
               </h2>
               <p className="text-[11px] text-slate-500">
                 {language === 'tr'
@@ -79,7 +76,9 @@ export const DashboardView: React.FC = () => {
                 <span className="font-mono text-rose-700 font-bold">28 Eylül 2026</span>
               </div>
               <h3 className="font-bold text-slate-900 text-xs leading-snug">
-                {language === 'tr' ? 'E062/2025 Yargıtay Sözlü Duruşması' : 'E062/2025 Court of Appeal Hearing'}
+                {language === 'tr'
+                  ? 'E062/2025 Yargıtay Sözlü Duruşması'
+                  : 'E062/2025 Court of Appeal Hearing'}
               </h3>
               <p className="text-[11px] text-slate-600 leading-relaxed">
                 {language === 'tr'
@@ -106,7 +105,9 @@ export const DashboardView: React.FC = () => {
                 <span className="font-mono text-amber-700 font-bold">6 Ekim 2026</span>
               </div>
               <h3 className="font-bold text-slate-900 text-xs leading-snug">
-                {language === 'tr' ? 'Blok A1 Çatı Kaplama Tedbir Esnetmesi' : 'Block A1 Weatherproofing Exemption'}
+                {language === 'tr'
+                  ? 'Blok A1 Çatı Kaplama Tedbir Esnetmesi'
+                  : 'Block A1 Weatherproofing Exemption'}
               </h3>
               <p className="text-[11px] text-slate-600 leading-relaxed">
                 {language === 'tr'
@@ -133,7 +134,9 @@ export const DashboardView: React.FC = () => {
                 <span className="font-mono text-emerald-700 font-bold">2026-2027</span>
               </div>
               <h3 className="font-bold text-slate-900 text-xs leading-snug">
-                {language === 'tr' ? 'KRA Vergi Muafiyeti & CUE Beratı' : 'KRA Tax Exemption & CUE Charter'}
+                {language === 'tr'
+                  ? 'KRA Vergi Muafiyeti & CUE Beratı'
+                  : 'KRA Tax Exemption & CUE Charter'}
               </h3>
               <p className="text-[11px] text-slate-600 leading-relaxed">
                 {language === 'tr'
@@ -160,7 +163,9 @@ export const DashboardView: React.FC = () => {
                 <span className="font-mono text-blue-700 font-bold">807.3M KShs</span>
               </div>
               <h3 className="font-bold text-slate-900 text-xs leading-snug">
-                {language === 'tr' ? 'Muhasebe API Senkronizasyonu' : 'Accounting Software API Gateway'}
+                {language === 'tr'
+                  ? 'Muhasebe API Senkronizasyonu'
+                  : 'Accounting Software API Gateway'}
               </h3>
               <p className="text-[11px] text-slate-600 leading-relaxed">
                 {language === 'tr'
@@ -194,7 +199,9 @@ export const DashboardView: React.FC = () => {
                     {language === 'tr' ? 'İnşaat Durumu' : 'Construction Status'}
                   </h2>
                   <span className="text-[10px] text-slate-500">
-                    {language === 'tr' ? '1. Aşama Karkas & Yapısal Koruma' : 'Phase 1 Structural Preservation'}
+                    {language === 'tr'
+                      ? '1. Aşama Karkas & Yapısal Koruma'
+                      : 'Phase 1 Structural Preservation'}
                   </span>
                 </div>
               </div>
@@ -242,10 +249,17 @@ export const DashboardView: React.FC = () => {
                 {language === 'tr' ? 'Önemli Yapı Blokları:' : 'Monitored Blocks:'}
               </div>
               {constructionBlocks.slice(0, 4).map((b: any) => (
-                <div key={b.id} className="p-2 rounded bg-slate-50 border border-slate-200 flex items-center justify-between">
-                  <span className="font-medium text-slate-800 truncate max-w-[170px]">{b.name}</span>
+                <div
+                  key={b.id}
+                  className="p-2 rounded bg-slate-50 border border-slate-200 flex items-center justify-between"
+                >
+                  <span className="font-medium text-slate-800 truncate max-w-[170px]">
+                    {b.name}
+                  </span>
                   <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-mono font-bold text-amber-700">{b.progressPercent}%</span>
+                    <span className="text-[11px] font-mono font-bold text-amber-700">
+                      {b.progressPercent}%
+                    </span>
                   </div>
                 </div>
               ))}
@@ -256,7 +270,9 @@ export const DashboardView: React.FC = () => {
             onClick={() => navigate('construction')}
             className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold transition-colors cursor-pointer"
           >
-            <span>{language === 'tr' ? 'İnşaat ve Metraj Modülü ➔' : 'Open Construction Hub ➔'}</span>
+            <span>
+              {language === 'tr' ? 'İnşaat ve Metraj Modülü ➔' : 'Open Construction Hub ➔'}
+            </span>
           </button>
         </div>
 
@@ -273,7 +289,9 @@ export const DashboardView: React.FC = () => {
                     {language === 'tr' ? 'Hukuki Durum' : 'Legal Status'}
                   </h2>
                   <span className="text-[10px] text-slate-500">
-                    {language === 'tr' ? 'Yargıtay Temyizi E062/2025' : 'Appellate Defense E062/2025'}
+                    {language === 'tr'
+                      ? 'Yargıtay Temyizi E062/2025'
+                      : 'Appellate Defense E062/2025'}
                   </span>
                 </div>
               </div>
@@ -285,8 +303,12 @@ export const DashboardView: React.FC = () => {
             {/* Active Appeal Summary */}
             <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 text-xs space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="font-mono text-amber-800 font-bold text-[11px]">CA No. E062 / 2025</span>
-                <span className="text-[10px] text-slate-500 font-mono">Mombasa Court of Appeal</span>
+                <span className="font-mono text-amber-800 font-bold text-[11px]">
+                  CA No. E062 / 2025
+                </span>
+                <span className="text-[10px] text-slate-500 font-mono">
+                  Mombasa Court of Appeal
+                </span>
               </div>
               <div className="font-semibold text-slate-800 text-xs">
                 The Zayed Foundation & AUTK vs Kazungu Moli Chogo & 11 Others
@@ -305,7 +327,9 @@ export const DashboardView: React.FC = () => {
               </div>
               <div className="p-2 rounded bg-slate-50 border border-slate-200 text-[11px] space-y-1">
                 <div className="font-semibold text-slate-800">
-                  {language === 'tr' ? '1. 5 Dönüm Sınır Koruması:' : '1. 5-Acre Boundary Restriction:'}
+                  {language === 'tr'
+                    ? '1. 5 Dönüm Sınır Koruması:'
+                    : '1. 5-Acre Boundary Restriction:'}
                 </div>
                 <p className="text-slate-600">
                   {language === 'tr'
@@ -316,7 +340,9 @@ export const DashboardView: React.FC = () => {
 
               <div className="p-2 rounded bg-slate-50 border border-slate-200 text-[11px] space-y-1">
                 <div className="font-semibold text-slate-800">
-                  {language === 'tr' ? '2. Asılsız İtaatsizlik Reddi:' : '2. Contempt Motion Defense:'}
+                  {language === 'tr'
+                    ? '2. Asılsız İtaatsizlik Reddi:'
+                    : '2. Contempt Motion Defense:'}
                 </div>
                 <p className="text-slate-600">
                   {language === 'tr'
@@ -360,12 +386,18 @@ export const DashboardView: React.FC = () => {
             {/* Financial Overview Metrics */}
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200">
-                <div className="text-[10px] text-slate-500 uppercase">{language === 'tr' ? 'Toplam Yatırım:' : 'Total Invested:'}</div>
+                <div className="text-[10px] text-slate-500 uppercase">
+                  {language === 'tr' ? 'Toplam Yatırım:' : 'Total Invested:'}
+                </div>
                 <div className="font-mono font-bold text-slate-900 text-sm mt-0.5">807.3M KShs</div>
               </div>
               <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200">
-                <div className="text-[10px] text-slate-500 uppercase">{language === 'tr' ? 'Taahhüt Fonu:' : 'Committed Fund:'}</div>
-                <div className="font-mono font-bold text-emerald-700 text-sm mt-0.5">980.0M KShs</div>
+                <div className="text-[10px] text-slate-500 uppercase">
+                  {language === 'tr' ? 'Taahhüt Fonu:' : 'Committed Fund:'}
+                </div>
+                <div className="font-mono font-bold text-emerald-700 text-sm mt-0.5">
+                  980.0M KShs
+                </div>
               </div>
             </div>
 
@@ -386,7 +418,10 @@ export const DashboardView: React.FC = () => {
                       </span>
                     </div>
                     <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-blue-500 rounded-full" style={{ width: `${item.percent}%` }} />
+                      <div
+                        className="h-full bg-blue-500 rounded-full"
+                        style={{ width: `${item.percent}%` }}
+                      />
                     </div>
                   </div>
                 ))}
@@ -401,14 +436,20 @@ export const DashboardView: React.FC = () => {
                   {accountingConfig.provider} API:
                 </span>
               </div>
-              <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold ${
-                accountingConfig.status === 'connected'
-                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                  : 'bg-amber-100 text-amber-800 border border-amber-300'
-              }`}>
+              <span
+                className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold ${
+                  accountingConfig.status === 'connected'
+                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                    : 'bg-amber-100 text-amber-800 border border-amber-300'
+                }`}
+              >
                 {accountingConfig.status === 'connected'
-                  ? (language === 'tr' ? 'BAĞLI' : 'LIVE SYNC')
-                  : (language === 'tr' ? 'HAZIR' : 'READY')}
+                  ? language === 'tr'
+                    ? 'BAĞLI'
+                    : 'LIVE SYNC'
+                  : language === 'tr'
+                    ? 'HAZIR'
+                    : 'READY'}
               </span>
             </div>
           </div>
@@ -417,17 +458,18 @@ export const DashboardView: React.FC = () => {
             onClick={() => navigate('finance')}
             className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold transition-colors cursor-pointer"
           >
-            <span>{language === 'tr' ? 'Mali Yönetim ve Harcamalar ➔' : 'Open Financial Hub ➔'}</span>
+            <span>
+              {language === 'tr' ? 'Mali Yönetim ve Harcamalar ➔' : 'Open Financial Hub ➔'}
+            </span>
           </button>
         </div>
       </div>
-    
-      <ContextualAIAssistant 
+
+      <ContextualAIAssistant
         contextData={JSON.stringify({ deadlines, legalCases, constructionBlocks, transactions })}
         systemInstruction="You are a Master Project Manager AI for the Mombasa International University Project Management Portal. Provide high-level executive summaries, prioritize upcoming deadlines, and identify overarching project risks based on the provided aggregated context."
         title={language === 'tr' ? 'Genel Yönetici AI (Executive)' : 'Executive AI Assistant'}
       />
-    
-</div>
+    </div>
   );
 };

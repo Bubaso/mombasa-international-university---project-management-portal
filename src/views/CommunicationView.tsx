@@ -2,14 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import * as queries from '../api/hooks';
 import { type CommunicationThread } from '../types';
-import {
-  MessagesSquare,
-  Send,
-  Plus,
-  Pin,
-  AlertTriangle,
-  Inbox
-} from 'lucide-react';
+import { MessagesSquare, Send, Plus, Pin, AlertTriangle, Inbox } from 'lucide-react';
 
 export const CommunicationView: React.FC = () => {
   const { currentUser, language } = useApp();
@@ -34,7 +27,9 @@ export const CommunicationView: React.FC = () => {
   });
 
   const activeThread =
-    communicationThreads.find((th: any) => th.id === selectedThreadId) || filteredThreads[0] || null;
+    communicationThreads.find((th: any) => th.id === selectedThreadId) ||
+    filteredThreads[0] ||
+    null;
 
   const handleSendReply = (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,9 +52,9 @@ export const CommunicationView: React.FC = () => {
           sender: currentUser.name,
           role: currentUser.role,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          text: firstMessage
-        }
-      ]
+          text: firstMessage,
+        },
+      ],
     });
 
     setNewTitle('');
@@ -75,7 +70,11 @@ export const CommunicationView: React.FC = () => {
         <div>
           <div className="flex items-center gap-2 text-xs font-semibold text-amber-800 uppercase tracking-wider">
             <MessagesSquare className="w-4 h-4 text-amber-600" />
-            <span>{language === 'tr' ? 'Paydaşlar Arası Güvenli İletişim' : 'Inter-Stakeholder Communication Gateway'}</span>
+            <span>
+              {language === 'tr'
+                ? 'Paydaşlar Arası Güvenli İletişim'
+                : 'Inter-Stakeholder Communication Gateway'}
+            </span>
           </div>
           <h1 className="text-xl font-bold text-slate-900 mt-1">
             {language === 'tr' ? 'İletişim' : 'Communications'}
@@ -102,7 +101,7 @@ export const CommunicationView: React.FC = () => {
               { id: 'legal', labelEn: '#legal', labelTr: '#hukuk' },
               { id: 'construction', labelEn: '#construction', labelTr: '#insaat' },
               { id: 'trustees', labelEn: '#trustees', labelTr: '#mutevelli' },
-              { id: 'finance', labelEn: '#finance', labelTr: '#maliye' }
+              { id: 'finance', labelEn: '#finance', labelTr: '#maliye' },
             ].map((ch) => (
               <button
                 key={ch.id}
@@ -127,7 +126,9 @@ export const CommunicationView: React.FC = () => {
                 </div>
                 <div className="space-y-1">
                   <h4 className="text-xs font-bold text-slate-800">
-                    {language === 'tr' ? 'Bu Kanalda Mesaj Bulunmuyor' : 'No Messages in this Channel'}
+                    {language === 'tr'
+                      ? 'Bu Kanalda Mesaj Bulunmuyor'
+                      : 'No Messages in this Channel'}
                   </h4>
                   <p className="text-[11px] text-slate-500 max-w-xs">
                     {language === 'tr'
@@ -172,7 +173,9 @@ export const CommunicationView: React.FC = () => {
                       <span className="text-slate-400 text-[10px]">{th.timestamp}</span>
                     </div>
 
-                    <h3 className="font-semibold text-slate-900 text-xs mt-1 line-clamp-1">{th.title}</h3>
+                    <h3 className="font-semibold text-slate-900 text-xs mt-1 line-clamp-1">
+                      {th.title}
+                    </h3>
                     <p className="text-[11px] text-slate-600 mt-1 line-clamp-2 leading-relaxed">
                       {lastMsg ? `${lastMsg.sender.split(' ')[0]}: ${lastMsg.text}` : ''}
                     </p>
@@ -191,7 +194,9 @@ export const CommunicationView: React.FC = () => {
               <div className="p-4 border-b border-slate-200 bg-slate-50">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-xs">
-                    <span className="font-mono text-amber-800 font-bold uppercase">#{activeThread.channel}</span>
+                    <span className="font-mono text-amber-800 font-bold uppercase">
+                      #{activeThread.channel}
+                    </span>
                     <span className="text-slate-400">·</span>
                     <span className="text-slate-600">{activeThread.authorOrg}</span>
                   </div>
@@ -233,7 +238,10 @@ export const CommunicationView: React.FC = () => {
               </div>
 
               {/* Reply Form */}
-              <form onSubmit={handleSendReply} className="p-3 border-t border-slate-200 bg-white flex gap-2">
+              <form
+                onSubmit={handleSendReply}
+                className="p-3 border-t border-slate-200 bg-white flex gap-2"
+              >
                 <input
                   type="text"
                   value={replyText}
@@ -290,7 +298,9 @@ export const CommunicationView: React.FC = () => {
           <div className="w-full max-w-lg bg-white border border-slate-200 rounded-2xl p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-bold text-slate-900 text-sm">
-                {language === 'tr' ? 'Yeni Paydaş İletişim Konusu Başlat' : 'Start New Stakeholder Thread'}
+                {language === 'tr'
+                  ? 'Yeni Paydaş İletişim Konusu Başlat'
+                  : 'Start New Stakeholder Thread'}
               </h3>
               <button
                 onClick={() => setShowNewThreadModal(false)}
@@ -330,9 +340,15 @@ export const CommunicationView: React.FC = () => {
                     className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-900 focus:outline-none focus:border-amber-500 focus:bg-white"
                   >
                     <option value="legal">{language === 'tr' ? '#hukuk (Legal)' : '#legal'}</option>
-                    <option value="construction">{language === 'tr' ? '#insaat (Construction)' : '#construction'}</option>
-                    <option value="trustees">{language === 'tr' ? '#mutevelli (Trustees)' : '#trustees'}</option>
-                    <option value="finance">{language === 'tr' ? '#maliye (Finance)' : '#finance'}</option>
+                    <option value="construction">
+                      {language === 'tr' ? '#insaat (Construction)' : '#construction'}
+                    </option>
+                    <option value="trustees">
+                      {language === 'tr' ? '#mutevelli (Trustees)' : '#trustees'}
+                    </option>
+                    <option value="finance">
+                      {language === 'tr' ? '#maliye (Finance)' : '#finance'}
+                    </option>
                   </select>
                 </div>
 
@@ -344,7 +360,9 @@ export const CommunicationView: React.FC = () => {
                       onChange={(e) => setIsUrgent(e.target.checked)}
                       className="w-4 h-4 rounded text-rose-600 bg-white border-slate-300 focus:ring-0"
                     />
-                    <span>{language === 'tr' ? 'Acil Eylem Bayrağı' : 'Flag as Urgent Action'}</span>
+                    <span>
+                      {language === 'tr' ? 'Acil Eylem Bayrağı' : 'Flag as Urgent Action'}
+                    </span>
                   </label>
                 </div>
               </div>

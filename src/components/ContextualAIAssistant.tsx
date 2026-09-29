@@ -12,19 +12,19 @@ interface ContextualAIAssistantProps {
   inline?: boolean;
 }
 
-export const ContextualAIAssistant: React.FC<ContextualAIAssistantProps> = ({ 
-  contextData, 
-  systemInstruction, 
-  title = "AI Assistant", 
-  buttonLabel = "Ask AI",
-  inline = false
+export const ContextualAIAssistant: React.FC<ContextualAIAssistantProps> = ({
+  contextData,
+  systemInstruction,
+  title = 'AI Assistant',
+  buttonLabel = 'Ask AI',
+  inline = false,
 }) => {
   const { language } = useApp();
   const [isOpen, setIsOpen] = useState(inline);
   const [messages, setMessages] = useState<{ role: 'user' | 'ai'; text: string }[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const endOfMessagesRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -33,9 +33,9 @@ export const ContextualAIAssistant: React.FC<ContextualAIAssistantProps> = ({
 
   const handleSend = async () => {
     if (!input.trim()) return;
-    
+
     const userPrompt = input.trim();
-    setMessages(prev => [...prev, { role: 'user', text: userPrompt }]);
+    setMessages((prev) => [...prev, { role: 'user', text: userPrompt }]);
     setInput('');
     setIsLoading(true);
 
@@ -43,11 +43,15 @@ export const ContextualAIAssistant: React.FC<ContextualAIAssistantProps> = ({
       // In production, you would proxy this request through your backend to hide the API key.
       const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
       if (!apiKey) {
-        throw new Error(language === 'tr' ? 'Gemini API anahtarı bulunamadı (.env.local)' : 'Gemini API key is missing (.env.local)');
+        throw new Error(
+          language === 'tr'
+            ? 'Gemini API anahtarı bulunamadı (.env.local)'
+            : 'Gemini API key is missing (.env.local)',
+        );
       }
 
       const ai = new GoogleGenAI({ apiKey });
-      
+
       const promptContext = `
       System Instruction: ${systemInstruction}
       
@@ -63,18 +67,20 @@ export const ContextualAIAssistant: React.FC<ContextualAIAssistantProps> = ({
       });
 
       if (response.text) {
-        setMessages(prev => [...prev, { role: 'ai', text: response.text || '' }]);
+        setMessages((prev) => [...prev, { role: 'ai', text: response.text || '' }]);
       }
     } catch (error: any) {
-      console.error("AI Error:", error);
-      setMessages(prev => [...prev, { role: 'ai', text: `Error: ${error.message}` }]);
+      console.error('AI Error:', error);
+      setMessages((prev) => [...prev, { role: 'ai', text: `Error: ${error.message}` }]);
     } finally {
       setIsLoading(false);
     }
   };
 
   const ChatUI = (
-    <div className={`flex flex-col ${inline ? 'h-[400px]' : 'h-[500px]'} bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden`}>
+    <div
+      className={`flex flex-col ${inline ? 'h-[400px]' : 'h-[500px]'} bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden`}
+    >
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-700 to-blue-900 px-4 py-3 flex items-center justify-between text-white">
         <div className="flex items-center gap-2">
@@ -82,7 +88,10 @@ export const ContextualAIAssistant: React.FC<ContextualAIAssistantProps> = ({
           <h3 className="font-semibold">{title}</h3>
         </div>
         {!inline && (
-          <button onClick={() => setIsOpen(false)} className="text-white/80 hover:text-white transition-colors">
+          <button
+            onClick={() => setIsOpen(false)}
+            className="text-white/80 hover:text-white transition-colors"
+          >
             <X className="w-5 h-5" />
           </button>
         )}
@@ -94,24 +103,24 @@ export const ContextualAIAssistant: React.FC<ContextualAIAssistantProps> = ({
           <div className="text-center text-slate-500 mt-10">
             <Bot className="w-12 h-12 mx-auto text-slate-300 mb-2" />
             <p className="text-sm">
-              {language === 'tr' 
+              {language === 'tr'
                 ? 'Bu bölge hakkında bana istediğinizi sorabilirsiniz. Veriler sizin için hazır.'
                 : 'Ask me anything about this section. I have the context ready.'}
             </p>
           </div>
         )}
-        
+
         {messages.map((msg, i) => (
           <div key={i} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${msg.role === 'user' ? 'bg-slate-200 text-slate-600' : 'bg-blue-100 text-blue-600'}`}>
+            <div
+              className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${msg.role === 'user' ? 'bg-slate-200 text-slate-600' : 'bg-blue-100 text-blue-600'}`}
+            >
               {msg.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
             </div>
-            <div className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm ${msg.role === 'user' ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-white border border-slate-200 text-slate-700 rounded-tl-none shadow-sm prose prose-sm'}`}>
-              {msg.role === 'ai' ? (
-                <ReactMarkdown>{msg.text}</ReactMarkdown>
-              ) : (
-                <p>{msg.text}</p>
-              )}
+            <div
+              className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm ${msg.role === 'user' ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-white border border-slate-200 text-slate-700 rounded-tl-none shadow-sm prose prose-sm'}`}
+            >
+              {msg.role === 'ai' ? <ReactMarkdown>{msg.text}</ReactMarkdown> : <p>{msg.text}</p>}
             </div>
           </div>
         ))}
@@ -123,8 +132,14 @@ export const ContextualAIAssistant: React.FC<ContextualAIAssistantProps> = ({
             <div className="bg-white border border-slate-200 rounded-2xl rounded-tl-none px-4 py-3 shadow-sm">
               <div className="flex gap-1">
                 <div className="w-2 h-2 bg-slate-300 rounded-full animate-bounce"></div>
-                <div className="w-2 h-2 bg-slate-300 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                <div className="w-2 h-2 bg-slate-300 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                <div
+                  className="w-2 h-2 bg-slate-300 rounded-full animate-bounce"
+                  style={{ animationDelay: '0.1s' }}
+                ></div>
+                <div
+                  className="w-2 h-2 bg-slate-300 rounded-full animate-bounce"
+                  style={{ animationDelay: '0.2s' }}
+                ></div>
               </div>
             </div>
           </div>

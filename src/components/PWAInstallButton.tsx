@@ -105,7 +105,7 @@ export const PWAInstallButton: React.FC = () => {
         showToast(
           language === 'tr'
             ? 'Tarayıcı adres çubuğunun sağındaki "Yükle" simgesine tıklayarak uygulamayı kurabilirsiniz.'
-            : 'Click the install icon in your browser address bar to install this applet.'
+            : 'Click the install icon in your browser address bar to install this applet.',
         );
       }}
       className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 px-2.5 py-1 text-xs text-slate-700 hover:text-slate-900 transition-colors cursor-pointer shadow-2xs font-medium"

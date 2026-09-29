@@ -1,14 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import * as queries from '../api/hooks';
-import {
-  Building2,
-  AlertTriangle,
-  FileSpreadsheet,
-  Plus,
-  Wrench,
-  Trash2
-} from 'lucide-react';
+import { Building2, AlertTriangle, FileSpreadsheet, Plus, Wrench, Trash2 } from 'lucide-react';
 
 interface BoQItem {
   id: string;
@@ -18,7 +11,7 @@ interface BoQItem {
   urgency: 'Critical' | 'High' | 'Medium';
 }
 
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from 'react-router-dom';
 import { ContextualAIAssistant } from '../components/ContextualAIAssistant';
 
 export const ConstructionView: React.FC = () => {
@@ -46,18 +39,24 @@ export const ConstructionView: React.FC = () => {
   // New task form
   const [taskTitle, setTaskTitle] = useState('');
   const [taskDueDate, setTaskDueDate] = useState('');
-  const [taskStatus, setTaskStatus] = useState<'in_progress' | 'urgent_preservation' | 'blocked_by_status_quo' | 'completed'>('urgent_preservation');
+  const [taskStatus, setTaskStatus] = useState<
+    'in_progress' | 'urgent_preservation' | 'blocked_by_status_quo' | 'completed'
+  >('urgent_preservation');
 
-  const selectedBlock = constructionBlocks.find((b) => b.id === selectedBlockId) || constructionBlocks[0];
+  const selectedBlock =
+    constructionBlocks.find((b) => b.id === selectedBlockId) || constructionBlocks[0];
 
   const handleSaveInspection = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedBlock) return;
-    updateConstructionBlock({ id: selectedBlock.id, updates: {
-      progressPercent: newProgress,
-      lastInspectionDate: new Date().toISOString().split('T')[0],
-      leadEngineer: inspectorName || selectedBlock.leadEngineer
-    } });
+    updateConstructionBlock({
+      id: selectedBlock.id,
+      updates: {
+        progressPercent: newProgress,
+        lastInspectionDate: new Date().toISOString().split('T')[0],
+        leadEngineer: inspectorName || selectedBlock.leadEngineer,
+      },
+    });
     setShowInspectionModal(false);
     setInspectionNotes('');
   };
@@ -69,11 +68,14 @@ export const ConstructionView: React.FC = () => {
       id: `tsk-${Date.now()}`,
       task: taskTitle,
       status: taskStatus,
-      dueDate: taskDueDate || new Date().toISOString().split('T')[0]
+      dueDate: taskDueDate || new Date().toISOString().split('T')[0],
     };
-    updateConstructionBlock({ id: selectedBlock.id, updates: {
-      items: [...(selectedBlock.items || []), newTask]
-    } });
+    updateConstructionBlock({
+      id: selectedBlock.id,
+      updates: {
+        items: [...(selectedBlock.items || []), newTask],
+      },
+    });
     setTaskTitle('');
     setTaskDueDate('');
     setShowAddTaskModal(false);
@@ -87,7 +89,7 @@ export const ConstructionView: React.FC = () => {
       itemEn: newBoqItem,
       itemTr: newBoqItem,
       costKShs: Number(newBoqCost),
-      urgency: newBoqUrgency
+      urgency: newBoqUrgency,
     };
     setBoqList([...boqList, item]);
     setNewBoqItem('');
@@ -108,7 +110,11 @@ export const ConstructionView: React.FC = () => {
         <div>
           <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700 uppercase tracking-wider">
             <Building2 className="w-4 h-4 text-emerald-600" />
-            <span>{language === 'tr' ? '1. Aşama Yerleşke İnşaatı & Yapısal Koruma' : 'Phase 1 Campus Infrastructure & Civil Works'}</span>
+            <span>
+              {language === 'tr'
+                ? '1. Aşama Yerleşke İnşaatı & Yapısal Koruma'
+                : 'Phase 1 Campus Infrastructure & Civil Works'}
+            </span>
           </div>
           <h1 className="text-xl font-bold text-slate-900 mt-1">
             {language === 'tr' ? 'İnşaat İşleri' : 'Construction'}
@@ -121,7 +127,9 @@ export const ConstructionView: React.FC = () => {
             className="inline-flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 px-3.5 py-2 rounded-lg text-xs font-medium transition-colors cursor-pointer"
           >
             <FileSpreadsheet className="w-3.5 h-3.5 text-amber-600" />
-            <span>{language === 'tr' ? 'Metraj & Keşif Cetveli (BoQ)' : 'QS Bill of Quantities'}</span>
+            <span>
+              {language === 'tr' ? 'Metraj & Keşif Cetveli (BoQ)' : 'QS Bill of Quantities'}
+            </span>
           </button>
           <button
             onClick={() => setShowInspectionModal(true)}
@@ -145,7 +153,9 @@ export const ConstructionView: React.FC = () => {
             </span>
           </div>
           <span className="text-[11px] font-mono text-rose-800 bg-rose-100 px-2 py-0.5 rounded border border-rose-300 font-semibold">
-            {language === 'tr' ? 'Telafisi İmkansız Zarar Doktrini (Substantial Loss)' : 'Doctrine of Substantial Loss'}
+            {language === 'tr'
+              ? 'Telafisi İmkansız Zarar Doktrini (Substantial Loss)'
+              : 'Doctrine of Substantial Loss'}
           </span>
         </div>
         <p className="text-xs text-slate-700 leading-relaxed">
@@ -157,14 +167,18 @@ export const ConstructionView: React.FC = () => {
           <div className="text-[11px] text-slate-600">
             {language === 'tr' ? 'Hukuki Dayanak:' : 'Legal Ground:'}{' '}
             <span className="text-slate-900 font-semibold">
-              {language === 'tr' ? 'Temyiz Konusunun Korunması (Preservation of Substratum)' : 'Preservation of Substratum'}
+              {language === 'tr'
+                ? 'Temyiz Konusunun Korunması (Preservation of Substratum)'
+                : 'Preservation of Substratum'}
             </span>
           </div>
           <button
             onClick={() => navigate('legal')}
             className="text-xs font-semibold text-rose-700 hover:text-rose-900 underline cursor-pointer"
           >
-            {language === 'tr' ? 'Yargıtay Başvuru Dilekçesini İncele' : 'View Court Variation Motion'}
+            {language === 'tr'
+              ? 'Yargıtay Başvuru Dilekçesini İncele'
+              : 'View Court Variation Motion'}
           </button>
         </div>
       </div>
@@ -198,7 +212,10 @@ export const ConstructionView: React.FC = () => {
                 />
               </div>
               <div className="flex items-center justify-between text-[11px] text-slate-500 mt-2">
-                <span>{b.floors} {language === 'tr' ? 'Kat' : 'Floors'} · {b.totalAreaSqm.toLocaleString()} m²</span>
+                <span>
+                  {b.floors} {language === 'tr' ? 'Kat' : 'Floors'} ·{' '}
+                  {b.totalAreaSqm.toLocaleString()} m²
+                </span>
                 {b.urgentPreservationNeeded && (
                   <span className="text-rose-700 font-medium text-[10px] flex items-center gap-1 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">
                     <AlertTriangle className="w-3 h-3 text-rose-600" />
@@ -215,11 +232,11 @@ export const ConstructionView: React.FC = () => {
           <div className="lg:col-span-8 bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
               <div>
-                <span className="font-mono text-emerald-700 text-xs font-bold uppercase">{selectedBlock.code}</span>
+                <span className="font-mono text-emerald-700 text-xs font-bold uppercase">
+                  {selectedBlock.code}
+                </span>
                 <h2 className="text-lg font-bold text-slate-900">{selectedBlock.name}</h2>
-                <div className="text-xs text-slate-500 mt-0.5">
-                  {selectedBlock.leadEngineer}
-                </div>
+                <div className="text-xs text-slate-500 mt-0.5">{selectedBlock.leadEngineer}</div>
               </div>
 
               <div className="flex items-center gap-2">
@@ -239,7 +256,9 @@ export const ConstructionView: React.FC = () => {
                 {language === 'tr' ? 'Koruma Tedbiri Açıklaması:' : 'Preservation Directive:'}
               </span>
               <p className="text-slate-700 leading-relaxed text-[11px]">
-                {language === 'tr' ? selectedBlock.preservationActionTr : selectedBlock.preservationActionEn}
+                {language === 'tr'
+                  ? selectedBlock.preservationActionTr
+                  : selectedBlock.preservationActionEn}
               </p>
             </div>
 
@@ -247,7 +266,9 @@ export const ConstructionView: React.FC = () => {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                  {language === 'tr' ? 'İnşaat Aşamaları ve Hukuki Uyumluluk' : 'Engineering Milestones & Compliance'}
+                  {language === 'tr'
+                    ? 'İnşaat Aşamaları ve Hukuki Uyumluluk'
+                    : 'Engineering Milestones & Compliance'}
                 </h3>
                 <span className="text-[11px] font-mono text-slate-500">
                   {selectedBlock.items.length} {language === 'tr' ? 'Aşama' : 'Tasks'}
@@ -288,20 +309,20 @@ export const ConstructionView: React.FC = () => {
                           item.status === 'completed'
                             ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
                             : item.status === 'urgent_preservation'
-                            ? 'bg-rose-100 text-rose-800 border-rose-300'
-                            : item.status === 'blocked_by_status_quo'
-                            ? 'bg-slate-200 text-slate-700 border-slate-300'
-                            : 'bg-amber-100 text-amber-800 border-amber-300'
+                              ? 'bg-rose-100 text-rose-800 border-rose-300'
+                              : item.status === 'blocked_by_status_quo'
+                                ? 'bg-slate-200 text-slate-700 border-slate-300'
+                                : 'bg-amber-100 text-amber-800 border-amber-300'
                         }`}
                       >
                         {language === 'tr'
                           ? item.status === 'urgent_preservation'
                             ? 'Acil Koruma'
                             : item.status === 'completed'
-                            ? 'Tamamlandı'
-                            : item.status === 'blocked_by_status_quo'
-                            ? 'Mevcut Durum Kapsamında'
-                            : 'İşlemde'
+                              ? 'Tamamlandı'
+                              : item.status === 'blocked_by_status_quo'
+                                ? 'Mevcut Durum Kapsamında'
+                                : 'İşlemde'
                           : item.status.replace(/_/g, ' ')}
                       </span>
                     </div>
@@ -320,10 +341,14 @@ export const ConstructionView: React.FC = () => {
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
                 <span className="text-[10px] font-mono text-amber-800 uppercase font-bold">
-                  {language === 'tr' ? 'Metraj ve Maliyet Bilirkişi Modülü (QS)' : 'Quantity Surveying & Bills of Quantities'}
+                  {language === 'tr'
+                    ? 'Metraj ve Maliyet Bilirkişi Modülü (QS)'
+                    : 'Quantity Surveying & Bills of Quantities'}
                 </span>
                 <h3 className="text-base font-bold text-slate-900">
-                  {language === 'tr' ? 'Metraj ve Keşif (BoQ) Kalemleri' : 'Bill of Quantities (BoQ)'}
+                  {language === 'tr'
+                    ? 'Metraj ve Keşif (BoQ) Kalemleri'
+                    : 'Bill of Quantities (BoQ)'}
                 </h3>
               </div>
               <div className="flex items-center gap-2">
@@ -348,7 +373,9 @@ export const ConstructionView: React.FC = () => {
                 <div className="p-8 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200 space-y-2">
                   <FileSpreadsheet className="w-8 h-8 text-slate-400 mx-auto" />
                   <h4 className="text-xs font-bold text-slate-700">
-                    {language === 'tr' ? 'Kayıtlı BoQ Kalemi Bulunmuyor' : 'No BoQ Items Recorded Yet'}
+                    {language === 'tr'
+                      ? 'Kayıtlı BoQ Kalemi Bulunmuyor'
+                      : 'No BoQ Items Recorded Yet'}
                   </h4>
                   <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
                     {language === 'tr'
@@ -359,12 +386,17 @@ export const ConstructionView: React.FC = () => {
               ) : (
                 <div className="space-y-2">
                   {boqList.map((row) => (
-                    <div key={row.id} className="p-3 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between">
+                    <div
+                      key={row.id}
+                      className="p-3 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between"
+                    >
                       <div>
                         <div className="font-semibold text-slate-900">
                           {language === 'tr' ? row.itemTr : row.itemEn}
                         </div>
-                        <span className="text-[10px] font-mono text-rose-700 font-medium">{row.urgency}</span>
+                        <span className="text-[10px] font-mono text-rose-700 font-medium">
+                          {row.urgency}
+                        </span>
                       </div>
                       <div className="flex items-center gap-3">
                         <span className="font-mono font-bold text-amber-800">
@@ -381,7 +413,9 @@ export const ConstructionView: React.FC = () => {
                   ))}
                   <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center justify-between font-bold text-slate-900">
                     <span>{language === 'tr' ? 'Toplam BoQ Tutarı:' : 'Total BoQ Budget:'}</span>
-                    <span className="font-mono text-amber-800">KShs {totalBoQBudget.toLocaleString()}</span>
+                    <span className="font-mono text-amber-800">
+                      KShs {totalBoQBudget.toLocaleString()}
+                    </span>
                   </div>
                 </div>
               )}
@@ -405,9 +439,16 @@ export const ConstructionView: React.FC = () => {
           <div className="w-full sm:max-w-md bg-white border border-slate-200 rounded-t-2xl sm:rounded-2xl p-5 sm:p-6 shadow-2xl space-y-4 text-xs">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-bold text-slate-900 text-sm">
-                {language === 'tr' ? 'Yeni Metraj/Keşif (BoQ) Kalemi Ekle' : 'Add Bill of Quantities Item'}
+                {language === 'tr'
+                  ? 'Yeni Metraj/Keşif (BoQ) Kalemi Ekle'
+                  : 'Add Bill of Quantities Item'}
               </h3>
-              <button onClick={() => setShowAddBoQModal(false)} className="text-slate-400 hover:text-slate-700 cursor-pointer p-1">✕</button>
+              <button
+                onClick={() => setShowAddBoQModal(false)}
+                className="text-slate-400 hover:text-slate-700 cursor-pointer p-1"
+              >
+                ✕
+              </button>
             </div>
             <form onSubmit={handleAddBoQ} className="space-y-3">
               <div>
@@ -419,7 +460,11 @@ export const ConstructionView: React.FC = () => {
                   required
                   value={newBoqItem}
                   onChange={(e) => setNewBoqItem(e.target.value)}
-                  placeholder={language === 'tr' ? 'Örn: Çatı makasları ve aşık imalatı' : 'e.g. Roof trusses fabrication'}
+                  placeholder={
+                    language === 'tr'
+                      ? 'Örn: Çatı makasları ve aşık imalatı'
+                      : 'e.g. Roof trusses fabrication'
+                  }
                   className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-900 focus:outline-none focus:border-amber-500 focus:bg-white"
                 />
               </div>
@@ -446,7 +491,9 @@ export const ConstructionView: React.FC = () => {
                   onChange={(e) => setNewBoqUrgency(e.target.value as any)}
                   className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-900 focus:outline-none focus:border-amber-500 focus:bg-white"
                 >
-                  <option value="Critical">{language === 'tr' ? 'Kritik (Critical)' : 'Critical'}</option>
+                  <option value="Critical">
+                    {language === 'tr' ? 'Kritik (Critical)' : 'Critical'}
+                  </option>
                   <option value="High">{language === 'tr' ? 'Yüksek (High)' : 'High'}</option>
                   <option value="Medium">{language === 'tr' ? 'Orta (Medium)' : 'Medium'}</option>
                 </select>
@@ -477,9 +524,16 @@ export const ConstructionView: React.FC = () => {
           <div className="w-full sm:max-w-md bg-white border border-slate-200 rounded-t-2xl sm:rounded-2xl p-5 sm:p-6 shadow-2xl space-y-4 text-xs">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-bold text-slate-900 text-sm">
-                {language === 'tr' ? 'Yapıya Yeni Aşama / Görev Ekle' : 'Add Structural Milestone / Task'}
+                {language === 'tr'
+                  ? 'Yapıya Yeni Aşama / Görev Ekle'
+                  : 'Add Structural Milestone / Task'}
               </h3>
-              <button onClick={() => setShowAddTaskModal(false)} className="text-slate-400 hover:text-slate-700 cursor-pointer p-1">✕</button>
+              <button
+                onClick={() => setShowAddTaskModal(false)}
+                className="text-slate-400 hover:text-slate-700 cursor-pointer p-1"
+              >
+                ✕
+              </button>
             </div>
             <form onSubmit={handleAddTask} className="space-y-3">
               <div>
@@ -491,7 +545,11 @@ export const ConstructionView: React.FC = () => {
                   required
                   value={taskTitle}
                   onChange={(e) => setTaskTitle(e.target.value)}
-                  placeholder={language === 'tr' ? 'Örn: Zemin drenaj kanalları açılması' : 'e.g. Foundation drainage channels'}
+                  placeholder={
+                    language === 'tr'
+                      ? 'Örn: Zemin drenaj kanalları açılması'
+                      : 'e.g. Foundation drainage channels'
+                  }
                   className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-900 focus:outline-none focus:border-emerald-500 focus:bg-white"
                 />
               </div>
@@ -504,10 +562,22 @@ export const ConstructionView: React.FC = () => {
                   onChange={(e) => setTaskStatus(e.target.value as any)}
                   className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-900 focus:outline-none focus:border-emerald-500 focus:bg-white"
                 >
-                  <option value="urgent_preservation">{language === 'tr' ? 'Acil Koruma Tedbiri (Urgent Preservation)' : 'Urgent Preservation'}</option>
-                  <option value="in_progress">{language === 'tr' ? 'Devam Ediyor / İşlemde (In Progress)' : 'In Progress'}</option>
-                  <option value="blocked_by_status_quo">{language === 'tr' ? 'Mevcut Durum Nedeniyle Durduruldu (Blocked by Status Quo)' : 'Blocked by Status Quo'}</option>
-                  <option value="completed">{language === 'tr' ? 'Tamamlandı (Completed)' : 'Completed'}</option>
+                  <option value="urgent_preservation">
+                    {language === 'tr'
+                      ? 'Acil Koruma Tedbiri (Urgent Preservation)'
+                      : 'Urgent Preservation'}
+                  </option>
+                  <option value="in_progress">
+                    {language === 'tr' ? 'Devam Ediyor / İşlemde (In Progress)' : 'In Progress'}
+                  </option>
+                  <option value="blocked_by_status_quo">
+                    {language === 'tr'
+                      ? 'Mevcut Durum Nedeniyle Durduruldu (Blocked by Status Quo)'
+                      : 'Blocked by Status Quo'}
+                  </option>
+                  <option value="completed">
+                    {language === 'tr' ? 'Tamamlandı (Completed)' : 'Completed'}
+                  </option>
                 </select>
               </div>
               <div>
@@ -567,14 +637,18 @@ export const ConstructionView: React.FC = () => {
                   required
                   value={inspectorName}
                   onChange={(e) => setInspectorName(e.target.value)}
-                  placeholder={language === 'tr' ? 'Mühendis veya Denetçi Adı...' : 'Inspector name...'}
+                  placeholder={
+                    language === 'tr' ? 'Mühendis veya Denetçi Adı...' : 'Inspector name...'
+                  }
                   className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-900 focus:outline-none focus:border-emerald-500 focus:bg-white"
                 />
               </div>
 
               <div>
                 <label className="block text-slate-700 font-semibold mb-1">
-                  {language === 'tr' ? 'Yeni İlerleme Yüzdesi (%):' : 'Updated Progress Percentage (%):'}
+                  {language === 'tr'
+                    ? 'Yeni İlerleme Yüzdesi (%):'
+                    : 'Updated Progress Percentage (%):'}
                 </label>
                 <input
                   type="number"
@@ -588,7 +662,9 @@ export const ConstructionView: React.FC = () => {
 
               <div>
                 <label className="block text-slate-700 font-semibold mb-1">
-                  {language === 'tr' ? 'Saha Gözlemleri & Yapısal Notlar:' : 'Structural Observations & Findings:'}
+                  {language === 'tr'
+                    ? 'Saha Gözlemleri & Yapısal Notlar:'
+                    : 'Structural Observations & Findings:'}
                 </label>
                 <textarea
                   rows={3}
@@ -622,13 +698,12 @@ export const ConstructionView: React.FC = () => {
           </div>
         </div>
       )}
-    
-      <ContextualAIAssistant 
+
+      <ContextualAIAssistant
         contextData={JSON.stringify({ blocks: constructionBlocks })}
         systemInstruction="You are an expert construction project management AI. Analyze block progress, identify bottlenecks, and suggest preservation actions based on the provided context."
         title={language === 'tr' ? 'İnşaat AI Asistanı' : 'Construction AI Assistant'}
       />
-    
-</div>
+    </div>
   );
 };

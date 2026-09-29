@@ -45,7 +45,7 @@ export const GlobalSearchModal: React.FC = () => {
           c.caseNumber.toLowerCase().includes(query) ||
           c.title.toLowerCase().includes(query) ||
           c.court.toLowerCase().includes(query) ||
-          c.keyIssues.some((issue: any) => issue.toLowerCase().includes(query))
+          c.keyIssues.some((issue: any) => issue.toLowerCase().includes(query)),
       )
     : [];
 
@@ -54,7 +54,7 @@ export const GlobalSearchModal: React.FC = () => {
         (d: any) =>
           d.title.toLowerCase().includes(query) ||
           d.category.toLowerCase().includes(query) ||
-          d.sha256Hash.toLowerCase().includes(query)
+          d.sha256Hash.toLowerCase().includes(query),
       )
     : [];
 
@@ -64,7 +64,7 @@ export const GlobalSearchModal: React.FC = () => {
           b.name.toLowerCase().includes(query) ||
           b.code.toLowerCase().includes(query) ||
           b.contractor.toLowerCase().includes(query) ||
-          b.items.some((item: any) => item.task.toLowerCase().includes(query))
+          b.items.some((item: any) => item.task.toLowerCase().includes(query)),
       )
     : [];
 
@@ -74,7 +74,7 @@ export const GlobalSearchModal: React.FC = () => {
           t.name.toLowerCase().includes(query) ||
           t.nationalId.toLowerCase().includes(query) ||
           t.appointedBy.toLowerCase().includes(query) ||
-          t.origin.toLowerCase().includes(query)
+          t.origin.toLowerCase().includes(query),
       )
     : [];
 
@@ -83,12 +83,16 @@ export const GlobalSearchModal: React.FC = () => {
         (tx: any) =>
           tx.referenceNo.toLowerCase().includes(query) ||
           tx.description.toLowerCase().includes(query) ||
-          tx.payee.toLowerCase().includes(query)
+          tx.payee.toLowerCase().includes(query),
       )
     : [];
 
   const totalResults =
-    matchedCases.length + matchedDocs.length + matchedBlocks.length + matchedTrustees.length + matchedTx.length;
+    matchedCases.length +
+    matchedDocs.length +
+    matchedBlocks.length +
+    matchedTrustees.length +
+    matchedTx.length;
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 bg-black/40 backdrop-blur-xs p-4 animate-fade-in">
@@ -125,11 +129,31 @@ export const GlobalSearchModal: React.FC = () => {
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {!query && (
             <div className="text-center py-8 text-slate-500 text-xs">
-              <p>{language === 'tr' ? 'Hızlı aramak için anahtar kelime seçin veya yazın' : 'Type to search historical project records across all modules'}</p>
+              <p>
+                {language === 'tr'
+                  ? 'Hızlı aramak için anahtar kelime seçin veya yazın'
+                  : 'Type to search historical project records across all modules'}
+              </p>
               <div className="mt-4 flex flex-wrap justify-center gap-2">
                 {(language === 'tr'
-                  ? ['Mevcut Durum (Status Quo)', 'E062/2025', '84 Dönüm', '807.3M KShs', 'Vakıf Senedi', 'Çatı Koruma', 'Zayed Vakfı']
-                  : ['Status Quo', 'E062/2025', '84 Acres', 'KShs 807M', 'Trust Deed', 'Roofing', 'Zayed Foundation']
+                  ? [
+                      'Mevcut Durum (Status Quo)',
+                      'E062/2025',
+                      '84 Dönüm',
+                      '807.3M KShs',
+                      'Vakıf Senedi',
+                      'Çatı Koruma',
+                      'Zayed Vakfı',
+                    ]
+                  : [
+                      'Status Quo',
+                      'E062/2025',
+                      '84 Acres',
+                      'KShs 807M',
+                      'Trust Deed',
+                      'Roofing',
+                      'Zayed Foundation',
+                    ]
                 ).map((term) => (
                   <button
                     key={term}
@@ -170,7 +194,9 @@ export const GlobalSearchModal: React.FC = () => {
                       <span className="font-semibold text-amber-800">{c.caseNumber}</span>
                       <span className="text-[11px] text-slate-500">{c.court}</span>
                     </div>
-                    <div className="text-xs font-medium text-slate-800 mt-1 line-clamp-1">{c.title}</div>
+                    <div className="text-xs font-medium text-slate-800 mt-1 line-clamp-1">
+                      {c.title}
+                    </div>
                     <div className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">
                       {language === 'tr' ? c.descriptionTr : c.descriptionEn}
                     </div>
@@ -199,7 +225,9 @@ export const GlobalSearchModal: React.FC = () => {
                   >
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-semibold text-slate-900">{d.title}</span>
-                      <span className="text-[11px] font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">{d.version}</span>
+                      <span className="text-[11px] font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                        {d.version}
+                      </span>
                     </div>
                     <div className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">
                       {language === 'tr' ? d.descriptionTr : d.descriptionEn}
@@ -229,9 +257,13 @@ export const GlobalSearchModal: React.FC = () => {
                   >
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-semibold text-slate-900">{b.name}</span>
-                      <span className="text-amber-700 font-mono text-xs font-semibold">{b.progressPercent}%</span>
+                      <span className="text-amber-700 font-mono text-xs font-semibold">
+                        {b.progressPercent}%
+                      </span>
                     </div>
-                    <div className="text-[11px] text-slate-500 mt-0.5">{b.leadEngineer} · {b.contractor}</div>
+                    <div className="text-[11px] text-slate-500 mt-0.5">
+                      {b.leadEngineer} · {b.contractor}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -259,7 +291,9 @@ export const GlobalSearchModal: React.FC = () => {
                       <span className="font-semibold text-slate-900">{t.name}</span>
                       <span className="text-slate-500 text-[11px]">{t.origin}</span>
                     </div>
-                    <div className="text-[11px] text-slate-500 mt-0.5">{t.appointedBy} · {t.nationalId}</div>
+                    <div className="text-[11px] text-slate-500 mt-0.5">
+                      {t.appointedBy} · {t.nationalId}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -285,9 +319,13 @@ export const GlobalSearchModal: React.FC = () => {
                   >
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-semibold text-slate-900">{tx.description}</span>
-                      <span className="font-mono text-emerald-700 font-semibold">KShs {tx.amountKShs.toLocaleString()}</span>
+                      <span className="font-mono text-emerald-700 font-semibold">
+                        KShs {tx.amountKShs.toLocaleString()}
+                      </span>
                     </div>
-                    <div className="text-[11px] text-slate-500 mt-0.5">{tx.payee} · {tx.date}</div>
+                    <div className="text-[11px] text-slate-500 mt-0.5">
+                      {tx.payee} · {tx.date}
+                    </div>
                   </div>
                 ))}
               </div>

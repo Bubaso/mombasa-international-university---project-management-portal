@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @theme {
   --color-solar-base03: #002b36;
@@ -90,5 +90,3 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #c7bc9f;
 }
-
-

@@ -2,14 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import * as queries from '../api/hooks';
 import { type DocumentItem } from '../types';
-import {
-  Lock,
-  ShieldCheck,
-  Download,
-  Upload,
-  Search,
-  Key
-} from 'lucide-react';
+import { Lock, ShieldCheck, Download, Upload, Search, Key } from 'lucide-react';
 import { ContextualAIAssistant } from '../components/ContextualAIAssistant';
 
 export const DocumentVaultView: React.FC = () => {
@@ -48,7 +41,7 @@ export const DocumentVaultView: React.FC = () => {
       category: docCategory,
       version: docVersion,
       descriptionEn: docDescription || 'Official document archived in encrypted repository.',
-      descriptionTr: docDescription || 'Şifreli kasada arşivlenen resmi belge.'
+      descriptionTr: docDescription || 'Şifreli kasada arşivlenen resmi belge.',
     });
     setDocTitle('');
     setDocDescription('');
@@ -62,7 +55,11 @@ export const DocumentVaultView: React.FC = () => {
         <div>
           <div className="flex items-center gap-2 text-xs font-semibold text-blue-700 uppercase tracking-wider">
             <Lock className="w-4 h-4 text-blue-600" />
-            <span>{language === 'tr' ? 'Şifreli Belge Kasası & Versiyon Kontrolü' : 'Encrypted Document Vault & Version Control'}</span>
+            <span>
+              {language === 'tr'
+                ? 'Şifreli Belge Kasası & Versiyon Kontrolü'
+                : 'Encrypted Document Vault & Version Control'}
+            </span>
           </div>
           <h1 className="text-xl font-bold text-slate-900 mt-1">
             {language === 'tr' ? 'Belge Kasası' : 'Document Vault'}
@@ -75,7 +72,9 @@ export const DocumentVaultView: React.FC = () => {
             className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer shadow-xs"
           >
             <Upload className="w-3.5 h-3.5" />
-            <span>{language === 'tr' ? 'Yeni Belge / Versiyon Yükle' : 'Upload Document / Version'}</span>
+            <span>
+              {language === 'tr' ? 'Yeni Belge / Versiyon Yükle' : 'Upload Document / Version'}
+            </span>
           </button>
         </div>
       </div>
@@ -90,7 +89,7 @@ export const DocumentVaultView: React.FC = () => {
             { id: 'legal_pleadings', labelEn: 'Legal Pleadings', labelTr: 'Dava Layihaları' },
             { id: 'boq_finance', labelEn: 'QS BoQ & Audit', labelTr: 'Metraj & Denetim' },
             { id: 'architectural', labelEn: 'Architectural', labelTr: 'Mimari Çizimler' },
-            { id: 'accreditation_cue', labelEn: 'CUE Charter', labelTr: 'CUE Akreditasyon' }
+            { id: 'accreditation_cue', labelEn: 'CUE Charter', labelTr: 'CUE Akreditasyon' },
           ].map((cat) => (
             <button
               key={cat.id}
@@ -112,7 +111,9 @@ export const DocumentVaultView: React.FC = () => {
             type="text"
             value={searchDocQuery}
             onChange={(e) => setSearchDocQuery(e.target.value)}
-            placeholder={language === 'tr' ? 'Belge adı veya SHA özeti...' : 'Search document or hash...'}
+            placeholder={
+              language === 'tr' ? 'Belge adı veya SHA özeti...' : 'Search document or hash...'
+            }
             className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white"
           />
         </div>
@@ -125,7 +126,9 @@ export const DocumentVaultView: React.FC = () => {
             <Lock className="w-6 h-6" />
           </div>
           <h3 className="text-sm font-bold text-slate-800">
-            {language === 'tr' ? 'Seçili Kriterde Belge Bulunamadı' : 'No Documents Found for Selected Filter'}
+            {language === 'tr'
+              ? 'Seçili Kriterde Belge Bulunamadı'
+              : 'No Documents Found for Selected Filter'}
           </h3>
           <p className="text-xs text-slate-500 max-w-sm mx-auto">
             {language === 'tr'
@@ -150,9 +153,11 @@ export const DocumentVaultView: React.FC = () => {
                 legal_pleadings: { en: 'Legal Pleadings', tr: 'Dava Layihası' },
                 boq_finance: { en: 'QS BoQ & Audit', tr: 'Metraj & Denetim' },
                 architectural: { en: 'Architectural / Photos', tr: 'Mimari / Fotoğraflar' },
-                accreditation_cue: { en: 'CUE Charter', tr: 'CUE Akreditasyon' }
+                accreditation_cue: { en: 'CUE Charter', tr: 'CUE Akreditasyon' },
               };
-              return language === 'tr' ? (map[doc.category]?.tr || doc.category) : (map[doc.category]?.en || doc.category.replace('_', ' '));
+              return language === 'tr'
+                ? map[doc.category]?.tr || doc.category
+                : map[doc.category]?.en || doc.category.replace('_', ' ');
             })();
 
             return (
@@ -162,7 +167,9 @@ export const DocumentVaultView: React.FC = () => {
               >
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-[11px]">
-                    <span className="font-mono text-blue-700 font-bold uppercase">{categoryLabel}</span>
+                    <span className="font-mono text-blue-700 font-bold uppercase">
+                      {categoryLabel}
+                    </span>
                     <span className="text-emerald-800 font-mono font-bold bg-emerald-50 border border-emerald-300 px-2 py-0.5 rounded">
                       {doc.version}
                     </span>
@@ -184,14 +191,19 @@ export const DocumentVaultView: React.FC = () => {
                       <Key className="w-3 h-3 text-amber-600" />
                       <span>{language === 'tr' ? 'Doğrulama Kodu:' : 'Verification Code:'}</span>
                     </span>
-                    <span className="font-mono text-slate-700 truncate max-w-[150px]" title={doc.sha256Hash}>
+                    <span
+                      className="font-mono text-slate-700 truncate max-w-[150px]"
+                      title={doc.sha256Hash}
+                    >
                       {doc.sha256Hash.slice(0, 16)}...
                     </span>
                   </div>
 
                   <div className="flex items-center justify-between text-slate-500 text-[10px]">
                     <span>{doc.uploadedBy}</span>
-                    <span>{doc.fileSize} · {doc.fileFormat}</span>
+                    <span>
+                      {doc.fileSize} · {doc.fileFormat}
+                    </span>
                   </div>
 
                   <div className="flex items-center justify-between pt-1">
@@ -205,7 +217,7 @@ export const DocumentVaultView: React.FC = () => {
                         showToast(
                           language === 'tr'
                             ? `"${doc.title}" indirildi ve doğrulaması sağlandı.`
-                            : `"${doc.title}" downloaded and verified.`
+                            : `"${doc.title}" downloaded and verified.`,
                         );
                       }}
                       className="inline-flex items-center gap-1 text-blue-700 hover:text-blue-900 font-semibold cursor-pointer py-1 px-2 rounded-lg hover:bg-blue-50"
@@ -262,12 +274,32 @@ export const DocumentVaultView: React.FC = () => {
                   onChange={(e) => setDocCategory(e.target.value as any)}
                   className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white"
                 >
-                  <option value="legal_pleadings">{language === 'tr' ? 'Dava Layihaları ve Savunmalar' : 'Legal Pleadings & Briefs'}</option>
-                  <option value="court_order">{language === 'tr' ? 'Mahkeme Kararları ve Tedbirler' : 'Court Orders & Injunctions'}</option>
-                  <option value="trust_deed">{language === 'tr' ? 'Vakıf Senedi ve Tüzük' : 'Trust Deed & Constitution'}</option>
-                  <option value="boq_finance">{language === 'tr' ? 'Metraj, BoQ ve Fatura Evrakları' : 'Quantity Surveyor BoQ & Invoices'}</option>
-                  <option value="architectural">{language === 'tr' ? 'Mimari Planlar ve Şantiye Görselleri' : 'Architectural Plans & Site Renders'}</option>
-                  <option value="accreditation_cue">{language === 'tr' ? 'CUE Akreditasyon Dosyası' : 'CUE Accreditation Dossier'}</option>
+                  <option value="legal_pleadings">
+                    {language === 'tr'
+                      ? 'Dava Layihaları ve Savunmalar'
+                      : 'Legal Pleadings & Briefs'}
+                  </option>
+                  <option value="court_order">
+                    {language === 'tr'
+                      ? 'Mahkeme Kararları ve Tedbirler'
+                      : 'Court Orders & Injunctions'}
+                  </option>
+                  <option value="trust_deed">
+                    {language === 'tr' ? 'Vakıf Senedi ve Tüzük' : 'Trust Deed & Constitution'}
+                  </option>
+                  <option value="boq_finance">
+                    {language === 'tr'
+                      ? 'Metraj, BoQ ve Fatura Evrakları'
+                      : 'Quantity Surveyor BoQ & Invoices'}
+                  </option>
+                  <option value="architectural">
+                    {language === 'tr'
+                      ? 'Mimari Planlar ve Şantiye Görselleri'
+                      : 'Architectural Plans & Site Renders'}
+                  </option>
+                  <option value="accreditation_cue">
+                    {language === 'tr' ? 'CUE Akreditasyon Dosyası' : 'CUE Accreditation Dossier'}
+                  </option>
                 </select>
               </div>
 
@@ -292,7 +324,11 @@ export const DocumentVaultView: React.FC = () => {
                   rows={3}
                   value={docDescription}
                   onChange={(e) => setDocDescription(e.target.value)}
-                  placeholder={language === 'tr' ? 'Belge içeriği ve özet bilgisi...' : 'Description of the record...'}
+                  placeholder={
+                    language === 'tr'
+                      ? 'Belge içeriği ve özet bilgisi...'
+                      : 'Description of the record...'
+                  }
                   className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white"
                 />
               </div>
@@ -316,13 +352,12 @@ export const DocumentVaultView: React.FC = () => {
           </div>
         </div>
       )}
-    
-      <ContextualAIAssistant 
+
+      <ContextualAIAssistant
         contextData={JSON.stringify(documentVault)}
         systemInstruction="You are an expert document archivist AI. Help the user find specific document versions, clarify access roles, and summarize document categories based ONLY on the provided context."
         title={language === 'tr' ? 'Döküman AI Asistanı' : 'Document Vault AI'}
       />
-    
-</div>
+    </div>
   );
 };

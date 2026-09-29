@@ -1,23 +1,14 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
 import { PWAInstallButton } from './PWAInstallButton';
-import {
-  Search,
-  Globe,
-  Menu
-} from 'lucide-react';
+import { Search, Globe, Menu } from 'lucide-react';
 
 interface NavbarProps {
   onOpenMenu: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ onOpenMenu }) => {
-  const {
-    language,
-    setLanguage,
-    setIsSearchOpen,
-    
-  } = useApp();
+  const { language, setLanguage, setIsSearchOpen } = useApp();
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 border-b border-slate-200 backdrop-blur-md shadow-xs">
@@ -35,12 +26,14 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenMenu }) => {
 
           {/* Logo & Brand */}
           <div
-            onClick={() => ('dashboard')}
+            onClick={() => 'dashboard'}
             className="flex items-center gap-2 sm:gap-3 cursor-pointer group"
           >
             <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 p-0.5 shadow-sm flex items-center justify-center shrink-0">
               <div className="w-full h-full bg-slate-900 rounded-[9px] sm:rounded-[10px] flex items-center justify-center">
-                <span className="font-extrabold text-[11px] sm:text-xs tracking-wider text-amber-400">MIU</span>
+                <span className="font-extrabold text-[11px] sm:text-xs tracking-wider text-amber-400">
+                  MIU
+                </span>
               </div>
             </div>
 
@@ -49,7 +42,9 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenMenu }) => {
                 {language === 'tr' ? 'Mombasa Uluslararası Üniv.' : 'Mombasa Int. University'}
               </span>
               <p className="text-[10px] sm:text-[11px] text-slate-500 truncate max-w-[160px] sm:max-w-xs leading-none mt-0.5">
-                {language === 'tr' ? 'Kenya Afrika Üniversitesi Vakfı' : 'African University Trust (AUTK)'}
+                {language === 'tr'
+                  ? 'Kenya Afrika Üniversitesi Vakfı'
+                  : 'African University Trust (AUTK)'}
               </p>
             </div>
           </div>
@@ -63,7 +58,11 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenMenu }) => {
           >
             <span className="flex items-center gap-2">
               <Search className="w-3.5 h-3.5 text-amber-600" />
-              <span>{language === 'tr' ? 'Dava, tapu, metraj ve müteahhit ara...' : 'Search cases, deeds, BoQ, contractors...'}</span>
+              <span>
+                {language === 'tr'
+                  ? 'Dava, tapu, metraj ve müteahhit ara...'
+                  : 'Search cases, deeds, BoQ, contractors...'}
+              </span>
             </span>
             <kbd className="font-mono text-[10px] bg-white text-slate-500 px-1.5 py-0.5 rounded border border-slate-200 shadow-xs">
               ⌘K
@@ -94,7 +93,9 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenMenu }) => {
             title={language === 'en' ? 'Switch to Turkish' : 'İngilizceye Geç'}
           >
             <Globe className="w-3.5 h-3.5 text-amber-600" />
-            <span className="font-mono font-bold text-[11px] uppercase">{language === 'en' ? 'TR' : 'EN'}</span>
+            <span className="font-mono font-bold text-[11px] uppercase">
+              {language === 'en' ? 'TR' : 'EN'}
+            </span>
           </button>
         </div>
       </div>

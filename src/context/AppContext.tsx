@@ -7,7 +7,7 @@ export const AVAILABLE_ROLES = [
   { role: 'legal_counsel' as UserRole, nameEn: 'Legal Counsel', nameTr: 'Hukuk Müşaviri' },
   { role: 'contractor_qs' as UserRole, nameEn: 'Contractor / QS', nameTr: 'Müteahhit / QS' },
   { role: 'auditor_finance' as UserRole, nameEn: 'Auditor', nameTr: 'Denetçi' },
-  { role: 'executive' as UserRole, nameEn: 'Executive', nameTr: 'Yönetici' }
+  { role: 'executive' as UserRole, nameEn: 'Executive', nameTr: 'Yönetici' },
 ];
 
 export const INITIAL_USER: CurrentUser = {
@@ -15,7 +15,7 @@ export const INITIAL_USER: CurrentUser = {
   name: 'Simon Karina',
   role: 'legal_counsel',
   organization: 'Simon Karina & Khatib Advocates',
-  email: 'simon@example.com'
+  email: 'simon@example.com',
 };
 
 interface AppContextType {
@@ -51,7 +51,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     apiKeyMasked: '',
     syncFrequency: 'daily',
     autoSyncBills: false,
-    autoSyncAssets: false
+    autoSyncAssets: false,
   });
   const [isSyncingAccounting, setIsSyncingAccounting] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -73,18 +73,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setCurrentUser((prev) => ({
       ...prev,
       role,
-      name: roleMeta ? (language === 'tr' ? roleMeta.nameTr : roleMeta.nameEn) : prev.name
+      name: roleMeta ? (language === 'tr' ? roleMeta.nameTr : roleMeta.nameEn) : prev.name,
     }));
     showToast(
       language === 'tr'
         ? `Rol değiştirildi: ${roleMeta?.nameTr || role}`
-        : `Switched role to: ${roleMeta?.nameEn || role}`
+        : `Switched role to: ${roleMeta?.nameEn || role}`,
     );
   };
 
   const updateAccountingConfig = (updates: Partial<AccountingApiConfig>) => {
     setAccountingConfig((prev) => ({ ...prev, ...updates }));
-    showToast(language === 'tr' ? 'Muhasebe API ayarları güncellendi' : 'Accounting API configuration updated');
+    showToast(
+      language === 'tr'
+        ? 'Muhasebe API ayarları güncellendi'
+        : 'Accounting API configuration updated',
+    );
   };
 
   const triggerAccountingSync = async () => {
@@ -94,13 +98,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setAccountingConfig((prev) => ({
       ...prev,
       status: 'connected',
-      lastSyncTimestamp: new Date().toISOString()
+      lastSyncTimestamp: new Date().toISOString(),
     }));
     setIsSyncingAccounting(false);
     showToast(
       language === 'tr'
         ? `${accountingConfig.provider} API ile çift yönlü senkronizasyon tamamlandı`
-        : `Bi-directional sync with ${accountingConfig.provider} completed successfully`
+        : `Bi-directional sync with ${accountingConfig.provider} completed successfully`,
     );
   };
 

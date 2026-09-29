@@ -10,7 +10,7 @@ import {
   Globe,
   Search,
   X,
-  ChevronRight
+  ChevronRight,
 } from 'lucide-react';
 
 interface MobileMoreSheetProps {
@@ -30,7 +30,16 @@ export const MobileMoreSheet: React.FC<MobileMoreSheetProps> = ({ isOpen, onClos
     onClose();
   };
 
-  const moreItems: { tab: ActiveTab; path: string; labelTr: string; labelEn: string; descTr: string; descEn: string; icon: React.ElementType; color: string }[] = [
+  const moreItems: {
+    tab: ActiveTab;
+    path: string;
+    labelTr: string;
+    labelEn: string;
+    descTr: string;
+    descEn: string;
+    icon: React.ElementType;
+    color: string;
+  }[] = [
     {
       tab: 'project_info',
       path: '/project_info',
@@ -39,7 +48,7 @@ export const MobileMoreSheet: React.FC<MobileMoreSheetProps> = ({ isOpen, onClos
       descTr: '84 dönüm arazi, 60 yıllık tapu, fakülteler, burs sözleşmesi',
       descEn: '84 acres, 60-year lease, faculties & scholarship terms',
       icon: GraduationCap,
-      color: 'bg-amber-100 text-amber-800 border-amber-300'
+      color: 'bg-amber-100 text-amber-800 border-amber-300',
     },
     {
       tab: 'governance',
@@ -49,7 +58,7 @@ export const MobileMoreSheet: React.FC<MobileMoreSheetProps> = ({ isOpen, onClos
       descTr: 'Fasıl 164 tescilli 12 mütevelli, CUE berat yol haritası',
       descEn: 'Cap 164 12-member board, CUE charter milestones',
       icon: Users2,
-      color: 'bg-purple-100 text-purple-800 border-purple-300'
+      color: 'bg-purple-100 text-purple-800 border-purple-300',
     },
     {
       tab: 'documents',
@@ -59,7 +68,7 @@ export const MobileMoreSheet: React.FC<MobileMoreSheetProps> = ({ isOpen, onClos
       descTr: 'Güvenli tapu, layihalar ve mimari çizimler',
       descEn: 'Secure deeds, court pleadings & BoQ prints',
       icon: FolderGit2,
-      color: 'bg-blue-100 text-blue-800 border-blue-300'
+      color: 'bg-blue-100 text-blue-800 border-blue-300',
     },
     {
       tab: 'communication',
@@ -69,8 +78,8 @@ export const MobileMoreSheet: React.FC<MobileMoreSheetProps> = ({ isOpen, onClos
       descTr: 'Avukatlar, şantiye müteahhitleri ve vakıflar arası mesajlaşma',
       descEn: 'Direct coordination between counsel, site engineers & trustees',
       icon: MessagesSquare,
-      color: 'bg-emerald-100 text-emerald-800 border-emerald-300'
-    }
+      color: 'bg-emerald-100 text-emerald-800 border-emerald-300',
+    },
   ];
 
   return (
@@ -97,7 +106,9 @@ export const MobileMoreSheet: React.FC<MobileMoreSheetProps> = ({ isOpen, onClos
                 {language === 'tr' ? 'Diğer Modüller & Ayarlar' : 'More Modules & Settings'}
               </h3>
               <p className="text-[11px] text-slate-500">
-                {language === 'tr' ? 'Mombasa Uluslararası Üniversitesi' : 'Mombasa International University'}
+                {language === 'tr'
+                  ? 'Mombasa Uluslararası Üniversitesi'
+                  : 'Mombasa International University'}
               </p>
             </div>
           </div>
@@ -148,7 +159,9 @@ export const MobileMoreSheet: React.FC<MobileMoreSheetProps> = ({ isOpen, onClos
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center border shrink-0 ${item.color}`}>
+                    <div
+                      className={`w-9 h-9 rounded-lg flex items-center justify-center border shrink-0 ${item.color}`}
+                    >
                       <Icon className="w-4 h-4" />
                     </div>
                     <div>
@@ -202,8 +215,6 @@ export const MobileMoreSheet: React.FC<MobileMoreSheetProps> = ({ isOpen, onClos
               </button>
             </div>
           </div>
-
-
         </div>
 
         {/* Footer info */}
