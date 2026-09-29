@@ -1,6 +1,7 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
 import * as queries from '../api/hooks';
+import { QueryStatus } from '../components/QueryStatus';
 import { Scale, Building2, Receipt, Flame, Server, Compass, ArrowUpRight } from 'lucide-react';
 
 import { useNavigate } from 'react-router-dom';
@@ -9,10 +10,14 @@ import { ContextualAIAssistant } from '../components/ContextualAIAssistant';
 export const DashboardView: React.FC = () => {
   const navigate = useNavigate();
   const { language, accountingConfig } = useApp();
-  const { data: deadlines = [] } = queries.useDeadlines();
-  const { data: constructionBlocks = [] } = queries.useConstructionBlocks();
-  const { data: legalCases = [] } = queries.useLegalCases();
-  const { data: transactions = [] } = queries.useTransactions();
+  const deadlinesQuery = queries.useDeadlines();
+  const deadlines = deadlinesQuery.data ?? [];
+  const constructionBlocksQuery = queries.useConstructionBlocks();
+  const constructionBlocks = constructionBlocksQuery.data ?? [];
+  const legalCasesQuery = queries.useLegalCases();
+  const legalCases = legalCasesQuery.data ?? [];
+  const transactionsQuery = queries.useTransactions();
+  const transactions = transactionsQuery.data ?? [];
   const FINANCIAL_SUMMARY: any = { breakdown: [] };
 
   // Calculate overall construction progress
@@ -27,6 +32,10 @@ export const DashboardView: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      <QueryStatus
+        queries={[deadlinesQuery, constructionBlocksQuery, legalCasesQuery, transactionsQuery]}
+      />
+
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-slate-200 p-5 rounded-xl shadow-xs">
         <div>

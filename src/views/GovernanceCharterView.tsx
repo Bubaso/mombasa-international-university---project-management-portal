@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import * as queries from '../api/hooks';
+import { QueryStatus } from '../components/QueryStatus';
 import { todayIso } from '../lib/date';
 import { Users2, FileCheck2, Landmark, CheckCircle, MapPin, Plus } from 'lucide-react';
 
 export const GovernanceCharterView: React.FC = () => {
   const { language } = useApp();
-  const { data: trustees = [] } = queries.useTrustees();
+  const trusteesQuery = queries.useTrustees();
+  const trustees = trusteesQuery.data ?? [];
   const [filterFoundation, setFilterFoundation] = useState<string>('all');
   const [showResolutionModal, setShowResolutionModal] = useState(false);
   const [resolutionTitle, setResolutionTitle] = useState('');
@@ -67,6 +69,8 @@ export const GovernanceCharterView: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      <QueryStatus queries={[trusteesQuery]} />
+
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-slate-200 p-5 rounded-xl shadow-xs">
         <div>

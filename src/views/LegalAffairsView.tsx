@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import * as queries from '../api/hooks';
+import { QueryStatus } from '../components/QueryStatus';
 import {
   Scale,
   ShieldCheck,
@@ -50,7 +51,8 @@ function loadHearingBrief(): HearingBrief | null {
 export const LegalAffairsView: React.FC = () => {
   const navigate = useNavigate();
   const { language } = useApp();
-  const { data: legalCases = [] } = queries.useLegalCases();
+  const legalCasesQuery = queries.useLegalCases();
+  const legalCases = legalCasesQuery.data ?? [];
   const { mutate: addLegalCase } = queries.useAddLegalCase();
   const [selectedCaseId] = useState<string>('case-appeal-e062');
   const [activeSubTab, setActiveSubTab] = useState<
@@ -95,6 +97,8 @@ export const LegalAffairsView: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      <QueryStatus queries={[legalCasesQuery]} />
+
       {/* Top Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-slate-200 p-5 rounded-xl shadow-xs">
         <div>

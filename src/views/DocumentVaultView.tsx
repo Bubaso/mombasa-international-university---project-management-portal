@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import * as queries from '../api/hooks';
+import { QueryStatus } from '../components/QueryStatus';
 import { type DocumentItem } from '../types';
 import { Lock, ShieldCheck, Download, Upload, Search, Key } from 'lucide-react';
 import { ContextualAIAssistant } from '../components/ContextualAIAssistant';
 
 export const DocumentVaultView: React.FC = () => {
   const { language, showToast } = useApp();
-  const { data: documentVault = [] } = queries.useDocumentVault();
+  const documentVaultQuery = queries.useDocumentVault();
+  const documentVault = documentVaultQuery.data ?? [];
   const { mutate: addDocument } = queries.useAddDocument();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchDocQuery, setSearchDocQuery] = useState<string>('');
@@ -50,6 +52,8 @@ export const DocumentVaultView: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      <QueryStatus queries={[documentVaultQuery]} />
+
       {/* Top Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-slate-200 p-5 rounded-xl shadow-xs">
         <div>

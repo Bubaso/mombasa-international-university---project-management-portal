@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import * as queries from '../api/hooks';
+import { QueryStatus } from '../components/QueryStatus';
 import { todayIso } from '../lib/date';
 import { Building2, AlertTriangle, FileSpreadsheet, Plus, Wrench, Trash2 } from 'lucide-react';
 
@@ -18,7 +19,8 @@ import { ContextualAIAssistant } from '../components/ContextualAIAssistant';
 export const ConstructionView: React.FC = () => {
   const navigate = useNavigate();
   const { language } = useApp();
-  const { data: constructionBlocks = [] } = queries.useConstructionBlocks();
+  const constructionBlocksQuery = queries.useConstructionBlocks();
+  const constructionBlocks = constructionBlocksQuery.data ?? [];
   const { mutate: updateConstructionBlock } = queries.useUpdateConstructionBlock();
   const [selectedBlockId, setSelectedBlockId] = useState<string>(constructionBlocks[0]?.id || '');
   const [showBoQModal, setShowBoQModal] = useState(false);
@@ -106,6 +108,8 @@ export const ConstructionView: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      <QueryStatus queries={[constructionBlocksQuery]} />
+
       {/* Top Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-slate-200 p-5 rounded-xl shadow-xs">
         <div>

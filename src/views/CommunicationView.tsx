@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import * as queries from '../api/hooks';
+import { QueryStatus } from '../components/QueryStatus';
 import { type CommunicationThread } from '../types';
 import { MessagesSquare, Send, Plus, Pin, AlertTriangle, Inbox } from 'lucide-react';
 
 export const CommunicationView: React.FC = () => {
   const { currentUser, language } = useApp();
-  const { data: communicationThreads = [] } = queries.useCommunicationThreads();
+  const communicationThreadsQuery = queries.useCommunicationThreads();
+  const communicationThreads = communicationThreadsQuery.data ?? [];
   const { mutate: addThreadMessage } = queries.useAddThreadMessage();
   const { mutate: createThread } = queries.useCreateThread();
 
@@ -65,6 +67,8 @@ export const CommunicationView: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      <QueryStatus queries={[communicationThreadsQuery]} />
+
       {/* Top Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-slate-200 p-5 rounded-xl shadow-xs">
         <div>

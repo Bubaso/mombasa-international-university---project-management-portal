@@ -14,6 +14,7 @@ import { OfflineIndicator } from './components/OfflineIndicator';
 import { GlobalSearchModal } from './components/GlobalSearchModal';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { MobileMoreSheet } from './components/MobileMoreSheet';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 const DashboardView = lazy(() =>
   import('./views/DashboardView').then((m) => ({ default: m.DashboardView })),
@@ -67,15 +68,17 @@ const MainLayout: React.FC = () => {
 
         {/* Dynamic Main View with mobile safe bottom spacing */}
         <main className="flex-1 p-3 sm:p-6 lg:p-8 pb-24 md:pb-8 overflow-y-auto relative">
-          <Suspense
-            fallback={
-              <div className="flex items-center justify-center h-full">
-                <div className="w-8 h-8 border-4 border-amber-600 border-t-transparent rounded-full animate-spin"></div>
-              </div>
-            }
-          >
-            <Outlet />
-          </Suspense>
+          <ErrorBoundary>
+            <Suspense
+              fallback={
+                <div className="flex items-center justify-center h-full">
+                  <div className="w-8 h-8 border-4 border-amber-600 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              }
+            >
+              <Outlet />
+            </Suspense>
+          </ErrorBoundary>
 
           {/* Footer note */}
           <footer className="mt-12 pt-6 border-t border-slate-200 text-[11px] text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-3">

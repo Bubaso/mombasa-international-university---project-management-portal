@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import * as queries from '../api/hooks';
+import { QueryStatus } from '../components/QueryStatus';
 import { Receipt, CheckCircle2, Plus, ShieldCheck, TrendingUp, CreditCard } from 'lucide-react';
 import { ContextualAIAssistant } from '../components/ContextualAIAssistant';
 
 export const FinanceAccountingView: React.FC = () => {
   const { language } = useApp();
-  const { data: transactions = [] } = queries.useTransactions();
+  const transactionsQuery = queries.useTransactions();
+  const transactions = transactionsQuery.data ?? [];
   const { mutate: addTransaction } = queries.useAddTransaction();
   const FINANCIAL_SUMMARY: any = { breakdown: [] };
 
@@ -35,6 +37,8 @@ export const FinanceAccountingView: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      <QueryStatus queries={[transactionsQuery]} />
+
       {/* Top Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-slate-200 p-5 rounded-xl shadow-xs">
         <div>
