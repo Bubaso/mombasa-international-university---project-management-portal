@@ -14,6 +14,7 @@ import {
   BookOpen,
   HelpCircle,
   Gavel,
+  TriangleAlert,
 } from 'lucide-react';
 
 import { useNavigate } from 'react-router-dom';
@@ -98,6 +99,28 @@ export const LegalAffairsView: React.FC = () => {
   return (
     <div className="space-y-6">
       <QueryStatus queries={[legalCasesQuery]} />
+
+      {/* Most of the legal narrative below — the status quo summary, the
+          grounds, the chronology, the directory — is hard-coded in this file
+          and traces to no record in the system. Some of it is also known to be
+          out of step with the project's own meeting minutes. Until each claim
+          hangs off a document, say plainly that it is unverified. */}
+      <div
+        className="flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-xs"
+        role="note"
+      >
+        <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" aria-hidden="true" />
+        <div className="space-y-1">
+          <div className="font-semibold text-amber-900">
+            {language === 'tr' ? 'Doğrulanmamış içerik' : 'Unverified content'}
+          </div>
+          <p className="leading-relaxed text-amber-900/80">
+            {language === 'tr'
+              ? 'Bu sayfadaki dava özeti, gerekçeler, kronoloji ve taraf listesi koda gömülü sabit metinlerdir; hiçbiri sistemdeki bir belgeye veya karara bağlı değildir ve güncelliği doğrulanmamıştır. Hukuki bir karara dayanak yapmadan önce asıl evrakla teyit edin.'
+              : 'The case summary, grounds, chronology and party list on this page are static text held in the code. None of it is linked to a document or record in the system, and none of it has been checked for currency. Verify against the primary filings before relying on any of it.'}
+          </p>
+        </div>
+      </div>
 
       {/* Top Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-slate-200 p-5 rounded-xl shadow-xs">
@@ -200,7 +223,7 @@ export const LegalAffairsView: React.FC = () => {
             id: 'hearing_brief',
             labelEn: 'Hearing Brief (28 Sept 2026)',
             labelTr: 'Duruşma Brifingi (28 Eylül 2026)',
-            badge: language === 'tr' ? 'CANLI' : 'LIVE',
+            badge: undefined,
           },
           {
             id: 'bench_qa',
@@ -468,7 +491,7 @@ export const LegalAffairsView: React.FC = () => {
                 <HelpCircle className="w-5 h-5 text-amber-600" />
                 <span>
                   {language === 'tr'
-                    ? 'Hâkimler Heyetinden Beklenen 12 Soru ve Taktik Cevaplar (Part E)'
+                    ? 'Hâkimler Heyetinden Beklenen Sorular ve Taktik Cevaplar (Part E)'
                     : 'Part E: Anticipated Questions from the Bench & Tactical Answers'}
                 </span>
               </h2>

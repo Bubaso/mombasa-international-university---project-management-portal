@@ -9,7 +9,7 @@ import { ContextualAIAssistant } from '../components/ContextualAIAssistant';
 
 export const DashboardView: React.FC = () => {
   const navigate = useNavigate();
-  const { language, accountingConfig } = useApp();
+  const { language } = useApp();
   const deadlinesQuery = queries.useDeadlines();
   const deadlines = deadlinesQuery.data ?? [];
   const constructionBlocksQuery = queries.useConstructionBlocks();
@@ -70,7 +70,7 @@ export const DashboardView: React.FC = () => {
             </div>
           </div>
           <span className="text-[10px] font-mono text-amber-900 bg-amber-100/80 border border-amber-300 px-2 py-0.5 rounded font-semibold self-start sm:self-center">
-            {language === 'tr' ? '4 AKTİF GÜNDEM MADDESİ' : '4 ACTIVE AGENDA ITEMS'}
+            {language === 'tr' ? 'SABİT GÜNDEM · DOĞRULANMADI' : 'STATIC AGENDA · UNVERIFIED'}
           </span>
         </div>
 
@@ -437,28 +437,17 @@ export const DashboardView: React.FC = () => {
               </div>
             </div>
 
-            {/* Accounting Software Live API Status */}
+            {/* No accounting system is connected. This used to read "LIVE
+                SYNC" from a hard-coded state object with nothing behind it. */}
             <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-xs flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Server className="w-3.5 h-3.5 text-slate-500" />
-                <span className="text-[11px] text-slate-700 font-medium">
-                  {accountingConfig.provider} API:
+                <Server className="w-3.5 h-3.5 text-slate-400" />
+                <span className="text-[11px] text-slate-600 font-medium">
+                  {language === 'tr' ? 'Muhasebe entegrasyonu' : 'Accounting integration'}
                 </span>
               </div>
-              <span
-                className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold ${
-                  accountingConfig.status === 'connected'
-                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                    : 'bg-amber-100 text-amber-800 border border-amber-300'
-                }`}
-              >
-                {accountingConfig.status === 'connected'
-                  ? language === 'tr'
-                    ? 'BAĞLI'
-                    : 'LIVE SYNC'
-                  : language === 'tr'
-                    ? 'HAZIR'
-                    : 'READY'}
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded font-bold bg-slate-200 text-slate-600 border border-slate-300">
+                {language === 'tr' ? 'KURULMADI' : 'NOT SET UP'}
               </span>
             </div>
           </div>

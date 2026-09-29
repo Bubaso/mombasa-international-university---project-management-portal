@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import * as queries from '../api/hooks';
 import { useNavigate } from 'react-router-dom';
@@ -7,15 +7,20 @@ import { AlertTriangle, Clock, Check, ShieldAlert } from 'lucide-react';
 export const DeadlineAlertBanner: React.FC = () => {
   const { language, currentUser } = useApp();
   const { data: deadlines = [] } = queries.useDeadlines();
-  const { mutate: dismissDeadline } = queries.useDismissDeadline();
   const navigate = useNavigate();
+
+  // Dismissing used to DELETE the row, which removed a court date or filing
+  // deadline for every user of the portal. Until per-user acknowledgements
+  // are stored, hiding one is local to this session only.
+  const [hiddenIds, setHiddenIds] = useState<string[]>([]);
 
   // Filter deadlines relevant to current user role or general
   const relevantDeadlines = deadlines.filter(
     (d) =>
-      d.targetRole.includes(currentUser.role) ||
-      currentUser.role === 'trustee' ||
-      currentUser.role === 'executive',
+      !hiddenIds.includes(d.id) &&
+      (d.targetRole.includes(currentUser.role) ||
+        currentUser.role === 'trustee' ||
+        currentUser.role === 'executive'),
   );
 
   if (relevantDeadlines.length === 0) return null;
@@ -67,8 +72,12 @@ export const DeadlineAlertBanner: React.FC = () => {
                 {language === 'tr' ? 'İncele' : 'View'}
               </button>
               <button
-                onClick={() => dismissDeadline(item.id)}
-                title={language === 'tr' ? 'Kapat' : 'Dismiss'}
+                onClick={() => setHiddenIds((prev) => [...prev, item.id])}
+                title={
+                  language === 'tr'
+                    ? 'Bu oturumda gizle (kayıt silinmez)'
+                    : 'Hide for this session (the record is not deleted)'
+                }
                 className="opacity-60 hover:opacity-100 hover:text-slate-900 ml-1 cursor-pointer p-0.5"
               >
                 <Check className="w-3 h-3" />

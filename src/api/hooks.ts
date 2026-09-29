@@ -62,11 +62,3 @@ export const useAddThreadMessage = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['communications'] }),
   });
 };
-
-export const useDismissDeadline = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: api.dismissDeadline,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['deadlines'] }),
-  });
-};

@@ -195,14 +195,3 @@ export const addThreadMessage = async ({ threadId, text }: { threadId: string; t
   if (error) throw error;
   return keysToCamel(updated);
 };
-
-export const dismissDeadline = async (id: string) => {
-  const { data: deleted, error } = await supabase
-    .from('deadline_notifications')
-    .delete()
-    .eq('id', id)
-    .select()
-    .single();
-  if (error) throw error;
-  return keysToCamel(deleted);
-};

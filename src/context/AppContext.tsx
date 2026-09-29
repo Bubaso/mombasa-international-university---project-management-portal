@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
-import { type Language, type UserRole, type CurrentUser, type AccountingApiConfig } from '../types';
+import { type Language, type UserRole, type CurrentUser } from '../types';
 import { translations } from '../i18n/translations';
 
 export const AVAILABLE_ROLES = [
@@ -24,10 +24,6 @@ interface AppContextType {
   t: typeof translations.en;
   currentUser: CurrentUser;
   switchRole: (role: UserRole) => void;
-  accountingConfig: AccountingApiConfig;
-  updateAccountingConfig: (updates: Partial<AccountingApiConfig>) => void;
-  triggerAccountingSync: () => Promise<void>;
-  isSyncingAccounting: boolean;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   isSearchOpen: boolean;
@@ -43,17 +39,6 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguage] = useState<Language>('tr');
   const [currentUser, setCurrentUser] = useState<CurrentUser>(INITIAL_USER);
-  const [accountingConfig, setAccountingConfig] = useState<AccountingApiConfig>({
-    provider: 'QuickBooks',
-    status: 'connected',
-    lastSyncTimestamp: new Date().toISOString(),
-    apiUrl: '',
-    apiKeyMasked: '',
-    syncFrequency: 'daily',
-    autoSyncBills: false,
-    autoSyncAssets: false,
-  });
-  const [isSyncingAccounting, setIsSyncingAccounting] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -82,32 +67,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   };
 
-  const updateAccountingConfig = (updates: Partial<AccountingApiConfig>) => {
-    setAccountingConfig((prev) => ({ ...prev, ...updates }));
-    showToast(
-      language === 'tr'
-        ? 'Muhasebe API ayarları güncellendi'
-        : 'Accounting API configuration updated',
-    );
-  };
-
-  const triggerAccountingSync = async () => {
-    setIsSyncingAccounting(true);
-    setAccountingConfig((prev) => ({ ...prev, status: 'syncing' }));
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setAccountingConfig((prev) => ({
-      ...prev,
-      status: 'connected',
-      lastSyncTimestamp: new Date().toISOString(),
-    }));
-    setIsSyncingAccounting(false);
-    showToast(
-      language === 'tr'
-        ? `${accountingConfig.provider} API ile çift yönlü senkronizasyon tamamlandı`
-        : `Bi-directional sync with ${accountingConfig.provider} completed successfully`,
-    );
-  };
-
   const setClarificationAnswer = (id: string, answer: string) => {
     setClarificationAnswers((prev) => ({ ...prev, [id]: answer }));
     showToast(language === 'tr' ? 'Açıklama kaydedildi' : 'Clarification response saved');
@@ -121,10 +80,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         t,
         currentUser,
         switchRole,
-        accountingConfig,
-        updateAccountingConfig,
-        triggerAccountingSync,
-        isSyncingAccounting,
         searchQuery,
         setSearchQuery,
         isSearchOpen,

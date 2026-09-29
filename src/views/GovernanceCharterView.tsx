@@ -3,7 +3,15 @@ import { useApp } from '../context/AppContext';
 import * as queries from '../api/hooks';
 import { QueryStatus } from '../components/QueryStatus';
 import { todayIso } from '../lib/date';
-import { Users2, FileCheck2, Landmark, CheckCircle, MapPin, Plus } from 'lucide-react';
+import {
+  Users2,
+  FileCheck2,
+  Landmark,
+  CheckCircle,
+  MapPin,
+  Plus,
+  TriangleAlert,
+} from 'lucide-react';
 
 export const GovernanceCharterView: React.FC = () => {
   const { language } = useApp();
@@ -286,6 +294,23 @@ export const GovernanceCharterView: React.FC = () => {
               : 'Trustee Resolutions & Minute Book'}
           </span>
         </h2>
+
+        {/* These rows live in component state only (S-6). Say so rather than
+            letting someone believe a board resolution has been filed. */}
+        <div
+          className="flex items-start gap-2.5 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[11px]"
+          role="note"
+        >
+          <TriangleAlert
+            className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-700"
+            aria-hidden="true"
+          />
+          <p className="leading-relaxed text-amber-900">
+            {language === 'tr'
+              ? 'Bu bölümdeki kayıtlar henüz veritabanına yazılmıyor; sayfayı yenilediğinizde eklediğiniz satırlar kaybolur.'
+              : 'Records in this section are not written to the database yet; anything you add is lost when the page reloads.'}
+          </p>
+        </div>
 
         <div className="space-y-2 text-xs">
           {resolutions.map((res) => (

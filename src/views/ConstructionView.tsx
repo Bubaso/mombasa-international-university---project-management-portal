@@ -3,7 +3,15 @@ import { useApp } from '../context/AppContext';
 import * as queries from '../api/hooks';
 import { QueryStatus } from '../components/QueryStatus';
 import { todayIso } from '../lib/date';
-import { Building2, AlertTriangle, FileSpreadsheet, Plus, Wrench, Trash2 } from 'lucide-react';
+import {
+  Building2,
+  AlertTriangle,
+  FileSpreadsheet,
+  Plus,
+  Wrench,
+  Trash2,
+  TriangleAlert,
+} from 'lucide-react';
 
 interface BoQItem {
   id: string;
@@ -371,6 +379,20 @@ export const ConstructionView: React.FC = () => {
                   ✕
                 </button>
               </div>
+            </div>
+
+            {/* BoQ items live in component state only (S-6): nothing is
+                persisted, so a quantity surveyor's work would be lost. */}
+            <div
+              className="flex items-start gap-2.5 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[11px]"
+              role="note"
+            >
+              <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-700" />
+              <p className="leading-relaxed text-amber-900">
+                {language === 'tr'
+                  ? 'Buraya girilen kalemler henüz veritabanına yazılmıyor; pencereyi kapattığınızda veya sayfayı yenilediğinizde kaybolur.'
+                  : 'Items entered here are not written to the database yet; they are lost when this dialog is closed or the page reloads.'}
+              </p>
             </div>
 
             <div className="flex-1 overflow-y-auto space-y-3 text-xs">
