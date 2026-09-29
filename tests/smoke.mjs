@@ -11,10 +11,21 @@
  */
 import { chromium } from 'playwright';
 import { spawn } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { setTimeout as sleep } from 'node:timers/promises';
 
 const PORT = Number(process.env.SMOKE_PORT ?? 4173);
 const BASE = `http://127.0.0.1:${PORT}`;
+
+/**
+ * Some environments ship a shared Chromium that does not match the revision
+ * Playwright expects to download. Prefer an explicit override, then a shared
+ * build if one is present, and otherwise let Playwright resolve its own.
+ */
+function resolveChromium() {
+  const candidates = [process.env.PLAYWRIGHT_CHROMIUM_PATH, '/opt/pw-browsers/chromium'];
+  return candidates.find((p) => p && existsSync(p));
+}
 
 const ROUTES = [
   '/',
@@ -69,9 +80,15 @@ const check = (ok, label, detail) => {
 
 try {
   await waitForServer(BASE);
-  browser = await chromium.launch({
-    executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH || undefined,
-  });
+  try {
+    browser = await chromium.launch({ executablePath: resolveChromium() });
+  } catch (error) {
+    console.error(
+      'Could not start Chromium. Install it with `npx playwright install chromium`, ' +
+        'or point PLAYWRIGHT_CHROMIUM_PATH at an existing build.',
+    );
+    throw error;
+  }
   const page = await browser.newPage();
 
   let pageErrors = [];
