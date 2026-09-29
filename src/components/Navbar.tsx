@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { PWAInstallButton } from './PWAInstallButton';
 import { Search, Globe, Menu } from 'lucide-react';
@@ -9,6 +10,7 @@ interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = ({ onOpenMenu }) => {
   const { language, setLanguage, setIsSearchOpen } = useApp();
+  const navigate = useNavigate();
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 border-b border-slate-200 backdrop-blur-md shadow-xs">
@@ -25,9 +27,13 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenMenu }) => {
           </button>
 
           {/* Logo & Brand */}
-          <div
-            onClick={() => 'dashboard'}
-            className="flex items-center gap-2 sm:gap-3 cursor-pointer group"
+          <button
+            type="button"
+            onClick={() => navigate('/')}
+            aria-label={
+              language === 'tr' ? 'Gösterge paneline git' : 'Go to the executive dashboard'
+            }
+            className="flex items-center gap-2 sm:gap-3 cursor-pointer group text-left"
           >
             <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 p-0.5 shadow-sm flex items-center justify-center shrink-0">
               <div className="w-full h-full bg-slate-900 rounded-[9px] sm:rounded-[10px] flex items-center justify-center">
@@ -47,7 +53,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenMenu }) => {
                   : 'African University Trust (AUTK)'}
               </p>
             </div>
-          </div>
+          </button>
         </div>
 
         {/* Center: Global Search Bar (Desktop) */}

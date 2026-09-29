@@ -17,19 +17,41 @@ import {
 
 import { useNavigate } from 'react-router-dom';
 import { ContextualAIAssistant } from '../components/ContextualAIAssistant';
+import { EmptyState } from '../components/EmptyState';
+import type { BenchQuestion, LegalAuthority } from '../types';
+
+interface ContemptDefencePillar {
+  id: string;
+  titleEn: string;
+  titleTr: string;
+  detailEn: string;
+  detailTr: string;
+}
+
+interface HearingBrief {
+  bench: string;
+  caseTitle: string;
+  counselOnRecord: string;
+  contemptDefencePillars: ContemptDefencePillar[];
+  benchQuestions: BenchQuestion[];
+  authorities: LegalAuthority[];
+}
+
+/**
+ * No hearing brief is stored anywhere yet. It used to be read off an untyped
+ * stub whose fields were mostly missing, which crashed the Bench Q&A tab the
+ * moment it was opened. This stays a function so the call sites already have
+ * the shape they will need once briefs are fetched like any other record.
+ */
+function loadHearingBrief(): HearingBrief | null {
+  return null;
+}
 
 export const LegalAffairsView: React.FC = () => {
   const navigate = useNavigate();
   const { language } = useApp();
   const { data: legalCases = [] } = queries.useLegalCases();
   const { mutate: addLegalCase } = queries.useAddLegalCase();
-  const HEARING_BRIEF_DATA: any = {
-    benchQA: [],
-    authorities: [],
-    summary: '',
-    keyArguments: [],
-    risks: [],
-  };
   const [selectedCaseId] = useState<string>('case-appeal-e062');
   const [activeSubTab, setActiveSubTab] = useState<
     | 'overview'
@@ -49,7 +71,10 @@ export const LegalAffairsView: React.FC = () => {
   const [motionCourt, setMotionCourt] = useState('Court of Appeal (Mombasa)');
   const [motionDetail, setMotionDetail] = useState('');
 
-  const activeCase = legalCases.find((c) => c.id === selectedCaseId) || legalCases[0];
+  const activeCase = legalCases.find((c) => c.id === selectedCaseId) ?? legalCases[0] ?? null;
+  const hearingBrief = loadHearingBrief();
+  const benchQuestions = hearingBrief?.benchQuestions ?? [];
+  const authorities = hearingBrief?.authorities ?? [];
 
   const handleCreateMotion = (e: React.FormEvent) => {
     e.preventDefault();
@@ -241,21 +266,25 @@ export const LegalAffairsView: React.FC = () => {
                   </span>
                   <span className="text-xs text-slate-500 font-mono">
                     {language === 'tr' ? 'Heyet: ' : 'Coram: '}
-                    {HEARING_BRIEF_DATA.bench}
+                    {hearingBrief?.bench ?? (language === 'tr' ? 'kayıtlı değil' : 'not recorded')}
                   </span>
                 </div>
                 <h2 className="text-base font-bold text-slate-900 mt-1">
-                  {HEARING_BRIEF_DATA.caseTitle}
+                  {hearingBrief?.caseTitle ??
+                    (language === 'tr'
+                      ? 'Sisteme kayıtlı duruşma brifingi yok'
+                      : 'No hearing brief on record')}
                 </h2>
                 <div className="text-xs text-amber-800 font-medium mt-0.5">
                   {language === 'tr' ? 'Savunma Avukatları: ' : 'Counsel on record: '}
-                  {HEARING_BRIEF_DATA.counselOnRecord}
+                  {hearingBrief?.counselOnRecord ??
+                    (language === 'tr' ? 'kayıtlı değil' : 'not recorded')}
                 </div>
               </div>
 
               <div className="flex items-center gap-2 self-start sm:self-center">
                 <button
-                  onClick={() => navigate('documents')}
+                  onClick={() => navigate('/documents')}
                   className="inline-flex items-center gap-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
                 >
                   <FileText className="w-3.5 h-3.5 text-amber-600" />
@@ -323,21 +352,38 @@ export const LegalAffairsView: React.FC = () => {
               </span>
             </h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-              {(HEARING_BRIEF_DATA?.contemptDefensePillars || []).map((pillar: any) => (
-                <div
-                  key={pillar.id}
-                  className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2"
-                >
-                  <h4 className="font-bold text-amber-800 text-xs">
-                    {language === 'tr' ? pillar.titleTr : pillar.titleEn}
-                  </h4>
-                  <p className="text-slate-700 text-[11px] leading-relaxed">
-                    {language === 'tr' ? pillar.detailTr : pillar.detailEn}
-                  </p>
-                </div>
-              ))}
-            </div>
+            {hearingBrief && hearingBrief.contemptDefencePillars.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                {hearingBrief.contemptDefencePillars.map((pillar) => (
+                  <div
+                    key={pillar.id}
+                    className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2"
+                  >
+                    <h4 className="font-bold text-amber-800 text-xs">
+                      {language === 'tr' ? pillar.titleTr : pillar.titleEn}
+                    </h4>
+                    <p className="text-slate-700 text-[11px] leading-relaxed">
+                      {language === 'tr' ? pillar.detailTr : pillar.detailEn}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                icon={ShieldCheck}
+                tone="unsourced"
+                title={
+                  language === 'tr'
+                    ? 'Savunma sütunları henüz kayıtlı değil'
+                    : 'No defence pillars on record'
+                }
+                description={
+                  language === 'tr'
+                    ? 'Bu bölüm sistemde tutulan bir duruşma brifingine bağlanacak. Şu anda böyle bir kayıt yok.'
+                    : 'This section will read from a hearing brief held in the system. No such record exists yet.'
+                }
+              />
+            )}
           </div>
 
           {/* Fallback Positions & Tactical Scripts */}
@@ -443,9 +489,26 @@ export const LegalAffairsView: React.FC = () => {
             </div>
           </div>
 
+          {benchQuestions.length === 0 && (
+            <EmptyState
+              icon={HelpCircle}
+              tone="unsourced"
+              title={
+                language === 'tr'
+                  ? 'Hâkim soru-cevapları henüz kayıtlı değil'
+                  : 'No anticipated bench questions on record'
+              }
+              description={
+                language === 'tr'
+                  ? 'Bu bölüm sistemde tutulan bir duruşma brifingine bağlanacak. Şu anda böyle bir kayıt yok.'
+                  : 'This section will read from a hearing brief held in the system. No such record exists yet.'
+              }
+            />
+          )}
+
           <div className="space-y-4">
-            {HEARING_BRIEF_DATA.benchQuestions
-              .filter((item: any) => {
+            {benchQuestions
+              .filter((item) => {
                 if (!qSearch) return true;
                 const q = qSearch.toLowerCase();
                 return (
@@ -455,7 +518,7 @@ export const LegalAffairsView: React.FC = () => {
                   item.answerTr.toLowerCase().includes(q)
                 );
               })
-              .map((qa: any, idx: number) => (
+              .map((qa, idx) => (
                 <div
                   key={idx}
                   className="p-4 rounded-xl bg-slate-50 border border-slate-200 hover:border-slate-300 transition-colors space-y-2.5"
@@ -511,8 +574,25 @@ export const LegalAffairsView: React.FC = () => {
             </p>
           </div>
 
+          {authorities.length === 0 && (
+            <EmptyState
+              icon={BookOpen}
+              tone="unsourced"
+              title={
+                language === 'tr'
+                  ? 'İçtihat listesi henüz kayıtlı değil'
+                  : 'No legal authorities on record'
+              }
+              description={
+                language === 'tr'
+                  ? 'Bu bölüm sistemde tutulan bir duruşma brifingine bağlanacak. Şu anda böyle bir kayıt yok.'
+                  : 'This section will read from a hearing brief held in the system. No such record exists yet.'
+              }
+            />
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-            {(HEARING_BRIEF_DATA?.authorities || []).map((auth: any, idx: number) => (
+            {authorities.map((auth, idx) => (
               <div
                 key={idx}
                 className={`p-4 rounded-xl border flex flex-col justify-between space-y-3 ${
@@ -566,14 +646,35 @@ export const LegalAffairsView: React.FC = () => {
       )}
 
       {/* Subtab Content: Overview */}
-      {activeSubTab === 'overview' && (
+      {activeSubTab === 'overview' && !activeCase && (
+        <EmptyState
+          icon={FolderOpen}
+          title={language === 'tr' ? 'Kayıtlı dava dosyası yok' : 'No case files on record'}
+          description={
+            language === 'tr'
+              ? 'Henüz hiçbir dava dosyası kaydedilmemiş. Yukarıdaki "Acil Dilekçe / Layiha Kaydet" düğmesiyle ilk dosyayı ekleyebilirsiniz.'
+              : 'No case file has been recorded yet. Use "File Motion / Pleading" above to add the first one.'
+          }
+          action={
+            <button
+              onClick={() => setShowNewMotionModal(true)}
+              className="inline-flex items-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold cursor-pointer shadow-xs"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>{language === 'tr' ? 'İlk Dosyayı Kaydet' : 'Log First Filing'}</span>
+            </button>
+          }
+        />
+      )}
+
+      {activeSubTab === 'overview' && activeCase && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <div className="lg:col-span-8 space-y-5">
             <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-4">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div>
                   <span className="text-[11px] font-mono text-amber-800 font-bold uppercase">
-                    Civil Appeal No. E062 of 2025
+                    {activeCase.caseNumber}
                   </span>
                   <h2 className="text-base font-bold text-slate-900 mt-0.5">{activeCase.title}</h2>
                 </div>
@@ -740,7 +841,7 @@ export const LegalAffairsView: React.FC = () => {
                   : 'Examine Kadzitu Moli 2012 payment receipt, 60-year lease and title certificates in vault.'}
               </p>
               <button
-                onClick={() => navigate('documents')}
+                onClick={() => navigate('/documents')}
                 className="text-xs text-amber-800 font-semibold underline hover:text-amber-950 cursor-pointer"
               >
                 {language === 'tr' ? 'Belge Kasasını Aç' : 'Access Vault'}

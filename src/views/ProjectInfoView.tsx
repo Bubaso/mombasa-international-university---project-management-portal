@@ -201,7 +201,7 @@ export const ProjectInfoView: React.FC = () => {
 
               <div className="pt-1">
                 <button
-                  onClick={() => navigate('construction')}
+                  onClick={() => navigate('/construction')}
                   className="w-full text-center py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg font-semibold text-xs transition-colors cursor-pointer"
                 >
                   {language === 'tr'

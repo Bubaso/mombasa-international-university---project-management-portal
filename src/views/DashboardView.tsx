@@ -87,7 +87,7 @@ export const DashboardView: React.FC = () => {
               </p>
             </div>
             <button
-              onClick={() => navigate('legal')}
+              onClick={() => navigate('/legal')}
               className="inline-flex items-center justify-between w-full text-[11px] font-semibold text-rose-800 hover:text-rose-950 pt-1 cursor-pointer"
             >
               <span>{language === 'tr' ? 'Duruşma Brifingini Aç' : 'Review Brief'}</span>
@@ -116,7 +116,7 @@ export const DashboardView: React.FC = () => {
               </p>
             </div>
             <button
-              onClick={() => navigate('construction')}
+              onClick={() => navigate('/construction')}
               className="inline-flex items-center justify-between w-full text-[11px] font-semibold text-amber-800 hover:text-amber-950 pt-1 cursor-pointer"
             >
               <span>{language === 'tr' ? 'Hasar & Metraj Dosyası' : 'Review Damage Report'}</span>
@@ -145,7 +145,7 @@ export const DashboardView: React.FC = () => {
               </p>
             </div>
             <button
-              onClick={() => navigate('governance')}
+              onClick={() => navigate('/governance')}
               className="inline-flex items-center justify-between w-full text-[11px] font-semibold text-emerald-800 hover:text-emerald-950 pt-1 cursor-pointer"
             >
               <span>{language === 'tr' ? 'Yönetişim & Berat Yol Haritası' : 'Review Roadmap'}</span>
@@ -174,7 +174,7 @@ export const DashboardView: React.FC = () => {
               </p>
             </div>
             <button
-              onClick={() => navigate('finance')}
+              onClick={() => navigate('/finance')}
               className="inline-flex items-center justify-between w-full text-[11px] font-semibold text-blue-800 hover:text-blue-950 pt-1 cursor-pointer"
             >
               <span>{language === 'tr' ? 'Mali Paneli Aç' : 'Open Financial Hub'}</span>
@@ -267,7 +267,7 @@ export const DashboardView: React.FC = () => {
           </div>
 
           <button
-            onClick={() => navigate('construction')}
+            onClick={() => navigate('/construction')}
             className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold transition-colors cursor-pointer"
           >
             <span>
@@ -354,7 +354,7 @@ export const DashboardView: React.FC = () => {
           </div>
 
           <button
-            onClick={() => navigate('legal')}
+            onClick={() => navigate('/legal')}
             className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold transition-colors cursor-pointer"
           >
             <span>{language === 'tr' ? 'Hukuk ve Dava Portföyü ➔' : 'Open Legal Portfolio ➔'}</span>
@@ -455,7 +455,7 @@ export const DashboardView: React.FC = () => {
           </div>
 
           <button
-            onClick={() => navigate('finance')}
+            onClick={() => navigate('/finance')}
             className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold transition-colors cursor-pointer"
           >
             <span>

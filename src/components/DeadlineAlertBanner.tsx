@@ -57,10 +57,10 @@ export const DeadlineAlertBanner: React.FC = () => {
               </span>
               <button
                 onClick={() => {
-                  if (item.category === 'legal') navigate('legal');
-                  else if (item.category === 'construction') navigate('construction');
-                  else if (item.category === 'finance') navigate('finance');
-                  else navigate('governance');
+                  if (item.category === 'legal') navigate('/legal');
+                  else if (item.category === 'construction') navigate('/construction');
+                  else if (item.category === 'finance') navigate('/finance');
+                  else navigate('/governance');
                 }}
                 className="text-[11px] font-semibold underline text-amber-800 hover:text-amber-950 cursor-pointer ml-1"
               >

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import * as queries from '../api/hooks';
+import { todayIso } from '../lib/date';
 import { Users2, FileCheck2, Landmark, CheckCircle, MapPin, Plus } from 'lucide-react';
 
 export const GovernanceCharterView: React.FC = () => {
@@ -51,7 +52,7 @@ export const GovernanceCharterView: React.FC = () => {
     setResolutions([
       {
         id: `res-${Date.now()}`,
-        date: new Date().toISOString().split('T')[0],
+        date: todayIso(),
         organ: 'Board of Trustees',
         titleEn: resolutionTitle,
         titleTr: resolutionTitle,

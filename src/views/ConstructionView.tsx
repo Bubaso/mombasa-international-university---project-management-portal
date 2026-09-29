@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import * as queries from '../api/hooks';
+import { todayIso } from '../lib/date';
 import { Building2, AlertTriangle, FileSpreadsheet, Plus, Wrench, Trash2 } from 'lucide-react';
 
 interface BoQItem {
@@ -53,7 +54,7 @@ export const ConstructionView: React.FC = () => {
       id: selectedBlock.id,
       updates: {
         progressPercent: newProgress,
-        lastInspectionDate: new Date().toISOString().split('T')[0],
+        lastInspectionDate: todayIso(),
         leadEngineer: inspectorName || selectedBlock.leadEngineer,
       },
     });
@@ -68,7 +69,7 @@ export const ConstructionView: React.FC = () => {
       id: `tsk-${Date.now()}`,
       task: taskTitle,
       status: taskStatus,
-      dueDate: taskDueDate || new Date().toISOString().split('T')[0],
+      dueDate: taskDueDate || todayIso(),
     };
     updateConstructionBlock({
       id: selectedBlock.id,
@@ -173,7 +174,7 @@ export const ConstructionView: React.FC = () => {
             </span>
           </div>
           <button
-            onClick={() => navigate('legal')}
+            onClick={() => navigate('/legal')}
             className="text-xs font-semibold text-rose-700 hover:text-rose-900 underline cursor-pointer"
           >
             {language === 'tr'
