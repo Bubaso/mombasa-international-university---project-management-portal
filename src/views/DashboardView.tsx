@@ -337,12 +337,12 @@ export const DashboardView: React.FC = () => {
               <div className="p-2 rounded bg-slate-50 border border-slate-200 text-[11px] space-y-1">
                 <div className="font-semibold text-slate-800">
                   {language === 'tr'
-                    ? '1. 5 Dönüm Sınır Koruması:'
+                    ? '1. 20 Dönüm Sınır Koruması:'
                     : '1. 5-Acre Boundary Restriction:'}
                 </div>
                 <p className="text-slate-600">
                   {language === 'tr'
-                    ? 'Davacılar sahada fiilen oturdukları 5 dönümle kesin olarak sınırlandırılmıştır.'
+                    ? 'Davacılar sahada fiilen oturdukları 20 dönümle kesin olarak sınırlandırılmıştır.'
                     : 'Claimants strictly confined to the 5 acres actually occupied during locus site visit.'}
                 </p>
               </div>

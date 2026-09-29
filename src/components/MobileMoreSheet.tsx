@@ -45,7 +45,7 @@ export const MobileMoreSheet: React.FC<MobileMoreSheetProps> = ({ isOpen, onClos
       path: '/project_info',
       labelTr: 'Proje Künyesi & Bilgileri',
       labelEn: 'Project Overview & Identity',
-      descTr: '84 dönüm arazi, 60 yıllık tapu, fakülteler, burs sözleşmesi',
+      descTr: '340 dönüm arazi, 60 yıllık tapu, fakülteler, burs sözleşmesi',
       descEn: '84 acres, 60-year lease, faculties & scholarship terms',
       icon: GraduationCap,
       color: 'bg-amber-100 text-amber-800 border-amber-300',

@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 
 import { useNavigate } from 'react-router-dom';
+import { formatLandArea } from '../lib/units';
 
 export const ProjectInfoView: React.FC = () => {
   const navigate = useNavigate();
@@ -52,7 +53,7 @@ export const ProjectInfoView: React.FC = () => {
             {language === 'tr' ? 'Kampüs Arazisi' : 'Campus Site Area'}
           </div>
           <div className="text-lg sm:text-xl font-bold text-slate-900 mt-1 font-mono">
-            {language === 'tr' ? '84 Dönüm' : '84 Acres'}
+            {formatLandArea(84, language)}
           </div>
           <div className="text-[11px] text-slate-500 mt-1">
             {language === 'tr' ? '79 ac yerleşke / 5 ac enklav' : '79 ac campus / 5 ac enclave'}
@@ -170,7 +171,7 @@ export const ProjectInfoView: React.FC = () => {
               <div className="p-3.5 bg-amber-50/60 border border-amber-200 rounded-lg space-y-2">
                 <div className="font-semibold text-amber-900 text-xs">
                   {language === 'tr'
-                    ? 'Arazi Fiili Kullanım Analizi (84 Dönüm):'
+                    ? 'Arazi Fiili Kullanım Analizi (340 dönüm):'
                     : 'Land Area Physical Allocation (84 Acres):'}
                 </div>
                 <ul className="space-y-1 text-slate-700 text-[11px] leading-relaxed">
@@ -178,7 +179,7 @@ export const ProjectInfoView: React.FC = () => {
                     <span className="text-amber-700 font-bold">•</span>
                     <span>
                       <strong className="text-slate-900">
-                        {language === 'tr' ? '79 Dönüm:' : '79 Acres:'}
+                        {language === 'tr' ? '320 dönüm:' : '79 Acres:'}
                       </strong>{' '}
                       {language === 'tr'
                         ? 'Üniversite ana yerleşkesi, akademik fakülteler, yurtlar, laboratuvarlar, cami ve spor tesisleri.'
@@ -189,7 +190,7 @@ export const ProjectInfoView: React.FC = () => {
                     <span className="text-amber-700 font-bold">•</span>
                     <span>
                       <strong className="text-slate-900">
-                        {language === 'tr' ? '5 Dönüm:' : '5 Acres:'}
+                        {language === 'tr' ? '20 dönüm:' : '5 Acres:'}
                       </strong>{' '}
                       {language === 'tr'
                         ? 'Moli ailesi yerleşim enklavı. 9 Şubat 2026 tarihli Yargıtay (Court of Appeal) Mevcut Durum emriyle koruma altında olan sınır.'

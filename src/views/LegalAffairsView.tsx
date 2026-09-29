@@ -176,7 +176,7 @@ export const LegalAffairsView: React.FC = () => {
             </div>
             <p className="text-slate-600 text-[11px] leading-relaxed">
               {language === 'tr'
-                ? 'Moli ailesi (1.–7. davalılar) sadece fiilen işgal ettikleri 5 dönümlük alanda kalmaya devam edecektir.'
+                ? 'Moli ailesi (1.–7. davalılar) sadece fiilen işgal ettikleri 20 dönümlük (5 acre) alanda kalmaya devam edecektir.'
                 : 'Claimants strictly confined to the 5-acre enclave they actually occupied during site survey.'}
             </p>
           </div>
@@ -914,7 +914,7 @@ export const LegalAffairsView: React.FC = () => {
                 descEn:
                   'Court’s own locus in quo on 9 Feb 2024 established Moli family occupied ONLY 5 ACRES, yet judge unlawfully awarded all 84 acres.',
                 descTr:
-                  'Hâkimin 9 Şubat 2024 tarihli kendi keşif raporunda Moli ailesinin yalnızca 5 dönümü işgal ettiği sabitken, 84 dönümün tamamı verilmiştir.',
+                  'Hâkimin 9 Şubat 2024 tarihli kendi keşif raporunda Moli ailesinin yalnızca 20 dönümü (5 acre) işgal ettiği sabitken, 340 dönümün tamamı verilmiştir.',
               },
               {
                 num: '3',
@@ -928,11 +928,11 @@ export const LegalAffairsView: React.FC = () => {
               {
                 num: '4',
                 titleEn: 'Breach of the Five-Acre Boundary',
-                titleTr: 'Beş Dönümlük Sınırın İhlali',
+                titleTr: 'Yirmi Dönümlük (5 Acre) Sınırın İhlali',
                 descEn:
                   'Adverse possession boundary exceeded: claimants could not legally claim adverse possession beyond their 5-acre enclave.',
                 descTr:
-                  'Olumsuz zilyetlik sınırları aşıldı: Davacılar 5 dönümlük yerleşimlerinin ötesindeki 79 dönümde zilyetlik iddia edemez.',
+                  'Olumsuz zilyetlik sınırları aşıldı: Davacılar 20 dönümlük yerleşimlerinin ötesindeki 320 dönümde zilyetlik iddia edemez.',
               },
               {
                 num: '5',
@@ -1160,7 +1160,7 @@ export const LegalAffairsView: React.FC = () => {
               </div>
               <p className="text-slate-600 text-[11px]">
                 {language === 'tr'
-                  ? 'Duruşmada arazideki 5 dönüm işgal / 79 dönüm üniversite durumunu kararlılıkla savunan baş tanık.'
+                  ? 'Duruşmada arazideki 20 dönüm işgal / 320 dönüm üniversite durumunu kararlılıkla savunan baş tanık.'
                   : 'Main defense witness who confirmed physical 5-acre vs 79-acre campus demarcation.'}
               </p>
             </div>
@@ -1249,7 +1249,7 @@ export const LegalAffairsView: React.FC = () => {
                 titleTr: 'Mohamed Yusuf Haji Kök Tapuyu Üzerine Çıkarıyor',
                 detailEn:
                   'Former powerful Provincial Commissioner registered 84 acres; NLC later claimed root title was void ab initio.',
-                detailTr: 'Dönemin Bölge Komiseri 84 dönümlük tapuyu üzerine tescil ettirdi.',
+                detailTr: 'Dönemin Bölge Komiseri 340 dönümlük tapuyu üzerine tescil ettirdi.',
               },
               {
                 year: '2002',
@@ -1258,16 +1258,16 @@ export const LegalAffairsView: React.FC = () => {
                 detailEn:
                   'Purchased for educational charity. Gentlemen’s agreement allocated 5-acre enclave for Moli family.',
                 detailTr:
-                  'Eğitim kurumu kurmak amacıyla satın alındı. Moli ailesine 5 dönüm ayrılması hususunda mutabakata varıldı.',
+                  'Eğitim kurumu kurmak amacıyla satın alındı. Moli ailesine 20 dönüm ayrılması hususunda mutabakata varıldı.',
               },
               {
                 year: '2004 — 2005',
                 titleEn: 'Perimeter Wall Demarcates 79 Acres vs 5 Acres',
-                titleTr: 'Çevre Duvarı İnşa Ediliyor (79 Dönüm Kampüs / 5 Dönüm Aile)',
+                titleTr: 'Çevre Duvarı İnşa Ediliyor (320 dönüm kampüs / 20 dönüm aile)',
                 detailEn:
                   'Foundation constructed permanent perimeter wall, isolating 79 acres for university and leaving 5 acres for Moli.',
                 detailTr:
-                  'Vakıf devasa bir çevre duvarı inşa etti: 79 dönüm üniversiteye ayrıldı, aile 5 dönümde kaldı.',
+                  'Vakıf devasa bir çevre duvarı inşa etti: 320 dönüm üniversiteye ayrıldı, aile 20 dönümde kaldı.',
               },
               {
                 year: '29 Feb 2012',
@@ -1285,7 +1285,7 @@ export const LegalAffairsView: React.FC = () => {
                 detailEn:
                   'Moli family filed adverse possession claim concealing the 2012 agreement and 2012 eviction proceedings.',
                 detailTr:
-                  'Moli ailesi 40 yıllık kesintisiz zilyetlik iddiasıyla 84 dönümün tamamı için tapu iptal davası açtı.',
+                  'Moli ailesi 40 yıllık kesintisiz zilyetlik iddiasıyla 340 dönümün tamamı için tapu iptal davası açtı.',
               },
               {
                 year: '9 Feb 2024',
@@ -1294,7 +1294,7 @@ export const LegalAffairsView: React.FC = () => {
                 detailEn:
                   'Court minutes officially recorded Moli family living only in 5 acres, while university occupied 79 acres.',
                 detailTr:
-                  'Tutanakta Moli ailesinin yalnızca 5 dönümlük alanda yaşadığı, diğer kısımda üniversite inşaatının olduğu tespit edildi.',
+                  'Tutanakta Moli ailesinin yalnızca 20 dönümlük alanda yaşadığı, diğer kısımda üniversite inşaatının olduğu tespit edildi.',
               },
               {
                 year: '27 June 2025',
@@ -1303,7 +1303,7 @@ export const LegalAffairsView: React.FC = () => {
                 detailEn:
                   'Judge Naikuni disregarded his own 5-acre finding and unlawfully awarded all 84 acres to Moli family.',
                 detailTr:
-                  'Hâkim Naikuni 5 dönüm sınırını hiçe sayarak 84 dönümün tamamını Moli ailesine devretti.',
+                  'Hâkim Naikuni 20 dönüm sınırını hiçe sayarak 340 dönümün tamamını Moli ailesine devretti.',
               },
               {
                 year: '9 Feb 2026',
@@ -1312,7 +1312,7 @@ export const LegalAffairsView: React.FC = () => {
                 detailEn:
                   'Land sales frozen, Moli restricted to 5 acres, appeal fast-tracked before JJ. Mohammed, Laibuta, Ngenye-Macharia.',
                 detailTr:
-                  'Yargıtay heyeti arazi satışlarını durdurdu, aileyi 5 dönüme hapsetti ve öncelikli duruşma emri verdi.',
+                  'Yargıtay heyeti arazi satışlarını durdurdu, aileyi 20 dönüme hapsetti ve öncelikli duruşma emri verdi.',
               },
             ].map((step, idx) => (
               <div key={idx} className="relative">

@@ -166,7 +166,7 @@ export const translations = {
       invested: 'Toplam Yapılan Yatırım',
       investedSub: 'Karkas, altyapı ve hukuki süreç',
       landArea: 'Proje Arazisi Büyüklüğü',
-      landAreaSub: '79 dönüm kampüs · 5 dönüm yerleşim',
+      landAreaSub: '320 dönüm kampüs · 20 dönüm yerleşim',
       intakeYear: 'İlk Öğrenci Alımı Hedefi',
       intakeSub: '1. Aşama: 5.000 öğrenci',
       appealStatus: 'E062/2025 Temyiz Durumu',
@@ -201,7 +201,7 @@ export const translations = {
       newCaseBtn: 'Yeni Dava / Dilekçe Kaydet',
       statusQuoTitle: 'Mevcut Durum (Status Quo) Karar Özeti (9 Şubat 2026)',
       statusQuo1:
-        '1. Sınırların Korunması: Davacılar kesinlikle fiilen oturdukları 5 dönüm ile sınırlıdır.',
+        '1. Sınırların Korunması: Davacılar kesinlikle fiilen oturdukları 20 dönüm ile sınırlıdır.',
       statusQuo2:
         '2. Satış ve Devir Yasağı: Hiçbir taraf araziyi 3. kişilere satamaz veya bölemez.',
       statusQuo3: '3. Öncelikli Yargılama: Temyiz davası mahkemede öncelikli sıraya alınmıştır.',
@@ -209,7 +209,7 @@ export const translations = {
         '4. İnşaatların Durdurulması: Yeni inşaat durdu; ancak koruma başvuruları mümkündür.',
       keyGroundsTitle: 'Temyiz İtiraznamesindeki (Memorandum of Appeal) Temel Hukuki Dayanaklar',
       ground1:
-        'Keşif Raporu Çelişkisi: Hâkim sahada 5 dönüm işgal gördü ancak 84 dönümün tamamını verdi.',
+        'Keşif Raporu Çelişkisi: Hâkim sahada 20 dönüm işgal gördü ancak 340 dönümün tamamını verdi.',
       ground2:
         'Ölümcül Usul Hatası: Olumsuz zilyetlik için zorunlu olan Onaylı Tapu Sureti (Order 37 Rule 7) sunulmadı.',
       ground3:

@@ -139,7 +139,7 @@ export const GlobalSearchModal: React.FC = () => {
                   ? [
                       'Mevcut Durum (Status Quo)',
                       'E062/2025',
-                      '84 Dönüm',
+                      '340 dönüm',
                       '807.3M KShs',
                       'Vakıf Senedi',
                       'Çatı Koruma',

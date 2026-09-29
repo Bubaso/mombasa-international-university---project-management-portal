@@ -15,6 +15,7 @@ import { GlobalSearchModal } from './components/GlobalSearchModal';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { MobileMoreSheet } from './components/MobileMoreSheet';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { formatLandArea } from './lib/units';
 
 const DashboardView = lazy(() =>
   import('./views/DashboardView').then((m) => ({ default: m.DashboardView })),
@@ -97,7 +98,7 @@ const MainLayout: React.FC = () => {
               ·{' '}
               <span>
                 {language === 'tr'
-                  ? 'Parsel No: MN/I/5141 (84 Dönüm), Utange/Majaoni'
+                  ? `Parsel No: MN/I/5141 (${formatLandArea(84, 'tr')}), Utange/Majaoni`
                   : 'Plot No. MN/I/5141 (84 Acres), Utange/Majaoni'}
               </span>
             </div>
