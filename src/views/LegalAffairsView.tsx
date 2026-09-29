@@ -5,24 +5,14 @@ import {
   Scale,
   ShieldCheck,
   FileText,
-  AlertCircle,
   Plus,
   Clock,
   UserCheck,
-  CheckCircle2,
-  Calendar,
-  ChevronDown,
-  ChevronUp,
   FileCheck,
-  AlertTriangle,
   FolderOpen,
-  ArrowRight,
   BookOpen,
   HelpCircle,
-  Gavel,
-  ShieldAlert,
-  Search,
-  ExternalLink
+  Gavel
 } from 'lucide-react';
 
 import { useNavigate } from "react-router-dom";
@@ -30,15 +20,14 @@ import { ContextualAIAssistant } from '../components/ContextualAIAssistant';
 
 export const LegalAffairsView: React.FC = () => {
   const navigate = useNavigate();
-  const { language, t, showToast } = useApp();
+  const { language } = useApp();
   const { data: legalCases = [] } = queries.useLegalCases();
   const { mutate: addLegalCase } = queries.useAddLegalCase();
   const HEARING_BRIEF_DATA: any = { benchQA: [], authorities: [], summary: '', keyArguments: [], risks: [] };
-  const [selectedCaseId, setSelectedCaseId] = useState<string>('case-appeal-e062');
+  const [selectedCaseId] = useState<string>('case-appeal-e062');
   const [activeSubTab, setActiveSubTab] = useState<'overview' | 'hearing_brief' | 'bench_qa' | 'authorities' | 'grounds' | 'action_plan' | 'who_is_who' | 'timeline'>('hearing_brief');
   const [showNewMotionModal, setShowNewMotionModal] = useState(false);
   const [qSearch, setQSearch] = useState('');
-  const [selectedQCat, setSelectedQCat] = useState<string>('all');
 
   // New Motion Form State
   const [motionTitle, setMotionTitle] = useState('');

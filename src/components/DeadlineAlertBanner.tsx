@@ -2,7 +2,7 @@ import React from 'react';
 import { useApp } from '../context/AppContext';
 import * as queries from '../api/hooks';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, Clock, Calendar, Check, ShieldAlert } from 'lucide-react';
+import { AlertTriangle, Clock, Check, ShieldAlert } from 'lucide-react';
 
 export const DeadlineAlertBanner: React.FC = () => {
   const { language, currentUser } = useApp();

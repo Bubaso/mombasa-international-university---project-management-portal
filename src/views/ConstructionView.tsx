@@ -1,21 +1,11 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import * as queries from '../api/hooks';
-import { ConstructionBlock } from '../types';
 import {
   Building2,
-  HardHat,
   AlertTriangle,
   FileSpreadsheet,
-  CheckCircle2,
-  Shield,
-  Clock,
   Plus,
-  Compass,
-  FileCheck,
-  Eye,
-  Camera,
-  Layers,
   Wrench,
   Trash2
 } from 'lucide-react';
@@ -33,7 +23,7 @@ import { ContextualAIAssistant } from '../components/ContextualAIAssistant';
 
 export const ConstructionView: React.FC = () => {
   const navigate = useNavigate();
-  const { language, t } = useApp();
+  const { language } = useApp();
   const { data: constructionBlocks = [] } = queries.useConstructionBlocks();
   const { mutate: updateConstructionBlock } = queries.useUpdateConstructionBlock();
   const [selectedBlockId, setSelectedBlockId] = useState<string>(constructionBlocks[0]?.id || '');

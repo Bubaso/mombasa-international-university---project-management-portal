@@ -1,18 +1,13 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import * as queries from '../api/hooks';
-import { CommunicationThread, UserRole } from '../types';
+import { type CommunicationThread } from '../types';
 import {
   MessagesSquare,
   Send,
   Plus,
   Pin,
   AlertTriangle,
-  User,
-  Shield,
-  MessageCircle,
-  FileCheck2,
-  Clock,
   Inbox
 } from 'lucide-react';
 

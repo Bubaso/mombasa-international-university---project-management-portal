@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
-import { Language, UserRole, CurrentUser, AccountingApiConfig } from '../types';
+import { type Language, type UserRole, type CurrentUser, type AccountingApiConfig } from '../types';
 import { translations } from '../i18n/translations';
 
 export const AVAILABLE_ROLES = [

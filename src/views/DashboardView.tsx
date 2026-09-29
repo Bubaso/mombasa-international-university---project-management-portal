@@ -5,16 +5,8 @@ import {
   Scale,
   Building2,
   Receipt,
-  AlertTriangle,
-  CheckCircle2,
-  Calendar,
-  Clock,
-  ArrowRight,
-  ShieldCheck,
   Flame,
-  FileText,
   Server,
-  TrendingUp,
   Compass,
   ArrowUpRight
 } from 'lucide-react';
@@ -29,7 +21,6 @@ export const DashboardView: React.FC = () => {
   const { data: constructionBlocks = [] } = queries.useConstructionBlocks();
   const { data: legalCases = [] } = queries.useLegalCases();
   const { data: transactions = [] } = queries.useTransactions();
-  const { data: documentVault = [] } = queries.useDocumentVault();
   const FINANCIAL_SUMMARY: any = { breakdown: [] };
 
   // Calculate overall construction progress

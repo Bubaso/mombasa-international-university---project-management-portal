@@ -1,20 +1,15 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useApp, AVAILABLE_ROLES } from '../context/AppContext';
-import { ActiveTab, UserRole } from '../types';
+import { useApp } from '../context/AppContext';
+import { type ActiveTab } from '../types';
 import {
   GraduationCap,
   Users2,
   FolderGit2,
   MessagesSquare,
-  HelpCircle,
   Globe,
-  Shield,
   Search,
   X,
-  Compass,
-  Download,
-  CheckCircle2,
   ChevronRight
 } from 'lucide-react';
 
@@ -24,13 +19,7 @@ interface MobileMoreSheetProps {
 }
 
 export const MobileMoreSheet: React.FC<MobileMoreSheetProps> = ({ isOpen, onClose }) => {
-  const {
-    language,
-    setLanguage,
-    currentUser,
-    switchRole,
-    setIsSearchOpen
-  } = useApp();
+  const { language, setLanguage, setIsSearchOpen } = useApp();
   const location = useLocation();
   const navigate = useNavigate();
 

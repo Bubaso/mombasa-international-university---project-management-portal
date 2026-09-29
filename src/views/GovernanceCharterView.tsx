@@ -4,15 +4,9 @@ import * as queries from '../api/hooks';
 import {
   Users2,
   FileCheck2,
-  GraduationCap,
-  Award,
   Landmark,
-  ShieldCheck,
-  Building,
   CheckCircle,
-  FileText,
   MapPin,
-  ExternalLink,
   Plus
 } from 'lucide-react';
 

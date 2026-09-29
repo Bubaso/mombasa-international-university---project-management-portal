@@ -1,18 +1,11 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
-import * as queries from '../api/hooks';
 import {
   GraduationCap,
-  Landmark,
   MapPin,
-  Building,
-  Users2,
   Award,
   BookOpen,
-  Calendar,
   ShieldCheck,
-  Globe2,
-  Layers,
   HeartHandshake,
   CheckCircle2,
   Clock

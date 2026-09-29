@@ -1,22 +1,14 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import * as queries from '../api/hooks';
-import { DocumentItem } from '../types';
+import { type DocumentItem } from '../types';
 import {
-  FolderGit2,
   Lock,
   ShieldCheck,
   Download,
   Upload,
   Search,
-  FileText,
-  FileCheck,
-  CheckCircle2,
-  Eye,
-  History,
-  Tag,
-  Key,
-  Plus
+  Key
 } from 'lucide-react';
 import { ContextualAIAssistant } from '../components/ContextualAIAssistant';
 

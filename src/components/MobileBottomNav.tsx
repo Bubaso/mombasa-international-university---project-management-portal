@@ -1,7 +1,7 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
-import { ActiveTab } from '../types';
+import { type ActiveTab } from '../types';
 import {
   LayoutDashboard,
   Scale,

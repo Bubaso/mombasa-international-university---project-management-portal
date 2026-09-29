@@ -1,12 +1,12 @@
 import { supabase } from '../lib/supabase';
 import {
-  LegalCase,
-  ConstructionBlock,
-  DocumentItem,
-  FinancialTransaction,
-  CommunicationThread,
-  TrusteeMember,
-  DeadlineNotification
+  type LegalCase,
+  type ConstructionBlock,
+  type DocumentItem,
+  type FinancialTransaction,
+  type CommunicationThread,
+  type TrusteeMember,
+  type DeadlineNotification
 } from '../types';
 
 // Utility for converting case

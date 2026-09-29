@@ -3,22 +3,16 @@ import { useApp } from '../context/AppContext';
 import * as queries from '../api/hooks';
 import {
   Receipt,
-  RefreshCw,
   CheckCircle2,
-  AlertCircle,
   Plus,
   ShieldCheck,
-  Server,
   TrendingUp,
-  CreditCard,
-  Building,
-  ArrowRightLeft,
-  FileText
+  CreditCard
 } from 'lucide-react';
 import { ContextualAIAssistant } from '../components/ContextualAIAssistant';
 
 export const FinanceAccountingView: React.FC = () => {
-  const { accountingConfig, updateAccountingConfig, triggerAccountingSync, isSyncingAccounting, language } = useApp();
+  const { language } = useApp();
   const { data: transactions = [] } = queries.useTransactions();
   const { mutate: addTransaction } = queries.useAddTransaction();
   const FINANCIAL_SUMMARY: any = { breakdown: [] };
