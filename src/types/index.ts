@@ -54,6 +54,7 @@ export type ActiveTab =
   | 'legal'
   | 'construction'
   | 'governance'
+  | 'stakeholders'
   | 'finance'
   | 'documents'
   | 'communication'
@@ -360,4 +361,126 @@ export interface AuditEntry {
   entityType: string;
   entityId: string | null;
   at: string;
+}
+
+// ---------------------------------------------------------------------------
+// Stakeholders (M4)
+//
+// Mirrors supabase/migrations/0006. The register is the project's political
+// map: who is with us, who influences whom, and what we privately think. The
+// database decides who may read which part of it.
+// ---------------------------------------------------------------------------
+
+export type StakeholderCategory =
+  | 'government'
+  | 'judiciary'
+  | 'partner_trust'
+  | 'legal'
+  | 'contractor'
+  | 'academia'
+  | 'community_leader'
+  | 'media'
+  | 'donor'
+  | 'opposing_party'
+  | 'other';
+
+/** Where someone stands. 'unknown' is the default: unexamined is not neutral. */
+export type Stance = 'champion' | 'supporter' | 'neutral' | 'sceptic' | 'opponent' | 'unknown';
+
+export type ContactChannel =
+  'in_person' | 'phone' | 'message' | 'email' | 'formal_letter' | 'other';
+
+export type RelationshipKind =
+  'influences' | 'works_with' | 'related_to' | 'reports_to' | 'opposes' | 'advises';
+
+export interface Organization {
+  id: string;
+  name: string;
+  category: StakeholderCategory;
+  country: string | null;
+  website: string | null;
+  notes: string | null;
+  confidentiality: Confidentiality;
+}
+
+export interface Stakeholder {
+  id: string;
+  fullName: string;
+  title: string | null;
+  organizationId: string | null;
+  organizationName: string | null;
+  category: StakeholderCategory;
+  email: string | null;
+  phone: string | null;
+  whatsapp: string | null;
+  location: string | null;
+  preferredLanguage: string | null;
+  interestTopic: string | null;
+  stance: Stance;
+  /** 1–5, the two axes of the power/interest grid. */
+  influence: number;
+  interest: number;
+  relationshipOwner: string | null;
+  relationshipOwnerName: string | null;
+  /** Set when this contact also signs in to the portal. */
+  profileId: string | null;
+  notes: string | null;
+  confidentiality: Confidentiality;
+}
+
+export interface StanceChange {
+  id: string;
+  stakeholderId: string;
+  fromStance: Stance | null;
+  toStance: Stance;
+  changedByName: string | null;
+  changedAt: string;
+  note: string | null;
+}
+
+export interface StakeholderInteraction {
+  id: string;
+  stakeholderId: string;
+  occurredAt: string;
+  channel: ContactChannel;
+  summary: string;
+  outcome: string | null;
+  loggedForName: string | null;
+  confidentiality: Confidentiality;
+}
+
+/** The half of a stakeholder record that is not for sharing. */
+export interface StakeholderAssessment {
+  id: string;
+  stakeholderId: string;
+  body: string;
+  assessedAt: string;
+  authorName: string | null;
+  confidentiality: Confidentiality;
+}
+
+export interface StakeholderRelationship {
+  id: string;
+  fromStakeholderId: string;
+  fromName: string | null;
+  toStakeholderId: string;
+  toName: string | null;
+  kind: RelationshipKind;
+  strength: number;
+  note: string | null;
+}
+
+/** Relationships that have nobody keeping them, or have gone quiet. */
+export interface StakeholderAttention {
+  id: string;
+  fullName: string;
+  category: StakeholderCategory;
+  stance: Stance;
+  influence: number;
+  interest: number;
+  relationshipOwner: string | null;
+  lastContactAt: string | null;
+  quietAfterDays: number;
+  needsAnOwner: boolean;
+  hasGoneQuiet: boolean;
 }

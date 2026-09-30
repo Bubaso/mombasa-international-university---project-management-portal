@@ -8,6 +8,7 @@ import {
   Scale,
   Building2,
   Users2,
+  Handshake,
   Receipt,
   FolderGit2,
   MessagesSquare,
@@ -47,6 +48,7 @@ export const Sidebar: React.FC = () => {
       badgeColor: 'text-rose-800 bg-rose-100 border border-rose-300',
     },
     { tab: 'governance', path: '/governance', label: t.nav.governance, icon: Users2 },
+    { tab: 'stakeholders', path: '/stakeholders', label: t.nav.stakeholders, icon: Handshake },
     {
       tab: 'finance',
       path: '/finance',

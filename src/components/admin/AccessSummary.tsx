@@ -6,7 +6,7 @@ import * as domain from '../../api/hooks';
 import * as access from '../../api/adminHooks';
 import { roleLabel } from '../../lib/roles';
 import { clearanceLabel, clearanceStyle, isExpired } from '../../lib/authority';
-import { Pill, Section } from './Section';
+import { Pill, Section } from '../ui/Controls';
 import type { Authority } from '../../types';
 
 /**

@@ -15,7 +15,7 @@ import {
   TextInput,
   Th,
   WriteError,
-} from './Section';
+} from '../ui/Controls';
 import type { Authority, Delegation } from '../../types';
 
 type State = 'awaiting' | 'in_force' | 'expired' | 'revoked';

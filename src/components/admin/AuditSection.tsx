@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { ScrollText } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import * as access from '../../api/adminHooks';
-import { Pill, Section, Select, TableFrame, Td, Th } from './Section';
+import { Pill, Section, Select, TableFrame, Td, Th } from '../ui/Controls';
 
 const ACTION_STYLES: Record<string, string> = {
   INSERT: 'border-emerald-200 bg-emerald-50 text-emerald-800',

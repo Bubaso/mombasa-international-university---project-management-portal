@@ -6,7 +6,16 @@ import * as domain from '../../api/hooks';
 import * as access from '../../api/adminHooks';
 import type { ScopeKind } from '../../api/admin';
 import { roleLabel } from '../../lib/roles';
-import { ActionButton, Field, Section, Select, TableFrame, Td, Th, WriteError } from './Section';
+import {
+  ActionButton,
+  Field,
+  Section,
+  Select,
+  TableFrame,
+  Td,
+  Th,
+  WriteError,
+} from '../ui/Controls';
 import type { Assignment, UserRole } from '../../types';
 
 /**

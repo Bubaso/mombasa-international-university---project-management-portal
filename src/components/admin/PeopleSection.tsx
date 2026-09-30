@@ -22,7 +22,7 @@ import {
   TextInput,
   Th,
   WriteError,
-} from './Section';
+} from '../ui/Controls';
 import { INTERNAL_ROLES, type Confidentiality, type Profile, type UserRole } from '../../types';
 
 const ALL_ROLES: UserRole[] = [

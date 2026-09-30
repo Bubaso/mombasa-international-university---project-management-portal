@@ -28,6 +28,26 @@ export const AUDIT_READERS: UserRole[] = [
 /** Who may raise or revoke a delegation — their own role, never a lent one. */
 export const DELEGATION_RAISERS: UserRole[] = ['trustee', 'admin'];
 
+/**
+ * Who keeps the project's own record — the register, the minutes, the
+ * actions. Mirrors app.can_minute(): the internal roles that write, plus
+ * trustees, who take the decisions being recorded.
+ */
+export const MINUTE_KEEPERS: UserRole[] = [
+  'admin',
+  'project_director',
+  'field_team',
+  'board_director',
+  'trustee',
+];
+
+/**
+ * Narrower, for the things that are judgements about people or commitments of
+ * the board: a private assessment of a stakeholder, and a decision. Mirrors
+ * app.can_assess().
+ */
+export const ASSESSORS: UserRole[] = ['admin', 'project_director', 'trustee', 'board_director'];
+
 export const CONFIDENTIALITY_TIERS: Confidentiality[] = [
   'public',
   'internal',

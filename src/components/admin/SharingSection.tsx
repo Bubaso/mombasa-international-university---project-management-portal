@@ -17,7 +17,7 @@ import {
   TextInput,
   Th,
   WriteError,
-} from './Section';
+} from '../ui/Controls';
 import type { GrantPermission } from '../../types';
 
 /**

@@ -73,6 +73,7 @@ const ROUTES = [
   '/legal',
   '/construction',
   '/governance',
+  '/stakeholders',
   '/finance',
   '/documents',
   '/communication',
@@ -234,7 +235,24 @@ try {
   );
   check(/Denetim kaydı|Audit trail/.test(directorView), 'director can read the audit trail');
 
+  // The register is the project's political map, so who may keep it is the
+  // same question the console answers about everything else.
+  pageErrors = [];
+  await page.goto(BASE + '/stakeholders', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(400);
+  const directorRegister = (await page.textContent('body')) ?? '';
+  check(/Paydaş ekle|Add a stakeholder/.test(directorRegister), 'director may keep the register');
+
   await actAs(EXTERNAL_AUTHORITY);
+  pageErrors = [];
+  await page.goto(BASE + '/stakeholders', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(400);
+  const contractorRegister = (await page.textContent('body')) ?? '';
+  check(
+    pageErrors.length === 0 && !/Paydaş ekle|Add a stakeholder/.test(contractorRegister),
+    'an external party is not offered the register controls',
+  );
+
   pageErrors = [];
   await page.goto(BASE + '/admin', { waitUntil: 'networkidle' });
   await page.waitForTimeout(400);

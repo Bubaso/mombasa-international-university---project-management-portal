@@ -15,6 +15,10 @@
 --
 -- Requirements: M4-01 … M4-11.
 
+-- Attribution points at profiles rather than at auth.users, which no client
+-- can read: "who wrote this" should be answerable in the same query that
+-- fetches the row. Writing at all requires an active profile, so the
+-- reference is always satisfiable.
 create or replace function app.add_common_columns(p_table regclass)
 returns void
 language plpgsql
@@ -23,9 +27,9 @@ begin
   execute format($f$
     alter table %s
       add column if not exists confidentiality confidentiality not null default 'internal',
-      add column if not exists created_by uuid references auth.users (id),
+      add column if not exists created_by uuid references profiles (id),
       add column if not exists created_at timestamptz not null default now(),
-      add column if not exists updated_by uuid references auth.users (id),
+      add column if not exists updated_by uuid references profiles (id),
       add column if not exists updated_at timestamptz not null default now();
   $f$, p_table);
 

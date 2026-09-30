@@ -43,6 +43,9 @@ const DocumentVaultView = lazy(() =>
 const CommunicationView = lazy(() =>
   import('./views/CommunicationView').then((m) => ({ default: m.CommunicationView })),
 );
+const StakeholdersView = lazy(() =>
+  import('./views/StakeholdersView').then((m) => ({ default: m.StakeholdersView })),
+);
 const AdminConsoleView = lazy(() =>
   import('./views/AdminConsoleView').then((m) => ({ default: m.AdminConsoleView })),
 );
@@ -167,6 +170,7 @@ const Gate: React.FC = () => {
         <Route path="/governance" element={<GovernanceCharterView />} />
         <Route path="/finance" element={<FinanceAccountingView />} />
         <Route path="/documents" element={<DocumentVaultView />} />
+        <Route path="/stakeholders" element={<StakeholdersView />} />
         <Route path="/communication" element={<CommunicationView />} />
         {/* Open to anyone signed in: the console shows each person only the
             parts their policies let them use, and everyone has a right to see
