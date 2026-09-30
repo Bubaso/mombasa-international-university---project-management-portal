@@ -93,6 +93,7 @@ const ROUTES = [
   '/stakeholders',
   '/meetings',
   '/obligations',
+  '/calendar',
   '/finance',
   '/documents',
   '/communication',

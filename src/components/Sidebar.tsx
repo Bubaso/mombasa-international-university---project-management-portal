@@ -11,6 +11,7 @@ import {
   Handshake,
   CalendarDays,
   ScrollText,
+  CalendarClock,
   Receipt,
   FolderGit2,
   MessagesSquare,
@@ -55,6 +56,8 @@ export const Sidebar: React.FC = () => {
     // The connective tissue: what the lease, the courts, the deed and the
     // people around this project have each undertaken, in one list.
     { tab: 'obligations', path: '/obligations', label: t.nav.obligations, icon: ScrollText },
+    // Everything with a date, from every register at once.
+    { tab: 'calendar', path: '/calendar', label: t.nav.calendar, icon: CalendarClock },
     {
       tab: 'finance',
       path: '/finance',

@@ -52,6 +52,9 @@ const MeetingsView = lazy(() =>
 const MeetingDetailView = lazy(() =>
   import('./views/MeetingDetailView').then((m) => ({ default: m.MeetingDetailView })),
 );
+const CalendarView = lazy(() =>
+  import('./views/CalendarView').then((m) => ({ default: m.CalendarView })),
+);
 const ObligationsView = lazy(() =>
   import('./views/ObligationsView').then((m) => ({ default: m.ObligationsView })),
 );
@@ -180,6 +183,7 @@ const Gate: React.FC = () => {
         <Route path="/finance" element={<FinanceAccountingView />} />
         <Route path="/documents" element={<DocumentVaultView />} />
         <Route path="/stakeholders" element={<StakeholdersView />} />
+        <Route path="/calendar" element={<CalendarView />} />
         <Route path="/obligations" element={<ObligationsView />} />
         <Route path="/meetings" element={<MeetingsView />} />
         <Route path="/meetings/:id" element={<MeetingDetailView />} />

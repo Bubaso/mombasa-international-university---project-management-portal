@@ -57,6 +57,7 @@ export type ActiveTab =
   | 'stakeholders'
   | 'meetings'
   | 'obligations'
+  | 'calendar'
   | 'finance'
   | 'documents'
   | 'communication'
@@ -708,4 +709,30 @@ export interface CommitmentRecord {
   overdue: number;
   /** Null means nothing of theirs is settled yet — not the same as zero. */
   keptPercent: number | null;
+}
+
+// ---------------------------------------------------------------------------
+// The unified calendar (M15-03) — mirrors the view in 0011
+// ---------------------------------------------------------------------------
+
+export type CalendarKind = 'hearing' | 'filing' | 'obligation' | 'action' | 'question' | 'meeting';
+
+/**
+ * One dated thing, from whichever register it belongs to. Each row was
+ * filtered by that register's own policy on the way out, so this is never a
+ * way around them.
+ */
+export interface CalendarEntry {
+  kind: CalendarKind;
+  id: string;
+  titleEn: string | null;
+  titleTr: string | null;
+  dueOn: string | null;
+  dueAt: string | null;
+  detail: string | null;
+  legalCaseId: string | null;
+  meetingId: string | null;
+  state: string | null;
+  needsAttention: boolean;
+  confidentiality: Confidentiality;
 }

@@ -1521,6 +1521,63 @@ select pg_temp.check('and a closed one has left the list',
   0::bigint);
 
 
+-- ===========================================================================
+-- One calendar over everything with a date (M15-03)
+-- ===========================================================================
+--
+-- The view reads six tables at once, which makes it the easiest place in the
+-- schema to accidentally build a way around all six. security_invoker is what
+-- stops that, and this is the proof.
+--
+-- These assert the rule rather than the arithmetic: the counts here depend on
+-- what the tests above have already changed, and a calendar test that breaks
+-- when an unrelated test files a document is a test about the fixture.
+
+select pg_temp.act_as('33333333-3333-3333-3333-333333333333');  -- trustee
+select pg_temp.check('the calendar draws from every register at once',
+  (select count(distinct kind) from project_calendar), 6::bigint);
+
+-- Overdue is shown, never hidden: a deadline that has passed is exactly the
+-- one somebody has to see.
+select pg_temp.check('everything past its date is flagged, and only that',
+  (select count(*) from project_calendar where needs_attention and not (due_on < current_date)),
+  0::bigint);
+
+-- --- and the part that matters: it is not a hole in the registers ---------
+
+select pg_temp.act_as('55555555-5555-5555-5555-555555555555');  -- advocate one
+select pg_temp.check(
+  'an advocate sees the court dates on their own file',
+  (select count(*) > 0 from project_calendar where kind in ('hearing', 'filing')),
+  true);
+
+select pg_temp.act_as('66666666-6666-6666-6666-666666666666');  -- advocate two
+select pg_temp.check(
+  'and an advocate on no case sees nothing at all',
+  (select count(*) from project_calendar), 0::bigint);
+
+select pg_temp.act_as('77777777-7777-7777-7777-777777777777');  -- contractor
+select pg_temp.check('the contractor sees the obligation that is theirs',
+  (select count(*) from project_calendar
+    where kind = 'obligation' and id = '19000000-0000-0000-0000-000000000006'),
+  1::bigint);
+select pg_temp.check(
+  'and no court date belonging to anybody else',
+  (select count(*) from project_calendar where kind in ('hearing', 'filing')),
+  0::bigint);
+
+-- Structural, so it holds whatever the fixtures become: every obligation on
+-- an external party's calendar is one they owe.
+select pg_temp.check(
+  'every dated thing they can see is something of their own',
+  (select count(*) from project_calendar c
+    where c.kind = 'obligation'
+      and not exists (
+        select 1 from obligations o
+        where o.id = c.id
+          and o.obligor_stakeholder_id = '0b000000-0000-0000-0000-000000000004')),
+  0::bigint);
+
 reset role;
 
 \echo ''
