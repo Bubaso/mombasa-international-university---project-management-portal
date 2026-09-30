@@ -386,6 +386,25 @@ supabase functions deploy verify-document
 supabase functions deploy document-download
 ```
 
+**If the project already has some of these applied by hand.** `db push` works
+out what to run from `supabase_migrations.schema_migrations`, which is written
+by the CLI and by nothing else. A project whose early migrations were pasted
+into the SQL editor has an empty table, so push starts at 0001 and stops on
+`type "app_role" already exists`. Tell it what is already there, then push:
+
+```bash
+supabase migration repair --status applied 0001 0002 0003
+supabase db push
+```
+
+A half-applied migration is worth ruling out before anything else, because it
+does not look like one from outside. Every policy in this schema calls into
+the `app` schema, so a run that stopped before the grants at the end of 0003
+leaves row level security switched on and every query raising _permission
+denied for schema app_ — which reaches a browser as a failure to load, not as
+a schema problem. `supabase/diagnose-access.sql` part 2 answers it in one
+query.
+
 `bootstrap.sql` is never applied: Supabase already owns the `auth` schema.
 0012 creates the `documents` bucket and its policies through
 `storage.buckets`, so no console step is needed for it.
