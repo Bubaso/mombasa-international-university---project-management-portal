@@ -413,6 +413,32 @@ const TEST_DEPENDENCIES = [
   },
 ];
 
+/** Two things waiting on a ruling, one of which a director can settle. */
+const TEST_DECISIONS = [
+  {
+    kind: 'risk_escalation',
+    id: '1',
+    title_en: 'The lease is not renewed',
+    title_tr: null,
+    detail: 'Score 16, over the threshold of 15',
+    waiting_since: '2026-09-10T09:00:00Z',
+    due_on: null,
+    waiting_on: ['admin', 'trustee', 'board_director'],
+    confidentiality: 'internal',
+  },
+  {
+    kind: 'payment_voucher',
+    id: '00000000-0000-0000-0000-0000000000c1',
+    title_en: 'PV-1001 — Smoke Contracting',
+    title_tr: null,
+    detail: 'Substructure, first claim',
+    waiting_since: '2026-09-25T09:00:00Z',
+    due_on: null,
+    waiting_on: ['admin', 'project_director'],
+    confidentiality: 'internal',
+  },
+];
+
 const ROUTES = [
   '/',
   '/project_info',
@@ -535,6 +561,14 @@ try {
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify([TEST_CASE]),
+    }),
+  );
+
+  await page.route('**/rest/v1/pending_decisions**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(TEST_DECISIONS),
     }),
   );
 
@@ -901,6 +935,46 @@ try {
   check(
     pageErrors.length === 0 && !/Risk ekle|Add a risk/.test(contractorRisks),
     'an external party is not offered the register controls',
+  );
+  await actAs(TEST_AUTHORITY);
+
+  // --- the home screen is a different screen per role (M12-01) --------------
+  // The old one answered nobody's question at length, out of four agenda
+  // cards typed into the component. These checks are that the replacement
+  // computes, says whose a decision is, and is not the same page for
+  // everybody.
+  pageErrors = [];
+  await page.goto(BASE + '/', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(600);
+  const directorHome = (await page.textContent('body')) ?? '';
+  check(
+    pageErrors.length === 0 && /Karar bekleyenler|Waiting on a decision/.test(directorHome),
+    'a director opens on what is waiting to be decided',
+  );
+  check(/sizde|yours/.test(directorHome), 'and the panel says which of them are theirs to settle');
+  check(
+    /Son güncelleme|Last updated/.test(directorHome),
+    'the screen says when what you are reading was fetched',
+  );
+  check(
+    // The figures that used to be typed in. 807.3M was the capital total and
+    // 980.0M the budget; neither came from a query.
+    !/807\.3M|980\.0M/.test(directorHome),
+    'and no hand-written capital figure survives on it',
+  );
+
+  await actAs(EXTERNAL_AUTHORITY);
+  pageErrors = [];
+  await page.goto(BASE + '/', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(600);
+  const contractorHome = (await page.textContent('body')) ?? '';
+  check(
+    pageErrors.length === 0 && /Saha, bugün|The site, today/.test(contractorHome),
+    'a contractor opens on the site instead',
+  );
+  check(
+    !/Karar bekleyenler|Waiting on a decision/.test(contractorHome),
+    'and is not shown the decision queue at all',
   );
   await actAs(TEST_AUTHORITY);
 

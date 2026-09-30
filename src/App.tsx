@@ -131,8 +131,11 @@ const MainLayout: React.FC = () => {
               <span className="text-emerald-600 font-mono font-medium">
                 {language === 'tr' ? 'PWA Etkin' : 'PWA Enabled'}
               </span>
-              <span>·</span>
-              <span>{language === 'tr' ? '807.3M KShs Yatırım' : 'KShs 807.3M Invested'}</span>
+              {/* The invested total used to sit here, typed in. A figure
+                  that appears on every page reads as current, and this one
+                  came from nowhere — there is no query behind it and no date
+                  on it. The ledger is where that number lives now, and it
+                  says which of it has been audited (M12-03). */}
             </div>
           </footer>
         </main>

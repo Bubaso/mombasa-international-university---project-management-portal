@@ -15,7 +15,6 @@ import {
   Receipt,
   FolderGit2,
   MessagesSquare,
-  ShieldAlert,
   ShieldCheck,
   TriangleAlert,
 } from 'lucide-react';
@@ -125,26 +124,26 @@ export const Sidebar: React.FC = () => {
         })}
       </div>
 
-      {/* Bottom Project Info Card */}
+      {/*
+        What used to be here: a card asserting the appeal's current standing
+        and the capital invested, both typed in. It said "STATUS QUO" and
+        "9 Feb 2026: priority hearing granted" on every page of the portal,
+        in the present tense, from a string — so it would have gone on saying
+        that whatever happened in court. A hardcoded legal status is worse
+        than a missing one: it is read as current by everybody who sees it,
+        and nobody thinks to check a thing the interface states plainly.
+
+        The court's standing is in the legal register, the invested total in
+        the ledger, and both say where they came from and when. What stays
+        here is the identity of the project, which does not change (M12-03).
+      */}
       <div className="p-3 border-t border-slate-200 bg-slate-50">
-        <div className="p-2.5 rounded-lg bg-white border border-slate-200 text-[11px] text-slate-700 space-y-1.5 shadow-xs">
-          <div className="flex items-center justify-between text-amber-800 font-semibold">
-            <span className="flex items-center gap-1">
-              <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
-              <span>{language === 'tr' ? 'Yargıtay Durumu' : 'Court of Appeal'}</span>
-            </span>
-            <span className="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 font-mono font-medium">
-              {language === 'tr' ? 'MEVCUT DURUM' : 'STATUS QUO'}
-            </span>
+        <div className="rounded-lg border border-slate-200 bg-white p-2.5 text-[11px] text-slate-600 shadow-xs">
+          <div className="font-semibold text-slate-700">
+            {language === 'tr' ? 'MIU · Utange/Majaoni' : 'MIU · Utange/Majaoni'}
           </div>
-          <p className="text-[11px] text-slate-500 line-clamp-2">
-            {language === 'tr'
-              ? '9 Şubat 2026: Sınırlar koruma altında, öncelikli temyiz süreci aktif.'
-              : '9 Feb 2026: Priority hearing granted, 5-acre boundary order active.'}
-          </p>
-          <div className="pt-1 flex items-center justify-between text-[10px] text-slate-400">
-            <span>Cap 164 · Mombasa</span>
-            <span className="font-medium text-slate-600">807.3M KShs</span>
+          <div className="mt-0.5 text-[10px] text-slate-400">
+            {language === 'tr' ? 'Parsel MN/I/5141 · Fasıl 164' : 'Plot MN/I/5141 · Cap 164'}
           </div>
         </div>
       </div>

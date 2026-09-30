@@ -1340,3 +1340,30 @@ export interface RiskMatrixCell {
   score: number;
   riskCount: number;
 }
+
+/** Mirrors decision_kind in supabase/migrations/0017. */
+export type DecisionKind =
+  | 'risk_escalation'
+  | 'payment_voucher'
+  | 'valuation_approval'
+  | 'open_question'
+  | 'work_under_prohibition'
+  | 'delegation_approval';
+
+/**
+ * One thing waiting on a ruling, from the pending_decisions view.
+ *
+ * `waitingOn` is the roles that can settle it. Without that column the panel
+ * is a list of worries; with it, it is a list somebody is answerable for.
+ */
+export interface PendingDecision {
+  kind: DecisionKind;
+  id: string;
+  titleEn: string | null;
+  titleTr: string | null;
+  detail: string | null;
+  waitingSince: string | null;
+  dueOn: string | null;
+  waitingOn: string[];
+  confidentiality: Confidentiality;
+}
