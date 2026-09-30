@@ -6,6 +6,7 @@ import { Scale, Building2, Receipt, Flame, Server, Compass, ArrowUpRight } from 
 
 import { useNavigate } from 'react-router-dom';
 import { ContextualAIAssistant } from '../components/ContextualAIAssistant';
+import { AgendaPanel } from '../components/meetings/AgendaPanel';
 
 export const DashboardView: React.FC = () => {
   const navigate = useNavigate();
@@ -35,6 +36,11 @@ export const DashboardView: React.FC = () => {
       <QueryStatus
         queries={[deadlinesQuery, constructionBlocksQuery, legalCasesQuery, transactionsQuery]}
       />
+
+      {/* What the project owes itself, before what it owns. Progress bars and
+          balances describe a state; this is the only part of the dashboard
+          that asks somebody to do something (M12-02). */}
+      <AgendaPanel limit={6} compact />
 
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-slate-200 p-5 rounded-xl shadow-xs">

@@ -67,6 +67,23 @@ const EXTERNAL_AUTHORITY = {
   delegations: [],
 };
 
+/** One meeting, so the detail page renders rather than reporting it missing. */
+const TEST_MEETING = {
+  id: '00000000-0000-0000-0000-0000000000bb',
+  title: 'Smoke meeting',
+  held_at: '2026-09-01T10:00:00Z',
+  location: 'Mombasa',
+  kind: 'trustee',
+  priority: 'normal',
+  status: 'completed',
+  minutes_status: 'draft',
+  continues_meeting_id: null,
+  confidentiality: 'internal',
+  preparer: null,
+  continues: null,
+  meeting_attendees: [{ count: 0 }],
+};
+
 const ROUTES = [
   '/',
   '/project_info',
@@ -74,6 +91,7 @@ const ROUTES = [
   '/construction',
   '/governance',
   '/stakeholders',
+  '/meetings',
   '/finance',
   '/documents',
   '/communication',
@@ -175,6 +193,17 @@ try {
 
   await actAs(TEST_AUTHORITY);
 
+  // Served as an object or an array depending on which call it is, the way
+  // PostgREST answers .maybeSingle() and a plain select differently.
+  await page.route('**/rest/v1/meetings**', (route) => {
+    const single = route.request().url().includes('id=eq.');
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(single ? TEST_MEETING : [TEST_MEETING]),
+    });
+  });
+
   // A session in storage is what supabase-js reads on start, so this puts the
   // app in the state it would be in after a real sign-in.
   await page.addInitScript((profile) => {
@@ -216,6 +245,24 @@ try {
       `text=${text.length} errors=${pageErrors.length}${pageErrors[0] ? ` — ${pageErrors[0].slice(0, 120)}` : ''}`,
     );
   }
+
+  // --- the meeting record ---------------------------------------------------
+  // Every M3 record type renders at once here, so a shape mistake in any of
+  // them shows up as a page error rather than as a quiet blank.
+  pageErrors = [];
+  await page.goto(BASE + `/meetings/${TEST_MEETING.id}`, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(400);
+  const detail = (await page.textContent('body')) ?? '';
+  check(
+    pageErrors.length === 0 &&
+      /Katılımcılar|Who was there/.test(detail) &&
+      /Tutanak|The note/.test(detail) &&
+      /Kararlar|Decisions/.test(detail) &&
+      /Aksiyonlar|Actions/.test(detail) &&
+      /Açık sorular|Open questions/.test(detail),
+    '/meetings/:id  ',
+    `errors=${pageErrors.length}${pageErrors[0] ? ` — ${pageErrors[0].slice(0, 120)}` : ''}`,
+  );
 
   // --- the console offers only what the policies allow ----------------------
   // Its whole premise is that a control the database would refuse is never

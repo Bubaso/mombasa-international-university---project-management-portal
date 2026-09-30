@@ -55,6 +55,7 @@ export type ActiveTab =
   | 'construction'
   | 'governance'
   | 'stakeholders'
+  | 'meetings'
   | 'finance'
   | 'documents'
   | 'communication'
@@ -483,4 +484,140 @@ export interface StakeholderAttention {
   quietAfterDays: number;
   needsAnOwner: boolean;
   hasGoneQuiet: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Meetings, decisions and actions (M3)
+//
+// Mirrors supabase/migrations/0007. A decision, an action and an unanswered
+// question are each their own record rather than three paragraphs in a note,
+// because a paragraph cannot have an owner, a date or a state, and cannot be
+// carried into the next meeting.
+// ---------------------------------------------------------------------------
+
+export type MeetingKind =
+  'internal' | 'trustee' | 'official' | 'partner' | 'legal' | 'site' | 'community';
+
+export type MeetingStatus = 'planned' | 'in_progress' | 'completed' | 'cancelled';
+
+/** Draft until circulated, circulated until agreed, then fixed for good. */
+export type MinutesStatus = 'draft' | 'circulated' | 'final';
+
+export type PriorityLevel = 'low' | 'normal' | 'high' | 'critical';
+
+export type AttendanceRole = 'chair' | 'secretary' | 'participant' | 'observer';
+
+export type NoteSection = 'discussed' | 'decisions' | 'actions' | 'outcomes' | 'open_questions';
+
+export type ContentLanguage = 'tr' | 'en';
+
+export type VoteOutcome = 'unanimous' | 'majority' | 'carried_with_dissent' | 'deferred';
+
+export type DecisionStatus = 'in_force' | 'implemented' | 'rescinded' | 'suspended';
+
+export type ActionStatus = 'open' | 'in_progress' | 'blocked' | 'done' | 'cancelled';
+
+export type QuestionStatus = 'open' | 'answered' | 'escalated' | 'dropped';
+
+/**
+ * Someone named in the record: a portal user or somebody in the stakeholder
+ * register, never a name typed into a box. Exactly one of the two ids is set.
+ */
+export interface Party {
+  profileId: string | null;
+  stakeholderId: string | null;
+  name: string | null;
+}
+
+export interface Meeting {
+  id: string;
+  title: string;
+  heldAt: string;
+  location: string | null;
+  kind: MeetingKind;
+  priority: PriorityLevel;
+  status: MeetingStatus;
+  minutesStatus: MinutesStatus;
+  preparedByName: string | null;
+  continuesMeetingId: string | null;
+  continuesMeetingTitle: string | null;
+  confidentiality: Confidentiality;
+  attendeeCount: number;
+}
+
+export interface MeetingAttendee extends Party {
+  id: string;
+  meetingId: string;
+  roleAtMeeting: AttendanceRole;
+  attended: boolean;
+}
+
+export interface MeetingNote {
+  id: string;
+  meetingId: string;
+  section: NoteSection;
+  language: ContentLanguage;
+  body: string;
+  isMachineTranslation: boolean;
+  confidentiality: Confidentiality;
+}
+
+export interface Decision {
+  id: string;
+  meetingId: string | null;
+  referenceNo: string | null;
+  textEn: string | null;
+  textTr: string | null;
+  rationaleEn: string | null;
+  rationaleTr: string | null;
+  organ: string | null;
+  vote: VoteOutcome | null;
+  decidedOn: string;
+  status: DecisionStatus;
+  confidentiality: Confidentiality;
+  dissenters: (Party & { id: string; note: string | null })[];
+}
+
+export interface ActionItem extends Party {
+  id: string;
+  meetingId: string | null;
+  decisionId: string | null;
+  textEn: string | null;
+  textTr: string | null;
+  dueDate: string;
+  status: ActionStatus;
+  priority: PriorityLevel;
+  completedAt: string | null;
+  completionNote: string | null;
+  confidentiality: Confidentiality;
+}
+
+export interface OpenQuestion extends Party {
+  id: string;
+  meetingId: string | null;
+  questionEn: string | null;
+  questionTr: string | null;
+  detailEn: string | null;
+  detailTr: string | null;
+  status: QuestionStatus;
+  targetResolutionDate: string | null;
+  answerEn: string | null;
+  answerTr: string | null;
+  answeredAt: string | null;
+  confidentiality: Confidentiality;
+}
+
+/** What the next meeting starts from: everything still open. */
+export interface AgendaItem {
+  itemKind: 'action' | 'question';
+  id: string;
+  textEn: string | null;
+  textTr: string | null;
+  dueOn: string | null;
+  status: string;
+  priority: PriorityLevel;
+  raisedAtMeetingId: string | null;
+  ownerProfileId: string | null;
+  ownerStakeholderId: string | null;
+  overdue: boolean;
 }

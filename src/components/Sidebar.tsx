@@ -9,6 +9,7 @@ import {
   Building2,
   Users2,
   Handshake,
+  CalendarDays,
   Receipt,
   FolderGit2,
   MessagesSquare,
@@ -49,6 +50,7 @@ export const Sidebar: React.FC = () => {
     },
     { tab: 'governance', path: '/governance', label: t.nav.governance, icon: Users2 },
     { tab: 'stakeholders', path: '/stakeholders', label: t.nav.stakeholders, icon: Handshake },
+    { tab: 'meetings', path: '/meetings', label: t.nav.meetings, icon: CalendarDays },
     {
       tab: 'finance',
       path: '/finance',
