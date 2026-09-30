@@ -36,3 +36,11 @@ jobs:
 
       - name: Smoke test
         run: npm run test:smoke
+
+      # Authorization is the one thing that must never regress silently: the
+      # portal is open to external stakeholders, so these run on every change.
+      - name: Install PostgreSQL
+        run: sudo apt-get update && sudo apt-get install -y postgresql postgresql-contrib
+
+      - name: Authorization policy tests
+        run: npm run test:policies
