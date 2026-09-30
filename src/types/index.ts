@@ -379,6 +379,7 @@ export type StakeholderCategory =
   | 'legal'
   | 'contractor'
   | 'academia'
+  | 'ngo'
   | 'community_leader'
   | 'media'
   | 'donor'
@@ -507,7 +508,8 @@ export type PriorityLevel = 'low' | 'normal' | 'high' | 'critical';
 
 export type AttendanceRole = 'chair' | 'secretary' | 'participant' | 'observer';
 
-export type NoteSection = 'discussed' | 'decisions' | 'actions' | 'outcomes' | 'open_questions';
+export type NoteSection =
+  'agenda' | 'discussed' | 'decisions' | 'actions' | 'outcomes' | 'open_questions';
 
 export type ContentLanguage = 'tr' | 'en';
 

@@ -698,7 +698,7 @@ select pg_temp.check(
 
 select pg_temp.act_as('33333333-3333-3333-3333-333333333333');  -- trustee
 select pg_temp.check('an internal role sees the whole register',
-  (select count(*) from stakeholders), 5::bigint);
+  (select count(*) from stakeholders), 6::bigint);
 
 select pg_temp.act_as('77777777-7777-7777-7777-777777777777');  -- contractor
 select pg_temp.check('an external role sees only what was published',
@@ -1049,6 +1049,121 @@ select pg_temp.act_as('77777777-7777-7777-7777-777777777777');  -- contractor
 select pg_temp.check(
   'the agenda view answers to the same policies as its tables',
   (select count(*) from meeting_agenda_candidates), 0::bigint);
+
+
+-- ===========================================================================
+-- Suggestions and provenance (0008)
+-- ===========================================================================
+
+-- The suggestion box is internal business, with one exception: whoever made a
+-- suggestion can see what happened to it. A box you post into and never hear
+-- from again is not a box, it is a bin.
+select pg_temp.act_as('33333333-3333-3333-3333-333333333333');  -- trustee
+select pg_temp.check('an internal role sees every suggestion',
+  (select count(*) from suggestions), 2::bigint);
+
+select pg_temp.act_as('77777777-7777-7777-7777-777777777777');  -- contractor
+select pg_temp.check(
+  'somebody outside sees the one they proposed, and no others',
+  (select count(*) from suggestions), 1::bigint);
+select pg_temp.check('and it is theirs',
+  (select title from suggestions), 'Invite the county education office'::text);
+
+-- Anyone signed in may propose something — and can then see what became of
+-- it, because the proposer defaults to whoever is asking.
+insert into suggestions (title, kind)
+values ('Ask the surveyor about the boundary markers', 'meeting_topic');
+select pg_temp.check('anyone signed in may put something in the box',
+  (select count(*) from suggestions), 2::bigint);
+select pg_temp.check('and a suggestion box you cannot read back is a bin',
+  (select count(*) from suggestions
+    where title = 'Ask the surveyor about the boundary markers'),
+  1::bigint);
+
+-- Answering one is a decision about the project's own plan.
+do $$
+declare n int;
+begin
+  update suggestions set status = 'approved'
+  where id = '13000000-0000-0000-0000-000000000001';
+  get diagnostics n = row_count;
+  if n <> 0 then
+    raise exception 'FAIL a contractor approved their own suggestion';
+  end if;
+  raise notice 'ok   proposing something is not the same as approving it';
+end;
+$$;
+
+select pg_temp.act_as('44444444-4444-4444-4444-444444444444');  -- field team
+do $$
+declare n int;
+begin
+  update suggestions set status = 'rejected'
+  where id = '13000000-0000-0000-0000-000000000002';
+  get diagnostics n = row_count;
+  if n <> 0 then
+    raise exception 'FAIL the field team answered a suggestion';
+  end if;
+  raise notice 'ok   nor is being on the team';
+end;
+$$;
+
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- project director
+update suggestions set status = 'approved', reviewed_by = auth.uid(), reviewed_at = now()
+where id = '13000000-0000-0000-0000-000000000001';
+select pg_temp.check('the project director answers it',
+  (select status::text from suggestions where id = '13000000-0000-0000-0000-000000000001'),
+  'approved'::text);
+
+-- A suggestion with nobody behind it at all is refused. A signed-in caller
+-- always has one by default, so this is the case that matters: the import,
+-- writing with no session, where the free-text name is the only attribution
+-- there is.
+do $$
+begin
+  begin
+    insert into suggestions (title, kind, suggested_by_profile_id)
+    values ('From nobody', 'other', null);
+    raise exception 'FAIL a suggestion with no proposer was accepted';
+  exception
+    when check_violation then
+      raise notice 'ok   a suggestion always says who made it';
+  end;
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- The import can be run twice
+-- ---------------------------------------------------------------------------
+--
+-- "One time" is about the direction of the migration, not the number of
+-- attempts. Nobody gets an import right first go.
+
+select pg_temp.check('an imported record remembers where it came from',
+  (select source_url is null and source_id = 'notion-page-id-1' from stakeholders
+    where id = '0b000000-0000-0000-0000-000000000006'),
+  true);
+
+do $$
+begin
+  begin
+    insert into stakeholders (full_name, category, source_system, source_id)
+    values ('Imported Contact (again)', 'other', 'notion', 'notion-page-id-1');
+    raise exception 'FAIL the same page was imported twice';
+  exception
+    when unique_violation then
+      raise notice 'ok   the same page cannot arrive twice';
+  end;
+end;
+$$;
+
+-- And records made in the portal, which have no source, are unaffected by it.
+insert into stakeholders (full_name, category) values ('Made Here', 'other');
+insert into stakeholders (full_name, category) values ('Made Here Too', 'other');
+select pg_temp.check(
+  'while records made in the portal are unaffected by that rule',
+  (select count(*) from stakeholders where source_id is null and full_name like 'Made Here%'),
+  2::bigint);
 
 
 reset role;

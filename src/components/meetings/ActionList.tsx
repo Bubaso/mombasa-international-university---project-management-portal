@@ -35,9 +35,17 @@ export const ActionList: React.FC<{
   const { language } = useApp();
   const tr = language === 'tr';
   const actions = meetings.useActions(meetingId);
+  const notes = meetings.useNotes(meetingId);
   const [adding, setAdding] = useState(false);
 
   const rows = actions.data ?? [];
+
+  // Imported meetings carry their action text under the "actions" heading of
+  // the note, because Notion holds no owner and no date as fields and the
+  // importer will not invent either. A meeting with that text and no actions
+  // is the state that needs a person, so it says so rather than looking done.
+  const actionText = (notes.data ?? []).find((n) => n.section === 'actions');
+  const needsTriage = rows.length === 0 && actionText != null && actionText.body.trim() !== '';
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white shadow-xs">
@@ -64,7 +72,25 @@ export const ActionList: React.FC<{
           />
         )}
 
-        {rows.length === 0 && !adding ? (
+        {needsTriage && (
+          <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5">
+            <p className="text-[11px] font-semibold text-amber-900">
+              {tr
+                ? 'Bu toplantının aksiyonları metin olarak duruyor'
+                : 'This meeting’s actions are still only text'}
+            </p>
+            <p className="mt-1 text-[11px] leading-relaxed text-amber-900/80">
+              {tr
+                ? 'Tutanağın “Aksiyonlar” başlığında yazılılar, ama hiçbiri sorumlusu ve tarihi olan bir kayda dönüşmemiş — dolayısıyla hiçbiri gündeme düşmüyor ve hiçbiri gecikemiyor. Her biri için bir sorumlu ve bir tarih verin.'
+                : 'They are written under the “Actions” heading, but none has become a record with an owner and a date — so none reaches the agenda and none can be late. Each needs one of each.'}
+            </p>
+            <p className="mt-1.5 whitespace-pre-wrap text-[11px] text-amber-950">
+              {actionText.body}
+            </p>
+          </div>
+        )}
+
+        {rows.length === 0 && !adding && !needsTriage ? (
           <p className="text-[11px] text-slate-500">
             {tr
               ? 'Bu toplantıdan aksiyon çıkmamış. Çıkması gerekiyorsa şimdi eklemek, sonra hatırlamaktan kolaydır.'

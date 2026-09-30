@@ -56,6 +56,7 @@ create type stakeholder_category as enum (
   'legal',
   'contractor',
   'academia',
+  'ngo',
   'community_leader',
   'media',
   'donor',

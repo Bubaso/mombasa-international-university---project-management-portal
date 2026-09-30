@@ -13,6 +13,7 @@ migrations/
   0005_effective_authority.sql           authority as a union; the audit gaps
   0006_stakeholders.sql                  the register, the network, the log
   0007_meetings_decisions_actions.sql    minutes that produce commitments
+  0008_provenance_and_suggestions.sql    where a row came from; the suggestion box
 functions/
   ai-assistant/                          server-side model proxy
   invite-user/                           creates an account and its profile
@@ -110,6 +111,17 @@ by anyone, because a record that can be tidied up afterwards is not evidence:
 - **Final minutes** — once `meetings.minutes_status` is `final`, its notes
   refuse edits and deletes, and the status cannot go back to draft. A
   correction is an addendum, not a quiet edit.
+
+## Importing from Notion
+
+Every imported row records where it came from (`source_system`, `source_id`,
+`source_url`) under a unique constraint, so the import is idempotent: run it,
+look at what arrived, fix the mapping, run it again. "One time" was about the
+direction of the migration, not the number of attempts.
+
+The mapping, and more usefully the three things it cannot do, are in
+[`docs/NOTION-GOC.md`](../docs/NOTION-GOC.md). The importer is
+`scripts/import-notion.mjs`; start with `npm run import:notion -- --dry-run`.
 
 ## Running the tests
 

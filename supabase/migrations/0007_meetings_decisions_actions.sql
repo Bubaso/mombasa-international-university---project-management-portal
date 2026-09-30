@@ -87,8 +87,10 @@ create type priority_level as enum ('low', 'normal', 'high', 'critical');
 
 create type attendance_role as enum ('chair', 'secretary', 'participant', 'observer');
 
--- The five headings the team already writes under.
+-- The headings the team already writes under. 'agenda' is what was planned
+-- before the meeting; the rest is what happened in it.
 create type note_section as enum (
+  'agenda',
   'discussed',
   'decisions',
   'actions',
@@ -612,10 +614,19 @@ create policy decision_documents_delete on decision_documents
 alter table action_items enable row level security;
 alter table action_items force row level security;
 
--- An action reaches its owner even when the meeting behind it does not: a
--- contractor who undertook to do something must be able to see what they
--- undertook, without being shown the discussion around it.
-create or replace function app.owns_action(p_profile uuid, p_stakeholder uuid)
+-- Is the caller the person this row names?
+--
+-- A row names somebody either by their portal account or by their entry in
+-- the stakeholder register, and the caller may be reachable through either.
+-- It has to be security definer: the register is not readable by the people
+-- this most often answers "yes" for — a contractor cannot see their own
+-- contact record, by design — so a policy that asked the question inline
+-- would answer no for exactly the cases it exists to allow.
+--
+-- That is what lets an action reach its owner even when the meeting behind it
+-- does not: somebody who undertook to do a thing must be able to see what
+-- they undertook, without being shown the discussion around it.
+create or replace function app.caller_is(p_profile uuid, p_stakeholder uuid)
 returns boolean
 language sql
 stable
@@ -631,7 +642,7 @@ $$;
 
 create policy action_items_read on action_items
   for select using (
-    app.owns_action(owner_profile_id, owner_stakeholder_id)
+    app.caller_is(owner_profile_id, owner_stakeholder_id)
     or app.can_see_via_meeting(confidentiality, meeting_id)
     or app.has_grant('action_items', id, 'read')
   );
@@ -676,8 +687,8 @@ create trigger action_items_owner_limits
 
 create policy action_items_owner_update on action_items
   for update
-  using (app.owns_action(owner_profile_id, owner_stakeholder_id))
-  with check (app.owns_action(owner_profile_id, owner_stakeholder_id));
+  using (app.caller_is(owner_profile_id, owner_stakeholder_id))
+  with check (app.caller_is(owner_profile_id, owner_stakeholder_id));
 
 create policy action_items_manage_update on action_items
   for update
@@ -693,7 +704,7 @@ alter table open_questions force row level security;
 
 create policy open_questions_read on open_questions
   for select using (
-    app.owns_action(owner_profile_id, owner_stakeholder_id)
+    app.caller_is(owner_profile_id, owner_stakeholder_id)
     or app.can_see_via_meeting(confidentiality, meeting_id)
   );
 

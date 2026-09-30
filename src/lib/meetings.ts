@@ -70,6 +70,7 @@ export const attendanceRoleLabel = (r: AttendanceRole, l: Language) => pick(ATTE
  * written in.
  */
 const NOTE_SECTIONS: Record<NoteSection, Bilingual> = {
+  agenda: { tr: 'Gündem', en: 'Agenda' },
   discussed: { tr: 'Görüşülenler', en: 'Discussed' },
   decisions: { tr: 'Kararlar', en: 'Decisions' },
   actions: { tr: 'Aksiyonlar', en: 'Actions' },
@@ -78,6 +79,7 @@ const NOTE_SECTIONS: Record<NoteSection, Bilingual> = {
 };
 
 export const NOTE_SECTION_VALUES: NoteSection[] = [
+  'agenda',
   'discussed',
   'decisions',
   'actions',

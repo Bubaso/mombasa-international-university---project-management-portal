@@ -16,7 +16,8 @@
     "test:smoke": "npm run build:smoke && node tests/smoke.mjs",
     "verify": "npm run typecheck && npm run lint && npm run format:check && npm run build && npm run test:smoke && npm run test:policies",
     "test:policies": "bash tests/db/run.sh",
-    "build:smoke": "VITE_SUPABASE_URL=https://smoke.supabase.co VITE_SUPABASE_ANON_KEY=smoke-anon-key vite build"
+    "build:smoke": "VITE_SUPABASE_URL=https://smoke.supabase.co VITE_SUPABASE_ANON_KEY=smoke-anon-key vite build",
+    "import:notion": "node scripts/import-notion.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.2",

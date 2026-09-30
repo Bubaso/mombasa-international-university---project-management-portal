@@ -16,6 +16,7 @@ const CATEGORY_LABELS: Record<StakeholderCategory, Bilingual> = {
   legal: { tr: 'Hukuk', en: 'Legal' },
   contractor: { tr: 'Müteahhit', en: 'Contractor' },
   academia: { tr: 'Akademi', en: 'Academia' },
+  ngo: { tr: 'Sivil toplum', en: 'NGO' },
   community_leader: { tr: 'Topluluk lideri', en: 'Community leader' },
   media: { tr: 'Medya', en: 'Media' },
   donor: { tr: 'Bağışçı', en: 'Donor' },

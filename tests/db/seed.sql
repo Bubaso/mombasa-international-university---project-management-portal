@@ -187,3 +187,27 @@ insert into open_questions
    current_date + 14, '22222222-2222-2222-2222-222222222222', 'internal');
 
 reset role;
+
+-- ---------------------------------------------------------------------------
+-- Suggestions and provenance (0008)
+-- ---------------------------------------------------------------------------
+
+set role postgres;
+
+insert into suggestions
+  (id, title, details, kind, status, suggested_by_stakeholder_id, suggested_by_name,
+   confidentiality) values
+  -- Proposed by somebody outside the organisation, which is the case the
+  -- suggestion box exists for.
+  ('13000000-0000-0000-0000-000000000001', 'Invite the county education office',
+   'They asked to be kept in the loop.', 'contact', 'pending_review',
+   '0b000000-0000-0000-0000-000000000004', 'Contractor Lead', 'internal'),
+  ('13000000-0000-0000-0000-000000000002', 'Move the trustee session earlier',
+   null, 'meeting_topic', 'pending_review', null, 'Someone in Notion', 'internal');
+
+-- A record that came from somewhere else, so provenance can be exercised.
+insert into stakeholders (id, full_name, category, confidentiality, source_system, source_id)
+values ('0b000000-0000-0000-0000-000000000006', 'Imported Contact', 'other', 'internal',
+        'notion', 'notion-page-id-1');
+
+reset role;
