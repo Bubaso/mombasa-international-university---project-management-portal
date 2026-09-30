@@ -20,6 +20,7 @@ migrations/
   0012_document_vault.sql                documents, versions, and who read them
   0013_site_and_works.sql                the breakdown, evidenced progress, quantities
   0014_own_profile_is_readable.sql       so a locked-out person can be told why
+  0015_budget_and_money.sql              the four figures, vouchers, the badge
 functions/
   ai-assistant/                          server-side model proxy
   invite-user/                           creates an account and its profile
@@ -105,6 +106,8 @@ besides a tier, lets someone reach a row:
 | `document_access`                                     | to answer for the project — or to be the reader  |
 | `work_packages`, `site_tasks`, `task_progress`        | the block to be readable; to report, to be on it |
 | `boq_versions`, `boq_items`, `valuations`             | to answer for money, or to be the surveyor on it |
+| `budget_lines`, `donations`                           | a role that answers for money                    |
+| `payment_vouchers`                                    | that, or to be the one who asked to be paid      |
 
 Every one of them narrows. None of them lifts: attending a confidential
 meeting does not raise an advocate's clearance to confidential, and being the
@@ -136,6 +139,8 @@ by anyone, because a record that can be tidied up afterwards is not evidence:
 - **`task_progress`** — what a task was reported at, by whom, on what evidence.
   A progress history that can be tidied afterwards tells you what somebody
   currently wishes had happened.
+- **`voucher_approvals`** — every ruling on a payment, with who made it and
+  which role they were acting under, including the ones later reversed.
 
 Each of these revokes `insert`/`update`/`delete` from `authenticated`
 explicitly, because 0003's default privileges grant them to every new table.
@@ -204,6 +209,51 @@ one that asks: somebody who has read it says so once, and after that
 `site_task_conflicts` cannot forget. The work is still not blocked — the
 project did once resolve unanimously to keep building under an order, and a
 portal that refused to record that would only have removed the trace.
+
+## The one badge nobody can award themselves
+
+`financial_transactions.audited_at` and `audited_by` are not in the update
+grant. `authenticated` cannot write them by any statement, correct or
+otherwise. The only thing that sets them is:
+
+```sql
+select public.mark_audited('<transaction id>', 'Vouched to invoice.');
+```
+
+which checks `app.acts_as('audit_committee', 'external_auditor')` first,
+re-checks that the caller could have read the transaction (definer rights
+bypass the policies, so that has to be explicit), and fills the columns once.
+
+Not the director and not an administrator. A badge the spender can award
+themselves says nothing to a donor, and one bad "audited" makes every other
+figure in the portal a question.
+
+The rest of M8 follows the same rule — a fact that follows from other facts is
+never separately assertable:
+
+- **Budget, committed, spent, remaining** are a view over the vouchers
+  (`budget_position`). An approved voucher is committed, a paid one is spent,
+  and remaining subtracts both, so money promised comes off the line before it
+  moves. Stored side by side these four begin to disagree, and the old summary
+  was that disagreement made visible (M8-02).
+- **Every amount carries its currency and the rate**, and the base figure is
+  generated from the two. The rate lives on the row, not in a table the sums
+  look up later, because a later table silently restates history (M8-03).
+- **`verified` is generated** from whether a document is attached, on both
+  transactions and donation tranches (M8-07).
+- **A pledge is not a receipt.** `donation_position` reports what was
+  promised, what arrived, and the gap — never their sum (M8-08).
+- **Approval thresholds are rows**, so a board can change its own and the
+  ones that applied stay auditable. The trigger refuses a ruling from below
+  the band, refuses anyone ruling on their own request, and stamps what the
+  line had left at the moment of the decision, so "was this approved knowing
+  the line was overspent" is answerable afterwards (M8-04, M8-05).
+
+`app.required_approvers()` is security definer on purpose: the bands are a
+rule of the institution, not rows belonging to the caller. Read under the
+caller's own policies, a contractor's lookup comes back empty and the refusal
+reads "no threshold covers this amount" — untrue, and a worse answer than the
+real one.
 
 ## Importing from Notion
 

@@ -1,7 +1,6 @@
 import { supabase } from '../lib/supabase';
 import {
   type LegalCase,
-  type FinancialTransaction,
   type CommunicationThread,
   type TrusteeMember,
   type DeadlineNotification,
@@ -48,15 +47,6 @@ export const fetchLegalCases = async (): Promise<LegalCase[]> => {
   return keysToCamel(data);
 };
 
-export const fetchTransactions = async (): Promise<FinancialTransaction[]> => {
-  const { data, error } = await supabase
-    .from('financial_transactions')
-    .select('*')
-    .order('created_at', { ascending: false });
-  if (error) throw error;
-  return keysToCamel(data);
-};
-
 export const fetchCommunicationThreads = async (): Promise<CommunicationThread[]> => {
   const { data, error } = await supabase
     .from('communication_threads')
@@ -89,17 +79,6 @@ export const addLegalCase = async (data: Partial<LegalCase>) => {
   const payload = keysToSnake(data);
   const { data: inserted, error } = await supabase
     .from('legal_cases')
-    .insert(payload)
-    .select()
-    .single();
-  if (error) throw error;
-  return keysToCamel(inserted);
-};
-
-export const addTransaction = async (tx: Partial<FinancialTransaction>) => {
-  const payload = keysToSnake(tx);
-  const { data: inserted, error } = await supabase
-    .from('financial_transactions')
     .insert(payload)
     .select()
     .single();

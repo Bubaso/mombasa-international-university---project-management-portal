@@ -376,22 +376,155 @@ export interface FinancialTransaction {
     | 'land_administration'
     | 'statutory_compliance';
   description: string;
-  amountKShs: number;
   payee: string;
-  syncedWithAccounting: boolean;
-  syncSource: 'QuickBooks' | 'SAP B1' | 'Xero' | 'Tally' | 'Manual';
-  verifiedByAudit: boolean;
+  amount: number;
+  currency: CurrencyCode;
+  fxRateToKes: number;
+  /** Generated from amount × rate. Never sent. */
+  amountKes: number;
+  budgetLineId: string | null;
+  paymentVoucherId: string | null;
+  documentId: string | null;
+  /** Generated from whether a document is attached (M8-07). */
+  verified: boolean;
+  /**
+   * Written only by public.mark_audited(), which admits nobody but the audit
+   * committee and the external auditor. There is no setter for this in the
+   * client because there is no privilege behind one (M8-06).
+   */
+  auditedAt: string | null;
+  auditedByName: string | null;
+  auditNote: string | null;
+  confidentiality: Confidentiality;
 }
 
-export interface AccountingApiConfig {
-  provider: 'QuickBooks' | 'SAP B1' | 'Xero' | 'Tally';
-  apiUrl: string;
-  apiKeyMasked: string;
-  status: 'connected' | 'disconnected' | 'syncing' | 'error';
-  lastSyncTimestamp: string;
-  syncFrequency: 'hourly' | 'daily' | 'realtime';
-  autoSyncBills: boolean;
-  autoSyncAssets: boolean;
+/** Mirrors voucher_state in supabase/migrations/0015. */
+export type VoucherState = 'requested' | 'approved' | 'rejected' | 'paid' | 'withdrawn';
+
+export type DonationState = 'pledged' | 'partly_received' | 'received' | 'lapsed';
+
+export interface BudgetCategory {
+  id: string;
+  code: string;
+  nameEn: string;
+  nameTr: string | null;
+  sequence: number;
+}
+
+export interface BudgetLine {
+  id: string;
+  budgetCategoryId: string;
+  categoryName: string | null;
+  phaseId: string | null;
+  workPackageId: string | null;
+  constructionBlockId: string | null;
+  titleEn: string;
+  titleTr: string | null;
+  amount: number;
+  currency: CurrencyCode;
+  amountKes: number;
+  confidentiality: Confidentiality;
+}
+
+/**
+ * The four figures (M8-02), computed rather than stored.
+ *
+ * Committed is approved and not yet paid; spent is paid; remaining subtracts
+ * both. Keeping them apart is the whole point — the old summary added
+ * commitments into spend and flattered every number it touched.
+ */
+export interface BudgetPosition {
+  budgetLineId: string;
+  budgetCategoryId: string;
+  titleEn: string;
+  titleTr: string | null;
+  currency: CurrencyCode;
+  budgetKes: number;
+  committedKes: number;
+  spentKes: number;
+  remainingKes: number;
+}
+
+export interface CategorySpend {
+  budgetCategoryId: string;
+  code: string;
+  nameEn: string;
+  nameTr: string | null;
+  sequence: number;
+  budgetKes: number;
+  committedKes: number;
+  spentKes: number;
+  remainingKes: number;
+  lineCount: number;
+}
+
+export interface PaymentVoucher {
+  id: string;
+  referenceNo: string;
+  budgetLineId: string | null;
+  budgetLineTitle: string | null;
+  payee: string;
+  purpose: string;
+  requestedByName: string | null;
+  requestedAt: string;
+  state: VoucherState;
+  valuationId: string | null;
+  amount: number;
+  currency: CurrencyCode;
+  amountKes: number;
+  decidedByName: string | null;
+  decidedAt: string | null;
+  decisionNote: string | null;
+  /** What the line had left when the ruling was made. */
+  budgetRemainingAtDecision: number | null;
+  paidAt: string | null;
+  confidentiality: Confidentiality;
+}
+
+export interface VoucherApproval {
+  id: string;
+  paymentVoucherId: string;
+  decision: VoucherState;
+  decidedByName: string | null;
+  decidedAt: string;
+  actingAs: string;
+  note: string | null;
+}
+
+export interface ApprovalThreshold {
+  id: string;
+  minAmountKes: number;
+  requiredRoles: string[];
+  note: string | null;
+}
+
+export interface Donation {
+  id: string;
+  donorName: string;
+  donorStakeholderId: string | null;
+  pledgedOn: string;
+  state: DonationState;
+  pledgedAmount: number;
+  pledgedCurrency: CurrencyCode;
+  pledgedAmountKes: number;
+  /** Summed from the tranches that actually arrived. */
+  receivedKes: number;
+  outstandingKes: number;
+  trancheCount: number;
+  unevidencedTranches: number;
+  confidentiality: Confidentiality;
+}
+
+export interface DonationTranche {
+  id: string;
+  donationId: string;
+  receivedOn: string;
+  receivedAmount: number;
+  receivedCurrency: CurrencyCode;
+  receivedAmountKes: number;
+  documentId: string | null;
+  verified: boolean;
+  note: string | null;
 }
 
 export interface CommunicationThread {

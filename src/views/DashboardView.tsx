@@ -3,6 +3,8 @@ import { useApp } from '../context/AppContext';
 import * as queries from '../api/hooks';
 import * as siteQueries from '../api/siteHooks';
 import { progressLabel } from '../lib/site';
+import * as money from '../api/moneyHooks';
+import { share } from '../lib/money';
 import { QueryStatus } from '../components/QueryStatus';
 import { Scale, Building2, Receipt, Flame, Server, Compass, ArrowUpRight } from 'lucide-react';
 
@@ -21,7 +23,9 @@ export const DashboardView: React.FC = () => {
   const legalCases = legalCasesQuery.data ?? [];
   const transactionsQuery = queries.useTransactions();
   const transactions = transactionsQuery.data ?? [];
-  const FINANCIAL_SUMMARY: any = { breakdown: [] };
+  const categorySpendQuery = money.useCategorySpend();
+  const categorySpend = categorySpendQuery.data ?? [];
+  const spendTotal = categorySpend.reduce((acc, c) => acc + c.spentKes, 0);
 
   // Overall construction progress, averaged over the blocks somebody has
   // actually reported on (M7-03). Two things this deliberately does not do:
@@ -452,24 +456,29 @@ export const DashboardView: React.FC = () => {
 
             {/* Capital Allocation Breakdown */}
             <div className="space-y-2 text-xs">
+              {/* M8-09. The heading used to name a figure — "KShs 807M" —
+                  that no query produced, over a breakdown that was an empty
+                  stub. Both come from category_spend now, so the total is
+                  whatever the budget actually says and the bars move when it
+                  does. */}
               <div className="text-[11px] font-bold uppercase text-slate-500 tracking-wider">
-                {language === 'tr' ? 'Harcama Dağılımı (KShs 807M):' : 'Capital Allocation:'}
+                {language === 'tr' ? 'Harcama Dağılımı:' : 'Capital Allocation:'}
               </div>
               <div className="space-y-1.5">
-                {FINANCIAL_SUMMARY.breakdown.slice(0, 3).map((item: any, idx: number) => (
-                  <div key={idx} className="space-y-0.5">
+                {categorySpend.slice(0, 3).map((item) => (
+                  <div key={item.budgetCategoryId} className="space-y-0.5">
                     <div className="flex items-center justify-between text-[11px]">
                       <span className="text-slate-700 truncate max-w-[180px]">
-                        {language === 'tr' ? item.categoryTr : item.categoryEn}
+                        {language === 'tr' ? (item.nameTr ?? item.nameEn) : item.nameEn}
                       </span>
                       <span className="font-mono font-bold text-slate-900">
-                        {(item.amountKShs / 1000000).toFixed(1)}M
+                        {(item.spentKes / 1000000).toFixed(1)}M
                       </span>
                     </div>
                     <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
                       <div
                         className="h-full bg-blue-500 rounded-full"
-                        style={{ width: `${item.percent}%` }}
+                        style={{ width: `${share(item.spentKes, spendTotal) ?? 0}%` }}
                       />
                     </div>
                   </div>

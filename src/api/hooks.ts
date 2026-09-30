@@ -3,6 +3,7 @@ import * as api from './index';
 import * as legal from './legal';
 import * as documents from './documents';
 import * as siteApi from './site';
+import * as moneyApi from './money';
 
 export const useLegalCases = () =>
   useQuery({ queryKey: ['legalCases'], queryFn: api.fetchLegalCases });
@@ -21,8 +22,9 @@ export const useConstructionBlocks = () =>
  */
 export const useDocumentVault = () =>
   useQuery({ queryKey: ['documents'], queryFn: documents.fetchDocuments });
+/** The same read the finance screens use; 0015 changed the ledger's shape. */
 export const useTransactions = () =>
-  useQuery({ queryKey: ['transactions'], queryFn: api.fetchTransactions });
+  useQuery({ queryKey: ['transactions'], queryFn: moneyApi.fetchTransactions });
 export const useCommunicationThreads = () =>
   useQuery({ queryKey: ['communications'], queryFn: api.fetchCommunicationThreads });
 export const useTrustees = () => useQuery({ queryKey: ['trustees'], queryFn: api.fetchTrustees });
@@ -41,14 +43,6 @@ export const useAddLegalCase = () => {
   return useMutation({
     mutationFn: api.addLegalCase,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['legalCases'] }),
-  });
-};
-
-export const useAddTransaction = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: api.addTransaction,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['transactions'] }),
   });
 };
 

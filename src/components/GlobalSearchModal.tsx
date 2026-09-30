@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import * as queries from '../api/hooks';
-import { workStateLabel } from '../lib/site';
+import { workStateLabel, money as fmtMoney } from '../lib/site';
 import { useNavigate } from 'react-router-dom';
 import { Search, X, Scale, FileText, Building2, Users, DollarSign } from 'lucide-react';
 
@@ -324,7 +324,7 @@ export const GlobalSearchModal: React.FC = () => {
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-semibold text-slate-900">{tx.description}</span>
                       <span className="font-mono text-emerald-700 font-semibold">
-                        KShs {tx.amountKShs.toLocaleString()}
+                        {fmtMoney(tx.amount, tx.currency)}
                       </span>
                     </div>
                     <div className="text-[11px] text-slate-500 mt-0.5">

@@ -249,6 +249,76 @@ const TEST_CONFLICT = {
   acknowledged: false,
 };
 
+/**
+ * One transaction with a receipt and no audit, and one with neither. The
+ * badge is the point: the old screen set it from a boolean with a default,
+ * so it appeared on things nobody had audited.
+ */
+const TEST_TRANSACTIONS = [
+  {
+    id: '00000000-0000-0000-0000-0000000000a1',
+    reference_no: 'PV-1001',
+    date: '2026-09-01',
+    category: 'civil_construction',
+    description: 'Substructure, first claim',
+    payee: 'Smoke Contracting',
+    external_reference: null,
+    amount: 2000000,
+    currency: 'KES',
+    fx_rate_to_kes: 1,
+    amount_kes: 2000000,
+    budget_line_id: null,
+    payment_voucher_id: null,
+    document_id: '00000000-0000-0000-0000-0000000000d1',
+    verified: true,
+    audited_at: null,
+    audit_note: null,
+    confidentiality: 'internal',
+    auditor: null,
+  },
+  {
+    id: '00000000-0000-0000-0000-0000000000a2',
+    reference_no: 'PV-1002',
+    date: '2026-09-10',
+    category: 'legal_defence',
+    description: 'Counsel fees',
+    payee: 'Smoke Advocates',
+    external_reference: null,
+    amount: 20000,
+    currency: 'USD',
+    fx_rate_to_kes: 130,
+    amount_kes: 2600000,
+    budget_line_id: null,
+    payment_voucher_id: null,
+    // No document, so it reads as unverified whatever anybody would prefer.
+    document_id: null,
+    verified: false,
+    audited_at: null,
+    audit_note: null,
+    confidentiality: 'internal',
+    auditor: null,
+  },
+];
+
+/** Pledged, received and the gap between them, never added together. */
+const TEST_DONATIONS = [
+  {
+    donation_id: '00000000-0000-0000-0000-0000000000b1',
+    donor_name: 'A Turkish foundation',
+    donor_stakeholder_id: null,
+    pledged_on: '2026-06-01',
+    state: 'partly_received',
+    pledged_currency: 'TRY',
+    pledged_amount: 1000000,
+    pledged_amount_kes: 4000000,
+    received_kes: 1200000,
+    outstanding_kes: 2800000,
+    tranche_count: 1,
+    unevidenced_tranches: 0,
+    confidentiality: 'internal',
+  },
+];
+
 const ROUTES = [
   '/',
   '/project_info',
@@ -370,6 +440,22 @@ try {
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify([TEST_CASE]),
+    }),
+  );
+
+  await page.route('**/rest/v1/financial_transactions**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(TEST_TRANSACTIONS),
+    }),
+  );
+
+  await page.route('**/rest/v1/donation_position**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(TEST_DONATIONS),
     }),
   );
 
@@ -589,6 +675,65 @@ try {
     'an outside firm is not offered the planning controls',
   );
   await actAs(TEST_AUTHORITY);
+
+  // --- money says what is backed and what is only claimed -------------------
+  // Three of the things Faz 0 took the words off lived on this screen.
+  pageErrors = [];
+  await page.goto(BASE + '/finance', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(400);
+  await page
+    .locator('button')
+    .filter({ hasText: /^Kasa defteri$|^Ledger$/ })
+    .first()
+    .click();
+  await page.waitForTimeout(400);
+  const ledgerView = (await page.textContent('body')) ?? '';
+  check(
+    pageErrors.length === 0 && /denetlenmedi|not audited/.test(ledgerView),
+    'nothing is audited until an auditor says so',
+  );
+  // Counted rather than searched for: the page legitimately explains the word
+  // "audited" in its subtitle, so asserting the word is absent would be a
+  // test about the prose. Both fixtures carry no audit, so both rows say so.
+  check(
+    (ledgerView.match(/denetlenmedi|not audited/g) ?? []).length === TEST_TRANSACTIONS.length,
+    'and every row says so, because none of the data carries a badge',
+  );
+  check(
+    /belgesiz|no document/.test(ledgerView),
+    'a transaction with nothing attached is named as such',
+  );
+  check(
+    // Recorded in dollars, shown in dollars, with the base figure beside it.
+    /\$ 20,000/.test(ledgerView) && /KShs 2,600,000/.test(ledgerView),
+    'an amount keeps the currency it was recorded in, and shows the base too',
+  );
+
+  // A director may keep the ledger; awarding the badge is not theirs.
+  check(
+    /İşlem kaydet|Record a transaction/.test(ledgerView),
+    'a director may record a transaction',
+  );
+  check(
+    !/Denetledim|Mark audited/.test(ledgerView),
+    'but is not offered the control that marks one audited',
+  );
+
+  pageErrors = [];
+  await page
+    .locator('button')
+    .filter({ hasText: /^Bağışlar$|^Donations$/ })
+    .first()
+    .click();
+  await page.waitForTimeout(400);
+  const donationView = (await page.textContent('body')) ?? '';
+  check(
+    pageErrors.length === 0 &&
+      /KShs 4,000,000/.test(donationView) &&
+      /KShs 1,200,000/.test(donationView) &&
+      /KShs 2,800,000/.test(donationView),
+    'a pledge, what arrived and the gap are three separate figures',
+  );
 
   // --- the console offers only what the policies allow ----------------------
   // Its whole premise is that a control the database would refuse is never
