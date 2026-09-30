@@ -459,9 +459,24 @@ applies nothing and the error names the statement that stopped it; the last
 block records every migration as applied so a later `supabase db push` does
 not start again from 0001.
 
-If the editor struggles with the size, apply the files in
-`supabase/migrations/` one at a time in numeric order instead. Each is
-self-contained, and you then know exactly which one stopped.
+**A large paste is the thing that goes wrong.** A browser editor that
+truncates it reports _Success_ and changes nothing: the text stops before
+`commit;`, and the open transaction is discarded when the connection returns
+to the pool, so no error is ever raised. So every generated file ends with a
+`select` that returns a row — **no row at the bottom means the paste did not
+finish**, whatever the editor said.
+
+For anything over about 100 KB, split it:
+
+```bash
+npm run sql:bundle -- --from 4 --split
+```
+
+Thirteen files in `supabase/bundled/split/`, largest 39 KB, applied in
+numeric order one paste each. Each prints its version and the running table
+count, so you can see it climb: 0004 → 16, 0007 → 33, 0010 → 51, 0013 → 69,
+0016 → 88. Two of them add no tables (0005 is functions, 0014 is a policy),
+so a number that does not move there is correct.
 
 **If the project already has some of these applied by hand.** `db push` works
 out what to run from `supabase_migrations.schema_migrations`, which is written

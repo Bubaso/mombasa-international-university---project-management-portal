@@ -17,9 +17,16 @@
  * state to diagnose, because every policy raises and none of it looks like a
  * migration problem from outside.
  *
+ * Every file ends with a SELECT that returns a row. That is not decoration.
+ * A DDL script produces no output, so an editor reports "Success" whether the
+ * work committed or the paste was cut short before `commit;` and the open
+ * transaction was discarded when the connection went back to the pool. No
+ * visible row at the end means the paste did not finish.
+ *
  * Usage:
- *   node scripts/bundle-migrations.mjs            # everything
+ *   node scripts/bundle-migrations.mjs            # everything, one file
  *   node scripts/bundle-migrations.mjs --from 4   # 0004 onwards
+ *   node scripts/bundle-migrations.mjs --from 4 --split   # one file each
  */
 import { readdirSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
@@ -92,11 +99,64 @@ parts.push(
   '',
 );
 
+/** Proof of work, so "Success" with no row is recognisably a cut-off paste. */
+function confirmation(label) {
+  return [
+    `select '${label}' as applied,`,
+    '  (select count(*) from information_schema.tables',
+    "    where table_schema = 'public') as public_tables;",
+    '',
+  ];
+}
+
+parts.push(
+  ...confirmation(`${selected[0].slice(0, 4)}-${selected[selected.length - 1].slice(0, 4)}`),
+);
+
 const outDir = join(root, 'supabase', 'bundled');
 mkdirSync(outDir, { recursive: true });
-const target = join(outDir, `migrations-${selected[0].slice(0, 4)}-onwards.sql`);
-writeFileSync(target, parts.join('\n'), 'utf8');
 
-const kb = (Buffer.byteLength(parts.join('\n'), 'utf8') / 1024).toFixed(0);
-console.log(`${selected.length} migration(s) → ${target} (${kb} KB)`);
-for (const name of selected) console.log(`  ${name}`);
+const split = process.argv.includes('--split');
+
+if (split) {
+  // One file per migration. A 230 KB paste is the thing that went wrong once
+  // already: each of these is small enough to arrive whole, and a failure
+  // then names which migration stopped instead of losing all of them.
+  const splitDir = join(outDir, 'split');
+  mkdirSync(splitDir, { recursive: true });
+  for (const name of selected) {
+    const version = name.slice(0, 4);
+    const body = [
+      `-- ${name} — generated; paste this whole file and run it once.`,
+      '--',
+      '-- One transaction. If it fails nothing is applied and the error names',
+      '-- the statement. If it succeeds you will see a row at the bottom; no',
+      '-- row means the paste was cut short.',
+      '',
+      'begin;',
+      '',
+      readFileSync(join(migrationsDir, name), 'utf8').trimEnd(),
+      '',
+      'commit;',
+      '',
+      ...confirmation(version),
+    ].join('\n');
+    const file = join(splitDir, name);
+    writeFileSync(file, body, 'utf8');
+    console.log(`  ${name}  ${(Buffer.byteLength(body, 'utf8') / 1024).toFixed(0)} KB`);
+  }
+  console.log(`\n${selected.length} file(s) → ${splitDir}`);
+  console.log('Apply them in numeric order, one paste each.');
+} else {
+  const target = join(outDir, `migrations-${selected[0].slice(0, 4)}-onwards.sql`);
+  writeFileSync(target, parts.join('\n'), 'utf8');
+  const kb = (Buffer.byteLength(parts.join('\n'), 'utf8') / 1024).toFixed(0);
+  console.log(`${selected.length} migration(s) → ${target} (${kb} KB)`);
+  for (const name of selected) console.log(`  ${name}`);
+  if (Number(kb) > 100) {
+    console.log(
+      `\nThat is a large paste for a browser editor. If it reports success and` +
+        ` nothing changed, the paste was truncated — use --split instead.`,
+    );
+  }
+}
