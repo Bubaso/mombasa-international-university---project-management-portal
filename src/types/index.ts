@@ -1,19 +1,50 @@
 export type Language = 'en' | 'tr';
 
+/** Mirrors the app_role enum in supabase/migrations/0001. */
 export type UserRole =
-  | 'trustee' // Board of Trustees (Shahbal, UEF, Afrika Vakfı)
-  | 'executive' // Board of Directors & Project Execs
-  | 'legal_counsel' // Advocates (Simon Karina, Khatib & Co, SC)
-  | 'contractor_qs' // Site Engineers, QS Stephen Ndibui Kamau, Contractors
-  | 'auditor_finance' // Audit Committee, Financial Officers
-  | 'regulatory_cue'; // CUE, Land Registrar, County Government
+  // internal
+  | 'admin'
+  | 'project_director'
+  | 'field_team'
+  | 'trustee'
+  | 'board_director'
+  | 'audit_committee'
+  // external
+  | 'legal_counsel'
+  | 'contractor'
+  | 'quantity_surveyor'
+  | 'external_auditor'
+  | 'donor'
+  | 'observer'
+  | 'consultant';
 
+export const INTERNAL_ROLES = [
+  'admin',
+  'project_director',
+  'field_team',
+  'trustee',
+  'board_director',
+  'audit_committee',
+] as const satisfies readonly UserRole[];
+
+export function isInternalRole(role: UserRole): boolean {
+  return (INTERNAL_ROLES as readonly UserRole[]).includes(role);
+}
+
+/** Mirrors the confidentiality enum. */
+export type Confidentiality = 'public' | 'internal' | 'confidential' | 'restricted';
+
+/**
+ * A signed-in person, read from their profile row. The database decides what
+ * they may see; this is only for addressing them and shaping the UI.
+ */
 export interface CurrentUser {
   id: string;
   name: string;
   email: string;
   role: UserRole;
-  organization: string;
+  organization: string | null;
+  clearance: Confidentiality;
   avatar?: string;
 }
 
@@ -148,6 +179,8 @@ export interface CommunicationThread {
   urgent: boolean;
   messages: {
     id: string;
+    /** The profile id of the sender; identity is never matched on a name. */
+    senderId: string;
     sender: string;
     role: UserRole;
     timestamp: string;

@@ -1,13 +1,17 @@
 /**
- * Smoke test: every route and every legal sub-tab must render without a
- * runtime error, with no backend configured.
+ * Smoke test: the sign-in gate holds, and once past it every route and every
+ * legal sub-tab renders without a runtime error while the backend returns
+ * nothing.
  *
- * That last condition is the point. The app reads its data from Supabase, and
- * when it is unreachable every query falls back to an empty list — which is
- * exactly the state that used to crash two of the legal sub-tabs and blank the
- * rest. Running with no credentials keeps that path covered.
+ * That last condition is the point. Empty data is exactly the state that used
+ * to crash two of the legal sub-tabs and blank the rest, so it stays covered.
  *
- * Usage: npm run build && npm run test:smoke
+ * Supabase is intercepted rather than run: the app is built against a dummy
+ * project and every call to it is answered here. There is deliberately no
+ * bypass inside the application — a test-only way past the gate is a way past
+ * the gate.
+ *
+ * Usage: npm run test:smoke
  */
 import { chromium } from 'playwright';
 import { spawn } from 'node:child_process';
@@ -26,6 +30,18 @@ function resolveChromium() {
   const candidates = [process.env.PLAYWRIGHT_CHROMIUM_PATH, '/opt/pw-browsers/chromium'];
   return candidates.find((p) => p && existsSync(p));
 }
+
+/** The person the intercepted backend reports as signed in. */
+const TEST_PROFILE = {
+  id: '00000000-0000-0000-0000-0000000000aa',
+  full_name: 'Smoke Test',
+  email: 'smoke@example.test',
+  role: 'project_director',
+  organization: 'AUTK',
+  clearance: 'restricted',
+  is_active: true,
+  expires_at: null,
+};
 
 const ROUTES = [
   '/',
@@ -93,6 +109,50 @@ try {
 
   let pageErrors = [];
   page.on('pageerror', (e) => pageErrors.push(e.message));
+
+  // --- the gate, before anything is signed in --------------------------------
+  await page.route('**/rest/v1/**', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }),
+  );
+  await page.route('**/auth/v1/**', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }),
+  );
+
+  await page.goto(BASE + '/legal', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(400);
+  const gateText = (await page.textContent('body')) ?? '';
+  check(
+    /Giriş yap|Sign in/.test(gateText) && !/Hukuk İşleri|Legal Affairs/.test(gateText),
+    'signed-out visitor is stopped at sign-in',
+  );
+
+  // --- signed in -------------------------------------------------------------
+  // Playwright tries the most recently registered handler first, so the
+  // specific profiles route has to be added after the catch-all to win.
+  await page.route('**/rest/v1/profiles**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(TEST_PROFILE),
+    }),
+  );
+
+  // A session in storage is what supabase-js reads on start, so this puts the
+  // app in the state it would be in after a real sign-in.
+  await page.addInitScript((profile) => {
+    const oneHour = Math.floor(Date.now() / 1000) + 3600;
+    window.localStorage.setItem(
+      'sb-smoke-auth-token',
+      JSON.stringify({
+        access_token: 'smoke-access-token',
+        refresh_token: 'smoke-refresh-token',
+        token_type: 'bearer',
+        expires_in: 3600,
+        expires_at: oneHour,
+        user: { id: profile.id, email: profile.email, aud: 'authenticated', role: 'authenticated' },
+      }),
+    );
+  }, TEST_PROFILE);
 
   for (const route of ROUTES) {
     pageErrors = [];

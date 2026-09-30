@@ -2,7 +2,9 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { PWAInstallButton } from './PWAInstallButton';
-import { Search, Globe, Menu } from 'lucide-react';
+import { Search, Globe, Menu, LogOut } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { roleLabel } from '../lib/roles';
 
 interface NavbarProps {
   onOpenMenu: () => void;
@@ -10,6 +12,7 @@ interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = ({ onOpenMenu }) => {
   const { language, setLanguage, setIsSearchOpen } = useApp();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
 
   return (
@@ -103,6 +106,30 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenMenu }) => {
               {language === 'en' ? 'TR' : 'EN'}
             </span>
           </button>
+
+          {/* Who is signed in. This replaces a menu that let anyone pick their
+              own role — the role now comes from the profile row and only an
+              administrator can change it. */}
+          {user && (
+            <div className="flex items-center gap-2 pl-1.5 sm:pl-2.5 sm:border-l sm:border-slate-200">
+              <div className="hidden sm:block text-right leading-tight">
+                <div className="text-[11px] font-semibold text-slate-800 max-w-[140px] truncate">
+                  {user.name}
+                </div>
+                <div className="text-[10px] text-slate-500 max-w-[140px] truncate">
+                  {roleLabel(user.role, language)}
+                </div>
+              </div>
+              <button
+                onClick={() => void signOut()}
+                title={language === 'tr' ? 'Çıkış yap' : 'Sign out'}
+                aria-label={language === 'tr' ? 'Çıkış yap' : 'Sign out'}
+                className="p-2 rounded-lg text-slate-500 hover:text-rose-700 hover:bg-rose-50 cursor-pointer"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </header>

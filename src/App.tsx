@@ -4,9 +4,11 @@
  */
 
 import React, { useState, Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route, Outlet } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Outlet, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AppProvider, useApp } from './context/AppContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { SignInPage } from './components/SignInPage';
 import { Navbar } from './components/Navbar';
 import { Sidebar } from './components/Sidebar';
 import { DeadlineAlertBanner } from './components/DeadlineAlertBanner';
@@ -134,23 +136,49 @@ const queryClient = new QueryClient({
   },
 });
 
+/**
+ * Nothing renders until we know who is asking. The portal used to mount
+ * straight into the dashboard with a hard-coded identity, so every screen was
+ * reachable by anyone who loaded the page.
+ */
+const Gate: React.FC = () => {
+  const { status } = useAuth();
+
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="w-8 h-8 border-4 border-amber-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (status !== 'signed_in') return <SignInPage />;
+
+  return (
+    <Routes>
+      <Route element={<MainLayout />}>
+        <Route path="/" element={<DashboardView />} />
+        <Route path="/project_info" element={<ProjectInfoView />} />
+        <Route path="/legal" element={<LegalAffairsView />} />
+        <Route path="/construction" element={<ConstructionView />} />
+        <Route path="/governance" element={<GovernanceCharterView />} />
+        <Route path="/finance" element={<FinanceAccountingView />} />
+        <Route path="/documents" element={<DocumentVaultView />} />
+        <Route path="/communication" element={<CommunicationView />} />
+      </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+};
+
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
         <AppProvider>
-          <Routes>
-            <Route element={<MainLayout />}>
-              <Route path="/" element={<DashboardView />} />
-              <Route path="/project_info" element={<ProjectInfoView />} />
-              <Route path="/legal" element={<LegalAffairsView />} />
-              <Route path="/construction" element={<ConstructionView />} />
-              <Route path="/governance" element={<GovernanceCharterView />} />
-              <Route path="/finance" element={<FinanceAccountingView />} />
-              <Route path="/documents" element={<DocumentVaultView />} />
-              <Route path="/communication" element={<CommunicationView />} />
-            </Route>
-          </Routes>
+          <AuthProvider>
+            <Gate />
+          </AuthProvider>
         </AppProvider>
       </Router>
     </QueryClientProvider>

@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
 import * as queries from '../api/hooks';
 import { QueryStatus } from '../components/QueryStatus';
 import { type CommunicationThread } from '../types';
 import { MessagesSquare, Send, Plus, Pin, AlertTriangle, Inbox } from 'lucide-react';
 
 export const CommunicationView: React.FC = () => {
-  const { currentUser, language } = useApp();
+  const { language } = useApp();
+  const { user } = useAuth();
   const communicationThreadsQuery = queries.useCommunicationThreads();
   const communicationThreads = communicationThreadsQuery.data ?? [];
   const { mutate: addThreadMessage } = queries.useAddThreadMessage();
@@ -42,7 +44,7 @@ export const CommunicationView: React.FC = () => {
 
   const handleCreateThread = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTitle.trim() || !firstMessage.trim()) return;
+    if (!newTitle.trim() || !firstMessage.trim() || !user) return;
 
     createThread({
       title: newTitle,
@@ -51,8 +53,9 @@ export const CommunicationView: React.FC = () => {
       messages: [
         {
           id: `msg-${Date.now()}`,
-          sender: currentUser.name,
-          role: currentUser.role,
+          sender: user.name,
+          senderId: user.id,
+          role: user.role,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           text: firstMessage,
         },
@@ -216,7 +219,7 @@ export const CommunicationView: React.FC = () => {
               {/* Messages Area */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/50">
                 {activeThread.messages.map((msg: any) => {
-                  const isMe = msg.sender.includes(currentUser.name.split(' ')[0]);
+                  const isMe = user != null && msg.senderId === user.id;
 
                   return (
                     <div

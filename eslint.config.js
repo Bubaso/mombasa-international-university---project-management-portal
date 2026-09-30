@@ -52,7 +52,9 @@ export default tseslint.config(
   },
   {
     files: ['vite.config.ts', 'scripts/**/*.{js,mjs}', 'tests/**/*.{js,mjs}', 'eslint.config.js'],
-    languageOptions: { globals: globals.node },
+    // Test files are Node, but browser-context callbacks (Playwright's
+    // addInitScript and friends) are inlined in them, so both apply.
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
     rules: {
       'no-console': 'off',
     },

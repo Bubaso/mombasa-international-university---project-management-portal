@@ -13,9 +13,10 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test:smoke": "node tests/smoke.mjs",
+    "test:smoke": "npm run build:smoke && node tests/smoke.mjs",
     "verify": "npm run typecheck && npm run lint && npm run format:check && npm run build && npm run test:smoke && npm run test:policies",
-    "test:policies": "bash tests/db/run.sh"
+    "test:policies": "bash tests/db/run.sh",
+    "build:smoke": "VITE_SUPABASE_URL=https://smoke.supabase.co VITE_SUPABASE_ANON_KEY=smoke-anon-key vite build"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.2",

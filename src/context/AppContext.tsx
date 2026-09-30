@@ -1,29 +1,11 @@
 import React, { createContext, useContext, useState } from 'react';
-import { type Language, type UserRole, type CurrentUser } from '../types';
+import { type Language } from '../types';
 import { translations } from '../i18n/translations';
-
-export const AVAILABLE_ROLES = [
-  { role: 'trustee' as UserRole, nameEn: 'Board Trustee', nameTr: 'Mütevelli' },
-  { role: 'legal_counsel' as UserRole, nameEn: 'Legal Counsel', nameTr: 'Hukuk Müşaviri' },
-  { role: 'contractor_qs' as UserRole, nameEn: 'Contractor / QS', nameTr: 'Müteahhit / QS' },
-  { role: 'auditor_finance' as UserRole, nameEn: 'Auditor', nameTr: 'Denetçi' },
-  { role: 'executive' as UserRole, nameEn: 'Executive', nameTr: 'Yönetici' },
-];
-
-export const INITIAL_USER: CurrentUser = {
-  id: 'u-1',
-  name: 'Simon Karina',
-  role: 'legal_counsel',
-  organization: 'Simon Karina & Khatib Advocates',
-  email: 'simon@example.com',
-};
 
 interface AppContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
   t: typeof translations.en;
-  currentUser: CurrentUser;
-  switchRole: (role: UserRole) => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   isSearchOpen: boolean;
@@ -38,7 +20,6 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguage] = useState<Language>('tr');
-  const [currentUser, setCurrentUser] = useState<CurrentUser>(INITIAL_USER);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -53,20 +34,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }, 4000);
   };
 
-  const switchRole = (role: UserRole) => {
-    const roleMeta = AVAILABLE_ROLES.find((r) => r.role === role);
-    setCurrentUser((prev) => ({
-      ...prev,
-      role,
-      name: roleMeta ? (language === 'tr' ? roleMeta.nameTr : roleMeta.nameEn) : prev.name,
-    }));
-    showToast(
-      language === 'tr'
-        ? `Rol değiştirildi: ${roleMeta?.nameTr || role}`
-        : `Switched role to: ${roleMeta?.nameEn || role}`,
-    );
-  };
-
   const setClarificationAnswer = (id: string, answer: string) => {
     setClarificationAnswers((prev) => ({ ...prev, [id]: answer }));
     showToast(language === 'tr' ? 'Açıklama kaydedildi' : 'Clarification response saved');
@@ -78,8 +45,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         language,
         setLanguage,
         t,
-        currentUser,
-        switchRole,
         searchQuery,
         setSearchQuery,
         isSearchOpen,

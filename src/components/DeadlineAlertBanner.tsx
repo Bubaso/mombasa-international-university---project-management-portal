@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
 import * as queries from '../api/hooks';
 import { useNavigate } from 'react-router-dom';
 import { AlertTriangle, Clock, Check, ShieldAlert } from 'lucide-react';
 
 export const DeadlineAlertBanner: React.FC = () => {
-  const { language, currentUser } = useApp();
+  const { language } = useApp();
+  const { user } = useAuth();
   const { data: deadlines = [] } = queries.useDeadlines();
   const navigate = useNavigate();
 
@@ -18,9 +20,10 @@ export const DeadlineAlertBanner: React.FC = () => {
   const relevantDeadlines = deadlines.filter(
     (d) =>
       !hiddenIds.includes(d.id) &&
-      (d.targetRole.includes(currentUser.role) ||
-        currentUser.role === 'trustee' ||
-        currentUser.role === 'executive'),
+      // The database already filters by target role; this keeps the banner
+      // consistent with it for a list fetched before the profile resolved.
+      user != null &&
+      (d.targetRole.length === 0 || d.targetRole.includes(user.role)),
   );
 
   if (relevantDeadlines.length === 0) return null;
