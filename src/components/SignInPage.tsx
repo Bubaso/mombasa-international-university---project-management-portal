@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Loader2, LogIn, ShieldAlert, PlugZap } from 'lucide-react';
 import { useAuth, type AccessDenial } from '../context/AuthContext';
+import { supabaseHost } from '../lib/supabase';
 import { useApp } from '../context/AppContext';
 
 /**
@@ -148,6 +149,10 @@ export const SignInPage: React.FC = () => {
                     <div className="flex flex-wrap gap-x-1.5">
                       <dt className="font-semibold">{tr ? 'Aranan kimlik' : 'Looked up as'}</dt>
                       <dd className="font-mono break-all">{denial.userId}</dd>
+                    </div>
+                    <div className="flex flex-wrap gap-x-1.5">
+                      <dt className="font-semibold">{tr ? 'Bağlı proje' : 'Talking to'}</dt>
+                      <dd className="font-mono break-all">{supabaseHost ?? '—'}</dd>
                     </div>
                   </dl>
                 )}

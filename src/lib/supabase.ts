@@ -20,6 +20,25 @@ if (!isSupabaseConfigured) {
   );
 }
 
+/**
+ * The project this build talks to, as a bare host.
+ *
+ * Shown on the access-denied screen. It is not a secret — it is compiled into
+ * every bundle and sent with every request — and it is the fastest way to see
+ * the failure that looks like all the others: a build pointed at a different
+ * project from the one somebody just set their profile up in. Both are baked
+ * in at build time, so this is also a reminder that fixing it means building
+ * again rather than changing something live.
+ */
+export const supabaseHost = (() => {
+  if (!supabaseUrl) return null;
+  try {
+    return new URL(supabaseUrl).host;
+  } catch {
+    return supabaseUrl;
+  }
+})();
+
 export const supabase = createClient(
   supabaseUrl || 'https://placeholder.supabase.co',
   supabaseAnonKey || 'placeholder-key',
