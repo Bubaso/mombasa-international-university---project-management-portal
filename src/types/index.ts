@@ -736,3 +736,112 @@ export interface CalendarEntry {
   needsAttention: boolean;
   confidentiality: Confidentiality;
 }
+
+// ---------------------------------------------------------------------------
+// The rest of the legal register (M5) — mirrors supabase/migrations/0009
+// ---------------------------------------------------------------------------
+
+export type CasePartyRole =
+  'appellant' | 'respondent' | 'claimant' | 'defendant' | 'interested_party' | 'amicus';
+
+export type HearingKind =
+  'mention' | 'directions' | 'hearing' | 'ruling' | 'judgment' | 'application';
+
+export type PreparationState = 'not_started' | 'in_preparation' | 'ready' | 'missed';
+
+export type FilingKind =
+  | 'pleading'
+  | 'affidavit'
+  | 'submission'
+  | 'application'
+  | 'appeal'
+  | 'record_of_appeal'
+  | 'notice'
+  | 'other';
+
+export type FilingState = 'planned' | 'drafting' | 'filed' | 'served' | 'withdrawn' | 'late';
+
+export type CounselState = 'proposed' | 'instructed' | 'on_record' | 'withdrawn';
+
+export interface CaseParty {
+  id: string;
+  legalCaseId: string;
+  role: CasePartyRole;
+  name: string;
+  stakeholderId: string | null;
+  representedBy: string | null;
+}
+
+export interface Hearing {
+  id: string;
+  legalCaseId: string;
+  scheduledFor: string;
+  kind: HearingKind;
+  bench: string | null;
+  courtroom: string | null;
+  preparation: PreparationState;
+  requiredDocuments: string[];
+  outcomeEn: string | null;
+  outcomeTr: string | null;
+  confidentiality: Confidentiality;
+}
+
+export interface Filing {
+  id: string;
+  legalCaseId: string;
+  kind: FilingKind;
+  title: string;
+  /** Kept separate from filedOn on purpose: the gap is the thing to see. */
+  dueOn: string | null;
+  filedOn: string | null;
+  state: FilingState;
+  filedByName: string | null;
+  documentId: string | null;
+  note: string | null;
+  confidentiality: Confidentiality;
+}
+
+export interface Exhibit {
+  id: string;
+  legalCaseId: string;
+  mark: string;
+  description: string;
+  source: string | null;
+  relevance: string | null;
+  documentId: string | null;
+  confidentiality: Confidentiality;
+}
+
+/** Who handed what to whom. Append-only, in the database and here. */
+export interface CustodyEntry {
+  id: string;
+  exhibitId: string;
+  handedOverAt: string;
+  fromParty: string;
+  toParty: string;
+  note: string | null;
+}
+
+export interface CaseCounsel {
+  id: string;
+  legalCaseId: string;
+  stakeholderId: string;
+  counselName: string | null;
+  state: CounselState;
+  /** Whether the instrument that actually lets them act has been filed. */
+  powerOfAttorneyFiled: boolean;
+  feeModel: string | null;
+  instructedOn: string | null;
+  note: string | null;
+}
+
+export interface LegalOpinion {
+  id: string;
+  legalCaseId: string | null;
+  question: string;
+  givenByStakeholderId: string | null;
+  givenByName: string | null;
+  givenOn: string | null;
+  conclusion: string | null;
+  confidentiality: Confidentiality;
+}

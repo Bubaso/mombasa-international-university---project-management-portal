@@ -67,6 +67,25 @@ const EXTERNAL_AUTHORITY = {
   delegations: [],
 };
 
+/** One case file, so the legal record panels render rather than reporting none. */
+const TEST_CASE = {
+  id: '00000000-0000-0000-0000-0000000000cc',
+  case_number: 'ELC/134/2013',
+  title: 'Smoke case',
+  court: 'ELC Mombasa',
+  case_type: 'Land',
+  current_status: 'Active',
+  priority: 'high',
+  risk_level: 'high',
+  filing_date: '2013-01-01',
+  next_hearing_date: null,
+  description_en: null,
+  description_tr: null,
+  key_issues: [],
+  documents_count: 0,
+  confidentiality: 'internal',
+};
+
 /** One meeting, so the detail page renders rather than reporting it missing. */
 const TEST_MEETING = {
   id: '00000000-0000-0000-0000-0000000000bb',
@@ -102,6 +121,11 @@ const ROUTES = [
 
 /** Each legal sub-tab, matched by the visible label in either language. */
 const LEGAL_TABS = {
+  hearings: /^Duruşmalar$|^Hearings$/i,
+  filings: /Layiha ve Süreler|Filings & Deadlines/i,
+  orders: /Mahkeme Kararları|Court Orders/i,
+  evidence: /Deliller ve Zincir|Evidence & Custody/i,
+  counsel: /Avukatlar ve Görüşler|Counsel & Opinions/i,
   hearing_brief: /Duruşma Brifingi|Hearing Brief/i,
   bench_qa: /Hâkimler Heyeti|Bench Q/i,
   authorities: /İçtihat|Authorities/i,
@@ -195,6 +219,14 @@ try {
 
   await actAs(TEST_AUTHORITY);
 
+  await page.route('**/rest/v1/legal_cases**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([TEST_CASE]),
+    }),
+  );
+
   // Served as an object or an array depending on which call it is, the way
   // PostgREST answers .maybeSingle() and a plain select differently.
   await page.route('**/rest/v1/meetings**', (route) => {
@@ -247,6 +279,41 @@ try {
       `text=${text.length} errors=${pageErrors.length}${pageErrors[0] ? ` — ${pageErrors[0].slice(0, 120)}` : ''}`,
     );
   }
+
+  // --- the legal record ------------------------------------------------------
+  // M5-16 decides who may write on a file. A director keeps it; somebody
+  // outside the organisation who is not counsel gets the record read-only.
+  pageErrors = [];
+  await page.goto(BASE + '/legal', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(400);
+  await page
+    .locator('button')
+    .filter({ hasText: /^Duruşmalar$|^Hearings$/i })
+    .first()
+    .click();
+  await page.waitForTimeout(300);
+  const directorLegal = (await page.textContent('body')) ?? '';
+  check(
+    pageErrors.length === 0 && /Duruşma ekle|Add/.test(directorLegal),
+    'director may keep the legal record',
+  );
+
+  await actAs(EXTERNAL_AUTHORITY);
+  pageErrors = [];
+  await page.goto(BASE + '/legal', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(400);
+  await page
+    .locator('button')
+    .filter({ hasText: /^Duruşmalar$|^Hearings$/i })
+    .first()
+    .click();
+  await page.waitForTimeout(300);
+  const contractorLegal = (await page.textContent('body')) ?? '';
+  check(
+    pageErrors.length === 0 && !/Duruşma ekle/.test(contractorLegal),
+    'somebody outside who is not counsel gets it read-only',
+  );
+  await actAs(TEST_AUTHORITY);
 
   // --- the meeting record ---------------------------------------------------
   // Every M3 record type renders at once here, so a shape mistake in any of
@@ -319,9 +386,16 @@ try {
   await actAs(TEST_AUTHORITY);
 
   // Cross-view links used to be relative, resolving under the current route
-  // (/legal/documents) instead of to the sibling route.
+  // (/legal/documents) instead of to the sibling route. The link lives on the
+  // appeal-file tab, which is no longer the one /legal opens on.
   pageErrors = [];
   await page.goto(BASE + '/legal', { waitUntil: 'networkidle' });
+  await page
+    .locator('button')
+    .filter({ hasText: /Temyiz Dosyası|Appeal File/ })
+    .first()
+    .click();
+  await page.waitForTimeout(400);
   await page
     .locator('button')
     .filter({ hasText: /Belge Kasasını Aç|Access Vault|Tam Layihayı|Open Full Brief/ })

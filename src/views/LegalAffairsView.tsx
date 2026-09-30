@@ -19,6 +19,14 @@ import {
 
 import { useNavigate } from 'react-router-dom';
 import { ContextualAIAssistant } from '../components/ContextualAIAssistant';
+import { CaseStrip } from '../components/legal/CaseStrip';
+import { HearingList } from '../components/legal/HearingList';
+import { FilingList } from '../components/legal/FilingList';
+import { OrderList } from '../components/legal/OrderList';
+import { EvidenceList } from '../components/legal/EvidenceList';
+import { CounselPanel } from '../components/legal/CounselPanel';
+import { useAuthority } from '../api/adminHooks';
+import { ASSESSORS, actsAs } from '../lib/authority';
 import { EmptyState } from '../components/EmptyState';
 import type { BenchQuestion, LegalAuthority } from '../types';
 
@@ -55,9 +63,16 @@ export const LegalAffairsView: React.FC = () => {
   const legalCasesQuery = queries.useLegalCases();
   const legalCases = legalCasesQuery.data ?? [];
   const { mutate: addLegalCase } = queries.useAddLegalCase();
-  const [selectedCaseId] = useState<string>('case-appeal-e062');
+  // A real choice now, rather than an identifier written into the source.
+  // M5-01: there are at least five files and new applications keep being made.
+  const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
   const [activeSubTab, setActiveSubTab] = useState<
     | 'overview'
+    | 'hearings'
+    | 'filings'
+    | 'orders'
+    | 'evidence'
+    | 'counsel'
     | 'hearing_brief'
     | 'bench_qa'
     | 'authorities'
@@ -65,7 +80,7 @@ export const LegalAffairsView: React.FC = () => {
     | 'action_plan'
     | 'who_is_who'
     | 'timeline'
-  >('hearing_brief');
+  >('hearings');
   const [showNewMotionModal, setShowNewMotionModal] = useState(false);
   const [qSearch, setQSearch] = useState('');
 
@@ -75,6 +90,13 @@ export const LegalAffairsView: React.FC = () => {
   const [motionDetail, setMotionDetail] = useState('');
 
   const activeCase = legalCases.find((c) => c.id === selectedCaseId) ?? legalCases[0] ?? null;
+  const authority = useAuthority();
+  // Advocates write on their own files; that is the point of them having
+  // accounts at all. app.can_keep_legal_record in 0009 is the rule this
+  // mirrors, and the one that refuses if this gets it wrong.
+  const canKeepRecord =
+    actsAs(authority.data, ...ASSESSORS) || actsAs(authority.data, 'legal_counsel');
+  const canManageCounsel = actsAs(authority.data, 'admin', 'project_director');
   // Orders are their own records now: a court order carries a state, the
   // document behind it, and the obligations it creates, none of which fitted
   // in the JSON array that used to sit on the case row.
@@ -220,9 +242,21 @@ export const LegalAffairsView: React.FC = () => {
         </div>
       </div>
 
+      {/* Which file. M5-01: multiple files are the normal case here. */}
+      <CaseStrip
+        cases={legalCases}
+        selectedId={activeCase?.id ?? null}
+        onSelect={setSelectedCaseId}
+      />
+
       {/* Navigation Sub-Tabs */}
       <div className="flex items-center gap-1.5 border-b border-slate-200 pb-2 overflow-x-auto scrollbar-none snap-x py-1 -mx-1 px-1 sm:mx-0 sm:px-0">
         {[
+          { id: 'hearings', labelEn: 'Hearings', labelTr: 'Duruşmalar' },
+          { id: 'filings', labelEn: 'Filings & Deadlines', labelTr: 'Layiha ve Süreler' },
+          { id: 'orders', labelEn: 'Court Orders', labelTr: 'Mahkeme Kararları' },
+          { id: 'evidence', labelEn: 'Evidence & Custody', labelTr: 'Deliller ve Zincir' },
+          { id: 'counsel', labelEn: 'Counsel & Opinions', labelTr: 'Avukatlar ve Görüşler' },
           {
             id: 'hearing_brief',
             labelEn: 'Hearing Brief (28 Sept 2026)',
@@ -283,6 +317,37 @@ export const LegalAffairsView: React.FC = () => {
           </button>
         ))}
       </div>
+
+      {/* The record tabs. Everything below them is narrative held in this
+          file; everything here is a row somebody entered. */}
+      {activeCase && activeSubTab === 'hearings' && (
+        <HearingList caseId={activeCase.id} canWrite={canKeepRecord} />
+      )}
+      {activeCase && activeSubTab === 'filings' && (
+        <FilingList caseId={activeCase.id} canWrite={canKeepRecord} />
+      )}
+      {activeCase && activeSubTab === 'orders' && (
+        <OrderList
+          caseId={activeCase.id}
+          canWrite={canKeepRecord}
+          canOblige={actsAs(authority.data, ...ASSESSORS)}
+        />
+      )}
+      {activeCase && activeSubTab === 'evidence' && (
+        <EvidenceList caseId={activeCase.id} canWrite={canKeepRecord} />
+      )}
+      {activeCase && activeSubTab === 'counsel' && (
+        <CounselPanel caseId={activeCase.id} canManage={canManageCounsel} />
+      )}
+
+      {!activeCase &&
+        ['hearings', 'filings', 'orders', 'evidence', 'counsel'].includes(activeSubTab) && (
+          <div className="rounded-xl border border-slate-200 bg-white px-4 py-6 text-center text-xs text-slate-500">
+            {language === 'tr'
+              ? 'Henüz kayıtlı dava dosyası yok. Duruşma, layiha ve karar kayıtları bir dosyaya bağlıdır.'
+              : 'No case file is recorded yet. Hearings, filings and orders all hang off one.'}
+          </div>
+        )}
 
       {/* Subtab Content: Hearing Brief (28 Sept 2026) */}
       {activeSubTab === 'hearing_brief' && (
