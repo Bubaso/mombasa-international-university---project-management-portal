@@ -485,5 +485,16 @@ a schema problem. `supabase/diagnose-access.sql` part 2 answers it in one
 query.
 
 `bootstrap.sql` is never applied: Supabase already owns the `auth` schema.
-0012 creates the `documents` bucket and its policies through
-`storage.buckets`, so no console step is needed for it.
+0012 tries to create the `documents` bucket and its upload policy, but the
+`storage` schema is not this schema — its tables belong to Supabase's own
+storage role, and whether the role running a migration may write to them
+differs between a project, a local stack and the test harness. So both
+statements are wrapped and neither can fail the migration: a bucket is
+infrastructure configuration, and losing twelve migrations over it would be
+the wrong trade.
+
+If they warn, do the two things by hand. Storage → New bucket, named
+`documents`, **Public unchecked**; then the `create policy` from
+`0012_document_vault.sql`, run as a role that owns `storage.objects`. Until
+both exist uploads are refused, which is the safe direction: there is no
+bucket to read from either.

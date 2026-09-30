@@ -2634,6 +2634,38 @@ select pg_temp.check('the site team keeps the register for what it sees',
   (select count(*) from risks where id = '1e000000-0000-0000-0000-000000000030'), 1::bigint);
 
 
+-- ===========================================================================
+-- The storage rule survived being made non-fatal
+-- ===========================================================================
+--
+-- 0012 wraps its two storage statements so that a project where the migration
+-- role cannot write to Supabase's storage schema does not lose the other
+-- twelve migrations over it. The cost of that handler is that it could hide a
+-- real failure, so here the harness — where the statements are permitted —
+-- insists they actually ran.
+
+-- As the owner, not as a caller: these are facts about the schema rather than
+-- rows anybody is entitled to read. `authenticated` has no privilege on
+-- storage.buckets at all, which is itself correct.
+reset role;
+
+select pg_temp.check('the private documents bucket exists',
+  (select count(*) from storage.buckets where id = 'documents' and not public), 1::bigint);
+
+select pg_temp.check('the upload policy was created, not swallowed by the handler',
+  (select count(*) from pg_policies
+    where schemaname = 'storage' and tablename = 'objects'
+      and cmd = 'INSERT'), 1::bigint);
+
+-- The absence is the mechanism: with no select policy the bytes are
+-- unreachable from a browser, so every read has to go through the function
+-- that writes the access log (M9-07).
+select pg_temp.check('and there is still no way to read the bucket directly',
+  (select count(*) from pg_policies
+    where schemaname = 'storage' and tablename = 'objects'
+      and cmd in ('SELECT', 'ALL')), 0::bigint);
+
+
 reset role;
 
 \echo ''

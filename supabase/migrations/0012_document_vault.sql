@@ -322,21 +322,59 @@ create policy document_links_delete on document_links
 -- function that writes the access log, which is the only way M9-07 can be
 -- mandatory rather than a convention.
 
-insert into storage.buckets (id, name, public)
-values ('documents', 'documents', false)
-on conflict (id) do nothing;
+-- Both statements below are wrapped, and neither is allowed to fail the
+-- migration. The `storage` schema is not this schema: its tables are owned by
+-- Supabase's own storage role, and whether the role running a migration may
+-- write to them differs between a project, a local stack and the test
+-- harness — which fakes `storage.objects` entirely, and so can prove that
+-- these statements compile but not that they are permitted.
+--
+-- A bucket is infrastructure configuration rather than schema, and taking
+-- thirteen migrations down over it would be the wrong trade. The failure
+-- direction is safe: with no bucket and no insert policy, uploads are refused
+-- and nothing is exposed. The warning says what to do by hand.
 
-create policy "upload only to a path a version already claims"
-on storage.objects for insert to authenticated
-with check (
-  bucket_id = 'documents'
-  and exists (
-    select 1 from document_versions v
-    where v.storage_path = storage.objects.name
-      and app.can_see_document(v.document_id)
-      and app.can_write('document_vault', v.document_id)
-  )
-);
+do $$
+begin
+  insert into storage.buckets (id, name, public)
+  values ('documents', 'documents', false)
+  on conflict (id) do nothing;
+exception
+  when others then
+    raise warning
+      'Could not create the private documents bucket (%). Create it by hand: '
+      'Storage > New bucket > name "documents", Public unchecked.', sqlerrm;
+end;
+$$;
+
+-- Executed dynamically because plpgsql cannot take a utility statement
+-- directly, and it has to be inside a block to be catchable at all.
+do $$
+begin
+  execute $policy$
+    create policy "upload only to a path a version already claims"
+    on storage.objects for insert to authenticated
+    with check (
+      bucket_id = 'documents'
+      and exists (
+        select 1 from document_versions v
+        where v.storage_path = storage.objects.name
+          and app.can_see_document(v.document_id)
+          and app.can_write('document_vault', v.document_id)
+      )
+    )
+  $policy$;
+exception
+  when duplicate_object then
+    null;
+  when others then
+    raise warning
+      'Could not create the storage upload policy (%). Add it by hand from '
+      'supabase/migrations/0012_document_vault.sql, as a role that owns '
+      'storage.objects. Until then uploads are refused, which is the safe '
+      'direction to be wrong in.', sqlerrm;
+end;
+$$;
 
 -- Deliberately no select, update or delete policy for authenticated on this
 -- bucket. Without a select policy the bytes are unreachable from a browser,
