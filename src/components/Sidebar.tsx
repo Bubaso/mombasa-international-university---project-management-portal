@@ -12,6 +12,7 @@ import {
   FolderGit2,
   MessagesSquare,
   ShieldAlert,
+  ShieldCheck,
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
@@ -67,6 +68,9 @@ export const Sidebar: React.FC = () => {
       label: t.nav.communication,
       icon: MessagesSquare,
     },
+    // Everyone signed in belongs here: for most people it is where they read
+    // what their own access consists of, not where they change anyone else's.
+    { tab: 'admin', path: '/admin', label: t.nav.admin, icon: ShieldCheck },
   ];
 
   return (

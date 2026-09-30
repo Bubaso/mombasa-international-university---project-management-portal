@@ -2,8 +2,9 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { PWAInstallButton } from './PWAInstallButton';
-import { Search, Globe, Menu, LogOut } from 'lucide-react';
+import { Search, Globe, Menu, LogOut, UserCog } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useAuthority } from '../api/adminHooks';
 import { roleLabel } from '../lib/roles';
 
 interface NavbarProps {
@@ -14,6 +15,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenMenu }) => {
   const { language, setLanguage, setIsSearchOpen } = useApp();
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const lentFrom = useAuthority().data?.delegations[0]?.lenderName;
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 border-b border-slate-200 backdrop-blur-md shadow-xs">
@@ -110,6 +112,26 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenMenu }) => {
           {/* Who is signed in. This replaces a menu that let anyone pick their
               own role — the role now comes from the profile row and only an
               administrator can change it. */}
+          {/* Acting on someone else's authority is not something to discover
+              later from the audit trail. */}
+          {lentFrom && (
+            <button
+              type="button"
+              onClick={() => navigate('/admin')}
+              title={
+                language === 'tr'
+                  ? `${lentFrom} adına devredilmiş yetkiyle hareket ediyorsunuz`
+                  : `You are acting on ${lentFrom}'s delegated authority`
+              }
+              className="flex items-center gap-1 rounded-lg border border-amber-300 bg-amber-50 px-2 py-1 text-[10px] font-semibold text-amber-900 hover:bg-amber-100 cursor-pointer"
+            >
+              <UserCog className="w-3.5 h-3.5 shrink-0" />
+              <span className="hidden sm:inline max-w-[120px] truncate">
+                {language === 'tr' ? `${lentFrom} adına` : `Acting for ${lentFrom}`}
+              </span>
+            </button>
+          )}
+
           {user && (
             <div className="flex items-center gap-2 pl-1.5 sm:pl-2.5 sm:border-l sm:border-slate-200">
               <div className="hidden sm:block text-right leading-tight">

@@ -10,9 +10,13 @@ migrations/
   0002_domain_tables.sql                 the tables the app reads
   0003_row_level_security.sql            who may read and write what
   0004_emergency_delegation.sql          two-trustee transfer of authority
+  0005_effective_authority.sql           authority as a union; the audit gaps
 functions/
   ai-assistant/                          server-side model proxy
+  invite-user/                           creates an account and its profile
 ```
+
+The console that drives all of this is `src/views/AdminConsoleView.tsx`.
 
 ## Access model in one page
 
@@ -45,6 +49,15 @@ Three things decide a read, and all three must agree:
 Writing is narrower than reading, and every mutating policy also requires the
 row to be readable: permission to edit is never a way to see something.
 
+**Authority is a set, not a rank.** `app.effective_roles()` is the caller's own
+role plus every role a live delegation lends them, and every policy asks
+`app.acts_as(...)` of that set. This matters because authority does not form a
+ladder: a trustee may approve a delegation and a director may not; a director
+may record a payment and a trustee may not. 0004 decided the question by
+comparing clearance ceilings, which meant a delegation to a trustee — the most
+likely recipient, since trustees are who approve — changed nothing at all.
+0005 replaced it.
+
 ## Emergency delegation
 
 Locking the portal down creates a problem of its own: if the project director
@@ -59,9 +72,8 @@ moment, and adds a hat rather than removing one: the recipient keeps whatever
 they already had. Every step lands in the audit log.
 
 This exists because the project's own evaluation report names a single-person
-dependency as its main structural weakness. It is enforced in the database and
-covered by tests; the console for requesting and approving one is not built
-yet, so today it is reachable only through SQL.
+dependency as its main structural weakness. Requesting, approving and revoking
+one is in the console, under Access & Administration.
 
 ## Running the tests
 
@@ -77,6 +89,34 @@ and one record per tier, then asserts each rule from the caller's seat. Set
 These are not optional. External stakeholders sign in to this portal, and the
 confidentiality model is what stands between a contractor and the trustees'
 private assessments.
+
+## What the client is allowed to believe about itself
+
+`public.current_authority()` returns the caller's effective role, the whole set
+of roles they act under, their clearance, and any delegation in force — all
+computed by the same functions the policies use. It is the only thing the
+browser and the invite function ask about authority, because a profile row says
+nothing about a delegation, and a JWT body is written by the browser.
+
+It shapes the interface and nothing else. The console's rule is to never draw
+a control the database would refuse, so that a person is never left guessing
+whether the system is broken or they are not allowed. A person who edits their
+way past that view reaches exactly nothing new.
+
+## Inviting someone
+
+Creating an account needs the service role key, which bypasses row level
+security entirely and must never reach a browser, so it lives in the
+`invite-user` edge function:
+
+```bash
+supabase functions deploy invite-user
+```
+
+It builds two clients on purpose: one carrying the caller's own token, used
+only to ask `current_authority()` who is asking, and one with the service role,
+used only after that answer says administrator. If the profile insert fails it
+deletes the auth user it just created, so a half-made account never lingers.
 
 ## Applying to a real project
 

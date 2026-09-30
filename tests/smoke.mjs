@@ -43,6 +43,30 @@ const TEST_PROFILE = {
   expires_at: null,
 };
 
+/**
+ * What public.current_authority() would answer for that person. The console
+ * asks the database this rather than reading the profile row, because the row
+ * says nothing about a delegation in force.
+ */
+const TEST_AUTHORITY = {
+  role: 'project_director',
+  roles: ['project_director'],
+  clearance: 'restricted',
+  isInternal: true,
+  isAdmin: false,
+  delegations: [],
+};
+
+/** The same question answered for someone outside the organisation. */
+const EXTERNAL_AUTHORITY = {
+  role: 'contractor',
+  roles: ['contractor'],
+  clearance: 'internal',
+  isInternal: false,
+  isAdmin: false,
+  delegations: [],
+};
+
 const ROUTES = [
   '/',
   '/project_info',
@@ -52,6 +76,7 @@ const ROUTES = [
   '/finance',
   '/documents',
   '/communication',
+  '/admin',
 ];
 
 /** Each legal sub-tab, matched by the visible label in either language. */
@@ -137,6 +162,18 @@ try {
     }),
   );
 
+  /** Swaps who the intercepted backend says the caller is allowed to be. */
+  const actAs = (authority) =>
+    page.route('**/rest/v1/rpc/current_authority', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(authority),
+      }),
+    );
+
+  await actAs(TEST_AUTHORITY);
+
   // A session in storage is what supabase-js reads on start, so this puts the
   // app in the state it would be in after a real sign-in.
   await page.addInitScript((profile) => {
@@ -178,6 +215,41 @@ try {
       `text=${text.length} errors=${pageErrors.length}${pageErrors[0] ? ` — ${pageErrors[0].slice(0, 120)}` : ''}`,
     );
   }
+
+  // --- the console offers only what the policies allow ----------------------
+  // Its whole premise is that a control the database would refuse is never
+  // drawn, so this is the assertion that matters most about it.
+  pageErrors = [];
+  await page.goto(BASE + '/admin', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(400);
+  const directorView = (await page.textContent('body')) ?? '';
+  check(
+    /Kapsam|Scope/.test(directorView) && /Olağanüstü yetki|Emergency delegation/.test(directorView),
+    'director sees scope and delegation',
+  );
+  check(
+    !/Kişi davet et|Invite someone/.test(directorView),
+    'director is not offered the invite control',
+    'inviting is an administrator’s to do',
+  );
+  check(/Denetim kaydı|Audit trail/.test(directorView), 'director can read the audit trail');
+
+  await actAs(EXTERNAL_AUTHORITY);
+  pageErrors = [];
+  await page.goto(BASE + '/admin', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(400);
+  const contractorView = (await page.textContent('body')) ?? '';
+  check(
+    pageErrors.length === 0 && /Sizin erişiminiz|Your access/.test(contractorView),
+    'an external party still sees their own access',
+  );
+  check(
+    !/Olağanüstü yetki|Emergency delegation/.test(contractorView) &&
+      !/Denetim kaydı|Audit trail/.test(contractorView) &&
+      !/Kayda özel paylaşım|Sharing/.test(contractorView),
+    'an external party is shown none of the administrative sections',
+  );
+  await actAs(TEST_AUTHORITY);
 
   // Cross-view links used to be relative, resolving under the current route
   // (/legal/documents) instead of to the sibling route.

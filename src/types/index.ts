@@ -57,7 +57,7 @@ export type ActiveTab =
   | 'finance'
   | 'documents'
   | 'communication'
-  | 'clarifications';
+  | 'admin';
 
 export interface LegalCase {
   id: string;
@@ -270,4 +270,94 @@ export interface EvidenceExhibit {
     | 'police_bond'
     | 'qs_valuation'
     | 'court_order';
+}
+
+// ---------------------------------------------------------------------------
+// Access administration
+//
+// These mirror the identity tables in supabase/migrations/0001 and 0004 and
+// the answer public.current_authority() gives. They shape the console; what a
+// person may actually do is decided by the policies, every time.
+// ---------------------------------------------------------------------------
+
+export interface Profile {
+  id: string;
+  fullName: string;
+  email: string;
+  role: UserRole;
+  organization: string | null;
+  clearance: Confidentiality;
+  isActive: boolean;
+  expiresAt: string | null;
+  createdAt: string;
+}
+
+/**
+ * What the caller may do, delegation included. Null when the signed-in account
+ * has no active profile — which is also how an expired consultant reads.
+ */
+export interface Authority {
+  /** Their own role, which is what the audit trail will record. */
+  role: UserRole;
+  /** Their own role plus every role a live delegation lends them. */
+  roles: UserRole[];
+  clearance: Confidentiality;
+  isInternal: boolean;
+  isAdmin: boolean;
+  delegations: {
+    lenderId: string;
+    lenderName: string;
+    role: UserRole;
+    clearance: Confidentiality;
+  }[];
+}
+
+export type GrantPermission = 'read' | 'write';
+
+/** One record handed to one person, optionally until a date. */
+export interface RecordGrant {
+  id: string;
+  userId: string;
+  userName: string | null;
+  entityType: string;
+  entityId: string;
+  permission: GrantPermission;
+  grantedByName: string | null;
+  grantedAt: string;
+  expiresAt: string | null;
+  reason: string | null;
+}
+
+/** An external party's scope: the cases or blocks they are on. */
+export interface Assignment {
+  userId: string;
+  userName: string | null;
+  targetId: string;
+  assignedByName: string | null;
+  assignedAt: string;
+}
+
+export interface Delegation {
+  id: string;
+  fromUserId: string;
+  fromUserName: string | null;
+  toUserId: string;
+  toUserName: string | null;
+  reason: string;
+  requestedByName: string | null;
+  requestedAt: string;
+  expiresAt: string;
+  revokedAt: string | null;
+  revokedByName: string | null;
+  approvals: { approverId: string; approverName: string | null; approvedAt: string }[];
+}
+
+export interface AuditEntry {
+  id: number;
+  actorId: string | null;
+  actorName: string | null;
+  action: string;
+  entityType: string;
+  entityId: string | null;
+  at: string;
 }

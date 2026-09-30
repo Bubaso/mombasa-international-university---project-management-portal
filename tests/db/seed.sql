@@ -20,7 +20,8 @@ insert into auth.users (id, email, email_confirmed_at) values
   ('77777777-7777-7777-7777-777777777777', 'contractor@example.test', now()),
   ('88888888-8888-8888-8888-888888888888', 'donor@example.test',      now()),
   ('99999999-9999-9999-9999-999999999999', 'expired@example.test',    now()),
-  ('aaaa1111-1111-1111-1111-111111111111', 'trustee2@example.test',   now());
+  ('aaaa1111-1111-1111-1111-111111111111', 'trustee2@example.test',   now()),
+  ('bbbb1111-1111-1111-1111-111111111111', 'trustee3@example.test',   now());
 
 insert into profiles (id, full_name, email, role, organization, clearance, is_active, expires_at) values
   ('11111111-1111-1111-1111-111111111111', 'Admin',            'admin@example.test',      'admin',            'AUTK',        'restricted',   true, null),
@@ -32,7 +33,11 @@ insert into profiles (id, full_name, email, role, organization, clearance, is_ac
   ('77777777-7777-7777-7777-777777777777', 'Contractor',       'contractor@example.test', 'contractor',       'Coast Eng',   'internal',     true, null),
   ('88888888-8888-8888-8888-888888888888', 'Donor',            'donor@example.test',      'donor',            'Foundation',  'public',       true, null),
   ('99999999-9999-9999-9999-999999999999', 'Expired Consult',  'expired@example.test',    'consultant',       'Advisory',    'internal',     true, now() - interval '1 day'),
-  ('aaaa1111-1111-1111-1111-111111111111', 'Trustee Two',      'trustee2@example.test',   'trustee',          'AUTK',        'restricted',   true, null);
+  ('aaaa1111-1111-1111-1111-111111111111', 'Trustee Two',      'trustee2@example.test',   'trustee',          'AUTK',        'restricted',   true, null),
+  -- A third trustee, because approving a delegation takes two who are not
+  -- the recipient: with only two on the books, no trustee could ever receive
+  -- one, which is the case 0005 had to get right.
+  ('bbbb1111-1111-1111-1111-111111111111', 'Trustee Three',    'trustee3@example.test',   'trustee',          'AUTK',        'restricted',   true, null);
 
 -- ---------------------------------------------------------------------------
 -- Records, one per tier

@@ -43,6 +43,9 @@ const DocumentVaultView = lazy(() =>
 const CommunicationView = lazy(() =>
   import('./views/CommunicationView').then((m) => ({ default: m.CommunicationView })),
 );
+const AdminConsoleView = lazy(() =>
+  import('./views/AdminConsoleView').then((m) => ({ default: m.AdminConsoleView })),
+);
 
 const MainLayout: React.FC = () => {
   const { language } = useApp();
@@ -165,6 +168,10 @@ const Gate: React.FC = () => {
         <Route path="/finance" element={<FinanceAccountingView />} />
         <Route path="/documents" element={<DocumentVaultView />} />
         <Route path="/communication" element={<CommunicationView />} />
+        {/* Open to anyone signed in: the console shows each person only the
+            parts their policies let them use, and everyone has a right to see
+            what their own access consists of. */}
+        <Route path="/admin" element={<AdminConsoleView />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
