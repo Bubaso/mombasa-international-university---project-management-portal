@@ -92,19 +92,31 @@ interface MeetingRow {
   continues_meeting_id: string | null;
   confidentiality: Confidentiality;
   preparer: NamedRef | NamedRef[] | null;
-  continues: { title: string } | { title: string }[] | null;
   meeting_attendees: { count: number }[] | null;
 }
 
+/**
+ * No embed for the meeting this one continues.
+ *
+ * It used to ask PostgREST to join `meetings` to itself by constraint name,
+ * and that is the one relationship a live project would not resolve: a
+ * self-reference has to be in the schema cache under its own hint, and after
+ * a batch of migrations some workers had it and some did not, so the screen
+ * failed intermittently with "could not find a relationship between
+ * 'meetings' and 'meetings'".
+ *
+ * The title is one string, and for a list it is already in the result — the
+ * continuation points at another meeting in the same set. So it is resolved
+ * from what came back, at no extra cost, and the client no longer depends on
+ * the least reliable corner of PostgREST's embedding.
+ */
 const MEETING_COLUMNS =
   'id, title, held_at, location, kind, priority, status, minutes_status, ' +
   'continues_meeting_id, confidentiality, ' +
   'preparer:profiles!meetings_prepared_by_fkey(full_name), ' +
-  'continues:meetings!meetings_continues_meeting_id_fkey(title), ' +
   'meeting_attendees(count)';
 
-function toMeeting(row: MeetingRow): Meeting {
-  const continues = Array.isArray(row.continues) ? row.continues[0] : row.continues;
+function toMeeting(row: MeetingRow, titles?: Map<string, string>): Meeting {
   return {
     id: row.id,
     title: row.title,
@@ -116,7 +128,8 @@ function toMeeting(row: MeetingRow): Meeting {
     minutesStatus: row.minutes_status,
     preparedByName: label(row.preparer),
     continuesMeetingId: row.continues_meeting_id,
-    continuesMeetingTitle: continues?.title ?? null,
+    continuesMeetingTitle:
+      (row.continues_meeting_id && titles?.get(row.continues_meeting_id)) ?? null,
     confidentiality: row.confidentiality,
     attendeeCount: row.meeting_attendees?.[0]?.count ?? 0,
   };
@@ -128,7 +141,10 @@ export async function fetchMeetings(): Promise<Meeting[]> {
     .select(MEETING_COLUMNS)
     .order('held_at', { ascending: false });
   fail(error);
-  return ((data ?? []) as unknown as MeetingRow[]).map(toMeeting);
+  const rows = (data ?? []) as unknown as MeetingRow[];
+  // The continuation is another row in this same set, so no second read.
+  const titles = new Map(rows.map((row) => [row.id, row.title]));
+  return rows.map((row) => toMeeting(row, titles));
 }
 
 export async function fetchMeeting(id: string): Promise<Meeting | null> {
@@ -138,7 +154,22 @@ export async function fetchMeeting(id: string): Promise<Meeting | null> {
     .eq('id', id)
     .maybeSingle();
   fail(error);
-  return data ? toMeeting(data as unknown as MeetingRow) : null;
+  if (!data) return null;
+  const row = data as unknown as MeetingRow;
+
+  // One row, so the title has to be looked up — and only when there is a
+  // continuation to look up, which is the uncommon case.
+  const titles = new Map<string, string>();
+  if (row.continues_meeting_id) {
+    const { data: parent } = await supabase
+      .from('meetings')
+      .select('id, title')
+      .eq('id', row.continues_meeting_id)
+      .maybeSingle();
+    const found = parent as { id: string; title: string } | null;
+    if (found) titles.set(found.id, found.title);
+  }
+  return toMeeting(row, titles);
 }
 
 export interface MeetingInput {
