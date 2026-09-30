@@ -19,7 +19,8 @@ insert into auth.users (id, email, email_confirmed_at) values
   ('66666666-6666-6666-6666-666666666666', 'advocate2@example.test',  now()),
   ('77777777-7777-7777-7777-777777777777', 'contractor@example.test', now()),
   ('88888888-8888-8888-8888-888888888888', 'donor@example.test',      now()),
-  ('99999999-9999-9999-9999-999999999999', 'expired@example.test',    now());
+  ('99999999-9999-9999-9999-999999999999', 'expired@example.test',    now()),
+  ('aaaa1111-1111-1111-1111-111111111111', 'trustee2@example.test',   now());
 
 insert into profiles (id, full_name, email, role, organization, clearance, is_active, expires_at) values
   ('11111111-1111-1111-1111-111111111111', 'Admin',            'admin@example.test',      'admin',            'AUTK',        'restricted',   true, null),
@@ -30,7 +31,8 @@ insert into profiles (id, full_name, email, role, organization, clearance, is_ac
   ('66666666-6666-6666-6666-666666666666', 'Advocate Two',     'advocate2@example.test',  'legal_counsel',    'Firm B',      'internal',     true, null),
   ('77777777-7777-7777-7777-777777777777', 'Contractor',       'contractor@example.test', 'contractor',       'Coast Eng',   'internal',     true, null),
   ('88888888-8888-8888-8888-888888888888', 'Donor',            'donor@example.test',      'donor',            'Foundation',  'public',       true, null),
-  ('99999999-9999-9999-9999-999999999999', 'Expired Consult',  'expired@example.test',    'consultant',       'Advisory',    'internal',     true, now() - interval '1 day');
+  ('99999999-9999-9999-9999-999999999999', 'Expired Consult',  'expired@example.test',    'consultant',       'Advisory',    'internal',     true, now() - interval '1 day'),
+  ('aaaa1111-1111-1111-1111-111111111111', 'Trustee Two',      'trustee2@example.test',   'trustee',          'AUTK',        'restricted',   true, null);
 
 -- ---------------------------------------------------------------------------
 -- Records, one per tier

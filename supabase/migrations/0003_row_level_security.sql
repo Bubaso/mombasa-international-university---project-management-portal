@@ -442,3 +442,12 @@ grant usage, select on all sequences in schema public to authenticated;
 
 revoke all on audit_log from authenticated;
 grant select on audit_log to authenticated;
+
+-- Tables added by later migrations inherit the same coarse grant, so a new
+-- table is governed by its policies rather than silently unreachable.
+alter default privileges in schema public
+  grant select, insert, update, delete on tables to authenticated;
+alter default privileges in schema public
+  grant usage, select on sequences to authenticated;
+alter default privileges in schema app
+  grant execute on functions to authenticated;

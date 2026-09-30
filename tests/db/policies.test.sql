@@ -256,6 +256,93 @@ begin
 end;
 $$;
 
+
+-- ===========================================================================
+-- Emergency delegation (M1-14)
+-- ===========================================================================
+
+-- The field team member cannot see the restricted case to begin with.
+select pg_temp.act_as('44444444-4444-4444-4444-444444444444');
+select pg_temp.check(
+  'before any delegation the field team stops below restricted',
+  pg_temp.visible_cases(), 3::bigint);
+
+-- A trustee raises a request to hand the director's authority over.
+select pg_temp.act_as('33333333-3333-3333-3333-333333333333');
+insert into emergency_delegations (id, from_user, to_user, reason, requested_by, expires_at)
+values ('ffff0000-0000-0000-0000-000000000001',
+        '22222222-2222-2222-2222-222222222222',
+        '44444444-4444-4444-4444-444444444444',
+        'Director unreachable during the hearing week',
+        '33333333-3333-3333-3333-333333333333',
+        now() + interval '3 days');
+
+select pg_temp.act_as('44444444-4444-4444-4444-444444444444');
+select pg_temp.check(
+  'an unapproved request grants nothing',
+  pg_temp.visible_cases(), 3::bigint);
+
+-- The recipient cannot approve their own delegation.
+do $$
+begin
+  begin
+    insert into emergency_delegation_approvals (delegation_id, approver_id)
+    values ('ffff0000-0000-0000-0000-000000000001', '44444444-4444-4444-4444-444444444444');
+    raise exception 'FAIL the recipient approved their own delegation';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   the recipient cannot approve their own delegation';
+  end;
+end;
+$$;
+
+-- Nor can someone who is not a trustee.
+select pg_temp.act_as('55555555-5555-5555-5555-555555555555');  -- advocate
+do $$
+begin
+  begin
+    insert into emergency_delegation_approvals (delegation_id, approver_id)
+    values ('ffff0000-0000-0000-0000-000000000001', '55555555-5555-5555-5555-555555555555');
+    raise exception 'FAIL a non-trustee approved a delegation';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   only a trustee may approve a delegation';
+  end;
+end;
+$$;
+
+-- One trustee is not enough.
+select pg_temp.act_as('33333333-3333-3333-3333-333333333333');
+insert into emergency_delegation_approvals (delegation_id, approver_id)
+values ('ffff0000-0000-0000-0000-000000000001', '33333333-3333-3333-3333-333333333333');
+
+select pg_temp.act_as('44444444-4444-4444-4444-444444444444');
+select pg_temp.check(
+  'one approval is not enough',
+  pg_temp.visible_cases(), 3::bigint);
+
+-- The second trustee completes it.
+select pg_temp.act_as('aaaa1111-1111-1111-1111-111111111111');
+insert into emergency_delegation_approvals (delegation_id, approver_id)
+values ('ffff0000-0000-0000-0000-000000000001', 'aaaa1111-1111-1111-1111-111111111111');
+
+select pg_temp.act_as('44444444-4444-4444-4444-444444444444');
+select pg_temp.check(
+  'two trustees together transfer the authority',
+  pg_temp.visible_cases(), 4::bigint);
+
+-- Revoking takes it straight back.
+select pg_temp.act_as('33333333-3333-3333-3333-333333333333');
+update emergency_delegations
+set revoked_by = '33333333-3333-3333-3333-333333333333', revoked_at = now()
+where id = 'ffff0000-0000-0000-0000-000000000001';
+
+select pg_temp.act_as('44444444-4444-4444-4444-444444444444');
+select pg_temp.check(
+  'revoking a delegation withdraws the authority',
+  pg_temp.visible_cases(), 3::bigint);
+
 reset role;
+
 \echo ''
 \echo 'All policy tests passed.'

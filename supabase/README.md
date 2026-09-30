@@ -9,6 +9,7 @@ migrations/
   0001_identity_and_classification.sql   profiles, roles, tiers, grants, audit
   0002_domain_tables.sql                 the tables the app reads
   0003_row_level_security.sql            who may read and write what
+  0004_emergency_delegation.sql          two-trustee transfer of authority
 functions/
   ai-assistant/                          server-side model proxy
 ```
@@ -43,6 +44,24 @@ Three things decide a read, and all three must agree:
 
 Writing is narrower than reading, and every mutating policy also requires the
 row to be readable: permission to edit is never a way to see something.
+
+## Emergency delegation
+
+Locking the portal down creates a problem of its own: if the project director
+is unreachable, nobody can act. Two trustees acting together can hand one
+person's authority to another for a bounded window.
+
+Two, not one — a single trustee quietly granting themselves the director's
+clearance is the hole this would otherwise open. The recipient cannot approve
+their own delegation, a non-trustee cannot approve at all, and a trustee
+cannot approve twice. A delegation always expires, can be revoked at any
+moment, and adds a hat rather than removing one: the recipient keeps whatever
+they already had. Every step lands in the audit log.
+
+This exists because the project's own evaluation report names a single-person
+dependency as its main structural weakness. It is enforced in the database and
+covered by tests; the console for requesting and approving one is not built
+yet, so today it is reachable only through SQL.
 
 ## Running the tests
 
