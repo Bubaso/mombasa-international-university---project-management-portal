@@ -235,6 +235,61 @@ the version first, under row level security, and the service role is used only
 after the policies have already answered. Neither is a convenience wrapper —
 without them a document has no digest and no route to its bytes at all.
 
+## When a verified sign-in says there is no access
+
+The portal now names which of four things happened, and shows the id it
+looked the profile up by. The id is the part that matters: a profile is keyed
+on `auth.users.id`, not on the email address, and the email is what people
+compare by eye.
+
+Run this in the SQL editor, as the project owner, so row level security is out
+of the way and you see what is actually there:
+
+```sql
+select
+  u.id            as auth_user_id,
+  u.email         as auth_email,
+  u.email_confirmed_at,
+  p.id            as profile_id,
+  p.role,
+  p.clearance,
+  p.is_active,
+  p.expires_at
+from auth.users u
+full outer join profiles p on p.id = u.id
+where u.email = 'you@example.com' or p.email = 'you@example.com';
+```
+
+What the rows mean:
+
+- **`profile_id` null** — the account exists and nothing in `profiles` carries
+  its id. Insert one with `id` set to the `auth_user_id` above, not a fresh
+  uuid. (`profiles.id` is a foreign key to `auth.users`, so a wrong id is
+  refused rather than accepted quietly.)
+- **`auth_user_id` null** — there is a profile row for that address and no
+  account behind it. The address in `profiles` is a label; sign-in goes
+  through `auth.users`.
+- **both present, `is_active` false or `expires_at` in the past** — the account
+  is switched off or timed out. This is what 0014 exists for: before it, such
+  a person could not read the row that said so, so the portal could only
+  report the vaguest of the four answers.
+- **both present and healthy, and the portal still refuses** — the build is
+  probably pointed at a different project. Check `VITE_SUPABASE_URL` in the
+  deployment against the project you are looking at, and compare the
+  `auth_user_id` here with the id the sign-in screen prints.
+
+To set up the first administrator by hand, after `supabase db push`:
+
+```sql
+insert into profiles (id, full_name, email, role, clearance)
+select u.id, 'Your Name', u.email, 'admin', 'restricted'
+from auth.users u
+where u.email = 'you@example.com';
+```
+
+Everyone after that should come through `invite-user`, which creates the
+account and the profile together and cannot leave one without the other.
+
 ## Applying to a real project
 
 ```bash

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Loader2, LogIn, ShieldAlert, PlugZap } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth, type AccessDenial } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
 
 /**
@@ -8,8 +8,40 @@ import { useApp } from '../context/AppContext';
  * configured, and signed in without a profile. Both are stated plainly rather
  * than shown as a failed password.
  */
+/**
+ * What to say about a refused sign-in.
+ *
+ * The old copy covered four causes with one sentence and sent everybody to
+ * the project director. Three of the four are things the person reading it
+ * can fix, and the fourth is worth quoting verbatim rather than paraphrasing.
+ */
+function denialText(denial: AccessDenial | null, tr: boolean): string {
+  switch (denial?.kind) {
+    case 'inactive':
+      return tr
+        ? 'Portalda profiliniz var ama etkin değil (is_active kapalı). Bunu bir yönetici açabilir.'
+        : 'A profile exists for this account but it is switched off (is_active is false). An administrator can turn it back on.';
+
+    case 'expired':
+      return tr
+        ? `Profilinizin erişimi ${new Date(denial.expiresAt).toLocaleDateString('tr')} tarihinde sona ermiş. Süreyi bir yönetici uzatabilir.`
+        : `This profile's access ended on ${new Date(denial.expiresAt).toLocaleDateString('en-GB')}. An administrator can extend it.`;
+
+    case 'error':
+      return tr
+        ? 'Giriş doğrulandı, ancak profil sorgusu veritabanı tarafından reddedildi. Veritabanının verdiği cevap aşağıda.'
+        : 'Your sign-in was verified, but the database refused the profile query. Its own answer is below.';
+
+    case 'no_row':
+    default:
+      return tr
+        ? 'Giriş doğrulandı, ancak bu kimliğe karşılık gelen okunabilir bir profil satırı yok. İki sebebi olabilir: profiles tablosunda bu id ile bir satır hiç yok, ya da satır var fakat etkin değil veya süresi dolmuş — bu durumda politikalar satırı size hiç göstermez. Aşağıdaki id ile profiles tablosunu kontrol edin.'
+        : 'Your sign-in was verified, but no readable profile row matches this id. Two things produce that: no row in profiles carries this id, or a row does but is inactive or past its date, in which case the policies do not show it to you at all. Check the profiles table against the id below.';
+  }
+}
+
 export const SignInPage: React.FC = () => {
-  const { status, signIn, signOut, requestPasswordReset } = useAuth();
+  const { status, denial, signIn, signOut, requestPasswordReset } = useAuth();
   const { language, setLanguage } = useApp();
   const tr = language === 'tr';
 
@@ -88,15 +120,38 @@ export const SignInPage: React.FC = () => {
           <div className="rounded-xl border border-rose-300 bg-rose-50 p-4 text-xs" role="alert">
             <div className="flex items-start gap-2.5">
               <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-rose-600" aria-hidden="true" />
-              <div className="space-y-2">
+              <div className="min-w-0 space-y-2">
                 <div className="font-semibold text-rose-900">
                   {tr ? 'Bu hesabın erişimi yok' : 'This account has no access'}
                 </div>
-                <p className="leading-relaxed text-rose-900/80">
-                  {tr
-                    ? 'Girişiniz doğrulandı, ancak portalda tanımlı bir profiliniz yok ya da erişiminiz süresi dolmuş. Proje direktörüyle iletişime geçin.'
-                    : 'You signed in, but no active profile exists for this account, or its access has expired. Contact the project director.'}
-                </p>
+
+                <p className="leading-relaxed text-rose-900/80">{denialText(denial, tr)}</p>
+
+                {denial?.kind === 'error' && (
+                  <p className="rounded-md bg-white/70 px-2 py-1 font-mono text-[10px] leading-relaxed break-words text-rose-900">
+                    {denial.message}
+                  </p>
+                )}
+
+                {/* Their own account, shown to them. This is the one fact that
+                    turns "contact the project director" into something the
+                    person can check themselves in a single query, and it is
+                    the id the portal actually looked up — not the email,
+                    which is what people compare by eye and which is not what
+                    the profile is keyed on. */}
+                {denial && (
+                  <dl className="space-y-0.5 rounded-md bg-white/70 px-2 py-1.5 text-[10px] text-rose-900">
+                    <div className="flex flex-wrap gap-x-1.5">
+                      <dt className="font-semibold">{tr ? 'Hesap' : 'Account'}</dt>
+                      <dd className="font-mono break-all">{denial.email ?? '—'}</dd>
+                    </div>
+                    <div className="flex flex-wrap gap-x-1.5">
+                      <dt className="font-semibold">{tr ? 'Aranan kimlik' : 'Looked up as'}</dt>
+                      <dd className="font-mono break-all">{denial.userId}</dd>
+                    </div>
+                  </dl>
+                )}
+
                 <button
                   onClick={() => void signOut()}
                   className="cursor-pointer rounded-lg border border-rose-300 bg-white px-2.5 py-1 font-semibold text-rose-800 hover:bg-rose-100"
