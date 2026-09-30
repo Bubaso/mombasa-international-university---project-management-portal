@@ -355,7 +355,7 @@ select pg_temp.act_as('bbbb1111-1111-1111-1111-111111111111');  -- trustee three
 do $$
 begin
   begin
-    insert into financial_transactions (reference_no, date, category, amount_kshs, confidentiality)
+    insert into financial_transactions (reference_no, date, category, amount, confidentiality)
     values ('PV-002', current_date, 'civil_construction', 250000, 'internal');
     raise exception 'FAIL a trustee recorded a payment with no delegation';
   exception
@@ -382,7 +382,7 @@ insert into emergency_delegation_approvals (delegation_id, approver_id)
 values ('ffff0000-0000-0000-0000-000000000002', 'aaaa1111-1111-1111-1111-111111111111');
 
 select pg_temp.act_as('bbbb1111-1111-1111-1111-111111111111');
-insert into financial_transactions (reference_no, date, category, amount_kshs, confidentiality)
+insert into financial_transactions (reference_no, date, category, amount, confidentiality)
 values ('PV-002', current_date, 'civil_construction', 250000, 'internal');
 select pg_temp.check(
   'a lent directorship lets a trustee record the payment',
@@ -487,7 +487,7 @@ select pg_temp.act_as('bbbb1111-1111-1111-1111-111111111111');
 do $$
 begin
   begin
-    insert into financial_transactions (reference_no, date, category, amount_kshs, confidentiality)
+    insert into financial_transactions (reference_no, date, category, amount, confidentiality)
     values ('PV-003', current_date, 'civil_construction', 10000, 'internal');
     raise exception 'FAIL a deactivated profile still lent its authority';
   exception
@@ -2166,6 +2166,259 @@ begin
       null;
   end;
   raise notice 'ok   but cannot extend its own access by reading it';
+end;
+$$;
+
+
+-- ===========================================================================
+-- Money: the budget, the vouchers, the badge, the pledge (M8)
+-- ===========================================================================
+
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- director
+
+-- M8-03. An amount carries the rate it was converted at, and the base figure
+-- is generated from the two, so it cannot disagree with them.
+select pg_temp.check('a foreign amount converts at the rate on its own row',
+  (select amount_kes from budget_lines where id = '1d000000-0000-0000-0000-000000000011'),
+  2600000.00::numeric(18, 2));
+
+do $$
+begin
+  begin
+    insert into budget_lines
+      (budget_category_id, title_en, amount, currency, fx_rate_to_kes)
+    values ('1d000000-0000-0000-0000-000000000001', 'Bad rate', 100, 'KES', 7);
+    raise exception 'FAIL the base currency was given a rate other than one';
+  exception
+    when check_violation then
+      raise notice 'ok   and the base currency cannot be given a rate of its own';
+  end;
+end;
+$$;
+
+-- M8-02. Four figures, none of them stored beside the others.
+select pg_temp.check('a line with nothing drawn on it is entirely remaining',
+  (select remaining_kes from budget_position
+    where budget_line_id = '1d000000-0000-0000-0000-000000000010'),
+  10000000.00::numeric(18, 2));
+
+insert into payment_vouchers
+  (id, reference_no, budget_line_id, payee, purpose, amount, currency, confidentiality)
+values ('1d000000-0000-0000-0000-000000000030', 'PV-1001',
+        '1d000000-0000-0000-0000-000000000010', 'Coast Engineering',
+        'Substructure, first claim', 2000000, 'KES', 'internal');
+
+-- M8-05, and the reason an approval chain exists at all.
+do $$
+begin
+  begin
+    update payment_vouchers set state = 'approved'
+    where id = '1d000000-0000-0000-0000-000000000030';
+    raise exception 'FAIL the requester approved their own voucher';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   the person who raised a voucher cannot rule on it';
+  end;
+end;
+$$;
+
+select pg_temp.act_as('11111111-1111-1111-1111-111111111111');  -- admin
+update payment_vouchers set state = 'approved'
+where id = '1d000000-0000-0000-0000-000000000030';
+
+select pg_temp.check('an approved voucher is committed, not yet spent',
+  (select committed_kes from budget_position
+    where budget_line_id = '1d000000-0000-0000-0000-000000000010'),
+  2000000.00::numeric(18, 2));
+
+select pg_temp.check('and it comes off what is left before the money moves',
+  (select remaining_kes from budget_position
+    where budget_line_id = '1d000000-0000-0000-0000-000000000010'),
+  8000000.00::numeric(18, 2));
+
+-- The budget check is part of the record, not a screen somebody saw.
+select pg_temp.check('what the line had left is written down at the decision',
+  (select budget_remaining_at_decision from payment_vouchers
+    where id = '1d000000-0000-0000-0000-000000000030'),
+  10000000.00::numeric(18, 2));
+
+select pg_temp.check('and the ruling itself is kept, with who made it',
+  (select count(*) from voucher_approvals
+    where payment_voucher_id = '1d000000-0000-0000-0000-000000000030'), 1::bigint);
+
+do $$
+declare
+  n int;
+begin
+  begin
+    update voucher_approvals set note = 'never mind'
+    where payment_voucher_id = '1d000000-0000-0000-0000-000000000030';
+    get diagnostics n = row_count;
+    if n <> 0 then
+      raise exception 'FAIL a recorded approval was edited';
+    end if;
+  exception
+    when insufficient_privilege then
+      null;
+  end;
+  raise notice 'ok   which cannot be rewritten afterwards';
+end;
+$$;
+
+update payment_vouchers set state = 'paid'
+where id = '1d000000-0000-0000-0000-000000000030';
+
+select pg_temp.check('once paid it moves from committed to spent',
+  (select committed_kes = 0 and spent_kes = 2000000.00
+   from budget_position where budget_line_id = '1d000000-0000-0000-0000-000000000010'),
+  true);
+
+do $$
+begin
+  begin
+    update payment_vouchers set state = 'requested'
+    where id = '1d000000-0000-0000-0000-000000000030';
+    raise exception 'FAIL a paid voucher was taken back';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   and a paid voucher cannot be taken back';
+  end;
+end;
+$$;
+
+-- M8-05 again, at the size where the board has to be the one signing.
+insert into payment_vouchers
+  (id, reference_no, budget_line_id, payee, purpose, amount, currency, confidentiality)
+values ('1d000000-0000-0000-0000-000000000031', 'PV-1002',
+        '1d000000-0000-0000-0000-000000000010', 'Coast Engineering',
+        'A very large claim', 30000000, 'KES', 'internal');
+
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- director
+do $$
+begin
+  begin
+    update payment_vouchers set state = 'approved'
+    where id = '1d000000-0000-0000-0000-000000000031';
+    raise exception 'FAIL a director approved a trustee-sized payment';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   a payment above the band needs the people the band names';
+  end;
+end;
+$$;
+
+select pg_temp.act_as('33333333-3333-3333-3333-333333333333');  -- trustee
+update payment_vouchers set state = 'approved'
+where id = '1d000000-0000-0000-0000-000000000031';
+select pg_temp.check('and goes through when one of them rules on it',
+  (select state::text from payment_vouchers
+    where id = '1d000000-0000-0000-0000-000000000031'), 'approved');
+
+-- M8-06. The badge nobody can award themselves.
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- director
+do $$
+declare
+  n int;
+begin
+  begin
+    update financial_transactions set audited_at = now(), audited_by = auth.uid()
+    where id = 'cccc0000-0000-0000-0000-000000000001';
+    get diagnostics n = row_count;
+    if n <> 0 then
+      raise exception 'FAIL a director marked a transaction audited';
+    end if;
+  exception
+    when insufficient_privilege then
+      null;
+  end;
+  raise notice 'ok   nobody can write the audited columns, whatever their role';
+end;
+$$;
+
+do $$
+begin
+  begin
+    perform public.mark_audited('cccc0000-0000-0000-0000-000000000001');
+    raise exception 'FAIL a director marked a transaction audited through the function';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   and the one function that can refuses anyone but the auditors';
+  end;
+end;
+$$;
+
+select pg_temp.act_as('dddd1111-1111-1111-1111-111111111111');  -- external auditor
+select public.mark_audited('cccc0000-0000-0000-0000-000000000001', 'Vouched to invoice.');
+
+select pg_temp.check('the auditor signing it is what produces the badge',
+  (select audited_at is not null from financial_transactions
+    where id = 'cccc0000-0000-0000-0000-000000000001'), true);
+
+select pg_temp.check('and it carries their name, not the spender''s',
+  (select audited_by = 'dddd1111-1111-1111-1111-111111111111' from financial_transactions
+    where id = 'cccc0000-0000-0000-0000-000000000001'), true);
+
+-- M8-07. Paper or no paper, it is recorded — and it says which.
+select pg_temp.check('a transaction with nothing attached reads as unverified',
+  (select verified from financial_transactions
+    where id = 'cccc0000-0000-0000-0000-000000000001'), false);
+
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- director
+update financial_transactions set document_id = '1b000000-0000-0000-0000-000000000001'
+where id = 'cccc0000-0000-0000-0000-000000000001';
+
+select pg_temp.check('and attaching the invoice is what makes it verified',
+  (select verified from financial_transactions
+    where id = 'cccc0000-0000-0000-0000-000000000001'), true);
+
+-- M8-08. A pledge is not a receipt.
+select pg_temp.check('a pledge is counted at what was promised',
+  (select pledged_amount_kes from donation_position
+    where donation_id = '1d000000-0000-0000-0000-000000000020'),
+  4000000.00::numeric(18, 2));
+
+select pg_temp.check('what has arrived is counted separately',
+  (select received_kes from donation_position
+    where donation_id = '1d000000-0000-0000-0000-000000000020'),
+  1200000.00::numeric(18, 2));
+
+select pg_temp.check('and the difference is named rather than netted away',
+  (select outstanding_kes from donation_position
+    where donation_id = '1d000000-0000-0000-0000-000000000020'),
+  2800000.00::numeric(18, 2));
+
+-- M8-09. The distribution is a query, not a constant.
+select pg_temp.check('the spend distribution comes from the lines themselves',
+  (select spent_kes from category_spend
+    where budget_category_id = '1d000000-0000-0000-0000-000000000001'),
+  2000000.00::numeric(18, 2));
+
+-- Money is not part of a contractor's world, and a budget is not either.
+select pg_temp.act_as('77777777-7777-7777-7777-777777777777');  -- contractor
+select pg_temp.check('somebody outside sees no budget lines',
+  (select count(*) from budget_lines), 0::bigint);
+select pg_temp.check('nor any donation',
+  (select count(*) from donations), 0::bigint);
+
+-- But anybody may ask to be paid, and read their own request back.
+insert into payment_vouchers (reference_no, payee, purpose, amount, currency, confidentiality)
+values ('PV-2001', 'Coast Engineering', 'Reimbursement', 40000, 'KES', 'internal');
+
+select pg_temp.check('though anybody may ask to be paid, and see their own request',
+  (select count(*) from payment_vouchers where reference_no = 'PV-2001'), 1::bigint);
+
+select pg_temp.check('and no request but their own',
+  (select count(*) from payment_vouchers), 1::bigint);
+
+do $$
+begin
+  begin
+    update payment_vouchers set state = 'approved' where reference_no = 'PV-2001';
+    raise exception 'FAIL an outside party approved their own payment';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   asking to be paid is not the same as approving it';
+  end;
 end;
 $$;
 

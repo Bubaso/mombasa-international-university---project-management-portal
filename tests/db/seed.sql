@@ -57,8 +57,11 @@ insert into construction_blocks (id, code, name, confidentiality) values
   ('bbbb0000-0000-0000-0000-000000000001', 'A1', 'Block A1', 'internal'),
   ('bbbb0000-0000-0000-0000-000000000002', 'B2', 'Block B2', 'internal');
 
-insert into financial_transactions (id, reference_no, date, category, amount_kshs, confidentiality) values
-  ('cccc0000-0000-0000-0000-000000000001', 'PV-001', current_date, 'civil_construction', 1000000, 'internal');
+insert into financial_transactions
+  (id, reference_no, date, category, amount, currency, confidentiality)
+values
+  ('cccc0000-0000-0000-0000-000000000001', 'PV-001', current_date, 'civil_construction',
+   1000000, 'KES', 'internal');
 
 insert into communication_threads (id, title, channel, confidentiality) values
   ('dddd0000-0000-0000-0000-000000000001', 'Internal thread',   'legal',    'internal'),
@@ -391,3 +394,49 @@ insert into site_tasks (id, work_package_id, title_en, kind, state, legal_basis_
 -- read the order said so; nothing inferred it.
 insert into obligation_blocks (obligation_id, construction_block_id) values
   ('19000000-0000-0000-0000-000000000003', 'bbbb0000-0000-0000-0000-000000000001');
+
+-- ---------------------------------------------------------------------------
+-- Money (M8)
+-- ---------------------------------------------------------------------------
+
+-- The external auditor is capped at `internal` by their role, which is the
+-- point: the audit badge is theirs to award and the restricted tier is still
+-- not theirs to read.
+insert into auth.users (id, email, email_confirmed_at)
+values ('dddd1111-1111-1111-1111-111111111111', 'auditor@example.test', now());
+
+insert into profiles (id, full_name, email, role, organization, clearance, is_active)
+values ('dddd1111-1111-1111-1111-111111111111', 'Auditor', 'auditor@example.test',
+        'external_auditor', 'Audit LLP', 'internal', true);
+
+insert into budget_categories (id, code, name_en, sequence) values
+  ('1d000000-0000-0000-0000-000000000001', 'CIVIL', 'Civil construction', 1),
+  ('1d000000-0000-0000-0000-000000000002', 'LEGAL', 'Legal costs', 2);
+
+insert into budget_lines
+  (id, budget_category_id, construction_block_id, title_en, amount, currency, confidentiality)
+values
+  ('1d000000-0000-0000-0000-000000000010', '1d000000-0000-0000-0000-000000000001',
+   'bbbb0000-0000-0000-0000-000000000001', 'Substructure to Block A1',
+   10000000, 'KES', 'internal'),
+  -- Pledged in one currency, reported in another: the rate is on the row.
+  ('1d000000-0000-0000-0000-000000000011', '1d000000-0000-0000-0000-000000000002',
+   null, 'Counsel fees', 20000, 'USD', 'internal');
+
+update budget_lines set fx_rate_to_kes = 130
+where id = '1d000000-0000-0000-0000-000000000011';
+
+insert into donations
+  (id, donor_name, pledged_on, pledged_amount, pledged_currency, confidentiality)
+values ('1d000000-0000-0000-0000-000000000020', 'A Turkish foundation',
+        current_date - 90, 1000000, 'TRY', 'internal');
+
+update donations set pledged_fx_rate_to_kes = 4
+where id = '1d000000-0000-0000-0000-000000000020';
+
+-- A third of it has actually arrived, and it has a receipt against it.
+insert into donation_tranches
+  (donation_id, received_on, received_amount, received_currency, received_fx_rate_to_kes,
+   document_id)
+values ('1d000000-0000-0000-0000-000000000020', current_date - 30, 300000, 'TRY', 4,
+        '1b000000-0000-0000-0000-000000000001');
