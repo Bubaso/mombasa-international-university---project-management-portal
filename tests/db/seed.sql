@@ -93,3 +93,97 @@ insert into record_grants (user_id, entity_type, entity_id, permission, granted_
    'read', '22222222-2222-2222-2222-222222222222');
 
 reset role;
+
+-- ---------------------------------------------------------------------------
+-- Stakeholders and meetings (M3, M4)
+-- ---------------------------------------------------------------------------
+
+set role postgres;
+
+insert into organizations (id, name, category, country) values
+  ('0a000000-0000-0000-0000-000000000001', 'Ministry of Education', 'government', 'Kenya'),
+  ('0a000000-0000-0000-0000-000000000002', 'Coast Engineering Ltd', 'contractor',  'Kenya');
+
+insert into stakeholders
+  (id, full_name, title, organization_id, category, stance, influence, interest,
+   relationship_owner, profile_id, confidentiality) values
+  ('0b000000-0000-0000-0000-000000000001', 'The Minister', 'Cabinet Secretary',
+   '0a000000-0000-0000-0000-000000000001', 'government', 'supporter', 5, 4,
+   '22222222-2222-2222-2222-222222222222', null, 'internal'),
+  ('0b000000-0000-0000-0000-000000000002', 'Community Elder', 'Elder',
+   null, 'community_leader', 'neutral', 2, 3,
+   '22222222-2222-2222-2222-222222222222', null, 'public'),
+  ('0b000000-0000-0000-0000-000000000003', 'Advocate One', 'Advocate',
+   null, 'legal', 'supporter', 3, 5,
+   '22222222-2222-2222-2222-222222222222', '55555555-5555-5555-5555-555555555555', 'internal'),
+  ('0b000000-0000-0000-0000-000000000004', 'Contractor Lead', 'Site Manager',
+   '0a000000-0000-0000-0000-000000000002', 'contractor', 'neutral', 2, 4,
+   '22222222-2222-2222-2222-222222222222', '77777777-7777-7777-7777-777777777777', 'internal'),
+  -- Nobody keeps this one and nobody has spoken to them: the two findings the
+  -- attention view exists to surface.
+  ('0b000000-0000-0000-0000-000000000005', 'Unattended Senator', 'Senator',
+   null, 'government', 'unknown', 5, 3, null, null, 'internal');
+
+insert into stakeholder_interactions (id, stakeholder_id, occurred_at, channel, summary) values
+  ('0c000000-0000-0000-0000-000000000001', '0b000000-0000-0000-0000-000000000001',
+   now() - interval '3 days', 'in_person', 'Met at the ministry; promised to make calls.');
+
+insert into stakeholder_assessments (id, stakeholder_id, body) values
+  ('0d000000-0000-0000-0000-000000000001', '0b000000-0000-0000-0000-000000000001',
+   'Warm in person, slow to act. Follow up through the governor.');
+
+insert into stakeholder_relationships
+  (from_stakeholder_id, to_stakeholder_id, kind, strength) values
+  ('0b000000-0000-0000-0000-000000000005', '0b000000-0000-0000-0000-000000000001',
+   'influences', 4);
+
+insert into meetings (id, title, held_at, kind, status, minutes_status, confidentiality) values
+  ('0e000000-0000-0000-0000-000000000001', 'Legal strategy', now() - interval '2 days',
+   'legal', 'completed', 'draft', 'internal'),
+  ('0e000000-0000-0000-0000-000000000002', 'Trustee session', now() - interval '1 day',
+   'trustee', 'completed', 'final', 'restricted'),
+  ('0e000000-0000-0000-0000-000000000003', 'Community briefing', now() - interval '5 days',
+   'community', 'completed', 'draft', 'public'),
+  -- Attended by the same advocate, but classified above their clearance: scope
+  -- narrows, it never lifts.
+  ('0e000000-0000-0000-0000-000000000004', 'Confidential counsel review', now(),
+   'legal', 'planned', 'draft', 'confidential');
+
+insert into meeting_attendees (meeting_id, profile_id, stakeholder_id, role_at_meeting) values
+  ('0e000000-0000-0000-0000-000000000001', '22222222-2222-2222-2222-222222222222', null, 'chair'),
+  ('0e000000-0000-0000-0000-000000000001', null, '0b000000-0000-0000-0000-000000000003', 'participant'),
+  ('0e000000-0000-0000-0000-000000000002', '33333333-3333-3333-3333-333333333333', null, 'chair'),
+  ('0e000000-0000-0000-0000-000000000003', null, '0b000000-0000-0000-0000-000000000002', 'participant'),
+  ('0e000000-0000-0000-0000-000000000004', null, '0b000000-0000-0000-0000-000000000003', 'participant');
+
+insert into meeting_notes (id, meeting_id, section, language, body) values
+  ('0f000000-0000-0000-0000-000000000001', '0e000000-0000-0000-0000-000000000001',
+   'discussed', 'en', 'Appeal timetable and the record of appeal.'),
+  ('0f000000-0000-0000-0000-000000000002', '0e000000-0000-0000-0000-000000000002',
+   'discussed', 'en', 'Board assessment of the partner trust.');
+
+insert into decisions (id, meeting_id, reference_no, text_en, organ, vote, status, confidentiality)
+values
+  ('10000000-0000-0000-0000-000000000001', '0e000000-0000-0000-0000-000000000001',
+   'D-2026-01', 'File our own Record of Appeal.', 'Board of Trustees', 'unanimous',
+   'in_force', 'internal');
+
+insert into action_items
+  (id, meeting_id, text_en, due_date, status, owner_profile_id, owner_stakeholder_id,
+   confidentiality) values
+  -- Owned by someone outside the organisation, which is the ordinary case.
+  ('11000000-0000-0000-0000-000000000001', '0e000000-0000-0000-0000-000000000001',
+   'Secure the site boundary markers.', current_date + 3, 'open',
+   null, '0b000000-0000-0000-0000-000000000004', 'internal'),
+  ('11000000-0000-0000-0000-000000000002', '0e000000-0000-0000-0000-000000000002',
+   'Draft the trustee briefing pack.', current_date + 7, 'open',
+   '44444444-4444-4444-4444-444444444444', null, 'internal');
+
+insert into open_questions
+  (id, meeting_id, question_en, status, target_resolution_date, owner_profile_id,
+   confidentiality) values
+  ('12000000-0000-0000-0000-000000000001', '0e000000-0000-0000-0000-000000000001',
+   'Do we join the partner trust''s appeal or file separately?', 'open',
+   current_date + 14, '22222222-2222-2222-2222-222222222222', 'internal');
+
+reset role;

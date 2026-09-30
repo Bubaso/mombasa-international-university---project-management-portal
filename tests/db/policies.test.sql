@@ -687,6 +687,370 @@ select pg_temp.check(
   1::bigint);
 
 
+-- ===========================================================================
+-- The stakeholder register (M4)
+-- ===========================================================================
+--
+-- This is the project's political map: who is with us, who influences whom,
+-- and what the project privately thinks of them. Clearance alone is not
+-- enough to protect it — an advocate and a contractor both hold 'internal'
+-- clearance — so it carries a scope rule of its own.
+
+select pg_temp.act_as('33333333-3333-3333-3333-333333333333');  -- trustee
+select pg_temp.check('an internal role sees the whole register',
+  (select count(*) from stakeholders), 5::bigint);
+
+select pg_temp.act_as('77777777-7777-7777-7777-777777777777');  -- contractor
+select pg_temp.check('an external role sees only what was published',
+  (select count(*) from stakeholders), 1::bigint);
+select pg_temp.check('and that one is the public record',
+  (select full_name from stakeholders), 'Community Elder'::text);
+
+-- Not even their own contact record, which carries the influence, interest and
+-- stance the project has assigned to them.
+select pg_temp.check(
+  'a person cannot read the assessment the register makes of them',
+  (select count(*) from stakeholders
+    where profile_id = '77777777-7777-7777-7777-777777777777'),
+  0::bigint);
+
+select pg_temp.check('nor the contact log, at any tier',
+  (select count(*) from stakeholder_interactions), 0::bigint);
+select pg_temp.check('nor the private assessments',
+  (select count(*) from stakeholder_assessments), 0::bigint);
+
+-- Sharing one stakeholder deliberately is the way to widen that.
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- project director
+insert into record_grants (user_id, entity_type, entity_id, permission, granted_by) values
+  ('55555555-5555-5555-5555-555555555555', 'stakeholders',
+   '0b000000-0000-0000-0000-000000000001', 'read',
+   '22222222-2222-2222-2222-222222222222');
+
+select pg_temp.act_as('55555555-5555-5555-5555-555555555555');  -- advocate one
+select pg_temp.check('a grant opens one stakeholder to an external role',
+  (select count(*) from stakeholders), 2::bigint);
+select pg_temp.check(
+  'but the private assessment of them stays shut',
+  (select count(*) from stakeholder_assessments
+    where stakeholder_id = '0b000000-0000-0000-0000-000000000001'),
+  0::bigint);
+-- An edge is only visible when both of its ends are.
+select pg_temp.check(
+  'and half a relationship is not shown',
+  (select count(*) from stakeholder_relationships), 0::bigint);
+
+-- ---------------------------------------------------------------------------
+-- How a stance moved (M4-03)
+-- ---------------------------------------------------------------------------
+
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');
+select pg_temp.check('a stance is dated from the moment it is first recorded',
+  (select count(*) from stakeholder_stance_changes
+    where stakeholder_id = '0b000000-0000-0000-0000-000000000001'),
+  1::bigint);
+
+update stakeholders set stance = 'sceptic'
+where id = '0b000000-0000-0000-0000-000000000001';
+
+select pg_temp.check('and a change appends rather than overwrites',
+  (select count(*) from stakeholder_stance_changes
+    where stakeholder_id = '0b000000-0000-0000-0000-000000000001'),
+  2::bigint);
+select pg_temp.check('the move is recorded both ways round',
+  (select from_stance || '→' || to_stance from stakeholder_stance_changes
+    where stakeholder_id = '0b000000-0000-0000-0000-000000000001'
+      and from_stance is not null),
+  'supporter→sceptic'::text);
+select pg_temp.check('and it names who moved it',
+  (select changed_by from stakeholder_stance_changes
+    where stakeholder_id = '0b000000-0000-0000-0000-000000000001'
+      and from_stance is not null),
+  '22222222-2222-2222-2222-222222222222'::uuid);
+
+-- Written by the trigger, by nobody else. Like the audit log, a history that
+-- can be tidied afterwards is worth nothing.
+do $$
+declare n int;
+begin
+  begin
+    update stakeholder_stance_changes set to_stance = 'champion';
+    get diagnostics n = row_count;
+    if n <> 0 then
+      raise exception 'FAIL a stance history row was edited';
+    end if;
+    raise notice 'ok   a stance history cannot be rewritten';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   a stance history cannot be rewritten (refused)';
+  end;
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- What needs attention (M4-05, M4-07)
+-- ---------------------------------------------------------------------------
+
+select pg_temp.check(
+  'a stakeholder nobody keeps is flagged',
+  (select needs_an_owner from stakeholder_attention
+    where id = '0b000000-0000-0000-0000-000000000005'),
+  true);
+select pg_temp.check(
+  'and so is one nobody has spoken to',
+  (select has_gone_quiet from stakeholder_attention
+    where id = '0b000000-0000-0000-0000-000000000005'),
+  true);
+select pg_temp.check(
+  'a recent conversation is not a warning',
+  (select has_gone_quiet from stakeholder_attention
+    where id = '0b000000-0000-0000-0000-000000000001'),
+  false);
+select pg_temp.check(
+  'the quiet window narrows as influence rises',
+  (select quiet_after_days from stakeholder_attention
+    where id = '0b000000-0000-0000-0000-000000000001'),
+  30);
+
+-- The view must not become a way around the table's own rules.
+select pg_temp.act_as('77777777-7777-7777-7777-777777777777');  -- contractor
+select pg_temp.check(
+  'the attention view answers to the same policies as the register',
+  (select count(*) from stakeholder_attention), 1::bigint);
+
+-- ===========================================================================
+-- Meetings, decisions and actions (M3)
+-- ===========================================================================
+
+select pg_temp.act_as('33333333-3333-3333-3333-333333333333');  -- trustee
+select pg_temp.check('an internal role sees every meeting',
+  (select count(*) from meetings), 4::bigint);
+
+select pg_temp.act_as('55555555-5555-5555-5555-555555555555');  -- advocate one
+-- Present at the legal meeting, so they read it; and the briefing was
+-- published. The trustee session is not theirs and never will be.
+select pg_temp.check('being in the room is what an outsider reads a meeting by',
+  (select count(*) from meetings), 2::bigint);
+select pg_temp.check('the meeting they attended',
+  (select count(*) from meetings where id = '0e000000-0000-0000-0000-000000000001'),
+  1::bigint);
+select pg_temp.check('a session they were not at stays closed',
+  (select count(*) from meetings where id = '0e000000-0000-0000-0000-000000000002'),
+  0::bigint);
+-- Attendance is scope. Scope narrows; it never lifts a clearance ceiling.
+select pg_temp.check(
+  'attending a meeting above their clearance does not open it',
+  (select count(*) from meetings where id = '0e000000-0000-0000-0000-000000000004'),
+  0::bigint);
+
+select pg_temp.check('they read the note of the meeting they were at',
+  (select count(*) from meeting_notes), 1::bigint);
+select pg_temp.check('and the decision that came out of it',
+  (select count(*) from decisions), 1::bigint);
+select pg_temp.check('they can see who else was in the room',
+  (select count(*) from meeting_attendees
+    where meeting_id = '0e000000-0000-0000-0000-000000000001'),
+  2::bigint);
+
+select pg_temp.act_as('77777777-7777-7777-7777-777777777777');  -- contractor
+select pg_temp.check('someone who was at none of them sees only what was published',
+  (select count(*) from meetings), 1::bigint);
+select pg_temp.check('and no decisions at all',
+  (select count(*) from decisions), 0::bigint);
+
+-- ---------------------------------------------------------------------------
+-- An action reaches its owner (M3-05, M3-06)
+-- ---------------------------------------------------------------------------
+
+-- The contractor cannot see the meeting the action came out of, and must
+-- still see what they undertook to do.
+select pg_temp.check(
+  'an action reaches its owner even when the meeting behind it does not',
+  (select count(*) from action_items), 1::bigint);
+select pg_temp.check('and it is theirs',
+  (select text_en from action_items),
+  'Secure the site boundary markers.'::text);
+
+-- Reporting on it is theirs to do.
+update action_items set status = 'done' where id = '11000000-0000-0000-0000-000000000001';
+select pg_temp.check('the owner may report it finished',
+  (select status::text from action_items where id = '11000000-0000-0000-0000-000000000001'),
+  'done'::text);
+select pg_temp.check('and the closing date is stamped rather than typed',
+  (select completed_at is not null from action_items
+    where id = '11000000-0000-0000-0000-000000000001'),
+  true);
+
+-- Redefining it is not.
+do $$
+begin
+  begin
+    update action_items set due_date = current_date + 90
+    where id = '11000000-0000-0000-0000-000000000001';
+    raise exception 'FAIL an owner moved their own deadline';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   an owner may report on an action, not redefine it';
+  end;
+end;
+$$;
+
+do $$
+begin
+  begin
+    update action_items
+    set owner_stakeholder_id = '0b000000-0000-0000-0000-000000000003'
+    where id = '11000000-0000-0000-0000-000000000001';
+    raise exception 'FAIL an owner handed their action to someone else';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   an action cannot be passed on by the person holding it';
+  end;
+end;
+$$;
+
+select pg_temp.check('and someone else''s action stays invisible',
+  (select count(*) from action_items where id = '11000000-0000-0000-0000-000000000002'),
+  0::bigint);
+
+-- The project director may do both, which is the point of the distinction.
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');
+update action_items set due_date = current_date + 30
+where id = '11000000-0000-0000-0000-000000000001';
+select pg_temp.check('whoever runs the meeting may move the date',
+  (select due_date = current_date + 30 from action_items
+    where id = '11000000-0000-0000-0000-000000000001'),
+  true);
+
+-- ---------------------------------------------------------------------------
+-- An action must have exactly one owner (M3-05)
+-- ---------------------------------------------------------------------------
+
+do $$
+begin
+  begin
+    insert into action_items (text_en, due_date) values ('Nobody''s job', current_date + 1);
+    raise exception 'FAIL an action was created with no owner';
+  exception
+    when check_violation then
+      raise notice 'ok   an action with no owner is refused';
+  end;
+end;
+$$;
+
+do $$
+begin
+  begin
+    insert into action_items
+      (text_en, due_date, owner_profile_id, owner_stakeholder_id)
+    values ('Everyone''s job', current_date + 1,
+            '44444444-4444-4444-4444-444444444444',
+            '0b000000-0000-0000-0000-000000000004');
+    raise exception 'FAIL an action was created with two owners';
+  exception
+    when check_violation then
+      raise notice 'ok   an action shared between two owners is refused';
+  end;
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- Minutes (M3-15)
+-- ---------------------------------------------------------------------------
+
+select pg_temp.act_as('33333333-3333-3333-3333-333333333333');  -- trustee
+do $$
+begin
+  begin
+    update meeting_notes set body = 'quietly corrected'
+    where id = '0f000000-0000-0000-0000-000000000002';
+    raise exception 'FAIL a final minute was edited';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   a minute that has been made final cannot be edited';
+  end;
+end;
+$$;
+
+do $$
+begin
+  begin
+    delete from meeting_notes where id = '0f000000-0000-0000-0000-000000000002';
+    raise exception 'FAIL a final minute was deleted';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   nor deleted';
+  end;
+end;
+$$;
+
+do $$
+begin
+  begin
+    update meetings set minutes_status = 'draft'
+    where id = '0e000000-0000-0000-0000-000000000002';
+    raise exception 'FAIL final minutes were reopened';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   nor reopened by putting the meeting back into draft';
+  end;
+end;
+$$;
+
+-- A draft is still a draft.
+update meeting_notes set body = 'Appeal timetable, record of appeal, and costs.'
+where id = '0f000000-0000-0000-0000-000000000001';
+select pg_temp.check('a draft minute is still editable',
+  (select body like '%costs.' from meeting_notes
+    where id = '0f000000-0000-0000-0000-000000000001'),
+  true);
+
+-- ---------------------------------------------------------------------------
+-- Who may record a decision
+-- ---------------------------------------------------------------------------
+
+select pg_temp.act_as('44444444-4444-4444-4444-444444444444');  -- field team
+insert into meetings (id, title, held_at, kind)
+values ('0e000000-0000-0000-0000-000000000005', 'Site walk', now(), 'site');
+select pg_temp.check('the field team may minute a site meeting',
+  (select count(*) from meetings where id = '0e000000-0000-0000-0000-000000000005'),
+  1::bigint);
+
+do $$
+begin
+  begin
+    insert into decisions (text_en, organ) values ('We proceed.', 'Board of Trustees');
+    raise exception 'FAIL the field team recorded a board decision';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   minuting a meeting is not the same as taking a decision';
+  end;
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- The agenda builds itself (M3-07)
+-- ---------------------------------------------------------------------------
+
+select pg_temp.act_as('33333333-3333-3333-3333-333333333333');  -- trustee
+select pg_temp.check(
+  'everything still open lands on the next agenda',
+  (select count(*) from meeting_agenda_candidates), 2::bigint);
+select pg_temp.check(
+  'a finished action drops off it',
+  (select count(*) from meeting_agenda_candidates
+    where id = '11000000-0000-0000-0000-000000000001'),
+  0::bigint);
+select pg_temp.check(
+  'and an unanswered question is on it alongside the actions',
+  (select count(*) from meeting_agenda_candidates where item_kind = 'question'),
+  1::bigint);
+
+select pg_temp.act_as('77777777-7777-7777-7777-777777777777');  -- contractor
+select pg_temp.check(
+  'the agenda view answers to the same policies as its tables',
+  (select count(*) from meeting_agenda_candidates), 0::bigint);
+
+
 reset role;
 
 \echo ''

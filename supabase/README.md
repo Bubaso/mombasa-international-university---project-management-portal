@@ -11,6 +11,8 @@ migrations/
   0003_row_level_security.sql            who may read and write what
   0004_emergency_delegation.sql          two-trustee transfer of authority
   0005_effective_authority.sql           authority as a union; the audit gaps
+  0006_stakeholders.sql                  the register, the network, the log
+  0007_meetings_decisions_actions.sql    minutes that produce commitments
 functions/
   ai-assistant/                          server-side model proxy
   invite-user/                           creates an account and its profile
@@ -74,6 +76,40 @@ they already had. Every step lands in the audit log.
 This exists because the project's own evaluation report names a single-person
 dependency as its main structural weakness. Requesting, approving and revoking
 one is in the console, under Access & Administration.
+
+## Scope rules, one per thing worth protecting
+
+Clearance is not enough on its own, because several roles that sit outside the
+organisation hold `internal` clearance. So each sensitive table names what,
+besides a tier, lets someone reach a row:
+
+| Table                                                 | Beyond clearance, a caller needs               |
+| ----------------------------------------------------- | ---------------------------------------------- |
+| `legal_cases`                                         | to be assigned to the case                     |
+| `construction_blocks`                                 | to be assigned to the block                    |
+| `financial_transactions`                              | a role that answers for money                  |
+| `stakeholders`                                        | to be internal — or a grant on that one person |
+| `stakeholder_interactions`, `stakeholder_assessments` | to be internal, with no grant route at all     |
+| `meetings`                                            | to have been in the room                       |
+| `action_items`                                        | to be the owner                                |
+
+Every one of them narrows. None of them lifts: attending a confidential
+meeting does not raise an advocate's clearance to confidential, and being the
+owner of an action does not open the meeting it came from. Only a grant lifts
+a ceiling, and never as far as `restricted`.
+
+## What the record keeps on its own
+
+Three things are written by triggers and cannot be written, edited or deleted
+by anyone, because a record that can be tidied up afterwards is not evidence:
+
+- **`audit_log`** — every write to every table that carries classification.
+- **`stakeholder_stance_changes`** — how an opinion of someone moved, and who
+  moved it. A stance that only shows its current value says nothing about
+  whether a relationship is being won or lost.
+- **Final minutes** — once `meetings.minutes_status` is `final`, its notes
+  refuse edits and deletes, and the status cannot go back to draft. A
+  correction is an addendum, not a quiet edit.
 
 ## Running the tests
 
