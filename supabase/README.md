@@ -386,6 +386,25 @@ supabase functions deploy verify-document
 supabase functions deploy document-download
 ```
 
+**If `supabase link` refuses.** An error like _your account does not have the
+necessary privileges to access this endpoint_ is about the Management API, not
+the database: the CLI is signed in as an account that cannot read this
+project's settings — a different account, or one whose role in the
+organisation is below Administrator. `supabase projects list` shows which it
+is.
+
+Linking is avoidable. Both commands take a connection string and talk to
+Postgres directly, so neither touches the endpoint that refused:
+
+```bash
+supabase db push --db-url "postgresql://postgres:<password>@db.<ref>.supabase.co:5432/postgres"
+```
+
+The string is in Project Settings → Database → Connection string, and it must
+be percent-encoded: a password containing `@`, `/`, `:` or `#` has to be
+escaped or the URL parses wrongly and the error will be about the host rather
+than the password.
+
 **If the project already has some of these applied by hand.** `db push` works
 out what to run from `supabase_migrations.schema_migrations`, which is written
 by the CLI and by nothing else. A project whose early migrations were pasted
@@ -393,9 +412,11 @@ into the SQL editor has an empty table, so push starts at 0001 and stops on
 `type "app_role" already exists`. Tell it what is already there, then push:
 
 ```bash
-supabase migration repair --status applied 0001 0002 0003
-supabase db push
+supabase migration repair --status applied 0001 0002 0003 --db-url "<the same string>"
+supabase db push --db-url "<the same string>"
 ```
+
+(Drop `--db-url` from both if the project is linked.)
 
 A half-applied migration is worth ruling out before anything else, because it
 does not look like one from outside. Every policy in this schema calls into

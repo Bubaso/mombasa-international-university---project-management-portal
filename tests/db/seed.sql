@@ -440,3 +440,39 @@ insert into donation_tranches
    document_id)
 values ('1d000000-0000-0000-0000-000000000020', current_date - 30, 300000, 'TRY', 4,
         '1b000000-0000-0000-0000-000000000001');
+
+-- ---------------------------------------------------------------------------
+-- RAID (M6)
+-- ---------------------------------------------------------------------------
+
+insert into risks
+  (id, title_en, category, likelihood, impact, state, owner_profile_id, confidentiality)
+values
+  ('1e000000-0000-0000-0000-000000000001', 'The lease is not renewed', 'legal',
+   3, 4, 'open', '22222222-2222-2222-2222-222222222222', 'internal'),
+  ('1e000000-0000-0000-0000-000000000002', 'Monsoon damage to the open slab', 'climate',
+   2, 3, 'open', '44444444-4444-4444-4444-444444444444', 'internal');
+
+-- The load-bearing belief the whole programme rests on.
+insert into assumptions
+  (id, statement_en, risk_category, state, owner_profile_id, confidentiality)
+values ('1e000000-0000-0000-0000-000000000010',
+        'The partner foundation continues to fund the appeal', 'partnership',
+        'unverified', '22222222-2222-2222-2222-222222222222', 'internal');
+
+-- The chain the requirement names: a ruling, then the work, then the rest.
+insert into dependencies
+  (id, blocker_legal_case_id, dependent_site_task_id, note_en, confidentiality)
+values ('1e000000-0000-0000-0000-000000000020',
+        'aaaa0000-0000-0000-0000-000000000002',
+        '1c000000-0000-0000-0000-000000000030',
+        'The raft cannot be signed off while the boundary is before the court.',
+        'internal');
+
+insert into dependencies
+  (id, blocker_site_task_id, dependent_label, note_en, confidentiality)
+values ('1e000000-0000-0000-0000-000000000021',
+        '1c000000-0000-0000-0000-000000000030',
+        'Accreditation inspection',
+        'The inspectors will not come to a site without a completed raft.',
+        'internal');

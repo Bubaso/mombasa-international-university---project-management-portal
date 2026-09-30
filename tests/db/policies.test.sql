@@ -2423,6 +2423,217 @@ end;
 $$;
 
 
+-- ===========================================================================
+-- RAID: risk, issue, assumption, dependency (M6)
+-- ===========================================================================
+
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- director
+
+-- M6-01. The score is the two numbers it comes from, and nothing else.
+select pg_temp.check('a risk score is the product, not a third number',
+  (select score from risks where id = '1e000000-0000-0000-0000-000000000001'), 12);
+
+do $$
+begin
+  begin
+    update risks set score = 25 where id = '1e000000-0000-0000-0000-000000000001';
+    raise exception 'FAIL a score was set by hand';
+  exception
+    when generated_always then
+      raise notice 'ok   and cannot be written over by hand';
+  end;
+end;
+$$;
+
+-- M6-09, which the escalation rule needs anyway: is this getting worse?
+select pg_temp.check('every risk starts with its score on the record',
+  (select count(*) from risk_score_changes
+    where risk_id = '1e000000-0000-0000-0000-000000000001'), 1::bigint);
+
+update risks set likelihood = 4 where id = '1e000000-0000-0000-0000-000000000001';
+
+select pg_temp.check('and a movement is recorded with where it came from',
+  (select from_score = 12 and to_score = 16 from risk_score_changes
+    where risk_id = '1e000000-0000-0000-0000-000000000001'
+    order by changed_at desc limit 1), true);
+
+-- M6-08. Crossing the line is an event, not a property.
+select pg_temp.check('crossing the threshold raises an escalation',
+  (select count(*) from risk_escalations
+    where risk_id = '1e000000-0000-0000-0000-000000000001'), 1::bigint);
+
+update risks set likelihood = 4, impact = 5 where id = '1e000000-0000-0000-0000-000000000001';
+select pg_temp.check('going further up while already over does not raise another',
+  (select count(*) from risk_escalations
+    where risk_id = '1e000000-0000-0000-0000-000000000001'), 1::bigint);
+
+update risks set likelihood = 2, impact = 2 where id = '1e000000-0000-0000-0000-000000000001';
+update risks set likelihood = 4, impact = 4 where id = '1e000000-0000-0000-0000-000000000001';
+select pg_temp.check('but coming back down and rising again is a second crossing',
+  (select count(*) from risk_escalations
+    where risk_id = '1e000000-0000-0000-0000-000000000001'), 2::bigint);
+
+do $$
+declare
+  n int;
+begin
+  begin
+    update risk_score_changes set to_score = 1
+    where risk_id = '1e000000-0000-0000-0000-000000000001';
+    get diagnostics n = row_count;
+    if n <> 0 then
+      raise exception 'FAIL the risk history was rewritten';
+    end if;
+  exception
+    when insufficient_privilege then
+      null;
+  end;
+  raise notice 'ok   a risk history cannot be rewritten to look better';
+end;
+$$;
+
+-- M6-02. Choosing to live with something is a decision, and a decision with
+-- no reasoning is indistinguishable from not having noticed.
+do $$
+begin
+  begin
+    update risks set response = 'accept'
+    where id = '1e000000-0000-0000-0000-000000000002';
+    raise exception 'FAIL a risk was accepted with no reasoning';
+  exception
+    when check_violation then
+      raise notice 'ok   accepting a risk requires saying why';
+  end;
+end;
+$$;
+
+update risks
+set response = 'accept',
+    response_plan_en = 'Sheeting is cheaper than the programme delay; reviewed each season.'
+where id = '1e000000-0000-0000-0000-000000000002';
+select pg_temp.check('and goes through once it does',
+  (select response::text from risks where id = '1e000000-0000-0000-0000-000000000002'),
+  'accept');
+
+-- M6-04, M6-05. What happened, and the trace back to having foreseen it.
+do $$
+declare
+  v_issue uuid;
+begin
+  v_issue := public.materialise_risk('1e000000-0000-0000-0000-000000000001',
+                                     'The landlord served notice this morning.');
+  if v_issue is null then
+    raise exception 'FAIL materialising a risk produced no issue';
+  end if;
+  raise notice 'ok   a risk that happens becomes an issue in one act';
+end;
+$$;
+
+select pg_temp.check('the issue points back at the risk it came from',
+  (select count(*) from issues
+    where materialised_from_risk_id = '1e000000-0000-0000-0000-000000000001'), 1::bigint);
+
+select pg_temp.check('and the risk is marked as having happened',
+  (select state::text from risks where id = '1e000000-0000-0000-0000-000000000001'),
+  'materialised');
+
+do $$
+begin
+  begin
+    perform public.materialise_risk('1e000000-0000-0000-0000-000000000001');
+    raise exception 'FAIL the same risk materialised twice';
+  exception
+    when check_violation then
+      raise notice 'ok   and it cannot happen twice';
+  end;
+end;
+$$;
+
+-- M6-06. The one piece of automation that files a record nobody asked for.
+update assumptions set state = 'broken', last_checked_on = current_date
+where id = '1e000000-0000-0000-0000-000000000010';
+
+select pg_temp.check('an assumption that collapses raises a risk by itself',
+  (select raised_risk_id is not null from assumptions
+    where id = '1e000000-0000-0000-0000-000000000010'), true);
+
+select pg_temp.check('classified as the kind of risk it always was',
+  (select r.category::text from risks r
+    join assumptions a on a.raised_risk_id = r.id
+    where a.id = '1e000000-0000-0000-0000-000000000010'), 'partnership');
+
+select pg_temp.check('at a likelihood of five, because it has already happened',
+  (select r.likelihood from risks r
+    join assumptions a on a.raised_risk_id = r.id
+    where a.id = '1e000000-0000-0000-0000-000000000010'), 5);
+
+select pg_temp.check('and pointing back at the assumption that failed',
+  (select r.source_assumption_id = '1e000000-0000-0000-0000-000000000010' from risks r
+    join assumptions a on a.raised_risk_id = r.id
+    where a.id = '1e000000-0000-0000-0000-000000000010'), true);
+
+-- M6-07. What is waiting on what.
+do $$
+begin
+  begin
+    insert into dependencies (blocker_label, blocker_risk_id, dependent_label)
+    values ('Something', '1e000000-0000-0000-0000-000000000002', 'Something else');
+    raise exception 'FAIL a dependency was given two blockers';
+  exception
+    when check_violation then
+      raise notice 'ok   a dependency has exactly one thing on each side';
+  end;
+end;
+$$;
+
+select pg_temp.check('a dependency on unfinished work reads as unsettled',
+  (select blocker_settled from dependency_status
+    where id = '1e000000-0000-0000-0000-000000000021'), false);
+
+-- The court is the honest null: a case being open says nothing about whether
+-- the particular ruling the work waits on has come.
+select pg_temp.check('and one on a court case says it cannot tell',
+  (select blocker_settled from dependency_status
+    where id = '1e000000-0000-0000-0000-000000000020'), null::boolean);
+
+-- M6-08. Twenty-five cells, including the empty ones.
+select pg_temp.check('the matrix has a cell for every combination',
+  (select count(*) from risk_matrix), 25::bigint);
+
+select pg_temp.check('and an empty cell says nought rather than going missing',
+  (select risk_count from risk_matrix where likelihood = 1 and impact = 1), 0::bigint);
+
+-- Scope. The register names partners and politics; it belongs inside.
+select pg_temp.act_as('77777777-7777-7777-7777-777777777777');  -- contractor
+select pg_temp.check('somebody outside the organisation sees no risks',
+  (select count(*) from risks), 0::bigint);
+select pg_temp.check('nor the assumptions the plan rests on',
+  (select count(*) from assumptions), 0::bigint);
+select pg_temp.check('nor what was recorded as having gone wrong',
+  (select count(*) from issues), 0::bigint);
+
+do $$
+begin
+  begin
+    insert into risks (title_en, category, likelihood, impact)
+    values ('Made up by an outsider', 'legal', 5, 5);
+    raise exception 'FAIL an outside party wrote to the risk register';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   and cannot put anything into the register';
+  end;
+end;
+$$;
+
+-- The site team carries the risks it can see first.
+select pg_temp.act_as('44444444-4444-4444-4444-444444444444');  -- field team
+insert into risks (id, title_en, category, likelihood, impact, confidentiality)
+values ('1e000000-0000-0000-0000-000000000030', 'Access road washes out', 'climate',
+        3, 3, 'internal');
+select pg_temp.check('the site team keeps the register for what it sees',
+  (select count(*) from risks where id = '1e000000-0000-0000-0000-000000000030'), 1::bigint);
+
+
 reset role;
 
 \echo ''
