@@ -441,6 +441,28 @@ be percent-encoded: a password containing `@`, `/`, `:` or `#` has to be
 escaped or the URL parses wrongly and the error will be about the host rather
 than the password.
 
+**If the CLI cannot be used at all.** No account with the privileges, and no
+way to open a Postgres connection from where you are — a container or CI that
+allows only outbound 443 cannot reach port 5432, and the failure looks like a
+timeout rather than a refusal. The dashboard is plain HTTPS, so it is the
+route that is left:
+
+```bash
+npm run sql:bundle -- --from 4     # or omit --from for everything
+```
+
+That writes `supabase/bundled/migrations-0004-onwards.sql` — generated from
+the migrations each time rather than kept in the repository, because a second
+copy of the schema is a second thing to forget. Paste it into the SQL editor
+and run it once. It is wrapped in a single transaction, so a failure part-way
+applies nothing and the error names the statement that stopped it; the last
+block records every migration as applied so a later `supabase db push` does
+not start again from 0001.
+
+If the editor struggles with the size, apply the files in
+`supabase/migrations/` one at a time in numeric order instead. Each is
+self-contained, and you then know exactly which one stopped.
+
 **If the project already has some of these applied by hand.** `db push` works
 out what to run from `supabase_migrations.schema_migrations`, which is written
 by the CLI and by nothing else. A project whose early migrations were pasted

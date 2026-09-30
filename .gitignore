@@ -2,6 +2,7 @@ node_modules/
 build/
 dist/
 dev-dist/
+supabase/bundled/
 coverage/
 .firebase/
 .DS_Store
