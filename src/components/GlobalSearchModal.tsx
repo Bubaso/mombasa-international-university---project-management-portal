@@ -52,9 +52,7 @@ export const GlobalSearchModal: React.FC = () => {
   const matchedDocs = query
     ? documentVault.filter(
         (d: any) =>
-          d.title.toLowerCase().includes(query) ||
-          d.category.toLowerCase().includes(query) ||
-          d.sha256Hash.toLowerCase().includes(query),
+          d.title.toLowerCase().includes(query) || d.category.toLowerCase().includes(query),
       )
     : [];
 
@@ -225,8 +223,14 @@ export const GlobalSearchModal: React.FC = () => {
                   >
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-semibold text-slate-900">{d.title}</span>
-                      <span className="text-[11px] font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
-                        {d.version}
+                      <span className="text-[11px] font-mono text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
+                        {d.versionCount > 1
+                          ? language === 'tr'
+                            ? `${d.versionCount} sürüm`
+                            : `${d.versionCount} versions`
+                          : language === 'tr'
+                            ? 'tek sürüm'
+                            : 'one version'}
                       </span>
                     </div>
                     <div className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">

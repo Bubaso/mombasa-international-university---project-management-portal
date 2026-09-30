@@ -103,6 +103,72 @@ const TEST_MEETING = {
   meeting_attendees: [{ count: 0 }],
 };
 
+/**
+ * Two documents, because the distinction the vault exists to make is between
+ * them: one whose stored bytes the server has read and digested, and one it
+ * has not. A screen that showed them the same way would be the screen Faz 0
+ * removed.
+ */
+const VERIFIED_DIGEST = '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08';
+
+const TEST_DOCUMENTS = [
+  {
+    id: '00000000-0000-0000-0000-0000000000d1',
+    title: 'Smoke deed',
+    category: 'trust_deed',
+    status: 'under_review',
+    description_en: null,
+    description_tr: null,
+    confidentiality: 'internal',
+    current_version_id: '00000000-0000-0000-0000-0000000000e1',
+    versions: [{ count: 2 }],
+  },
+  {
+    id: '00000000-0000-0000-0000-0000000000d2',
+    title: 'Smoke contract',
+    category: 'contract_mou',
+    status: 'under_review',
+    description_en: null,
+    description_tr: null,
+    confidentiality: 'internal',
+    current_version_id: '00000000-0000-0000-0000-0000000000e2',
+    versions: [{ count: 1 }],
+  },
+];
+
+const TEST_VERSIONS = [
+  {
+    id: '00000000-0000-0000-0000-0000000000e1',
+    document_id: '00000000-0000-0000-0000-0000000000d1',
+    version_no: 2,
+    storage_path: 'd1/e1',
+    file_name: 'deed.pdf',
+    content_type: 'application/pdf',
+    byte_size: 24576,
+    sha256: VERIFIED_DIGEST,
+    digest_computed_at: '2026-09-01T10:05:00Z',
+    uploaded_at: '2026-09-01T10:00:00Z',
+    note: null,
+    uploader: { full_name: 'Smoke Test' },
+  },
+  {
+    // No digest: the server has not read these bytes back yet, or they never
+    // arrived. Either way the screen has to say so.
+    id: '00000000-0000-0000-0000-0000000000e2',
+    document_id: '00000000-0000-0000-0000-0000000000d2',
+    version_no: 1,
+    storage_path: 'd2/e2',
+    file_name: 'contract.pdf',
+    content_type: 'application/pdf',
+    byte_size: 8192,
+    sha256: null,
+    digest_computed_at: null,
+    uploaded_at: '2026-09-02T09:00:00Z',
+    note: null,
+    uploader: { full_name: 'Smoke Test' },
+  },
+];
+
 const ROUTES = [
   '/',
   '/project_info',
@@ -227,6 +293,22 @@ try {
     }),
   );
 
+  await page.route('**/rest/v1/document_vault**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(TEST_DOCUMENTS),
+    }),
+  );
+
+  await page.route('**/rest/v1/document_versions**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(TEST_VERSIONS),
+    }),
+  );
+
   // Served as an object or an array depending on which call it is, the way
   // PostgREST answers .maybeSingle() and a plain select differently.
   await page.route('**/rest/v1/meetings**', (route) => {
@@ -332,6 +414,44 @@ try {
     '/meetings/:id  ',
     `errors=${pageErrors.length}${pageErrors[0] ? ` — ${pageErrors[0].slice(0, 120)}` : ''}`,
   );
+
+  // --- the vault says which files it has actually read ----------------------
+  // The old screen printed "SHA-256 verified" over a page where no file could
+  // exist. These three checks are the inverse of that: a digest appears only
+  // for the version the server has read, the one it has not is named as
+  // unverified rather than left blank, and the page counts them.
+  pageErrors = [];
+  await page.goto(BASE + '/documents', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(400);
+  const vaultView = (await page.textContent('body')) ?? '';
+  check(
+    pageErrors.length === 0 && vaultView.includes(VERIFIED_DIGEST.slice(0, 8)),
+    'a verified version shows the digest the server computed',
+  );
+  check(
+    /doğrulanmadı|unverified/.test(vaultView),
+    'and one with no digest is named unverified rather than shown as clean',
+  );
+  check(
+    /1 belgenin geçerli sürümü doğrulanmamış|1 documents have an unverified current version/.test(
+      vaultView,
+    ),
+    'with the count stated where it cannot be missed',
+  );
+  check(/Belge ekle|Add a document/.test(vaultView), 'a director may put documents in the vault');
+
+  // M9 write access follows app.can_write, which does not include somebody
+  // outside the organisation — so the control is not drawn for them either.
+  await actAs(EXTERNAL_AUTHORITY);
+  pageErrors = [];
+  await page.goto(BASE + '/documents', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(400);
+  const contractorVault = (await page.textContent('body')) ?? '';
+  check(
+    pageErrors.length === 0 && !/Belge ekle|Add a document/.test(contractorVault),
+    'an external party is not offered the upload control',
+  );
+  await actAs(TEST_AUTHORITY);
 
   // --- the console offers only what the policies allow ----------------------
   // Its whole premise is that a control the database would refuse is never

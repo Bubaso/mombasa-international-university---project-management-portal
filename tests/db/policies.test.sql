@@ -1578,6 +1578,179 @@ select pg_temp.check(
           and o.obligor_stakeholder_id = '0b000000-0000-0000-0000-000000000004')),
   0::bigint);
 
+-- ===========================================================================
+-- The document vault (M9)
+-- ===========================================================================
+--
+-- The module this replaces claimed encryption and a verified digest on a
+-- screen with no file upload. The claims are now properties the database
+-- either enforces or does not let anyone assert.
+
+select pg_temp.act_as('33333333-3333-3333-3333-333333333333');  -- trustee
+
+-- ---------------------------------------------------------------------------
+-- M9-02: the digest is computed, never stated
+-- ---------------------------------------------------------------------------
+--
+-- Not a policy and not a trigger: `authenticated` has no privilege on the
+-- column, so there is no expression to get wrong.
+
+do $$
+begin
+  begin
+    insert into document_versions
+      (document_id, storage_path, file_name, sha256, digest_computed_at)
+    values ('1b000000-0000-0000-0000-000000000001', 'made/up/path', 'claimed.pdf',
+            'deadbeef', now());
+    raise exception 'FAIL a client wrote the digest';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   a client cannot state a digest, only the server computes one';
+  end;
+end;
+$$;
+
+select pg_temp.check(
+  'a version whose digest has not been computed says so rather than nothing',
+  (select sha256 is null from document_versions
+    where id = '1c000000-0000-0000-0000-000000000003'),
+  true);
+
+-- ---------------------------------------------------------------------------
+-- M9-04: a version is written once, and superseded rather than replaced
+-- ---------------------------------------------------------------------------
+
+select pg_temp.check('the newest upload is the one in force',
+  (select current_version_id from document_vault
+    where id = '1b000000-0000-0000-0000-000000000001'),
+  '1c000000-0000-0000-0000-000000000002'::uuid);
+
+select pg_temp.check('and the one it replaced is still there',
+  (select count(*) from document_versions
+    where document_id = '1b000000-0000-0000-0000-000000000001'),
+  2::bigint);
+
+select pg_temp.check('numbered in the order they arrived',
+  (select string_agg(version_no::text, ',' order by version_no)
+    from document_versions where document_id = '1b000000-0000-0000-0000-000000000001'),
+  '1,2'::text);
+
+do $$
+begin
+  begin
+    update document_versions set file_name = 'renamed.pdf'
+    where id = '1c000000-0000-0000-0000-000000000001';
+    raise exception 'FAIL a version was edited';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   a version cannot be edited after it is written';
+  end;
+end;
+$$;
+
+do $$
+begin
+  begin
+    delete from document_versions where id = '1c000000-0000-0000-0000-000000000001';
+    raise exception 'FAIL a version was deleted';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   nor deleted, however many newer ones there are';
+  end;
+end;
+$$;
+
+-- A trustee reads the vault but does not fill it: writing documents is the
+-- operational set from 0003 (app.can_write), the same rule that governs the
+-- document record itself. A trustee who needs one in asks the director.
+do $$
+begin
+  begin
+    insert into document_versions (document_id, storage_path, file_name)
+    values ('1b000000-0000-0000-0000-000000000001', 'trustee/upload', 'board.pdf');
+    raise exception 'FAIL a trustee uploaded into the vault';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   reading the vault is not the same as filling it';
+  end;
+end;
+$$;
+
+-- A new upload is how a document changes, and it takes over as the one in
+-- force without anyone having to remember to say so.
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- project director
+insert into document_versions (id, document_id, storage_path, file_name)
+values ('1c000000-0000-0000-0000-000000000004', '1b000000-0000-0000-0000-000000000001',
+        '1b000000-0000-0000-0000-000000000001/1c000000-0000-0000-0000-000000000004',
+        'title-copy-v3.pdf');
+
+select pg_temp.check('a new upload becomes the version in force by itself',
+  (select current_version_id from document_vault
+    where id = '1b000000-0000-0000-0000-000000000001'),
+  '1c000000-0000-0000-0000-000000000004'::uuid);
+select pg_temp.check('and is numbered after the last',
+  (select version_no from document_versions
+    where id = '1c000000-0000-0000-0000-000000000004'),
+  3);
+select pg_temp.check('arriving unverified, because nothing has read the bytes yet',
+  (select sha256 is null from document_versions
+    where id = '1c000000-0000-0000-0000-000000000004'),
+  true);
+
+-- ---------------------------------------------------------------------------
+-- M9-07: the access log is not something a client can decline to write
+-- ---------------------------------------------------------------------------
+
+select pg_temp.act_as('33333333-3333-3333-3333-333333333333');  -- trustee
+do $$
+begin
+  begin
+    insert into document_access (document_id, profile_id, action)
+    values ('1b000000-0000-0000-0000-000000000001', auth.uid(), 'downloaded');
+    raise exception 'FAIL a client wrote its own access record';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   only the server records a reading, so it cannot be skipped';
+  end;
+end;
+$$;
+
+do $$
+begin
+  begin
+    delete from document_access;
+    raise exception 'FAIL an access record was deleted';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   and what was read cannot be unread afterwards';
+  end;
+end;
+$$;
+
+select pg_temp.check('those who answer for the project can see who read what',
+  (select count(*) > 0 from document_access), true);
+
+-- ---------------------------------------------------------------------------
+-- M9-06: a version is visible exactly when its document is
+-- ---------------------------------------------------------------------------
+
+select pg_temp.act_as('44444444-4444-4444-4444-444444444444');  -- field team
+select pg_temp.check(
+  'somebody below the tier sees neither the restricted document nor its versions',
+  (select count(*) from document_versions
+    where document_id = '1b000000-0000-0000-0000-000000000002'),
+  0::bigint);
+select pg_temp.check('while the one they may read brings its versions with it',
+  (select count(*) from document_versions
+    where document_id = '1b000000-0000-0000-0000-000000000001') > 0,
+  true);
+
+select pg_temp.act_as('77777777-7777-7777-7777-777777777777');  -- contractor
+select pg_temp.check(
+  'and somebody outside sees only their own reading history',
+  (select count(*) from document_access), 0::bigint);
+
+
 reset role;
 
 \echo ''

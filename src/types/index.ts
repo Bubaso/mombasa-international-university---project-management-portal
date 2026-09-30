@@ -103,30 +103,75 @@ export interface ConstructionBlock {
   }[];
 }
 
+/** Mirrors document_category in supabase/migrations/0012. */
+export type DocumentCategory =
+  | 'trust_deed'
+  | 'court_order'
+  | 'pleading'
+  | 'evidence'
+  | 'contract_mou'
+  | 'architectural'
+  | 'boq_financial'
+  | 'accreditation'
+  | 'correspondence'
+  | 'photograph'
+  | 'other';
+
+/**
+ * What is true of a document across every version of it. Everything that
+ * describes a file — its name, size, digest, who uploaded it — belongs to one
+ * upload and lives on DocumentVersion.
+ */
 export interface DocumentItem {
   id: string;
   title: string;
-  category:
-    | 'legal_pleadings'
-    | 'trust_deed'
-    | 'court_order'
-    | 'architectural'
-    | 'boq_finance'
-    | 'accreditation_cue'
-    | 'site_survey';
-  version: string;
-  fileFormat: string;
-  fileSize: string;
-  uploadedBy: string;
-  uploadedDate: string;
-  sha256Hash: string;
-  encrypted: boolean;
-  accessRoles: UserRole[];
-  status: 'approved' | 'under_review' | 'archived';
-  descriptionEn: string;
-  descriptionTr: string;
-  downloadUrl?: string;
-  versionsCount: number;
+  category: DocumentCategory;
+  status: 'approved' | 'under_review' | 'archived' | null;
+  descriptionEn: string | null;
+  descriptionTr: string | null;
+  confidentiality: Confidentiality;
+  currentVersionId: string | null;
+  versionCount: number;
+}
+
+export interface DocumentVersion {
+  id: string;
+  documentId: string;
+  versionNo: number;
+  storagePath: string;
+  fileName: string;
+  contentType: string | null;
+  byteSize: number | null;
+  /**
+   * Computed by the server from the stored bytes. Null means not yet
+   * computed, which is shown as unverified — never as nothing.
+   */
+  sha256: string | null;
+  digestComputedAt: string | null;
+  uploadedByName: string | null;
+  uploadedAt: string;
+  note: string | null;
+}
+
+export type DocumentActionKind = 'viewed' | 'downloaded';
+
+/** Who read what, written only by the server (M9-07). */
+export interface DocumentAccessEntry {
+  id: number;
+  documentId: string;
+  versionId: string | null;
+  profileId: string;
+  readerName: string | null;
+  action: DocumentActionKind;
+  at: string;
+}
+
+export interface DocumentLink {
+  id: string;
+  documentId: string;
+  entityType: string;
+  entityId: string;
+  note: string | null;
 }
 
 export interface FinancialTransaction {

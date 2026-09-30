@@ -304,3 +304,48 @@ update obligations set state = 'fulfilled'
 where id = '19000000-0000-0000-0000-000000000007';
 
 reset role;
+
+-- ---------------------------------------------------------------------------
+-- The document vault (M9)
+-- ---------------------------------------------------------------------------
+
+set role postgres;
+
+insert into document_vault (id, title, category, status, confidentiality) values
+  ('1b000000-0000-0000-0000-000000000001', 'Certified copy of the title',
+   'trust_deed', 'approved', 'internal'),
+  ('1b000000-0000-0000-0000-000000000002', 'Board assessment pack',
+   'correspondence', 'approved', 'restricted');
+
+-- Two uploads of the same document, so "which one is in force" is testable.
+-- The digests here stand in for ones the server computed; nothing but the
+-- service role can write them at runtime.
+insert into document_versions
+  (id, document_id, storage_path, file_name, content_type, byte_size, sha256,
+   digest_computed_at)
+values
+  ('1c000000-0000-0000-0000-000000000001', '1b000000-0000-0000-0000-000000000001',
+   '1b000000-0000-0000-0000-000000000001/1c000000-0000-0000-0000-000000000001',
+   'title-copy-v1.pdf', 'application/pdf', 182344,
+   'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', now()),
+  ('1c000000-0000-0000-0000-000000000002', '1b000000-0000-0000-0000-000000000001',
+   '1b000000-0000-0000-0000-000000000001/1c000000-0000-0000-0000-000000000002',
+   'title-copy-v2.pdf', 'application/pdf', 190112,
+   'b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c', now());
+
+-- One that was uploaded but whose digest has not been computed: the interface
+-- must show this as unverified rather than as a document.
+insert into document_versions (id, document_id, storage_path, file_name)
+values ('1c000000-0000-0000-0000-000000000003', '1b000000-0000-0000-0000-000000000002',
+        '1b000000-0000-0000-0000-000000000002/1c000000-0000-0000-0000-000000000003',
+        'board-pack.pdf');
+
+insert into document_access (document_id, version_id, profile_id, action) values
+  ('1b000000-0000-0000-0000-000000000001', '1c000000-0000-0000-0000-000000000002',
+   '33333333-3333-3333-3333-333333333333', 'downloaded');
+
+insert into document_links (document_id, entity_type, entity_id) values
+  ('1b000000-0000-0000-0000-000000000001', 'legal_cases',
+   'aaaa0000-0000-0000-0000-000000000002');
+
+reset role;

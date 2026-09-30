@@ -1,13 +1,20 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as api from './index';
 import * as legal from './legal';
+import * as documents from './documents';
 
 export const useLegalCases = () =>
   useQuery({ queryKey: ['legalCases'], queryFn: api.fetchLegalCases });
 export const useConstructionBlocks = () =>
   useQuery({ queryKey: ['construction'], queryFn: api.fetchConstructionBlocks });
+/**
+ * The same fetch the vault's own screens use. Two query functions under one
+ * key would race, and the one that lost would hand its callers a document
+ * with no version count — which is the difference between "nothing has been
+ * filed against this" and "we did not ask".
+ */
 export const useDocumentVault = () =>
-  useQuery({ queryKey: ['documents'], queryFn: api.fetchDocumentVault });
+  useQuery({ queryKey: ['documents'], queryFn: documents.fetchDocuments });
 export const useTransactions = () =>
   useQuery({ queryKey: ['transactions'], queryFn: api.fetchTransactions });
 export const useCommunicationThreads = () =>
@@ -36,14 +43,6 @@ export const useUpdateConstructionBlock = () => {
   return useMutation({
     mutationFn: api.updateConstructionBlock,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['construction'] }),
-  });
-};
-
-export const useAddDocument = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: api.addDocument,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['documents'] }),
   });
 };
 

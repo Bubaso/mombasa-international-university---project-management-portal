@@ -60,3 +60,44 @@ $$;
 
 grant usage on schema auth to authenticated, anon;
 grant select on auth.users to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- A stand-in for Supabase Storage
+-- ---------------------------------------------------------------------------
+--
+-- Only enough of the storage schema for the migrations to apply and for their
+-- policies to be created and reasoned about. It stores nothing and behaves
+-- like nothing: uploads, signed URLs and the object lifecycle are Supabase's,
+-- and none of that is exercised here.
+--
+-- The columns are the ones Supabase's storage.objects actually has, so a
+-- policy that compiles against this compiles against the real thing. What it
+-- cannot tell us is whether the policy does the right thing at runtime — that
+-- has to be checked against a real project.
+
+create schema if not exists storage;
+
+create table if not exists storage.buckets (
+  id text primary key,
+  name text not null,
+  owner uuid,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now(),
+  public boolean default false,
+  file_size_limit bigint,
+  allowed_mime_types text[]
+);
+
+create table if not exists storage.objects (
+  id uuid primary key default gen_random_uuid(),
+  bucket_id text references storage.buckets (id),
+  name text,
+  owner uuid,
+  owner_id text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now(),
+  last_accessed_at timestamptz default now(),
+  metadata jsonb
+);
+
+grant usage on schema storage to authenticated, anon, service_role;

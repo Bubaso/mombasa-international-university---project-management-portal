@@ -84,7 +84,7 @@ export const SharingSection: React.FC<{ canManage: boolean }> = ({ canManage }) 
       case 'document_vault':
         return (documents.data ?? []).map((d) => ({
           id: d.id,
-          label: `${d.title} (${d.version})`,
+          label: d.versionCount > 1 ? `${d.title} (${d.versionCount})` : d.title,
         }));
       case 'financial_transactions':
         return (transactions.data ?? []).map((t) => ({

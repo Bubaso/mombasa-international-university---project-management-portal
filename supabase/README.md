@@ -16,9 +16,13 @@ migrations/
   0008_provenance_and_suggestions.sql    where a row came from; the suggestion box
   0009_legal_register.sql                cases, hearings, filings, orders, evidence
   0010_obligations.sql                   what four sources oblige this project to do
+  0011_project_calendar.sql              every dated thing, in one view
+  0012_document_vault.sql                documents, versions, and who read them
 functions/
   ai-assistant/                          server-side model proxy
   invite-user/                           creates an account and its profile
+  verify-document/                       reads stored bytes, records their digest
+  document-download/                     logs a reading, then signs a 60s link
 ```
 
 The console that drives all of this is `src/views/AdminConsoleView.tsx`.
@@ -86,15 +90,17 @@ Clearance is not enough on its own, because several roles that sit outside the
 organisation hold `internal` clearance. So each sensitive table names what,
 besides a tier, lets someone reach a row:
 
-| Table                                                 | Beyond clearance, a caller needs               |
-| ----------------------------------------------------- | ---------------------------------------------- |
-| `legal_cases`                                         | to be assigned to the case                     |
-| `construction_blocks`                                 | to be assigned to the block                    |
-| `financial_transactions`                              | a role that answers for money                  |
-| `stakeholders`                                        | to be internal — or a grant on that one person |
-| `stakeholder_interactions`, `stakeholder_assessments` | to be internal, with no grant route at all     |
-| `meetings`                                            | to have been in the room                       |
-| `action_items`                                        | to be the owner                                |
+| Table                                                 | Beyond clearance, a caller needs                |
+| ----------------------------------------------------- | ----------------------------------------------- |
+| `legal_cases`                                         | to be assigned to the case                      |
+| `construction_blocks`                                 | to be assigned to the block                     |
+| `financial_transactions`                              | a role that answers for money                   |
+| `stakeholders`                                        | to be internal — or a grant on that one person  |
+| `stakeholder_interactions`, `stakeholder_assessments` | to be internal, with no grant route at all      |
+| `meetings`                                            | to have been in the room                        |
+| `action_items`                                        | to be the owner                                 |
+| `document_versions`                                   | to be able to read the document they belong to  |
+| `document_access`                                     | to answer for the project — or to be the reader |
 
 Every one of them narrows. None of them lifts: attending a confidential
 meeting does not raise an advocate's clearance to confidential, and being the
@@ -118,6 +124,11 @@ by anyone, because a record that can be tidied up afterwards is not evidence:
 - **`obligation_overrides`** — proceeding in spite of an obligation. The
   portal warns and records; it does not block. A deliberate risk that can be
   erased later was never recorded.
+- **`document_versions`** — a version is written once. Edits and deletes are
+  refused, with one exception: the server filling in a digest that was null.
+  Replacing a file is a new version, so which one was in force on a given day
+  stays answerable.
+- **`document_access`** — who opened which version, and when.
 
 Each of these revokes `insert`/`update`/`delete` from `authenticated`
 explicitly, because 0003's default privileges grant them to every new table.
@@ -134,6 +145,29 @@ record fails silently with zero rows instead of saying no.
   change until something is attached. "Done" without evidence is a claim, and
   on this project the claims that matter are ones a court may later be asked
   to believe.
+
+## Three rules the vault keeps without asking the interface
+
+- **A digest is computed, never stated.** `authenticated` holds no privilege
+  on `document_versions.sha256`, so the column is unreachable from a browser
+  whatever it sends. Only `verify-document` writes it, from the bytes it
+  downloads out of the bucket — not from what the uploader claimed they sent.
+  Until it runs the value is null and every screen says _unverified_, which is
+  the true answer and the one the old module lied about.
+- **The bytes have exactly one route out.** The `documents` bucket has no
+  select policy for `authenticated` at all. A browser cannot fetch a file, and
+  the only path to one is `document-download`, which writes the access row
+  before it signs a sixty-second link. M9-07 asks for a log on confidential
+  material; making it mandatory for everything costs one row and removes the
+  question of who was supposed to remember.
+- **Storage is written where a version already says so.** The bucket's one
+  insert policy allows a path only if a `document_versions` row already claims
+  it, so the client writes the row first and the upload second. A file with no
+  row behind it cannot be put there.
+
+Column privileges do the first of those, rather than a policy or a trigger,
+because there is no expression to get wrong and nothing to reason around: the
+grant simply does not exist.
 
 ## Importing from Notion
 
@@ -189,11 +223,28 @@ only to ask `current_authority()` who is asking, and one with the service role,
 used only after that answer says administrator. If the profile insert fails it
 deletes the auth user it just created, so a half-made account never lingers.
 
+## The two document functions
+
+```bash
+supabase functions deploy verify-document
+supabase functions deploy document-download
+```
+
+Both follow the same shape as `invite-user`: the caller's own token asks for
+the version first, under row level security, and the service role is used only
+after the policies have already answered. Neither is a convenience wrapper —
+without them a document has no digest and no route to its bytes at all.
+
 ## Applying to a real project
 
 ```bash
 supabase link --project-ref <ref>
 supabase db push
+supabase functions deploy invite-user
+supabase functions deploy verify-document
+supabase functions deploy document-download
 ```
 
 `bootstrap.sql` is never applied: Supabase already owns the `auth` schema.
+0012 creates the `documents` bucket and its policies through
+`storage.buckets`, so no console step is needed for it.

@@ -2,7 +2,6 @@ import { supabase } from '../lib/supabase';
 import {
   type LegalCase,
   type ConstructionBlock,
-  type DocumentItem,
   type FinancialTransaction,
   type CommunicationThread,
   type TrusteeMember,
@@ -53,15 +52,6 @@ export const fetchLegalCases = async (): Promise<LegalCase[]> => {
 export const fetchConstructionBlocks = async (): Promise<ConstructionBlock[]> => {
   const { data, error } = await supabase
     .from('construction_blocks')
-    .select('*')
-    .order('created_at', { ascending: false });
-  if (error) throw error;
-  return keysToCamel(data);
-};
-
-export const fetchDocumentVault = async (): Promise<DocumentItem[]> => {
-  const { data, error } = await supabase
-    .from('document_vault')
     .select('*')
     .order('created_at', { ascending: false });
   if (error) throw error;
@@ -132,17 +122,6 @@ export const updateConstructionBlock = async ({
     .single();
   if (error) throw error;
   return keysToCamel(updated);
-};
-
-export const addDocument = async (doc: Partial<DocumentItem>) => {
-  const payload = keysToSnake(doc);
-  const { data: inserted, error } = await supabase
-    .from('document_vault')
-    .insert(payload)
-    .select()
-    .single();
-  if (error) throw error;
-  return keysToCamel(inserted);
 };
 
 export const addTransaction = async (tx: Partial<FinancialTransaction>) => {
