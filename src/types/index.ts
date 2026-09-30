@@ -56,6 +56,7 @@ export type ActiveTab =
   | 'governance'
   | 'stakeholders'
   | 'meetings'
+  | 'obligations'
   | 'finance'
   | 'documents'
   | 'communication'
@@ -633,4 +634,78 @@ export interface LegalOrder {
   /** Set when this order changes an earlier one. */
   variesOrderId: string | null;
   confidentiality: Confidentiality;
+}
+
+// ---------------------------------------------------------------------------
+// Obligations (M2) — mirrors supabase/migrations/0010
+//
+// The connective tissue: what the lease, the courts, the trust deed, the MoU
+// and the people around this project have each undertaken, in one register.
+// ---------------------------------------------------------------------------
+
+export type ObligationSource =
+  'lease' | 'court_order' | 'trust_deed' | 'mou' | 'statute' | 'contract' | 'personal_commitment';
+
+export type ObligationState =
+  | 'open'
+  | 'in_progress'
+  | 'fulfilled'
+  | 'at_risk'
+  | 'breached'
+  /** A court can stop the clock. Not done, and not failed. */
+  | 'suspended';
+
+export interface Obligation {
+  id: string;
+  titleEn: string | null;
+  titleTr: string | null;
+  detailEn: string | null;
+  detailTr: string | null;
+  source: ObligationSource;
+  sourceDocumentId: string | null;
+  sourceLegalOrderId: string | null;
+  sourceMeetingId: string | null;
+  obligorName: string;
+  obligorStakeholderId: string | null;
+  obligorProfileId: string | null;
+  beneficiaryName: string | null;
+  dueOn: string | null;
+  state: ObligationState;
+  /** Whether this forbids something rather than requiring it. */
+  prohibits: boolean;
+  /** Generated from whether a source document is attached. Never asserted. */
+  verified: boolean;
+  confidentiality: Confidentiality;
+  evidenceCount: number;
+}
+
+export interface ObligationEvidence {
+  id: string;
+  obligationId: string;
+  description: string;
+  documentId: string | null;
+  observedOn: string | null;
+  addedByName: string | null;
+}
+
+/** Proceeding in spite of an obligation. Recorded, never erased. */
+export interface ObligationOverride {
+  id: string;
+  obligationId: string;
+  noteOfWhat: string;
+  reason: string;
+  acknowledgedByName: string | null;
+  acknowledgedAt: string;
+}
+
+/** Of what somebody undertook, how much they did (M2-08). */
+export interface CommitmentRecord {
+  stakeholderId: string;
+  undertaken: number;
+  kept: number;
+  broken: number;
+  outstanding: number;
+  overdue: number;
+  /** Null means nothing of theirs is settled yet — not the same as zero. */
+  keptPercent: number | null;
 }

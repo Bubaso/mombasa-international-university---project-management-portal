@@ -10,6 +10,7 @@ import {
   Users2,
   Handshake,
   CalendarDays,
+  ScrollText,
   Receipt,
   FolderGit2,
   MessagesSquare,
@@ -51,6 +52,9 @@ export const Sidebar: React.FC = () => {
     { tab: 'governance', path: '/governance', label: t.nav.governance, icon: Users2 },
     { tab: 'stakeholders', path: '/stakeholders', label: t.nav.stakeholders, icon: Handshake },
     { tab: 'meetings', path: '/meetings', label: t.nav.meetings, icon: CalendarDays },
+    // The connective tissue: what the lease, the courts, the deed and the
+    // people around this project have each undertaken, in one list.
+    { tab: 'obligations', path: '/obligations', label: t.nav.obligations, icon: ScrollText },
     {
       tab: 'finance',
       path: '/finance',

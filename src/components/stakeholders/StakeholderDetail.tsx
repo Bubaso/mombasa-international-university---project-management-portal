@@ -6,6 +6,7 @@ import {
   Mail,
   Phone,
   History,
+  Handshake,
   MessagesSquare,
   Lock,
   Network,
@@ -15,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import * as register from '../../api/stakeholderHooks';
+import { useCommitmentRecords } from '../../api/obligationHooks';
 import { useProfiles } from '../../api/adminHooks';
 import { todayIso } from '../../lib/date';
 import { clearanceLabel, clearanceStyle } from '../../lib/authority';
@@ -69,6 +71,7 @@ export const StakeholderDetail: React.FC<Props> = ({
   const interactions = register.useInteractions(stakeholder.id);
   const assessments = register.useAssessments(stakeholder.id);
   const relationships = register.useRelationships();
+  const commitments = useCommitmentRecords();
   const profiles = useProfiles();
   const update = register.useUpdateStakeholder();
 
@@ -238,6 +241,45 @@ export const StakeholderDetail: React.FC<Props> = ({
             </ul>
           )}
         </Block>
+
+        {/* ---- of what they undertook, how much they did (M2-08) -------- */}
+        {(() => {
+          const record = (commitments.data ?? []).find((c) => c.stakeholderId === stakeholder.id);
+          if (!record) return null;
+          return (
+            <Block icon={Handshake} title={tr ? 'Verilen sözler' : 'What they undertook'}>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px]">
+                <span className="text-slate-700">
+                  <span className="font-semibold text-slate-900">{record.undertaken}</span>{' '}
+                  {tr ? 'taahhüt' : 'undertaken'}
+                </span>
+                <span className="text-emerald-700">
+                  {record.kept} {tr ? 'tutuldu' : 'kept'}
+                </span>
+                <span className="text-rose-700">
+                  {record.broken} {tr ? 'tutulmadı' : 'broken'}
+                </span>
+                <span className="text-slate-500">
+                  {record.outstanding} {tr ? 'açık' : 'outstanding'}
+                </span>
+                {record.overdue > 0 && (
+                  <span className="font-medium text-rose-700">
+                    {record.overdue} {tr ? 'gecikmiş' : 'overdue'}
+                  </span>
+                )}
+              </div>
+              <p className="mt-1 text-[11px] text-slate-600">
+                {record.keptPercent == null
+                  ? tr
+                    ? 'Henüz kapanmış bir taahhüdü yok — bu sıfır demek değil, ölçülecek bir şey olmaması demek.'
+                    : 'Nothing of theirs is settled yet, which is not zero but nothing to measure.'
+                  : tr
+                    ? `Kapanmış taahhütlerin %${record.keptPercent}'i yerine getirildi.`
+                    : `${record.keptPercent}% of what has been settled was kept.`}
+              </p>
+            </Block>
+          );
+        })()}
 
         {/* ---- who they know -------------------------------------------- */}
         <Block icon={Network} title={tr ? 'İlişki ağı' : 'Who they know'}>
