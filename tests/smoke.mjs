@@ -319,6 +319,100 @@ const TEST_DONATIONS = [
   },
 ];
 
+/**
+ * Two risks: one over the escalation line with nobody having acknowledged the
+ * crossing, one below it with no trigger written down. Both states are things
+ * the register is supposed to be loud about.
+ */
+const TEST_RISKS = [
+  {
+    id: '00000000-0000-0000-0000-0000000000e1',
+    title_en: 'The lease is not renewed',
+    title_tr: null,
+    detail_en: null,
+    detail_tr: null,
+    category: 'legal',
+    likelihood: 4,
+    impact: 4,
+    score: 16,
+    owner_profile_id: null,
+    state: 'open',
+    response: null,
+    response_plan_en: null,
+    response_plan_tr: null,
+    trigger_en: 'The landlord serves notice.',
+    early_warning_en: null,
+    source_assumption_id: null,
+    review_on: null,
+    confidentiality: 'internal',
+    owner: { full_name: 'Smoke Test' },
+  },
+  {
+    id: '00000000-0000-0000-0000-0000000000e2',
+    title_en: 'Monsoon damage to the open slab',
+    title_tr: null,
+    detail_en: null,
+    detail_tr: null,
+    category: 'climate',
+    likelihood: 2,
+    impact: 3,
+    score: 6,
+    owner_profile_id: null,
+    state: 'open',
+    response: null,
+    response_plan_en: null,
+    response_plan_tr: null,
+    // No trigger: nobody can say whether this is happening.
+    trigger_en: null,
+    early_warning_en: null,
+    source_assumption_id: null,
+    review_on: null,
+    confidentiality: 'internal',
+    owner: null,
+  },
+];
+
+const TEST_ESCALATIONS = [
+  {
+    id: 1,
+    risk_id: '00000000-0000-0000-0000-0000000000e1',
+    score: 16,
+    threshold: 15,
+    escalated_at: '2026-09-15T09:00:00Z',
+    acknowledged_at: null,
+    acknowledger: null,
+  },
+];
+
+/** Five by five, with the two risks above in their cells. */
+const TEST_MATRIX = Array.from({ length: 5 }, (_, l) =>
+  Array.from({ length: 5 }, (_, i) => ({
+    likelihood: l + 1,
+    impact: i + 1,
+    score: (l + 1) * (i + 1),
+    risk_count: (l + 1 === 4 && i + 1 === 4) || (l + 1 === 2 && i + 1 === 3) ? 1 : 0,
+  })),
+).flat();
+
+const TEST_DEPENDENCIES = [
+  {
+    id: '00000000-0000-0000-0000-0000000000e5',
+    blocker_legal_case_id: '00000000-0000-0000-0000-0000000000cc',
+    blocker_site_task_id: null,
+    blocker_obligation_id: null,
+    blocker_risk_id: null,
+    blocker_label: null,
+    dependent_site_task_id: null,
+    dependent_obligation_id: null,
+    dependent_legal_case_id: null,
+    dependent_label: 'Accreditation inspection',
+    note_en: 'The inspectors will not come while the boundary is before the court.',
+    // The honest null: a case being open says nothing about the ruling.
+    blocker_settled: null,
+    confidentiality: 'internal',
+  },
+];
+
 const ROUTES = [
   '/',
   '/project_info',
@@ -328,6 +422,7 @@ const ROUTES = [
   '/stakeholders',
   '/meetings',
   '/obligations',
+  '/risks',
   '/calendar',
   '/finance',
   '/documents',
@@ -440,6 +535,38 @@ try {
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify([TEST_CASE]),
+    }),
+  );
+
+  await page.route('**/rest/v1/risks**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(TEST_RISKS),
+    }),
+  );
+
+  await page.route('**/rest/v1/risk_escalations**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(TEST_ESCALATIONS),
+    }),
+  );
+
+  await page.route('**/rest/v1/risk_matrix**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(TEST_MATRIX),
+    }),
+  );
+
+  await page.route('**/rest/v1/dependency_status**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(TEST_DEPENDENCIES),
     }),
   );
 
@@ -734,6 +861,48 @@ try {
       /KShs 2,800,000/.test(donationView),
     'a pledge, what arrived and the gap are three separate figures',
   );
+
+  // --- the register is loud about what it does not know ---------------------
+  pageErrors = [];
+  await page.goto(BASE + '/risks', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(500);
+  const riskView = (await page.textContent('body')) ?? '';
+  check(
+    pageErrors.length === 0 && /Risk matrisi|Risk matrix/.test(riskView),
+    'the matrix opens the register rather than hiding behind a tab',
+  );
+  check(
+    /tetikleyicisi yazılmamış|have no trigger written down/.test(riskView),
+    'a risk nobody can watch is called out, not just listed',
+  );
+  check(
+    /görülmedi|unacknowledged/.test(riskView),
+    'and a threshold crossing nobody has seen stays on the row',
+  );
+
+  pageErrors = [];
+  await page
+    .locator('button')
+    .filter({ hasText: /^Bağımlılıklar$|^Dependencies$/ })
+    .first()
+    .click();
+  await page.waitForTimeout(400);
+  const dependencyView = (await page.textContent('body')) ?? '';
+  check(
+    pageErrors.length === 0 && /portal bilemiyor|the portal cannot say/.test(dependencyView),
+    'a dependency the portal cannot judge says so instead of guessing',
+  );
+
+  await actAs(EXTERNAL_AUTHORITY);
+  pageErrors = [];
+  await page.goto(BASE + '/risks', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(400);
+  const contractorRisks = (await page.textContent('body')) ?? '';
+  check(
+    pageErrors.length === 0 && !/Risk ekle|Add a risk/.test(contractorRisks),
+    'an external party is not offered the register controls',
+  );
+  await actAs(TEST_AUTHORITY);
 
   // --- the console offers only what the policies allow ----------------------
   // Its whole premise is that a control the database would refuse is never

@@ -57,6 +57,7 @@ export type ActiveTab =
   | 'stakeholders'
   | 'meetings'
   | 'obligations'
+  | 'risks'
   | 'calendar'
   | 'finance'
   | 'documents'
@@ -1212,4 +1213,130 @@ export interface LegalOpinion {
   givenOn: string | null;
   conclusion: string | null;
   confidentiality: Confidentiality;
+}
+
+// ---------------------------------------------------------------------------
+// RAID (M6) — mirrors supabase/migrations/0016
+// ---------------------------------------------------------------------------
+
+export type RiskCategory =
+  | 'legal'
+  | 'political'
+  | 'financial'
+  | 'reputational'
+  | 'site_safety'
+  | 'construction'
+  | 'accreditation'
+  | 'partnership'
+  | 'climate';
+
+export type RiskState = 'open' | 'mitigating' | 'materialised' | 'closed';
+
+export type RiskResponse = 'avoid' | 'reduce' | 'transfer' | 'accept';
+
+export type IssueState = 'open' | 'in_progress' | 'resolved' | 'closed';
+
+export type AssumptionState = 'unverified' | 'holding' | 'shaky' | 'broken';
+
+export interface Risk {
+  id: string;
+  titleEn: string;
+  titleTr: string | null;
+  detailEn: string | null;
+  detailTr: string | null;
+  category: RiskCategory;
+  likelihood: number;
+  impact: number;
+  /** Generated from likelihood × impact. Never sent. */
+  score: number;
+  ownerProfileId: string | null;
+  ownerName: string | null;
+  state: RiskState;
+  response: RiskResponse | null;
+  responsePlanEn: string | null;
+  responsePlanTr: string | null;
+  triggerEn: string | null;
+  earlyWarningEn: string | null;
+  sourceAssumptionId: string | null;
+  reviewOn: string | null;
+  confidentiality: Confidentiality;
+  /** Unacknowledged threshold crossings. */
+  openEscalations: number;
+}
+
+export interface RiskScoreChange {
+  id: number;
+  riskId: string;
+  fromScore: number | null;
+  toScore: number;
+  toLikelihood: number;
+  toImpact: number;
+  changedByName: string | null;
+  changedAt: string;
+}
+
+export interface RiskEscalation {
+  id: number;
+  riskId: string;
+  score: number;
+  threshold: number;
+  escalatedAt: string;
+  acknowledgedAt: string | null;
+  acknowledgedByName: string | null;
+}
+
+export interface Issue {
+  id: string;
+  titleEn: string;
+  titleTr: string | null;
+  detailEn: string | null;
+  category: RiskCategory;
+  severity: number;
+  ownerName: string | null;
+  state: IssueState;
+  openedOn: string;
+  /** Set when this issue is a risk that happened (M6-05). */
+  materialisedFromRiskId: string | null;
+  resolvedAt: string | null;
+  resolutionEn: string | null;
+  confidentiality: Confidentiality;
+}
+
+export interface Assumption {
+  id: string;
+  statementEn: string;
+  statementTr: string | null;
+  riskCategory: RiskCategory;
+  state: AssumptionState;
+  ownerName: string | null;
+  reviewOn: string | null;
+  lastCheckedOn: string | null;
+  note: string | null;
+  /** Filled by the database when the assumption breaks. */
+  raisedRiskId: string | null;
+  confidentiality: Confidentiality;
+}
+
+export interface Dependency {
+  id: string;
+  blockerLegalCaseId: string | null;
+  blockerSiteTaskId: string | null;
+  blockerObligationId: string | null;
+  blockerRiskId: string | null;
+  blockerLabel: string | null;
+  dependentSiteTaskId: string | null;
+  dependentObligationId: string | null;
+  dependentLegalCaseId: string | null;
+  dependentLabel: string | null;
+  noteEn: string | null;
+  /** Null means the portal cannot say, which is not the same as "no". */
+  blockerSettled: boolean | null;
+  confidentiality: Confidentiality;
+}
+
+export interface RiskMatrixCell {
+  likelihood: number;
+  impact: number;
+  score: number;
+  riskCount: number;
 }

@@ -17,6 +17,7 @@ import {
   MessagesSquare,
   ShieldAlert,
   ShieldCheck,
+  TriangleAlert,
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
@@ -56,6 +57,7 @@ export const Sidebar: React.FC = () => {
     // The connective tissue: what the lease, the courts, the deed and the
     // people around this project have each undertaken, in one list.
     { tab: 'obligations', path: '/obligations', label: t.nav.obligations, icon: ScrollText },
+    { tab: 'risks', path: '/risks', label: t.nav.risks, icon: TriangleAlert },
     // Everything with a date, from every register at once.
     { tab: 'calendar', path: '/calendar', label: t.nav.calendar, icon: CalendarClock },
     {

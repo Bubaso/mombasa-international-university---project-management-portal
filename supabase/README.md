@@ -21,6 +21,7 @@ migrations/
   0013_site_and_works.sql                the breakdown, evidenced progress, quantities
   0014_own_profile_is_readable.sql       so a locked-out person can be told why
   0015_budget_and_money.sql              the four figures, vouchers, the badge
+  0016_raid.sql                          risk, issue, assumption, dependency
 functions/
   ai-assistant/                          server-side model proxy
   invite-user/                           creates an account and its profile
@@ -108,6 +109,7 @@ besides a tier, lets someone reach a row:
 | `boq_versions`, `boq_items`, `valuations`             | to answer for money, or to be the surveyor on it |
 | `budget_lines`, `donations`                           | a role that answers for money                    |
 | `payment_vouchers`                                    | that, or to be the one who asked to be paid      |
+| `risks`, `issues`, `assumptions`                      | to be internal — the register names partners     |
 
 Every one of them narrows. None of them lifts: attending a confidential
 meeting does not raise an advocate's clearance to confidential, and being the
@@ -141,6 +143,10 @@ by anyone, because a record that can be tidied up afterwards is not evidence:
   currently wishes had happened.
 - **`voucher_approvals`** — every ruling on a payment, with who made it and
   which role they were acting under, including the ones later reversed.
+- **`risk_score_changes`** — how a risk's score moved. A register that shows
+  only today's number cannot answer the one question worth asking of it.
+- **`risk_escalations`** — each time a score crossed the line. Acknowledging
+  one is the only thing anybody does to it; it cannot be deleted.
 
 Each of these revokes `insert`/`update`/`delete` from `authenticated`
 explicitly, because 0003's default privileges grant them to every new table.
@@ -254,6 +260,36 @@ rule of the institution, not rows belonging to the caller. Read under the
 caller's own policies, a contractor's lookup comes back empty and the refusal
 reads "no threshold covers this amount" — untrue, and a worse answer than the
 real one.
+
+## What the risk register does by itself
+
+- **A score is generated** from likelihood × impact, so it is never a third
+  number anybody maintains beside the two it comes from (M6-01).
+- **Accepting a risk requires saying why.** A check constraint refuses
+  `response = 'accept'` with no plan, because a decision to live with
+  something, with no reasoning attached, is indistinguishable from not having
+  noticed (M6-02).
+- **Crossing the escalation line is an event**, recorded once on the way up. A
+  risk that goes over and comes back has crossed twice and both are kept; one
+  that sits above the line does not escalate again when somebody edits its
+  title (M6-08).
+- **`materialise_risk()` is one act** — the issue is created, linked and the
+  risk moved, or none of it happens. So "we could not have known" stays
+  checkable against the register that saw it coming (M6-04, M6-05).
+- **A collapsed assumption raises a risk on its own.** This is the only
+  automation in the schema that files a record nobody asked for, and it earns
+  that: the moment an assumption fails is the moment everybody is busy with
+  the consequences, so a risk filed then is one filed after it mattered.
+  Likelihood five, because it has already happened; impact three, as a
+  placeholder for a person, because the database has no way of knowing
+  (M6-06).
+
+`dependency_status.blocker_settled` is deliberately three-valued. Null means
+the portal cannot say — a court case being open tells you nothing about
+whether the particular ruling the work waits on has come, and answering "not
+settled" there would be making something up. A dependency may also name
+something the portal does not hold: accreditation has no module, and a
+register that could not mention it would be describing a different project.
 
 ## Importing from Notion
 
