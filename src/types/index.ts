@@ -79,28 +79,218 @@ export interface LegalCase {
   documentsCount: number;
 }
 
+/** Mirrors work_state in supabase/migrations/0013. */
+export type WorkState =
+  | 'planned'
+  | 'in_progress'
+  | 'completed'
+  | 'legally_suspended'
+  | 'emergency_preservation'
+  | 'blocked';
+
+/** Mirrors work_kind: preservation is tracked apart from construction. */
+export type WorkKind = 'construction' | 'preservation';
+
+export type ValuationState = 'draft' | 'qs_certified' | 'director_approved' | 'paid' | 'rejected';
+
+export type BoqState = 'draft' | 'issued' | 'superseded';
+
+export type CurrencyCode = 'KES' | 'USD' | 'TRY';
+
 export interface ConstructionBlock {
   id: string;
   name: string;
   code: string;
-  floors: number;
-  totalAreaSqm: number;
-  progressPercent: number;
-  status: 'foundation' | 'structural_frame' | 'roofing_urgent' | 'interior_finishing' | 'planned';
-  budgetKShs: number;
-  spentKShs: number;
-  leadEngineer: string;
-  urgentPreservationNeeded: boolean;
-  preservationActionEn: string;
-  preservationActionTr: string;
-  lastInspectionDate: string;
-  contractor: string;
-  items: {
-    id: string;
-    task: string;
-    status: 'completed' | 'in_progress' | 'blocked_by_status_quo' | 'urgent_preservation';
-    dueDate: string;
-  }[];
+  floors: number | null;
+  totalAreaSqm: number | null;
+  state: WorkState;
+  purposeEn: string | null;
+  purposeTr: string | null;
+  phaseId: string | null;
+  phaseName: string | null;
+  startedOn: string | null;
+  targetCompletion: string | null;
+  leadEngineerName: string | null;
+  contractorId: string | null;
+  contractorName: string | null;
+  confidentiality: Confidentiality;
+}
+
+/**
+ * What a block is at, from the block_progress view.
+ *
+ * `percentComplete` is null when nothing has been reported. That is not the
+ * same as zero, and the screens are careful to keep it different: the old
+ * module printed a number for every block whether or not anybody had ever
+ * looked at one.
+ */
+export interface BlockProgress {
+  constructionBlockId: string;
+  constructionTasks: number;
+  preservationTasks: number;
+  tasksWithEvidence: number;
+  percentComplete: number | null;
+  lastReportedAt: string | null;
+  lastCapturedAt: string | null;
+}
+
+export interface ProjectPhase {
+  id: string;
+  code: string;
+  nameEn: string;
+  nameTr: string | null;
+  sequence: number;
+}
+
+export interface Contractor {
+  id: string;
+  name: string;
+  contractReference: string | null;
+  scopeEn: string | null;
+  startsOn: string | null;
+  endsOn: string | null;
+  bondAmount: number | null;
+  bondCurrency: CurrencyCode | null;
+  performanceNote: string | null;
+  performanceNotedByName: string | null;
+  performanceNotedAt: string | null;
+}
+
+export interface WorkPackage {
+  id: string;
+  constructionBlockId: string;
+  code: string;
+  titleEn: string;
+  titleTr: string | null;
+  contractorId: string | null;
+  contractorName: string | null;
+  plannedStart: string | null;
+  plannedEnd: string | null;
+  taskCount: number;
+}
+
+export interface SiteTask {
+  id: string;
+  workPackageId: string;
+  workPackageTitle: string | null;
+  titleEn: string;
+  titleTr: string | null;
+  kind: WorkKind;
+  state: WorkState;
+  plannedStart: string | null;
+  plannedEnd: string | null;
+  ownerProfileId: string | null;
+  ownerName: string | null;
+  legalBasisEn: string | null;
+  legalBasisTr: string | null;
+  sourceLegalOrderId: string | null;
+  confidentiality: Confidentiality;
+  /** Latest evidenced report, or null when nothing has been filed. */
+  percentComplete: number | null;
+  reportCount: number;
+}
+
+export interface TaskProgressReport {
+  id: string;
+  siteTaskId: string;
+  percentComplete: number;
+  documentId: string;
+  documentTitle: string | null;
+  capturedAt: string | null;
+  capturedLat: number | null;
+  capturedLng: number | null;
+  note: string | null;
+  reportedByName: string | null;
+  reportedAt: string;
+}
+
+export interface SiteInspection {
+  id: string;
+  constructionBlockId: string;
+  inspectedOn: string;
+  inspectorName: string | null;
+  summaryEn: string | null;
+  summaryTr: string | null;
+  signedOffAt: string | null;
+  signedOffByName: string | null;
+  confidentiality: Confidentiality;
+  findingCount: number;
+  nonconformityCount: number;
+}
+
+export interface InspectionFinding {
+  id: string;
+  siteInspectionId: string;
+  descriptionEn: string;
+  descriptionTr: string | null;
+  isNonconformity: boolean;
+  severity: number | null;
+  documentId: string | null;
+  resolvedAt: string | null;
+  resolutionNote: string | null;
+}
+
+/** A live prohibition that reaches open work, from site_task_conflicts. */
+export interface TaskConflict {
+  siteTaskId: string;
+  taskTitleEn: string;
+  taskTitleTr: string | null;
+  taskState: WorkState;
+  taskKind: WorkKind;
+  constructionBlockId: string;
+  obligationId: string;
+  obligationTitleEn: string | null;
+  obligationTitleTr: string | null;
+  obligationSource: string;
+  sourceLegalOrderId: string | null;
+  acknowledged: boolean;
+}
+
+export interface BoqVersion {
+  id: string;
+  constructionBlockId: string;
+  versionNo: number;
+  state: BoqState;
+  preparedByName: string | null;
+  preparedOn: string;
+  currency: CurrencyCode;
+  note: string | null;
+  lineCount: number;
+  total: number;
+}
+
+export interface BoqItem {
+  id: string;
+  boqVersionId: string;
+  workPackageId: string | null;
+  itemCode: string | null;
+  descriptionEn: string;
+  descriptionTr: string | null;
+  unit: string;
+  quantity: number;
+  unitRate: number;
+  /** Generated by the database from quantity × rate; never sent. */
+  amount: number;
+}
+
+export interface Valuation {
+  id: string;
+  constructionBlockId: string;
+  contractorId: string | null;
+  contractorName: string | null;
+  boqVersionId: string | null;
+  periodStart: string;
+  periodEnd: string;
+  amount: number;
+  currency: CurrencyCode;
+  state: ValuationState;
+  summary: string | null;
+  qsCertifiedByName: string | null;
+  qsCertifiedAt: string | null;
+  directorApprovedByName: string | null;
+  directorApprovedAt: string | null;
+  paidAt: string | null;
+  confidentiality: Confidentiality;
 }
 
 /** Mirrors document_category in supabase/migrations/0012. */

@@ -1,736 +1,288 @@
-import React, { useState } from 'react';
+/**
+ * Construction and the site (M7).
+ *
+ * What this replaces is worth stating, because the design is a reaction to
+ * it. The old screen was a list of blocks with a percentage on each; the
+ * percentage was a number somebody typed into a dialog, and the bill of
+ * quantities beside it lived in component state and was gone on reload. The
+ * figure that told the trustees how far along the project was had exactly the
+ * same standing as the figure that told them the weather.
+ *
+ * So the number on every block here comes from `block_progress`, which
+ * averages the latest evidenced report on each task, and a block nobody has
+ * reported on says *not reported* rather than 0%. There is no control on this
+ * screen that sets a percentage, because there is no column to set.
+ *
+ * The other thing the old screen could not say: that a task is suspended by a
+ * court rather than merely late, and that work continuing under an order is a
+ * recorded decision rather than an oversight. Both are here, at the top,
+ * before the progress.
+ */
+import React, { useMemo, useState } from 'react';
+import { Building2, HardHat, Layers, Ruler } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import * as queries from '../api/hooks';
+import { useAuthority } from '../api/adminHooks';
+import * as site from '../api/siteHooks';
 import { QueryStatus } from '../components/QueryStatus';
-import { todayIso } from '../lib/date';
-import {
-  Building2,
-  AlertTriangle,
-  FileSpreadsheet,
-  Plus,
-  Wrench,
-  Trash2,
-  TriangleAlert,
-} from 'lucide-react';
+import { EmptyState } from '../components/EmptyState';
+import { Pill } from '../components/ui/Controls';
+import { clearanceLabel, clearanceStyle } from '../lib/authority';
+import { formatDate, progressLabel, workStateLabel, workStateStyle } from '../lib/site';
+import { ProgressPanel } from '../components/site/ProgressPanel';
+import { ConflictPanel } from '../components/site/ConflictPanel';
+import { InspectionList } from '../components/site/InspectionList';
+import { CommercialPanel } from '../components/site/CommercialPanel';
+import type { BlockProgress } from '../types';
 
-interface BoQItem {
-  id: string;
-  itemEn: string;
-  itemTr: string;
-  costKShs: number;
-  urgency: 'Critical' | 'High' | 'Medium';
-}
+type Tab = 'works' | 'inspections' | 'commercial';
 
-import { useNavigate } from 'react-router-dom';
-import { ContextualAIAssistant } from '../components/ContextualAIAssistant';
+const acts = (roles: string[] | undefined, ...wanted: string[]) =>
+  roles != null && wanted.some((role) => roles.includes(role));
 
 export const ConstructionView: React.FC = () => {
-  const navigate = useNavigate();
   const { language } = useApp();
-  const constructionBlocksQuery = queries.useConstructionBlocks();
-  const constructionBlocks = constructionBlocksQuery.data ?? [];
-  const { mutate: updateConstructionBlock } = queries.useUpdateConstructionBlock();
-  const [selectedBlockId, setSelectedBlockId] = useState<string>(constructionBlocks[0]?.id || '');
-  const [showBoQModal, setShowBoQModal] = useState(false);
-  const [showInspectionModal, setShowInspectionModal] = useState(false);
-  const [showAddTaskModal, setShowAddTaskModal] = useState(false);
-  const [showAddBoQModal, setShowAddBoQModal] = useState(false);
+  const tr = language === 'tr';
 
-  // Dynamic BoQ State
-  const [boqList, setBoqList] = useState<BoQItem[]>([]);
-  const [newBoqItem, setNewBoqItem] = useState('');
-  const [newBoqCost, setNewBoqCost] = useState<number>(0);
-  const [newBoqUrgency, setNewBoqUrgency] = useState<'Critical' | 'High' | 'Medium'>('Critical');
+  const blocks = site.useBlocks();
+  const progress = site.useBlockProgress();
+  const authority = useAuthority();
 
-  // Inspection form
-  const [inspectorName, setInspectorName] = useState('');
-  const [inspectionNotes, setInspectionNotes] = useState('');
-  const [newProgress, setNewProgress] = useState(0);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [tab, setTab] = useState<Tab>('works');
 
-  // New task form
-  const [taskTitle, setTaskTitle] = useState('');
-  const [taskDueDate, setTaskDueDate] = useState('');
-  const [taskStatus, setTaskStatus] = useState<
-    'in_progress' | 'urgent_preservation' | 'blocked_by_status_quo' | 'completed'
-  >('urgent_preservation');
+  const roles = authority.data?.roles;
+  // The site team and the firm on the block report; planning the work is
+  // internal. Pricing is the surveyor's, approving is the director's — and
+  // the database holds the same lines, so nothing here is the real gate.
+  const canReport = acts(
+    roles,
+    'admin',
+    'project_director',
+    'field_team',
+    'contractor',
+    'quantity_surveyor',
+  );
+  const canPlan = acts(roles, 'admin', 'project_director', 'field_team');
+  const canInspect = acts(
+    roles,
+    'admin',
+    'project_director',
+    'field_team',
+    'quantity_surveyor',
+    'external_auditor',
+  );
+  const canPrice = acts(roles, 'admin', 'project_director', 'quantity_surveyor');
+  const canApprove = acts(roles, 'admin', 'project_director');
 
-  const selectedBlock =
-    constructionBlocks.find((b) => b.id === selectedBlockId) || constructionBlocks[0];
+  const byBlock = useMemo(() => {
+    const map = new Map<string, BlockProgress>();
+    for (const row of progress.data ?? []) map.set(row.constructionBlockId, row);
+    return map;
+  }, [progress.data]);
 
-  const handleSaveInspection = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedBlock) return;
-    updateConstructionBlock({
-      id: selectedBlock.id,
-      updates: {
-        progressPercent: newProgress,
-        lastInspectionDate: todayIso(),
-        leadEngineer: inspectorName || selectedBlock.leadEngineer,
-      },
-    });
-    setShowInspectionModal(false);
-    setInspectionNotes('');
-  };
-
-  const handleAddTask = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedBlock || !taskTitle) return;
-    const newTask = {
-      id: `tsk-${Date.now()}`,
-      task: taskTitle,
-      status: taskStatus,
-      dueDate: taskDueDate || todayIso(),
-    };
-    updateConstructionBlock({
-      id: selectedBlock.id,
-      updates: {
-        items: [...(selectedBlock.items || []), newTask],
-      },
-    });
-    setTaskTitle('');
-    setTaskDueDate('');
-    setShowAddTaskModal(false);
-  };
-
-  const handleAddBoQ = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newBoqItem || !newBoqCost) return;
-    const item: BoQItem = {
-      id: `boq-${Date.now()}`,
-      itemEn: newBoqItem,
-      itemTr: newBoqItem,
-      costKShs: Number(newBoqCost),
-      urgency: newBoqUrgency,
-    };
-    setBoqList([...boqList, item]);
-    setNewBoqItem('');
-    setNewBoqCost(0);
-    setShowAddBoQModal(false);
-  };
-
-  const handleDeleteBoQ = (id: string) => {
-    setBoqList(boqList.filter((b) => b.id !== id));
-  };
-
-  const totalBoQBudget = boqList.reduce((acc, curr) => acc + curr.costKShs, 0);
+  const rows = blocks.data ?? [];
+  const selected = rows.find((b) => b.id === selectedId) ?? null;
 
   return (
-    <div className="space-y-6">
-      <QueryStatus queries={[constructionBlocksQuery]} />
-
-      {/* Top Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-slate-200 p-5 rounded-xl shadow-xs">
+    <div className="space-y-4">
+      <header className="flex items-start gap-2.5">
+        <Building2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" aria-hidden="true" />
         <div>
-          <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700 uppercase tracking-wider">
-            <Building2 className="w-4 h-4 text-emerald-600" />
-            <span>
-              {language === 'tr'
-                ? '1. Aşama Yerleşke İnşaatı & Yapısal Koruma'
-                : 'Phase 1 Campus Infrastructure & Civil Works'}
-            </span>
-          </div>
-          <h1 className="text-xl font-bold text-slate-900 mt-1">
-            {language === 'tr' ? 'İnşaat İşleri' : 'Construction'}
+          <h1 className="text-lg font-bold text-slate-900">
+            {tr ? 'İnşaat ve Saha' : 'Construction and Site'}
           </h1>
+          <p className="max-w-2xl text-xs text-slate-500">
+            {tr
+              ? 'İlerleme, dayandığı kanıttan hesaplanır. Hiç rapor edilmemiş bir blok "raporlanmadı" der — sıfır demez, çünkü ikisi aynı şey değil.'
+              : 'Progress is computed from the evidence behind it. A block nobody has reported on says "not reported" — not zero, because those are not the same thing.'}
+          </p>
         </div>
+      </header>
 
-        <div className="flex flex-wrap items-center gap-2.5">
-          <button
-            onClick={() => setShowBoQModal(true)}
-            className="inline-flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 px-3.5 py-2 rounded-lg text-xs font-medium transition-colors cursor-pointer"
-          >
-            <FileSpreadsheet className="w-3.5 h-3.5 text-amber-600" />
-            <span>
-              {language === 'tr' ? 'Metraj & Keşif Cetveli (BoQ)' : 'QS Bill of Quantities'}
-            </span>
-          </button>
-          <button
-            onClick={() => setShowInspectionModal(true)}
-            className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer shadow-xs"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>{language === 'tr' ? 'Saha Denetim Kaydı Ekle' : 'Log Site Inspection'}</span>
-          </button>
-        </div>
-      </div>
+      <QueryStatus queries={[blocks, progress]} />
 
-      {/* Critical Roof Protection Banner */}
-      <div className="bg-rose-50 border-2 border-rose-300 rounded-xl p-5 shadow-xs space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-rose-200 pb-3">
-          <div className="flex items-center gap-2 text-rose-800 font-bold text-xs uppercase tracking-wider">
-            <AlertTriangle className="w-5 h-5 text-rose-600 animate-bounce" />
-            <span>
-              {language === 'tr'
-                ? 'Acil Yapısal Koruma Uyarısı: Blok A1 Çatı Kapatma Zorunluluğu'
-                : 'Urgent Structural Dilapidation Alert: Block A1 Roof Encapsulation'}
-            </span>
-          </div>
-          <span className="text-[11px] font-mono text-rose-800 bg-rose-100 px-2 py-0.5 rounded border border-rose-300 font-semibold">
-            {language === 'tr'
-              ? 'Telafisi İmkansız Zarar Doktrini (Substantial Loss)'
-              : 'Doctrine of Substantial Loss'}
-          </span>
-        </div>
-        <p className="text-xs text-slate-700 leading-relaxed">
-          {language === 'tr'
-            ? 'Metraj ve Maliyet Uzmanı (QS) ve yapı denetim mühendislerinin tespitlerine göre; 4 katlı Blok A1 (Bilişim & İktisat Fakültesi) karkasının açıkta kalması, muson yağmurlarında beton dökülmelerine ve çelik donatıların paslanmasına yol açacaktır. 9 Şubat 2026 tarihli mahkeme kararının "koruyucu tedbirleri kapsamadığı" hususunda Yargıtay’a acil başvuru (Certificate of Urgency) yapılarak yatırım heba olmaktan kurtarılacaktır.'
-            : 'According to structural surveys, leaving the 4-story reinforced concrete frame of Block A1 exposed during upcoming seasonal rainfall will trigger irreparable spalling and structural carbonation. Counsel is filing an urgent variation motion to distinguish between "new development" and "preservation of the suit property", preventing the appeal from being rendered nugatory.'}
-        </p>
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-          <div className="text-[11px] text-slate-600">
-            {language === 'tr' ? 'Hukuki Dayanak:' : 'Legal Ground:'}{' '}
-            <span className="text-slate-900 font-semibold">
-              {language === 'tr'
-                ? 'Temyiz Konusunun Korunması (Preservation of Substratum)'
-                : 'Preservation of Substratum'}
-            </span>
-          </div>
-          <button
-            onClick={() => navigate('/legal')}
-            className="text-xs font-semibold text-rose-700 hover:text-rose-900 underline cursor-pointer"
-          >
-            {language === 'tr'
-              ? 'Yargıtay Başvuru Dilekçesini İncele'
-              : 'View Court Variation Motion'}
-          </button>
-        </div>
-      </div>
+      {/* Before the blocks, not inside one. Work that a live order reaches is
+          not a footnote to the progress, and finding out about it should not
+          require having already guessed which block to open. Once a block is
+          selected this narrows to that block. */}
+      <ConflictPanel blockId={selectedId} canAcknowledge={canApprove} />
 
-      {/* Campus Blocks Selector & Detail Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Block Cards */}
-        <div className="lg:col-span-4 space-y-3">
-          <div className="text-xs font-bold uppercase tracking-wider text-slate-500 px-1">
-            {language === 'tr' ? 'İzlenen Yerleşke Yapıları' : 'Monitored Campus Facilities'}
-          </div>
-          {constructionBlocks.map((b) => (
-            <div
-              key={b.id}
-              onClick={() => setSelectedBlockId(b.id)}
-              className={`p-4 rounded-xl border text-left cursor-pointer transition-all ${
-                selectedBlockId === b.id
-                  ? 'bg-white border-emerald-500 ring-2 ring-emerald-500/20 shadow-xs'
-                  : 'bg-white border-slate-200 hover:border-slate-300'
-              }`}
-            >
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-mono text-emerald-700 font-bold">{b.code}</span>
-                <span className="font-mono font-bold text-slate-800">{b.progressPercent}%</span>
-              </div>
-              <h3 className="font-semibold text-slate-900 text-xs mt-1">{b.name}</h3>
-              <div className="w-full h-1.5 bg-slate-100 rounded-full mt-2 overflow-hidden">
-                <div
-                  className="h-full bg-emerald-500 rounded-full"
-                  style={{ width: `${b.progressPercent}%` }}
-                />
-              </div>
-              <div className="flex items-center justify-between text-[11px] text-slate-500 mt-2">
-                <span>
-                  {b.floors} {language === 'tr' ? 'Kat' : 'Floors'} ·{' '}
-                  {b.totalAreaSqm.toLocaleString()} m²
-                </span>
-                {b.urgentPreservationNeeded && (
-                  <span className="text-rose-700 font-medium text-[10px] flex items-center gap-1 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">
-                    <AlertTriangle className="w-3 h-3 text-rose-600" />
-                    {language === 'tr' ? 'Acil Koruma' : 'Preservation Needed'}
-                  </span>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Right Column: Selected Block Deep Dive */}
-        {selectedBlock && (
-          <div className="lg:col-span-8 bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
-              <div>
-                <span className="font-mono text-emerald-700 text-xs font-bold uppercase">
-                  {selectedBlock.code}
-                </span>
-                <h2 className="text-lg font-bold text-slate-900">{selectedBlock.name}</h2>
-                <div className="text-xs text-slate-500 mt-0.5">{selectedBlock.leadEngineer}</div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setShowAddTaskModal(true)}
-                  className="inline-flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>{language === 'tr' ? 'Aşama / Görev Ekle' : 'Add Task'}</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Critical Preservation Directive */}
-            <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-1">
-              <span className="text-amber-800 font-bold uppercase text-[10px] tracking-wider">
-                {language === 'tr' ? 'Koruma Tedbiri Açıklaması:' : 'Preservation Directive:'}
-              </span>
-              <p className="text-slate-700 leading-relaxed text-[11px]">
-                {language === 'tr'
-                  ? selectedBlock.preservationActionTr
-                  : selectedBlock.preservationActionEn}
-              </p>
-            </div>
-
-            {/* Tasks & Engineering Milestones */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                  {language === 'tr'
-                    ? 'İnşaat Aşamaları ve Hukuki Uyumluluk'
-                    : 'Engineering Milestones & Compliance'}
-                </h3>
-                <span className="text-[11px] font-mono text-slate-500">
-                  {selectedBlock.items.length} {language === 'tr' ? 'Aşama' : 'Tasks'}
-                </span>
-              </div>
-
-              {selectedBlock.items.length === 0 ? (
-                <div className="p-6 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200 space-y-2">
-                  <Wrench className="w-6 h-6 text-slate-400 mx-auto" />
-                  <p className="text-xs text-slate-500">
-                    {language === 'tr'
-                      ? 'Bu yapı için henüz görev veya aşama kaydı eklenmemiştir.'
-                      : 'No specific engineering tasks logged for this block yet.'}
-                  </p>
+      {rows.length === 0 ? (
+        <EmptyState
+          icon={Building2}
+          title={tr ? 'Blok yok' : 'No blocks'}
+          description={
+            tr
+              ? 'Henüz blok tanımlanmamış, ya da bu blokları görme yetkiniz yok. Dış firmalar yalnızca kendilerine atanan blokları görür.'
+              : 'No blocks are defined, or none are yours to see. An outside firm sees only the blocks it is assigned to.'
+          }
+        />
+      ) : (
+        <>
+          <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {rows.map((block) => {
+              const stats = byBlock.get(block.id);
+              const percent = stats?.percentComplete ?? null;
+              return (
+                <li key={block.id}>
                   <button
-                    onClick={() => setShowAddTaskModal(true)}
-                    className="inline-flex items-center gap-1.5 text-xs text-emerald-700 font-medium hover:underline cursor-pointer"
+                    type="button"
+                    onClick={() => setSelectedId(block.id === selectedId ? null : block.id)}
+                    className={`w-full cursor-pointer rounded-xl border p-3 text-left transition-colors ${
+                      block.id === selectedId
+                        ? 'border-emerald-300 bg-emerald-50'
+                        : 'border-slate-200 bg-white hover:bg-slate-50'
+                    }`}
                   >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>{language === 'tr' ? 'İlk Aşamayı Kaydet' : 'Log First Task'}</span>
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-2 text-xs">
-                  {selectedBlock.items.map((item) => (
-                    <div
-                      key={item.id}
-                      className="p-3 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between"
-                    >
-                      <div className="space-y-0.5">
-                        <div className="font-semibold text-slate-800">{item.task}</div>
-                        <div className="text-[11px] text-slate-500 font-mono">
-                          {language === 'tr' ? 'Hedef Tarih:' : 'Target Due:'} {item.dueDate}
-                        </div>
-                      </div>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="font-mono text-[11px] font-semibold text-slate-500">
+                        {block.code}
+                      </span>
+                      <span className="text-xs font-medium text-slate-900">{block.name}</span>
+                      <Pill className={workStateStyle(block.state)}>
+                        {workStateLabel(block.state, language)}
+                      </Pill>
+                      {block.confidentiality !== 'internal' && (
+                        <Pill className={clearanceStyle(block.confidentiality)}>
+                          {clearanceLabel(block.confidentiality, language)}
+                        </Pill>
+                      )}
+                    </div>
+
+                    <div className="mt-2 flex items-center justify-between text-[11px]">
+                      <span className="text-slate-500">{tr ? 'İlerleme' : 'Progress'}</span>
                       <span
-                        className={`text-[10px] font-mono px-2 py-0.5 rounded border uppercase font-medium ${
-                          item.status === 'completed'
-                            ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
-                            : item.status === 'urgent_preservation'
-                              ? 'bg-rose-100 text-rose-800 border-rose-300'
-                              : item.status === 'blocked_by_status_quo'
-                                ? 'bg-slate-200 text-slate-700 border-slate-300'
-                                : 'bg-amber-100 text-amber-800 border-amber-300'
+                        className={`font-mono font-semibold ${
+                          percent == null ? 'text-amber-700' : 'text-slate-800'
                         }`}
                       >
-                        {language === 'tr'
-                          ? item.status === 'urgent_preservation'
-                            ? 'Acil Koruma'
-                            : item.status === 'completed'
-                              ? 'Tamamlandı'
-                              : item.status === 'blocked_by_status_quo'
-                                ? 'Mevcut Durum Kapsamında'
-                                : 'İşlemde'
-                          : item.status.replace(/_/g, ' ')}
+                        {progressLabel(percent, language)}
                       </span>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* BoQ Breakdown Modal */}
-      {showBoQModal && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-xs p-0 sm:p-4 animate-fade-in">
-          <div className="w-full sm:max-w-2xl bg-white border border-slate-200 rounded-t-2xl sm:rounded-2xl p-5 sm:p-6 shadow-2xl space-y-4 max-h-[88vh] flex flex-col">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div>
-                <span className="text-[10px] font-mono text-amber-800 uppercase font-bold">
-                  {language === 'tr'
-                    ? 'Metraj ve Maliyet Bilirkişi Modülü (QS)'
-                    : 'Quantity Surveying & Bills of Quantities'}
-                </span>
-                <h3 className="text-base font-bold text-slate-900">
-                  {language === 'tr'
-                    ? 'Metraj ve Keşif (BoQ) Kalemleri'
-                    : 'Bill of Quantities (BoQ)'}
-                </h3>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setShowAddBoQModal(true)}
-                  className="inline-flex items-center gap-1 bg-amber-600 hover:bg-amber-700 text-white px-2.5 py-1 rounded text-xs font-semibold cursor-pointer shadow-xs"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>{language === 'tr' ? 'Kalem Ekle' : 'Add Item'}</span>
-                </button>
-                <button
-                  onClick={() => setShowBoQModal(false)}
-                  className="text-slate-400 hover:text-slate-700 ml-2 cursor-pointer p-1"
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-
-            {/* BoQ items live in component state only (S-6): nothing is
-                persisted, so a quantity surveyor's work would be lost. */}
-            <div
-              className="flex items-start gap-2.5 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[11px]"
-              role="note"
-            >
-              <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-700" />
-              <p className="leading-relaxed text-amber-900">
-                {language === 'tr'
-                  ? 'Buraya girilen kalemler henüz veritabanına yazılmıyor; pencereyi kapattığınızda veya sayfayı yenilediğinizde kaybolur.'
-                  : 'Items entered here are not written to the database yet; they are lost when this dialog is closed or the page reloads.'}
-              </p>
-            </div>
-
-            <div className="flex-1 overflow-y-auto space-y-3 text-xs">
-              {boqList.length === 0 ? (
-                <div className="p-8 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200 space-y-2">
-                  <FileSpreadsheet className="w-8 h-8 text-slate-400 mx-auto" />
-                  <h4 className="text-xs font-bold text-slate-700">
-                    {language === 'tr'
-                      ? 'Kayıtlı BoQ Kalemi Bulunmuyor'
-                      : 'No BoQ Items Recorded Yet'}
-                  </h4>
-                  <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
-                    {language === 'tr'
-                      ? 'Metraj ve maliyet uzmanı (QS) tarafından hazırlanan resmi keşif kalemlerini yukarıdaki "Kalem Ekle" butonundan sisteme girebilirsiniz.'
-                      : 'Add verified Bill of Quantities items prepared by the Quantity Surveyor using the "Add Item" button.'}
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {boqList.map((row) => (
-                    <div
-                      key={row.id}
-                      className="p-3 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between"
-                    >
-                      <div>
-                        <div className="font-semibold text-slate-900">
-                          {language === 'tr' ? row.itemTr : row.itemEn}
-                        </div>
-                        <span className="text-[10px] font-mono text-rose-700 font-medium">
-                          {row.urgency}
-                        </span>
+                    {/* No bar when there is no number. A bar at zero width
+                        reads as "nothing done" rather than "nobody looked". */}
+                    {percent != null && (
+                      <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
+                        <div
+                          className="h-full rounded-full bg-emerald-500"
+                          style={{ width: `${percent}%` }}
+                        />
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span className="font-mono font-bold text-amber-800">
-                          KShs {row.costKShs.toLocaleString()}
+                    )}
+
+                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-slate-500">
+                      {stats && (
+                        <span className="flex items-center gap-1">
+                          <Layers className="h-3 w-3" aria-hidden="true" />
+                          {tr
+                            ? `${stats.tasksWithEvidence}/${stats.constructionTasks} görev kanıtlı`
+                            : `${stats.tasksWithEvidence}/${stats.constructionTasks} tasks evidenced`}
                         </span>
-                        <button
-                          onClick={() => handleDeleteBoQ(row.id)}
-                          className="text-slate-400 hover:text-rose-600 p-1 cursor-pointer"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
+                      )}
+                      {stats != null && stats.preservationTasks > 0 && (
+                        <span className="text-orange-700">
+                          {tr
+                            ? `${stats.preservationTasks} koruma işi`
+                            : `${stats.preservationTasks} preservation`}
+                        </span>
+                      )}
+                      {block.targetCompletion && (
+                        <span>{formatDate(block.targetCompletion, language)}</span>
+                      )}
                     </div>
-                  ))}
-                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center justify-between font-bold text-slate-900">
-                    <span>{language === 'tr' ? 'Toplam BoQ Tutarı:' : 'Total BoQ Budget:'}</span>
-                    <span className="font-mono text-amber-800">
-                      KShs {totalBoQBudget.toLocaleString()}
-                    </span>
-                  </div>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+
+          {selected && (
+            <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
+              <header className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 pb-3">
+                <div>
+                  <h2 className="text-sm font-bold text-slate-900">
+                    {selected.code} · {selected.name}
+                  </h2>
+                  <p className="mt-0.5 text-[11px] text-slate-500">
+                    {[
+                      selected.phaseName,
+                      selected.contractorName,
+                      selected.leadEngineerName,
+                      selected.floors != null
+                        ? tr
+                          ? `${selected.floors} kat`
+                          : `${selected.floors} floors`
+                        : null,
+                      selected.totalAreaSqm != null ? `${selected.totalAreaSqm} m²` : null,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ') || (tr ? 'Ayrıntı girilmemiş' : 'No details recorded')}
+                  </p>
+                  {(selected.purposeEn ?? selected.purposeTr) && (
+                    <p className="mt-1 max-w-2xl text-[11px] text-slate-600">
+                      {tr ? (selected.purposeTr ?? selected.purposeEn) : selected.purposeEn}
+                    </p>
+                  )}
                 </div>
+                <div className="flex gap-1.5">
+                  <TabButton
+                    icon={HardHat}
+                    label={tr ? 'İşler' : 'Works'}
+                    active={tab === 'works'}
+                    onClick={() => setTab('works')}
+                  />
+                  <TabButton
+                    icon={Building2}
+                    label={tr ? 'Denetim' : 'Inspection'}
+                    active={tab === 'inspections'}
+                    onClick={() => setTab('inspections')}
+                  />
+                  <TabButton
+                    icon={Ruler}
+                    label={tr ? 'Metraj ve hakediş' : 'Quantities and valuations'}
+                    active={tab === 'commercial'}
+                    onClick={() => setTab('commercial')}
+                  />
+                </div>
+              </header>
+
+              {tab === 'works' && (
+                <ProgressPanel blockId={selected.id} canReport={canReport} canPlan={canPlan} />
               )}
-            </div>
-
-            <div className="flex justify-end pt-3 border-t border-slate-100">
-              <button
-                onClick={() => setShowBoQModal(false)}
-                className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold cursor-pointer"
-              >
-                {language === 'tr' ? 'Kapat' : 'Close'}
-              </button>
-            </div>
-          </div>
-        </div>
+              {tab === 'inspections' && (
+                <InspectionList blockId={selected.id} canInspect={canInspect} />
+              )}
+              {tab === 'commercial' && (
+                <CommercialPanel
+                  blockId={selected.id}
+                  canPrice={canPrice}
+                  canApprove={canApprove}
+                />
+              )}
+            </section>
+          )}
+        </>
       )}
-
-      {/* Add BoQ Item Modal */}
-      {showAddBoQModal && (
-        <div className="fixed inset-0 z-55 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-xs p-0 sm:p-4 animate-fade-in">
-          <div className="w-full sm:max-w-md bg-white border border-slate-200 rounded-t-2xl sm:rounded-2xl p-5 sm:p-6 shadow-2xl space-y-4 text-xs">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-bold text-slate-900 text-sm">
-                {language === 'tr'
-                  ? 'Yeni Metraj/Keşif (BoQ) Kalemi Ekle'
-                  : 'Add Bill of Quantities Item'}
-              </h3>
-              <button
-                onClick={() => setShowAddBoQModal(false)}
-                className="text-slate-400 hover:text-slate-700 cursor-pointer p-1"
-              >
-                ✕
-              </button>
-            </div>
-            <form onSubmit={handleAddBoQ} className="space-y-3">
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">
-                  {language === 'tr' ? 'Kalem / İş Tanımı:' : 'Item Description:'}
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={newBoqItem}
-                  onChange={(e) => setNewBoqItem(e.target.value)}
-                  placeholder={
-                    language === 'tr'
-                      ? 'Örn: Çatı makasları ve aşık imalatı'
-                      : 'e.g. Roof trusses fabrication'
-                  }
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-900 focus:outline-none focus:border-amber-500 focus:bg-white"
-                />
-              </div>
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">
-                  {language === 'tr' ? 'Maliyet (KShs):' : 'Estimated Cost (KShs):'}
-                </label>
-                <input
-                  type="number"
-                  required
-                  min="1"
-                  value={newBoqCost || ''}
-                  onChange={(e) => setNewBoqCost(Number(e.target.value))}
-                  placeholder="0"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-900 font-mono focus:outline-none focus:border-amber-500 focus:bg-white"
-                />
-              </div>
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">
-                  {language === 'tr' ? 'Aciliyet Seviyesi:' : 'Urgency Level:'}
-                </label>
-                <select
-                  value={newBoqUrgency}
-                  onChange={(e) => setNewBoqUrgency(e.target.value as any)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-900 focus:outline-none focus:border-amber-500 focus:bg-white"
-                >
-                  <option value="Critical">
-                    {language === 'tr' ? 'Kritik (Critical)' : 'Critical'}
-                  </option>
-                  <option value="High">{language === 'tr' ? 'Yüksek (High)' : 'High'}</option>
-                  <option value="Medium">{language === 'tr' ? 'Orta (Medium)' : 'Medium'}</option>
-                </select>
-              </div>
-              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setShowAddBoQModal(false)}
-                  className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer font-medium"
-                >
-                  {language === 'tr' ? 'İptal' : 'Cancel'}
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold cursor-pointer shadow-xs"
-                >
-                  {language === 'tr' ? 'Kaydet' : 'Save'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Add Task Modal */}
-      {showAddTaskModal && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-xs p-0 sm:p-4 animate-fade-in">
-          <div className="w-full sm:max-w-md bg-white border border-slate-200 rounded-t-2xl sm:rounded-2xl p-5 sm:p-6 shadow-2xl space-y-4 text-xs">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-bold text-slate-900 text-sm">
-                {language === 'tr'
-                  ? 'Yapıya Yeni Aşama / Görev Ekle'
-                  : 'Add Structural Milestone / Task'}
-              </h3>
-              <button
-                onClick={() => setShowAddTaskModal(false)}
-                className="text-slate-400 hover:text-slate-700 cursor-pointer p-1"
-              >
-                ✕
-              </button>
-            </div>
-            <form onSubmit={handleAddTask} className="space-y-3">
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">
-                  {language === 'tr' ? 'Aşama / Görev Tanımı:' : 'Task Description:'}
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={taskTitle}
-                  onChange={(e) => setTaskTitle(e.target.value)}
-                  placeholder={
-                    language === 'tr'
-                      ? 'Örn: Zemin drenaj kanalları açılması'
-                      : 'e.g. Foundation drainage channels'
-                  }
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-900 focus:outline-none focus:border-emerald-500 focus:bg-white"
-                />
-              </div>
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">
-                  {language === 'tr' ? 'Durum / Statü:' : 'Task Status:'}
-                </label>
-                <select
-                  value={taskStatus}
-                  onChange={(e) => setTaskStatus(e.target.value as any)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-900 focus:outline-none focus:border-emerald-500 focus:bg-white"
-                >
-                  <option value="urgent_preservation">
-                    {language === 'tr'
-                      ? 'Acil Koruma Tedbiri (Urgent Preservation)'
-                      : 'Urgent Preservation'}
-                  </option>
-                  <option value="in_progress">
-                    {language === 'tr' ? 'Devam Ediyor / İşlemde (In Progress)' : 'In Progress'}
-                  </option>
-                  <option value="blocked_by_status_quo">
-                    {language === 'tr'
-                      ? 'Mevcut Durum Nedeniyle Durduruldu (Blocked by Status Quo)'
-                      : 'Blocked by Status Quo'}
-                  </option>
-                  <option value="completed">
-                    {language === 'tr' ? 'Tamamlandı (Completed)' : 'Completed'}
-                  </option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">
-                  {language === 'tr' ? 'Hedef Tarih:' : 'Target Due Date:'}
-                </label>
-                <input
-                  type="date"
-                  value={taskDueDate}
-                  onChange={(e) => setTaskDueDate(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-900 focus:outline-none focus:border-emerald-500 focus:bg-white"
-                />
-              </div>
-              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setShowAddTaskModal(false)}
-                  className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer font-medium"
-                >
-                  {language === 'tr' ? 'İptal' : 'Cancel'}
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold cursor-pointer shadow-xs"
-                >
-                  {language === 'tr' ? 'Görevi Kaydet' : 'Save Task'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Log Inspection Modal */}
-      {showInspectionModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-fade-in">
-          <div className="w-full max-w-md bg-white border border-slate-200 rounded-2xl p-6 shadow-2xl space-y-4 text-xs">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-bold text-slate-900 text-sm">
-                {language === 'tr' ? 'Saha Denetim Kaydı Gir' : 'Record Site Inspection'}
-              </h3>
-              <button
-                onClick={() => setShowInspectionModal(false)}
-                className="text-slate-400 hover:text-slate-700 cursor-pointer p-1"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveInspection} className="space-y-4 text-xs">
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">
-                  {language === 'tr' ? 'Denetçi Mühendis / Uzman:' : 'Lead Inspector / QS:'}
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={inspectorName}
-                  onChange={(e) => setInspectorName(e.target.value)}
-                  placeholder={
-                    language === 'tr' ? 'Mühendis veya Denetçi Adı...' : 'Inspector name...'
-                  }
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-900 focus:outline-none focus:border-emerald-500 focus:bg-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">
-                  {language === 'tr'
-                    ? 'Yeni İlerleme Yüzdesi (%):'
-                    : 'Updated Progress Percentage (%):'}
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={newProgress}
-                  onChange={(e) => setNewProgress(Number(e.target.value))}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-900 font-mono focus:outline-none focus:border-emerald-500 focus:bg-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">
-                  {language === 'tr'
-                    ? 'Saha Gözlemleri & Yapısal Notlar:'
-                    : 'Structural Observations & Findings:'}
-                </label>
-                <textarea
-                  rows={3}
-                  value={inspectionNotes}
-                  onChange={(e) => setInspectionNotes(e.target.value)}
-                  placeholder={
-                    language === 'tr'
-                      ? 'Betonarme durumu, nem kontrolü ve çevre duvarı güvenlik notları...'
-                      : 'Concrete frame status, moisture readings, and perimeter boundary observations...'
-                  }
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-900 focus:outline-none focus:border-emerald-500 focus:bg-white"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setShowInspectionModal(false)}
-                  className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs cursor-pointer font-medium"
-                >
-                  {language === 'tr' ? 'İptal' : 'Cancel'}
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition-colors cursor-pointer shadow-xs"
-                >
-                  {language === 'tr' ? 'Denetim Kaydını İmzala' : 'Sign & Submit Inspection'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      <ContextualAIAssistant
-        contextData={JSON.stringify({ blocks: constructionBlocks })}
-        systemInstruction="You are an expert construction project management AI. Analyze block progress, identify bottlenecks, and suggest preservation actions based on the provided context."
-        title={language === 'tr' ? 'İnşaat AI Asistanı' : 'Construction AI Assistant'}
-      />
     </div>
   );
 };
+
+const TabButton: React.FC<{
+  icon: React.ElementType;
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}> = ({ icon: Icon, label, active, onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
+      active
+        ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
+        : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+    }`}
+  >
+    <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+    <span>{label}</span>
+  </button>
+);

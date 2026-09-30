@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import * as queries from '../api/hooks';
+import { workStateLabel } from '../lib/site';
 import { useNavigate } from 'react-router-dom';
 import { Search, X, Scale, FileText, Building2, Users, DollarSign } from 'lucide-react';
 
@@ -56,13 +57,13 @@ export const GlobalSearchModal: React.FC = () => {
       )
     : [];
 
+  // Tasks are their own records now rather than a jsonb bag on the block, so
+  // this matches the block and leaves the tasks to the site screens.
   const matchedBlocks = query
-    ? constructionBlocks.filter(
-        (b: any) =>
-          b.name.toLowerCase().includes(query) ||
-          b.code.toLowerCase().includes(query) ||
-          b.contractor.toLowerCase().includes(query) ||
-          b.items.some((item: any) => item.task.toLowerCase().includes(query)),
+    ? constructionBlocks.filter((b) =>
+        [b.name, b.code, b.contractorName, b.leadEngineerName, b.phaseName]
+          .filter(Boolean)
+          .some((field) => (field as string).toLowerCase().includes(query)),
       )
     : [];
 
@@ -261,12 +262,11 @@ export const GlobalSearchModal: React.FC = () => {
                   >
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-semibold text-slate-900">{b.name}</span>
-                      <span className="text-amber-700 font-mono text-xs font-semibold">
-                        {b.progressPercent}%
-                      </span>
+                      <span className="text-slate-500 font-mono text-[11px]">{b.code}</span>
                     </div>
                     <div className="text-[11px] text-slate-500 mt-0.5">
-                      {b.leadEngineer} · {b.contractor}
+                      {[b.contractorName, b.leadEngineerName].filter(Boolean).join(' · ') ||
+                        workStateLabel(b.state, language)}
                     </div>
                   </div>
                 ))}

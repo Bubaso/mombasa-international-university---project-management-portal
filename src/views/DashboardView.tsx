@@ -1,6 +1,8 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
 import * as queries from '../api/hooks';
+import * as siteQueries from '../api/siteHooks';
+import { progressLabel } from '../lib/site';
 import { QueryStatus } from '../components/QueryStatus';
 import { Scale, Building2, Receipt, Flame, Server, Compass, ArrowUpRight } from 'lucide-react';
 
@@ -21,15 +23,21 @@ export const DashboardView: React.FC = () => {
   const transactions = transactionsQuery.data ?? [];
   const FINANCIAL_SUMMARY: any = { breakdown: [] };
 
-  // Calculate overall construction progress
+  // Overall construction progress, averaged over the blocks somebody has
+  // actually reported on (M7-03). Two things this deliberately does not do:
+  // count an unreported block as nought, which would make the project look
+  // worse the less anybody looked; and fall back to a figure when there is
+  // nothing to average, which is what the old `: 52` did.
+  const blockProgress = siteQueries.useBlockProgress();
+  const reported = (blockProgress.data ?? []).filter((b) => b.percentComplete != null);
   const totalBlocks = constructionBlocks.length;
   const avgProgress =
-    totalBlocks > 0
-      ? Math.round(
-          constructionBlocks.reduce((acc: number, b: any) => acc + b.progressPercent, 0) /
-            totalBlocks,
-        )
-      : 52;
+    reported.length > 0
+      ? Math.round(reported.reduce((acc, b) => acc + (b.percentComplete ?? 0), 0) / reported.length)
+      : null;
+  const progressById = new Map(
+    (blockProgress.data ?? []).map((b) => [b.constructionBlockId, b.percentComplete]),
+  );
 
   return (
     <div className="space-y-6">
@@ -220,8 +228,14 @@ export const DashboardView: React.FC = () => {
                   </span>
                 </div>
               </div>
-              <span className="text-xs font-mono font-bold text-emerald-800 bg-emerald-50 border border-emerald-300 px-2 py-0.5 rounded">
-                %{avgProgress}
+              <span
+                className={`text-xs font-mono font-bold px-2 py-0.5 rounded border ${
+                  avgProgress == null
+                    ? 'text-slate-500 bg-slate-50 border-slate-300'
+                    : 'text-emerald-800 bg-emerald-50 border-emerald-300'
+                }`}
+              >
+                {progressLabel(avgProgress, language)}
               </span>
             </div>
 
@@ -231,14 +245,27 @@ export const DashboardView: React.FC = () => {
                 <span className="font-semibold text-slate-700">
                   {language === 'tr' ? '1. Aşama Genel İlerleme' : 'Phase 1 Overall Progress'}
                 </span>
-                <span className="font-mono font-bold text-slate-900">%{avgProgress}</span>
+                <span className="font-mono font-bold text-slate-900">
+                  {progressLabel(avgProgress, language)}
+                </span>
               </div>
-              <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-emerald-600 rounded-full transition-all duration-500"
-                  style={{ width: `${avgProgress}%` }}
-                />
-              </div>
+              {/* No bar when nothing has been reported. A bar at zero reads as
+                  "nothing has been built", which is a different claim from
+                  "nobody has been to look". */}
+              {avgProgress == null ? (
+                <p className="text-[11px] text-slate-500">
+                  {language === 'tr'
+                    ? `${totalBlocks} blok için kanıta bağlı ilerleme raporu yok.`
+                    : `No evidence-backed progress has been reported for ${totalBlocks} block(s).`}
+                </p>
+              ) : (
+                <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-emerald-600 rounded-full transition-all duration-500"
+                    style={{ width: `${avgProgress}%` }}
+                  />
+                </div>
+              )}
             </div>
 
             {/* Status Quo Legal Compliance Tag */}
@@ -263,21 +290,28 @@ export const DashboardView: React.FC = () => {
               <div className="text-[11px] font-bold uppercase text-slate-500 tracking-wider">
                 {language === 'tr' ? 'Önemli Yapı Blokları:' : 'Monitored Blocks:'}
               </div>
-              {constructionBlocks.slice(0, 4).map((b: any) => (
-                <div
-                  key={b.id}
-                  className="p-2 rounded bg-slate-50 border border-slate-200 flex items-center justify-between"
-                >
-                  <span className="font-medium text-slate-800 truncate max-w-[170px]">
-                    {b.name}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-mono font-bold text-amber-700">
-                      {b.progressPercent}%
+              {constructionBlocks.slice(0, 4).map((b) => {
+                const percent = progressById.get(b.id) ?? null;
+                return (
+                  <div
+                    key={b.id}
+                    className="p-2 rounded bg-slate-50 border border-slate-200 flex items-center justify-between"
+                  >
+                    <span className="font-medium text-slate-800 truncate max-w-[170px]">
+                      {b.name}
                     </span>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`text-[11px] font-mono font-bold ${
+                          percent == null ? 'text-slate-400' : 'text-amber-700'
+                        }`}
+                      >
+                        {progressLabel(percent, language)}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 

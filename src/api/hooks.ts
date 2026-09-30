@@ -2,11 +2,17 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as api from './index';
 import * as legal from './legal';
 import * as documents from './documents';
+import * as siteApi from './site';
 
 export const useLegalCases = () =>
   useQuery({ queryKey: ['legalCases'], queryFn: api.fetchLegalCases });
+/**
+ * The same fetch the site screens use. 0013 replaced the block's typed
+ * percentage and its jsonb bag of items with real structures, so a second
+ * `select('*')` here would hand its callers a shape that no longer exists.
+ */
 export const useConstructionBlocks = () =>
-  useQuery({ queryKey: ['construction'], queryFn: api.fetchConstructionBlocks });
+  useQuery({ queryKey: ['construction'], queryFn: siteApi.fetchBlocks });
 /**
  * The same fetch the vault's own screens use. Two query functions under one
  * key would race, and the one that lost would hand its callers a document
@@ -35,14 +41,6 @@ export const useAddLegalCase = () => {
   return useMutation({
     mutationFn: api.addLegalCase,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['legalCases'] }),
-  });
-};
-
-export const useUpdateConstructionBlock = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: api.updateConstructionBlock,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['construction'] }),
   });
 };
 

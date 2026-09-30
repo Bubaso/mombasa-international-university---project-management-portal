@@ -18,6 +18,8 @@ migrations/
   0010_obligations.sql                   what four sources oblige this project to do
   0011_project_calendar.sql              every dated thing, in one view
   0012_document_vault.sql                documents, versions, and who read them
+  0013_site_and_works.sql                the breakdown, evidenced progress, quantities
+  0014_own_profile_is_readable.sql       so a locked-out person can be told why
 functions/
   ai-assistant/                          server-side model proxy
   invite-user/                           creates an account and its profile
@@ -90,17 +92,19 @@ Clearance is not enough on its own, because several roles that sit outside the
 organisation hold `internal` clearance. So each sensitive table names what,
 besides a tier, lets someone reach a row:
 
-| Table                                                 | Beyond clearance, a caller needs                |
-| ----------------------------------------------------- | ----------------------------------------------- |
-| `legal_cases`                                         | to be assigned to the case                      |
-| `construction_blocks`                                 | to be assigned to the block                     |
-| `financial_transactions`                              | a role that answers for money                   |
-| `stakeholders`                                        | to be internal — or a grant on that one person  |
-| `stakeholder_interactions`, `stakeholder_assessments` | to be internal, with no grant route at all      |
-| `meetings`                                            | to have been in the room                        |
-| `action_items`                                        | to be the owner                                 |
-| `document_versions`                                   | to be able to read the document they belong to  |
-| `document_access`                                     | to answer for the project — or to be the reader |
+| Table                                                 | Beyond clearance, a caller needs                 |
+| ----------------------------------------------------- | ------------------------------------------------ |
+| `legal_cases`                                         | to be assigned to the case                       |
+| `construction_blocks`                                 | to be assigned to the block                      |
+| `financial_transactions`                              | a role that answers for money                    |
+| `stakeholders`                                        | to be internal — or a grant on that one person   |
+| `stakeholder_interactions`, `stakeholder_assessments` | to be internal, with no grant route at all       |
+| `meetings`                                            | to have been in the room                         |
+| `action_items`                                        | to be the owner                                  |
+| `document_versions`                                   | to be able to read the document they belong to   |
+| `document_access`                                     | to answer for the project — or to be the reader  |
+| `work_packages`, `site_tasks`, `task_progress`        | the block to be readable; to report, to be on it |
+| `boq_versions`, `boq_items`, `valuations`             | to answer for money, or to be the surveyor on it |
 
 Every one of them narrows. None of them lifts: attending a confidential
 meeting does not raise an advocate's clearance to confidential, and being the
@@ -129,6 +133,9 @@ by anyone, because a record that can be tidied up afterwards is not evidence:
   Replacing a file is a new version, so which one was in force on a given day
   stays answerable.
 - **`document_access`** — who opened which version, and when.
+- **`task_progress`** — what a task was reported at, by whom, on what evidence.
+  A progress history that can be tidied afterwards tells you what somebody
+  currently wishes had happened.
 
 Each of these revokes `insert`/`update`/`delete` from `authenticated`
 explicitly, because 0003's default privileges grant them to every new table.
@@ -168,6 +175,35 @@ record fails silently with zero rows instead of saying no.
 Column privileges do the first of those, rather than a policy or a trigger,
 because there is no expression to get wrong and nothing to reason around: the
 grant simply does not exist.
+
+## What the site schema will not let anybody say
+
+- **There is no progress column.** `construction_blocks.progress_percent` is
+  gone. Progress is `task_progress`, whose `document_id` is `not null`, so
+  there is nowhere to put a figure without putting the evidence with it
+  (M7-03). `block_progress` then computes what a block is at, and answers
+  **null** where nothing has been reported — which is not zero, and the
+  screens keep the two apart.
+- **Preservation is not progress.** A preservation task is its own kind and
+  must record what justifies it, so money spent keeping an open structure
+  standing never reads as the project advancing (M7-11).
+- **An issued bill of quantities does not change.** A new version is the way,
+  and a line's `amount` is generated from quantity × rate, so a total cannot
+  disagree with its own parts (M7-07).
+- **A valuation needs two signatures, in order, from two people.** A trigger
+  refuses approval before certification and payment before approval; a check
+  constraint refuses one person being both. An approval chain one person can
+  be both links of is not a chain (M7-08).
+- **A signed inspection is fixed.** Findings can still be closed out
+  afterwards, because that is not editing the report — the finding stands and
+  what is added is the answer to it (M7-04).
+
+`obligation_blocks` records which blocks a prohibition reaches. Nothing infers
+that from the text of an order, and a system that guessed would be worse than
+one that asks: somebody who has read it says so once, and after that
+`site_task_conflicts` cannot forget. The work is still not blocked — the
+project did once resolve unanimously to keep building under an order, and a
+portal that refused to record that would only have removed the trace.
 
 ## Importing from Notion
 

@@ -169,6 +169,86 @@ const TEST_VERSIONS = [
   },
 ];
 
+/**
+ * One block with two tasks: one that somebody has evidenced, one that nobody
+ * has. The pair is the whole point of the screen — a reported percentage and
+ * an unreported one must not look the same.
+ */
+const TEST_BLOCK = {
+  id: '00000000-0000-0000-0000-0000000000f1',
+  code: 'A1',
+  name: 'Smoke block',
+  floors: 3,
+  total_area_sqm: 2400,
+  state: 'in_progress',
+  purpose_en: null,
+  purpose_tr: null,
+  phase_id: null,
+  started_on: '2026-01-10',
+  target_completion: '2026-12-01',
+  contractor_id: '00000000-0000-0000-0000-0000000000f2',
+  confidentiality: 'internal',
+  phase: null,
+  engineer: { full_name: 'Smoke Test' },
+  contractor: { name: 'Smoke Contracting' },
+};
+
+const TEST_BLOCK_PROGRESS = [
+  {
+    construction_block_id: TEST_BLOCK.id,
+    code: 'A1',
+    name: 'Smoke block',
+    state: 'in_progress',
+    confidentiality: 'internal',
+    construction_tasks: 2,
+    preservation_tasks: 1,
+    tasks_with_evidence: 1,
+    percent_complete: 45,
+    last_reported_at: '2026-09-20T09:00:00Z',
+    last_captured_at: '2026-09-18T09:00:00Z',
+  },
+  {
+    // Nothing reported: this one must read as unknown, not as zero.
+    construction_block_id: '00000000-0000-0000-0000-0000000000f9',
+    code: 'B2',
+    name: 'Unvisited block',
+    state: 'planned',
+    confidentiality: 'internal',
+    construction_tasks: 1,
+    preservation_tasks: 0,
+    tasks_with_evidence: 0,
+    percent_complete: null,
+    last_reported_at: null,
+    last_captured_at: null,
+  },
+];
+
+const UNVISITED_BLOCK = {
+  ...TEST_BLOCK,
+  id: '00000000-0000-0000-0000-0000000000f9',
+  code: 'B2',
+  name: 'Unvisited block',
+  state: 'planned',
+  contractor: null,
+  engineer: null,
+};
+
+/** A live prohibition reaching open work on the block (M7-06). */
+const TEST_CONFLICT = {
+  site_task_id: '00000000-0000-0000-0000-0000000000f5',
+  task_title_en: 'Pour the raft',
+  task_title_tr: null,
+  task_state: 'in_progress',
+  task_kind: 'construction',
+  construction_block_id: TEST_BLOCK.id,
+  obligation_id: '00000000-0000-0000-0000-0000000000f6',
+  obligation_title_en: 'Do not interfere with the boundary',
+  obligation_title_tr: null,
+  obligation_source: 'court_order',
+  source_legal_order_id: null,
+  acknowledged: false,
+};
+
 const ROUTES = [
   '/',
   '/project_info',
@@ -290,6 +370,30 @@ try {
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify([TEST_CASE]),
+    }),
+  );
+
+  await page.route('**/rest/v1/construction_blocks**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([TEST_BLOCK, UNVISITED_BLOCK]),
+    }),
+  );
+
+  await page.route('**/rest/v1/block_progress**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(TEST_BLOCK_PROGRESS),
+    }),
+  );
+
+  await page.route('**/rest/v1/site_task_conflicts**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([TEST_CONFLICT]),
     }),
   );
 
@@ -450,6 +554,39 @@ try {
   check(
     pageErrors.length === 0 && !/Belge ekle|Add a document/.test(contractorVault),
     'an external party is not offered the upload control',
+  );
+  await actAs(TEST_AUTHORITY);
+
+  // --- the site says what it knows and what it does not ---------------------
+  // The module this replaces put a typed percentage on every block. These
+  // three checks are the inverse: a computed figure where there is evidence,
+  // a named absence where there is none, and the court order above both.
+  pageErrors = [];
+  await page.goto(BASE + '/construction', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(400);
+  const siteView = (await page.textContent('body')) ?? '';
+  check(
+    pageErrors.length === 0 && /45%/.test(siteView),
+    'a block with evidence shows the computed figure',
+  );
+  check(
+    /raporlanmadı|not reported/.test(siteView),
+    'and one nobody has reported on says so rather than showing nought',
+  );
+  check(
+    /Do not interfere with the boundary/.test(siteView) &&
+      /yasağın kapsamında|live prohibition/.test(siteView),
+    'open work under a court order is surfaced above the progress',
+  );
+
+  await actAs(EXTERNAL_AUTHORITY);
+  pageErrors = [];
+  await page.goto(BASE + '/construction', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(400);
+  const contractorSite = (await page.textContent('body')) ?? '';
+  check(
+    pageErrors.length === 0 && !/Görev ekle|Add a task/.test(contractorSite),
+    'an outside firm is not offered the planning controls',
   );
   await actAs(TEST_AUTHORITY);
 
