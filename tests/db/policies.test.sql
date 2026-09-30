@@ -165,7 +165,7 @@ do $$
 declare
   n int;
 begin
-  update construction_blocks set progress_percent = 99
+  update construction_blocks set name = 'Renamed by somebody else'
   where id = 'bbbb0000-0000-0000-0000-000000000002';
   get diagnostics n = row_count;
   if n <> 0 then
@@ -1749,6 +1749,425 @@ select pg_temp.act_as('77777777-7777-7777-7777-777777777777');  -- contractor
 select pg_temp.check(
   'and somebody outside sees only their own reading history',
   (select count(*) from document_access), 0::bigint);
+
+
+-- ===========================================================================
+-- The site: progress, inspection, quantities, valuations (M7)
+-- ===========================================================================
+
+select pg_temp.act_as('44444444-4444-4444-4444-444444444444');  -- field team
+
+-- M7-03. The whole design of this table is the not-null on document_id: there
+-- is no route to a percentage that does not also carry what it rests on.
+do $$
+begin
+  begin
+    insert into task_progress (site_task_id, percent_complete)
+    values ('1c000000-0000-0000-0000-000000000030', 40);
+    raise exception 'FAIL progress was recorded with no evidence';
+  exception
+    when not_null_violation then
+      raise notice 'ok   a percentage cannot be recorded without the evidence for it';
+  end;
+end;
+$$;
+
+insert into task_progress (site_task_id, percent_complete, document_id, captured_at, note)
+values ('1c000000-0000-0000-0000-000000000030', 40,
+        '1b000000-0000-0000-0000-000000000001', now() - interval '2 days',
+        'Raft poured to gridline 4');
+
+select pg_temp.check('and with it, the report stands',
+  (select count(*) from task_progress
+    where site_task_id = '1c000000-0000-0000-0000-000000000030'), 1::bigint);
+
+-- What the block is at is computed from that, not typed on the block.
+select pg_temp.check('a block is at what its evidence says it is at',
+  (select percent_complete from block_progress
+    where construction_block_id = 'bbbb0000-0000-0000-0000-000000000001'), 40);
+
+select pg_temp.check('and one nobody has reported on reads as unknown, not as nought',
+  (select percent_complete from block_progress
+    where construction_block_id = 'bbbb0000-0000-0000-0000-000000000002'), null::int);
+
+-- M7-11. Preservation is counted apart, so money spent stopping a slab from
+-- failing never reads as the project having advanced.
+select pg_temp.check('preservation work is counted apart from construction',
+  (select preservation_tasks from block_progress
+    where construction_block_id = 'bbbb0000-0000-0000-0000-000000000001'), 1::bigint);
+
+do $$
+begin
+  begin
+    insert into site_tasks (work_package_id, title_en, kind)
+    values ('1c000000-0000-0000-0000-000000000020', 'Unexplained protection works',
+            'preservation');
+    raise exception 'FAIL preservation work was opened with no reason';
+  exception
+    when check_violation then
+      raise notice 'ok   preservation work has to say what justifies it';
+  end;
+end;
+$$;
+
+-- A history that can be tidied afterwards is not a history.
+do $$
+declare
+  n int;
+begin
+  begin
+    update task_progress set percent_complete = 95
+    where site_task_id = '1c000000-0000-0000-0000-000000000030';
+    get diagnostics n = row_count;
+    if n <> 0 then
+      raise exception 'FAIL a progress report was edited after the fact';
+    end if;
+  exception
+    when insufficient_privilege then
+      null;
+  end;
+  raise notice 'ok   a progress report cannot be revised afterwards';
+end;
+$$;
+
+do $$
+declare
+  n int;
+begin
+  begin
+    delete from task_progress where site_task_id = '1c000000-0000-0000-0000-000000000030';
+    get diagnostics n = row_count;
+    if n <> 0 then
+      raise exception 'FAIL a progress report was deleted';
+    end if;
+  exception
+    when insufficient_privilege then
+      null;
+  end;
+  raise notice 'ok   nor withdrawn once it is filed';
+end;
+$$;
+
+-- M7-10. The firm reports on its own work.
+select pg_temp.act_as('77777777-7777-7777-7777-777777777777');  -- contractor
+
+insert into task_progress (site_task_id, percent_complete, document_id)
+values ('1c000000-0000-0000-0000-000000000030', 55,
+        '1b000000-0000-0000-0000-000000000001');
+
+select pg_temp.check('the firm reports progress on the block it is on',
+  (select percent_complete from block_progress
+    where construction_block_id = 'bbbb0000-0000-0000-0000-000000000001'), 55);
+
+do $$
+declare
+  n int;
+begin
+  begin
+    insert into task_progress (site_task_id, percent_complete, document_id)
+    values ('1c000000-0000-0000-0000-000000000032', 10,
+            '1b000000-0000-0000-0000-000000000001');
+    raise exception 'FAIL contractor reported on a block they are not on';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   and on no other block, because it is not their work';
+  end;
+end;
+$$;
+
+select pg_temp.check('nor can they see a block they were never assigned',
+  (select count(*) from site_tasks
+    where id = '1c000000-0000-0000-0000-000000000032'), 0::bigint);
+
+-- M7-06. A live prohibition reaching the block surfaces against the open work.
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- director
+
+select pg_temp.check('open work under a live prohibition is findable',
+  (select count(*) from site_task_conflicts
+    where site_task_id = '1c000000-0000-0000-0000-000000000030') > 0, true);
+
+-- A second order, raised here rather than in the fixtures so that what it
+-- proves is the transition and not an arithmetic about the seed: the M2-06
+-- case above has already acknowledged the first one.
+insert into obligations
+  (id, title_en, source, source_legal_order_id, obligor_name, state, prohibits, confidentiality)
+values ('1c000000-0000-0000-0000-000000000070',
+        'Do not break ground on the second block', 'court_order',
+        '14000000-0000-0000-0000-000000000001', 'AUTK', 'open', true, 'internal');
+
+insert into obligation_blocks (obligation_id, construction_block_id)
+values ('1c000000-0000-0000-0000-000000000070', 'bbbb0000-0000-0000-0000-000000000002');
+
+select pg_temp.check('and reads as unacknowledged until somebody says otherwise',
+  (select acknowledged from site_task_conflicts
+    where obligation_id = '1c000000-0000-0000-0000-000000000070'), false);
+
+insert into obligation_overrides
+  (obligation_id, site_task_id, note_of_what, reason, acknowledged_by)
+values ('1c000000-0000-0000-0000-000000000070',
+        '1c000000-0000-0000-0000-000000000032',
+        'Setting out continues on Block B2',
+        'Resolved unanimously at the April sitting; the programme cannot absorb another season.',
+        '22222222-2222-2222-2222-222222222222');
+
+select pg_temp.check('proceeding in spite of it is recorded rather than blocked',
+  (select acknowledged from site_task_conflicts
+    where obligation_id = '1c000000-0000-0000-0000-000000000070'), true);
+
+-- M7-04. An inspection report is evidence, so signing it fixes it.
+insert into site_inspections
+  (id, construction_block_id, inspected_on, inspector_profile_id, summary_en)
+values ('1c000000-0000-0000-0000-000000000040', 'bbbb0000-0000-0000-0000-000000000001',
+        current_date - 1, '22222222-2222-2222-2222-222222222222',
+        'Walked the raft and the sheeting.');
+
+insert into inspection_findings
+  (id, site_inspection_id, description_en, is_nonconformity, severity)
+values ('1c000000-0000-0000-0000-000000000041', '1c000000-0000-0000-0000-000000000040',
+        'Cover to reinforcement short in two bays', true, 4);
+
+update site_inspections
+set signed_off_at = now(), signed_off_by = '22222222-2222-2222-2222-222222222222'
+where id = '1c000000-0000-0000-0000-000000000040';
+
+do $$
+begin
+  begin
+    update site_inspections set signed_off_at = null, signed_off_by = null
+    where id = '1c000000-0000-0000-0000-000000000040';
+    raise exception 'FAIL a signed inspection was unsigned';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   a signed inspection report cannot be unsigned';
+  end;
+end;
+$$;
+
+do $$
+begin
+  begin
+    update site_inspections set summary_en = 'Everything was fine'
+    where id = '1c000000-0000-0000-0000-000000000040';
+    raise exception 'FAIL a signed inspection was rewritten';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   nor rewritten after the fact';
+  end;
+end;
+$$;
+
+do $$
+begin
+  begin
+    update inspection_findings set severity = 1
+    where id = '1c000000-0000-0000-0000-000000000041';
+    raise exception 'FAIL a finding on a signed report was softened';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   and a finding on it cannot be softened';
+  end;
+end;
+$$;
+
+-- Closing a finding out is not editing the report: the finding stands, and
+-- what is added is what was done about it.
+update inspection_findings
+set resolved_at = now(), resolution_note = 'Bays broken out and recast; re-inspected.'
+where id = '1c000000-0000-0000-0000-000000000041';
+
+select pg_temp.check('though what was done about it can still be recorded',
+  (select resolved_at is not null from inspection_findings
+    where id = '1c000000-0000-0000-0000-000000000041'), true);
+
+-- M7-07. The bill of quantities, which used to live in component state and
+-- was gone on reload.
+select pg_temp.act_as('cccc1111-1111-1111-1111-111111111111');  -- quantity surveyor
+
+insert into boq_versions (id, construction_block_id, currency)
+values ('1c000000-0000-0000-0000-000000000050', 'bbbb0000-0000-0000-0000-000000000001', 'KES');
+
+select pg_temp.check('a bill of quantities is numbered by the database',
+  (select version_no from boq_versions where id = '1c000000-0000-0000-0000-000000000050'), 1);
+
+insert into boq_items
+  (boq_version_id, description_en, unit, quantity, unit_rate)
+values ('1c000000-0000-0000-0000-000000000050', 'Mass concrete in raft', 'm3', 120, 18500);
+
+select pg_temp.check('and a line total is computed, never stated',
+  (select amount from boq_items where boq_version_id = '1c000000-0000-0000-0000-000000000050'),
+  2220000.00::numeric(16, 2));
+
+select pg_temp.check('which the total reads straight off',
+  (select total from boq_totals where boq_version_id = '1c000000-0000-0000-0000-000000000050'),
+  2220000.00::numeric(16, 2));
+
+update boq_versions set state = 'issued' where id = '1c000000-0000-0000-0000-000000000050';
+
+do $$
+begin
+  begin
+    update boq_items set unit_rate = 12000
+    where boq_version_id = '1c000000-0000-0000-0000-000000000050';
+    raise exception 'FAIL an issued bill of quantities was repriced in place';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   an issued bill of quantities is repriced by raising another';
+  end;
+end;
+$$;
+
+do $$
+begin
+  begin
+    update boq_versions set state = 'draft' where id = '1c000000-0000-0000-0000-000000000050';
+    raise exception 'FAIL an issued bill of quantities went back to draft';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   and cannot quietly go back to being a draft';
+  end;
+end;
+$$;
+
+-- M7-08. Two signatures, in order, belonging to two people.
+insert into valuations
+  (id, construction_block_id, contractor_id, period_start, period_end, amount, currency)
+values ('1c000000-0000-0000-0000-000000000060', 'bbbb0000-0000-0000-0000-000000000001',
+        '1c000000-0000-0000-0000-000000000010', current_date - 30, current_date, 1850000, 'KES');
+
+do $$
+begin
+  begin
+    update valuations
+    set director_approved_by = '22222222-2222-2222-2222-222222222222',
+        director_approved_at = now()
+    where id = '1c000000-0000-0000-0000-000000000060';
+    raise exception 'FAIL a valuation was approved before it was measured';
+  exception
+    when check_violation then
+      raise notice 'ok   a valuation cannot be approved before it is certified';
+  end;
+end;
+$$;
+
+update valuations
+set qs_certified_by = 'cccc1111-1111-1111-1111-111111111111',
+    qs_certified_at = now(),
+    state = 'qs_certified'
+where id = '1c000000-0000-0000-0000-000000000060';
+
+do $$
+begin
+  begin
+    update valuations
+    set director_approved_by = 'cccc1111-1111-1111-1111-111111111111',
+        director_approved_at = now()
+    where id = '1c000000-0000-0000-0000-000000000060';
+    raise exception 'FAIL one person was both signatures';
+  exception
+    when check_violation then
+      raise notice 'ok   and the two signatures cannot be the same person';
+  end;
+end;
+$$;
+
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- director
+
+do $$
+begin
+  begin
+    update valuations set state = 'paid' where id = '1c000000-0000-0000-0000-000000000060';
+    raise exception 'FAIL a valuation was paid before approval';
+  exception
+    when check_violation then
+      raise notice 'ok   nor paid before it is approved';
+  end;
+end;
+$$;
+
+update valuations
+set director_approved_by = '22222222-2222-2222-2222-222222222222',
+    director_approved_at = now(),
+    state = 'director_approved'
+where id = '1c000000-0000-0000-0000-000000000060';
+
+select pg_temp.check('with both, the valuation stands approved',
+  (select state::text from valuations where id = '1c000000-0000-0000-0000-000000000060'),
+  'director_approved');
+
+-- M7-10, the other half. The firm on the block reports progress and reads its
+-- own work; what it is being paid, and what the job was priced at, are not
+-- its to read here.
+select pg_temp.act_as('77777777-7777-7777-7777-777777777777');  -- contractor
+
+select pg_temp.check('the firm sees the work packages on its own block',
+  (select count(*) from work_packages
+    where construction_block_id = 'bbbb0000-0000-0000-0000-000000000001'), 1::bigint);
+
+select pg_temp.check('but not the bill of quantities behind them',
+  (select count(*) from boq_versions), 0::bigint);
+
+select pg_temp.check('nor the lines in it',
+  (select count(*) from boq_items), 0::bigint);
+
+select pg_temp.check('nor the valuations raised against them',
+  (select count(*) from valuations), 0::bigint);
+
+select pg_temp.check('while the surveyor, whose job that is, reads all three',
+  (select count(*) from site_tasks
+    where work_package_id = '1c000000-0000-0000-0000-000000000020'), 2::bigint);
+
+select pg_temp.act_as('cccc1111-1111-1111-1111-111111111111');  -- quantity surveyor
+select pg_temp.check('the surveyor reads the commercial papers on their block',
+  (select count(*) from boq_versions) > 0 and (select count(*) from valuations) > 0, true);
+
+
+-- ===========================================================================
+-- Being locked out is answerable (M1-01)
+-- ===========================================================================
+--
+-- The expired consultant is the case this exists for: their access ran out,
+-- so app.current_clearance() is null, so every policy in the schema closes on
+-- them — including, before 0014, the one on the row that says why.
+
+select pg_temp.act_as('99999999-9999-9999-9999-999999999999');  -- expired
+
+select pg_temp.check('somebody whose access ran out can still read their own row',
+  (select count(*) from profiles
+    where id = '99999999-9999-9999-9999-999999999999'), 1::bigint);
+
+select pg_temp.check('and can see that it is the date, not a missing profile',
+  (select expires_at < now() from profiles
+    where id = '99999999-9999-9999-9999-999999999999'), true);
+
+select pg_temp.check('while still seeing nobody else in the directory',
+  (select count(*) from profiles
+    where id <> '99999999-9999-9999-9999-999999999999'), 0::bigint);
+
+select pg_temp.check('and nothing else in the portal at all',
+  (select count(*) from legal_cases) + (select count(*) from construction_blocks)
+    + (select count(*) from document_vault), 0::bigint);
+
+-- Reading it is not the same as being able to fix it. The self-update policy
+-- compares against app.current_profile(), which is empty for this caller, so
+-- the check cannot pass however the row is addressed.
+do $$
+declare
+  n int;
+begin
+  begin
+    update profiles set expires_at = now() + interval '1 year'
+    where id = '99999999-9999-9999-9999-999999999999';
+    get diagnostics n = row_count;
+    if n <> 0 then
+      raise exception 'FAIL an expired profile extended itself';
+    end if;
+  exception
+    when insufficient_privilege then
+      null;
+  end;
+  raise notice 'ok   but cannot extend its own access by reading it';
+end;
+$$;
 
 
 reset role;

@@ -21,7 +21,8 @@ insert into auth.users (id, email, email_confirmed_at) values
   ('88888888-8888-8888-8888-888888888888', 'donor@example.test',      now()),
   ('99999999-9999-9999-9999-999999999999', 'expired@example.test',    now()),
   ('aaaa1111-1111-1111-1111-111111111111', 'trustee2@example.test',   now()),
-  ('bbbb1111-1111-1111-1111-111111111111', 'trustee3@example.test',   now());
+  ('bbbb1111-1111-1111-1111-111111111111', 'trustee3@example.test',   now()),
+  ('cccc1111-1111-1111-1111-111111111111', 'qs@example.test',         now());
 
 insert into profiles (id, full_name, email, role, organization, clearance, is_active, expires_at) values
   ('11111111-1111-1111-1111-111111111111', 'Admin',            'admin@example.test',      'admin',            'AUTK',        'restricted',   true, null),
@@ -37,7 +38,10 @@ insert into profiles (id, full_name, email, role, organization, clearance, is_ac
   -- A third trustee, because approving a delegation takes two who are not
   -- the recipient: with only two on the books, no trustee could ever receive
   -- one, which is the case 0005 had to get right.
-  ('bbbb1111-1111-1111-1111-111111111111', 'Trustee Three',    'trustee3@example.test',   'trustee',          'AUTK',        'restricted',   true, null);
+  ('bbbb1111-1111-1111-1111-111111111111', 'Trustee Three',    'trustee3@example.test',   'trustee',          'AUTK',        'restricted',   true, null),
+  -- The quantity surveyor is the one external role whose whole job is the
+  -- commercial papers, so M7-10 splits along them and not along the fence.
+  ('cccc1111-1111-1111-1111-111111111111', 'Surveyor',         'qs@example.test',         'quantity_surveyor','Measure Ltd', 'internal',     true, null);
 
 -- ---------------------------------------------------------------------------
 -- Records, one per tier
@@ -76,6 +80,8 @@ insert into case_assignments (user_id, legal_case_id, assigned_by) values
 -- The contractor has Block A1 and not B2.
 insert into block_assignments (user_id, construction_block_id, assigned_by) values
   ('77777777-7777-7777-7777-777777777777', 'bbbb0000-0000-0000-0000-000000000001',
+   '22222222-2222-2222-2222-222222222222'),
+  ('cccc1111-1111-1111-1111-111111111111', 'bbbb0000-0000-0000-0000-000000000001',
    '22222222-2222-2222-2222-222222222222');
 
 -- A grant lifting Advocate One to one confidential case, and an expired one
@@ -349,3 +355,39 @@ insert into document_links (document_id, entity_type, entity_id) values
    'aaaa0000-0000-0000-0000-000000000002');
 
 reset role;
+
+-- ---------------------------------------------------------------------------
+-- The site (M7)
+-- ---------------------------------------------------------------------------
+
+insert into project_phases (id, code, name_en, sequence) values
+  ('1c000000-0000-0000-0000-000000000001', 'P1', 'Phase one', 1);
+
+insert into contractors (id, name, contract_reference, starts_on) values
+  ('1c000000-0000-0000-0000-000000000010', 'Coast Engineering', 'C-2024-01', current_date - 200);
+
+update construction_blocks
+set phase_id = '1c000000-0000-0000-0000-000000000001',
+    contractor_id = '1c000000-0000-0000-0000-000000000010';
+
+insert into work_packages (id, construction_block_id, code, title_en) values
+  ('1c000000-0000-0000-0000-000000000020', 'bbbb0000-0000-0000-0000-000000000001',
+   'A1-SUB', 'Substructure'),
+  ('1c000000-0000-0000-0000-000000000021', 'bbbb0000-0000-0000-0000-000000000002',
+   'B2-SUB', 'Substructure');
+
+-- Two on the assigned block: one ordinary, one preservation with the reason
+-- it exists recorded. And one on the block nobody outside is assigned to.
+insert into site_tasks (id, work_package_id, title_en, kind, state, legal_basis_en) values
+  ('1c000000-0000-0000-0000-000000000030', '1c000000-0000-0000-0000-000000000020',
+   'Pour the raft', 'construction', 'in_progress', null),
+  ('1c000000-0000-0000-0000-000000000031', '1c000000-0000-0000-0000-000000000020',
+   'Sheet the open slab before the monsoon', 'preservation', 'in_progress',
+   'Works are stopped by the boundary order; the structure still has to be kept.'),
+  ('1c000000-0000-0000-0000-000000000032', '1c000000-0000-0000-0000-000000000021',
+   'Set out grid lines', 'construction', 'planned', null);
+
+-- The prohibition from the court order reaches the first block. Somebody who
+-- read the order said so; nothing inferred it.
+insert into obligation_blocks (obligation_id, construction_block_id) values
+  ('19000000-0000-0000-0000-000000000003', 'bbbb0000-0000-0000-0000-000000000001');
