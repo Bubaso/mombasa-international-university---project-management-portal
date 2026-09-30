@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as api from './index';
+import * as legal from './legal';
 
 export const useLegalCases = () =>
   useQuery({ queryKey: ['legalCases'], queryFn: api.fetchLegalCases });
@@ -12,6 +13,13 @@ export const useTransactions = () =>
 export const useCommunicationThreads = () =>
   useQuery({ queryKey: ['communications'], queryFn: api.fetchCommunicationThreads });
 export const useTrustees = () => useQuery({ queryKey: ['trustees'], queryFn: api.fetchTrustees });
+/** The orders on a case, which used to be a JSON array on the case row. */
+export const useCaseOrders = (caseId: string | undefined) =>
+  useQuery({
+    queryKey: ['caseOrders', caseId ?? 'all'],
+    queryFn: () => legal.fetchOrders(caseId),
+  });
+
 export const useDeadlines = () =>
   useQuery({ queryKey: ['deadlines'], queryFn: api.fetchDeadlines });
 

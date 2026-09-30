@@ -211,3 +211,96 @@ values ('0b000000-0000-0000-0000-000000000006', 'Imported Contact', 'other', 'in
         'notion', 'notion-page-id-1');
 
 reset role;
+
+-- ---------------------------------------------------------------------------
+-- The legal register and the obligations it feeds (M5, M2)
+-- ---------------------------------------------------------------------------
+
+set role postgres;
+
+-- Everything below hangs off the internal case, which Advocate One is on and
+-- Advocate Two is not: that is what makes M5-16 testable.
+insert into legal_orders (id, legal_case_id, made_on, made_by, reference_no, text_en, state)
+values
+  ('14000000-0000-0000-0000-000000000001', 'aaaa0000-0000-0000-0000-000000000002',
+   current_date - 60, 'ELC Mombasa', 'ORD-2026-01',
+   'No interference with the boundary pending determination.', 'in_force'),
+  ('14000000-0000-0000-0000-000000000002', 'aaaa0000-0000-0000-0000-000000000004',
+   current_date - 30, 'Magistrate', 'ORD-2026-02',
+   'Restricted matter.', 'in_force');
+
+insert into hearings (id, legal_case_id, scheduled_for, kind, bench, preparation)
+values ('15000000-0000-0000-0000-000000000001', 'aaaa0000-0000-0000-0000-000000000002',
+        now() + interval '10 days', 'hearing', 'ELC Mombasa', 'in_preparation');
+
+insert into filings (id, legal_case_id, kind, title, due_on, state)
+values ('16000000-0000-0000-0000-000000000001', 'aaaa0000-0000-0000-0000-000000000002',
+        'record_of_appeal', 'Record of Appeal', current_date + 5, 'drafting');
+
+insert into exhibits (id, legal_case_id, mark, description, source)
+values ('17000000-0000-0000-0000-000000000001', 'aaaa0000-0000-0000-0000-000000000002',
+        'AUTK-1', 'Certified copy of the title', 'Land registry');
+
+insert into exhibit_custody (id, exhibit_id, from_party, to_party)
+values ('18000000-0000-0000-0000-000000000001', '17000000-0000-0000-0000-000000000001',
+        'Land registry', 'Advocate One');
+
+insert into case_counsel (legal_case_id, stakeholder_id, state, power_of_attorney_filed)
+values ('aaaa0000-0000-0000-0000-000000000002', '0b000000-0000-0000-0000-000000000003',
+        'on_record', true);
+
+-- --- obligations, one per source that matters ------------------------------
+
+insert into obligations
+  (id, title_en, source, obligor_name, beneficiary_name, due_on, state, confidentiality)
+values
+  ('19000000-0000-0000-0000-000000000001', 'Build a mosque on the campus', 'lease',
+   'AUTK', 'The lessor', current_date + 40, 'open', 'internal'),
+  ('19000000-0000-0000-0000-000000000002', 'Full scholarships for 20% of students', 'lease',
+   'AUTK', 'Coastal youth', current_date + 400, 'open', 'internal');
+
+-- From a court order, and forbidding rather than requiring: the case M2-06
+-- exists for.
+insert into obligations
+  (id, title_en, source, source_legal_order_id, obligor_name, due_on, state, prohibits,
+   confidentiality)
+values ('19000000-0000-0000-0000-000000000003',
+        'Do not interfere with the boundary', 'court_order',
+        '14000000-0000-0000-0000-000000000001', 'AUTK', null, 'open', true, 'internal');
+
+-- A promise made in a meeting, owed by somebody in the register.
+insert into obligations
+  (id, title_en, source, source_meeting_id, obligor_name, obligor_stakeholder_id,
+   due_on, state, confidentiality)
+values
+  ('19000000-0000-0000-0000-000000000004',
+   'Use his contacts to support the legal case', 'personal_commitment',
+   '0e000000-0000-0000-0000-000000000001', 'The Minister',
+   '0b000000-0000-0000-0000-000000000001', current_date + 3, 'open', 'internal'),
+  ('19000000-0000-0000-0000-000000000005',
+   'Sign the MoU before the departure', 'personal_commitment',
+   '0e000000-0000-0000-0000-000000000001', 'The Minister',
+   '0b000000-0000-0000-0000-000000000001', current_date - 10, 'breached', 'internal');
+
+-- One the contractor owes, so an external obligor has something to find.
+insert into obligations
+  (id, title_en, source, obligor_name, obligor_stakeholder_id, due_on, state, confidentiality)
+values ('19000000-0000-0000-0000-000000000006', 'Keep the site boundary markers in place',
+        'contract', 'Contractor Lead', '0b000000-0000-0000-0000-000000000004',
+        current_date + 20, 'open', 'internal');
+
+-- Evidence first, then the state moves: the trigger allows no other order.
+insert into obligations
+  (id, title_en, source, source_meeting_id, obligor_name, obligor_stakeholder_id,
+   state, confidentiality)
+values ('19000000-0000-0000-0000-000000000007', 'Brief the ambassador', 'personal_commitment',
+        '0e000000-0000-0000-0000-000000000001', 'The Minister',
+        '0b000000-0000-0000-0000-000000000001', 'open', 'internal');
+
+insert into obligation_evidence (obligation_id, description, observed_on)
+values ('19000000-0000-0000-0000-000000000007', 'Briefing note circulated', current_date - 2);
+
+update obligations set state = 'fulfilled'
+where id = '19000000-0000-0000-0000-000000000007';
+
+reset role;

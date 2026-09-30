@@ -1166,6 +1166,361 @@ select pg_temp.check(
   2::bigint);
 
 
+-- ===========================================================================
+-- The legal register (M5)
+-- ===========================================================================
+--
+-- M5-16 is the rule everything here turns on: an outside advocate reaches
+-- their own files and nothing else — not the other cases, and not the money.
+-- Eight tables hang off a case, and they all have to answer the same way.
+
+select pg_temp.act_as('55555555-5555-5555-5555-555555555555');  -- advocate one, on the case
+select pg_temp.check('the advocate on a case reads its orders',
+  (select count(*) from legal_orders), 1::bigint);
+select pg_temp.check('its hearings',
+  (select count(*) from hearings), 1::bigint);
+select pg_temp.check('its filings',
+  (select count(*) from filings), 1::bigint);
+select pg_temp.check('its exhibits',
+  (select count(*) from exhibits), 1::bigint);
+select pg_temp.check('and the chain of custody behind them',
+  (select count(*) from exhibit_custody), 1::bigint);
+
+select pg_temp.act_as('66666666-6666-6666-6666-666666666666');  -- advocate two, on nothing
+select pg_temp.check('an advocate on another matter reads none of it',
+  (select count(*) from legal_orders)
+  + (select count(*) from hearings)
+  + (select count(*) from filings)
+  + (select count(*) from exhibits)
+  + (select count(*) from exhibit_custody),
+  0::bigint);
+
+-- Writing on your own file is the reason an advocate has an account at all.
+select pg_temp.act_as('55555555-5555-5555-5555-555555555555');
+insert into filings (legal_case_id, kind, title, due_on, state)
+values ('aaaa0000-0000-0000-0000-000000000002', 'submission', 'Written submissions',
+        current_date + 12, 'drafting');
+select pg_temp.check('the advocate on a case may file on it',
+  (select count(*) from filings), 2::bigint);
+
+-- But not on somebody else's.
+select pg_temp.act_as('66666666-6666-6666-6666-666666666666');
+do $$
+begin
+  begin
+    insert into filings (legal_case_id, kind, title, state)
+    values ('aaaa0000-0000-0000-0000-000000000002', 'submission', 'Not mine', 'planned');
+    raise exception 'FAIL an advocate filed on a case they are not on';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   an advocate cannot act on a file that is not theirs';
+  end;
+end;
+$$;
+
+-- Nor put themselves on record: who represents the project is the project's
+-- decision.
+select pg_temp.act_as('55555555-5555-5555-5555-555555555555');
+do $$
+begin
+  begin
+    insert into case_counsel (legal_case_id, stakeholder_id, state)
+    values ('aaaa0000-0000-0000-0000-000000000001',
+            '0b000000-0000-0000-0000-000000000003', 'on_record');
+    raise exception 'FAIL an advocate put themselves on record';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   who is on record is not the advocate''s to decide';
+  end;
+end;
+$$;
+
+-- A filing that claims to have been made says when.
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');
+do $$
+begin
+  begin
+    insert into filings (legal_case_id, kind, title, state)
+    values ('aaaa0000-0000-0000-0000-000000000002', 'notice', 'Filed, apparently', 'filed');
+    raise exception 'FAIL a filing claimed to be filed with no date';
+  exception
+    when check_violation then
+      raise notice 'ok   a filing cannot say it was made without saying when';
+  end;
+end;
+$$;
+
+-- The chain of custody is evidence about evidence.
+select pg_temp.act_as('55555555-5555-5555-5555-555555555555');
+do $$
+begin
+  begin
+    update exhibit_custody set to_party = 'someone else'
+    where id = '18000000-0000-0000-0000-000000000001';
+    raise exception 'FAIL a chain of custody entry was edited';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   a chain of custody cannot be rewritten';
+  end;
+end;
+$$;
+
+do $$
+begin
+  begin
+    delete from exhibit_custody where id = '18000000-0000-0000-0000-000000000001';
+    raise exception 'FAIL a chain of custody entry was deleted';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   nor broken by deleting a link from it';
+  end;
+end;
+$$;
+
+-- ===========================================================================
+-- The obligations register (M2)
+-- ===========================================================================
+
+select pg_temp.act_as('33333333-3333-3333-3333-333333333333');  -- trustee
+-- Lease, court order, contract and a promise made in a meeting, in one list.
+-- That is the whole idea: they are the same kind of thing.
+select pg_temp.check('the register holds every source together',
+  (select count(distinct source) from obligations), 4::bigint);
+
+-- ---------------------------------------------------------------------------
+-- M2-02: verified means a document is attached, and nothing else
+-- ---------------------------------------------------------------------------
+
+select pg_temp.check(
+  'an obligation with no paper behind it is marked unverified',
+  (select bool_and(not verified) from obligations), true);
+
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- project director
+do $$
+begin
+  begin
+    update obligations set verified = true
+    where id = '19000000-0000-0000-0000-000000000001';
+    raise exception 'FAIL verified was set by hand';
+  exception
+    when others then
+      raise notice 'ok   verified is computed from the document, not asserted';
+  end;
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- M2-04: done without evidence is a claim, not a record
+-- ---------------------------------------------------------------------------
+
+do $$
+begin
+  begin
+    update obligations set state = 'fulfilled'
+    where id = '19000000-0000-0000-0000-000000000001';
+    raise exception 'FAIL an obligation was fulfilled with no evidence';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   an obligation cannot be closed without evidence';
+  end;
+end;
+$$;
+
+insert into obligation_evidence (obligation_id, description, observed_on)
+values ('19000000-0000-0000-0000-000000000001', 'Foundation laid; photographs filed',
+        current_date);
+update obligations set state = 'fulfilled'
+where id = '19000000-0000-0000-0000-000000000001';
+select pg_temp.check('and can once there is some',
+  (select state::text from obligations where id = '19000000-0000-0000-0000-000000000001'),
+  'fulfilled'::text);
+
+-- ---------------------------------------------------------------------------
+-- M2-01: a court order obligation names its order
+-- ---------------------------------------------------------------------------
+
+do $$
+begin
+  begin
+    insert into obligations (title_en, source, obligor_name)
+    values ('Something a court said, apparently', 'court_order', 'AUTK');
+    raise exception 'FAIL a court-order obligation was recorded with no order';
+  exception
+    when check_violation then
+      raise notice 'ok   an obligation from a court names the order it came from';
+  end;
+end;
+$$;
+
+do $$
+begin
+  begin
+    insert into obligations (title_en, source, obligor_name)
+    values ('Somebody promised something', 'personal_commitment', 'The Minister');
+    raise exception 'FAIL a commitment was recorded with no meeting';
+  exception
+    when check_violation then
+      raise notice 'ok   and a promise names the meeting it was made in';
+  end;
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- M2-07: who may write which kind
+-- ---------------------------------------------------------------------------
+
+select pg_temp.act_as('44444444-4444-4444-4444-444444444444');  -- field team
+insert into obligations
+  (title_en, source, source_meeting_id, obligor_name, obligor_stakeholder_id)
+values ('Walk the boundary with the surveyor', 'personal_commitment',
+        '0e000000-0000-0000-0000-000000000001', 'Contractor Lead',
+        '0b000000-0000-0000-0000-000000000004');
+select pg_temp.check(
+  'whoever is minuting can write down a promise while it is being made',
+  (select count(*) from obligations where source = 'personal_commitment'), 4::bigint);
+
+do $$
+begin
+  begin
+    insert into obligations (title_en, source, obligor_name)
+    values ('Something the lease requires', 'lease', 'AUTK');
+    raise exception 'FAIL the field team declared a lease obligation';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   but what the lease requires is not theirs to declare';
+  end;
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- An obligor outside the organisation
+-- ---------------------------------------------------------------------------
+
+select pg_temp.act_as('77777777-7777-7777-7777-777777777777');  -- contractor
+select pg_temp.check(
+  'somebody outside sees what they owe, and only that',
+  (select count(*) from obligations), 2::bigint);
+select pg_temp.check('one of them being the one they undertook',
+  (select count(*) from obligations
+    where id = '19000000-0000-0000-0000-000000000006'),
+  1::bigint);
+
+-- And can show that they did it, which is the part that matters to them.
+insert into obligation_evidence (obligation_id, description, observed_on)
+values ('19000000-0000-0000-0000-000000000006', 'Markers reset and photographed',
+        current_date);
+select pg_temp.check('and may put evidence against it',
+  (select count(*) from obligation_evidence
+    where obligation_id = '19000000-0000-0000-0000-000000000006'),
+  1::bigint);
+
+-- Declaring it done is somebody else's call.
+do $$
+declare n int;
+begin
+  update obligations set state = 'fulfilled'
+  where id = '19000000-0000-0000-0000-000000000006';
+  get diagnostics n = row_count;
+  if n <> 0 then
+    raise exception 'FAIL an obligor closed their own obligation';
+  end if;
+  raise notice 'ok   showing you did it is not the same as being signed off';
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- M2-06: proceeding anyway is recorded, not prevented
+-- ---------------------------------------------------------------------------
+
+select pg_temp.act_as('33333333-3333-3333-3333-333333333333');  -- trustee
+select pg_temp.check('a live prohibition is findable before work is opened',
+  (select count(*) from active_prohibitions), 1::bigint);
+
+insert into obligation_overrides
+  (id, obligation_id, construction_block_id, note_of_what, reason, acknowledged_by)
+values ('1a000000-0000-0000-0000-000000000001', '19000000-0000-0000-0000-000000000003',
+        'bbbb0000-0000-0000-0000-000000000001',
+        'Continuing structural work on Block A1',
+        'Board decided unanimously that preservation outweighs the risk.',
+        '33333333-3333-3333-3333-333333333333');
+select pg_temp.check('and proceeding in spite of it is recorded rather than blocked',
+  (select count(*) from obligation_overrides), 1::bigint);
+
+do $$
+begin
+  begin
+    update obligation_overrides set reason = 'never mind'
+    where id = '1a000000-0000-0000-0000-000000000001';
+    raise exception 'FAIL a recorded override was edited';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   a deliberate risk cannot be unrecorded afterwards';
+  end;
+end;
+$$;
+
+-- Somebody has to put their own name to it.
+select pg_temp.act_as('44444444-4444-4444-4444-444444444444');  -- field team
+do $$
+begin
+  begin
+    insert into obligation_overrides
+      (obligation_id, note_of_what, reason, acknowledged_by)
+    values ('19000000-0000-0000-0000-000000000003', 'Carrying on',
+            'It seemed fine', '33333333-3333-3333-3333-333333333333');
+    raise exception 'FAIL an override was recorded in somebody else''s name';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   an override carries the name of whoever took it';
+  end;
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- M2-08: of what somebody undertook, how much did they do
+-- ---------------------------------------------------------------------------
+
+select pg_temp.act_as('33333333-3333-3333-3333-333333333333');
+select pg_temp.check('the register counts what a person undertook',
+  (select undertaken from stakeholder_commitments
+    where stakeholder_id = '0b000000-0000-0000-0000-000000000001'),
+  3::bigint);
+select pg_temp.check('and what became of it',
+  (select kept || '/' || broken || '/' || outstanding from stakeholder_commitments
+    where stakeholder_id = '0b000000-0000-0000-0000-000000000001'),
+  '1/1/1'::text);
+-- Settled one way or the other, not counting the open ones: otherwise the
+-- number measures how long you have been waiting, not the person.
+select pg_temp.check('as a rate over what is settled, not over what is pending',
+  (select kept_percent from stakeholder_commitments
+    where stakeholder_id = '0b000000-0000-0000-0000-000000000001'),
+  50::numeric);
+select pg_temp.check(
+  'and nothing settled reads as unknown rather than as zero',
+  (select kept_percent is null from stakeholder_commitments
+    where stakeholder_id = '0b000000-0000-0000-0000-000000000004'),
+  true);
+
+-- ---------------------------------------------------------------------------
+-- M2-09: the reminder bands
+-- ---------------------------------------------------------------------------
+
+select pg_temp.check('an obligation due this week is in the seven-day band',
+  (select threshold_days from obligation_deadlines
+    where id = '19000000-0000-0000-0000-000000000004'),
+  7);
+select pg_temp.check('one due next month is in the sixty-day band',
+  (select threshold_days from obligation_deadlines
+    where id = '19000000-0000-0000-0000-000000000001' or
+          id = '19000000-0000-0000-0000-000000000006'
+    order by due_on limit 1),
+  30);
+select pg_temp.check('and a closed one has left the list',
+  (select count(*) from obligation_deadlines
+    where id = '19000000-0000-0000-0000-000000000007'),
+  0::bigint);
+
+
 reset role;
 
 \echo ''

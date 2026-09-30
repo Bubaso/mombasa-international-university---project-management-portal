@@ -535,7 +535,12 @@ grant select, insert, update, delete on
   stakeholder_interactions, stakeholder_assessments
   to authenticated;
 
--- Written only by the trigger, so nothing but select is granted.
+-- 0003 set default privileges granting insert, update and delete on every new
+-- table in this schema, which is right for ordinary tables and wrong here: it
+-- leaves the append-only triggers unreachable, so an attempt to rewrite the
+-- record matches no policy and fails silently with zero rows instead of
+-- saying no. Revoked explicitly, exactly as audit_log does.
+revoke all on stakeholder_stance_changes from authenticated;
 grant select on stakeholder_stance_changes to authenticated;
 grant select on stakeholder_attention to authenticated;
 grant execute on all functions in schema app to authenticated;

@@ -73,18 +73,7 @@ export interface LegalCase {
   nextHearingDate?: string;
   descriptionEn: string;
   descriptionTr: string;
-  keyParties: {
-    appellantOrClaimant: string;
-    respondentOrDefendant: string;
-    lawyers: string;
-  };
   keyIssues: string[];
-  orders: {
-    date: string;
-    title: string;
-    detail: string;
-    status: 'active' | 'superseded' | 'pending';
-  }[];
   documentsCount: number;
 }
 
@@ -622,4 +611,26 @@ export interface AgendaItem {
   ownerProfileId: string | null;
   ownerStakeholderId: string | null;
   overdue: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// The legal register (M5) — mirrors supabase/migrations/0009
+// ---------------------------------------------------------------------------
+
+/** What an order is doing now, which is the question anyone actually has. */
+export type OrderState = 'in_force' | 'varied' | 'discharged' | 'appealed' | 'spent';
+
+export interface LegalOrder {
+  id: string;
+  legalCaseId: string;
+  madeOn: string;
+  madeBy: string | null;
+  referenceNo: string | null;
+  textEn: string | null;
+  textTr: string | null;
+  state: OrderState;
+  documentId: string | null;
+  /** Set when this order changes an earlier one. */
+  variesOrderId: string | null;
+  confidentiality: Confidentiality;
 }

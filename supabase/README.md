@@ -14,6 +14,8 @@ migrations/
   0006_stakeholders.sql                  the register, the network, the log
   0007_meetings_decisions_actions.sql    minutes that produce commitments
   0008_provenance_and_suggestions.sql    where a row came from; the suggestion box
+  0009_legal_register.sql                cases, hearings, filings, orders, evidence
+  0010_obligations.sql                   what four sources oblige this project to do
 functions/
   ai-assistant/                          server-side model proxy
   invite-user/                           creates an account and its profile
@@ -111,6 +113,27 @@ by anyone, because a record that can be tidied up afterwards is not evidence:
 - **Final minutes** — once `meetings.minutes_status` is `final`, its notes
   refuse edits and deletes, and the status cannot go back to draft. A
   correction is an addendum, not a quiet edit.
+- **`exhibit_custody`** — who handed which exhibit to whom. A chain that can
+  be tidied afterwards proves nothing, which is the only reason to keep one.
+- **`obligation_overrides`** — proceeding in spite of an obligation. The
+  portal warns and records; it does not block. A deliberate risk that can be
+  erased later was never recorded.
+
+Each of these revokes `insert`/`update`/`delete` from `authenticated`
+explicitly, because 0003's default privileges grant them to every new table.
+Without the revoke the triggers are unreachable and an attempt to rewrite the
+record fails silently with zero rows instead of saying no.
+
+## Two rules the obligations register will not bend
+
+- **`verified` is generated**, from whether a source document is attached.
+  Nobody can assert it. An obligation with no paper behind it is still
+  recorded — an unrecorded obligation is worse than an unverified one — but
+  it says what it is.
+- **Nothing is `fulfilled` without evidence.** A trigger refuses the state
+  change until something is attached. "Done" without evidence is a claim, and
+  on this project the claims that matter are ones a court may later be asked
+  to believe.
 
 ## Importing from Notion
 

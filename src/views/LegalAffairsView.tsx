@@ -75,6 +75,10 @@ export const LegalAffairsView: React.FC = () => {
   const [motionDetail, setMotionDetail] = useState('');
 
   const activeCase = legalCases.find((c) => c.id === selectedCaseId) ?? legalCases[0] ?? null;
+  // Orders are their own records now: a court order carries a state, the
+  // document behind it, and the obligations it creates, none of which fitted
+  // in the JSON array that used to sit on the case row.
+  const caseOrders = queries.useCaseOrders(activeCase?.id).data ?? [];
   const hearingBrief = loadHearingBrief();
   const benchQuestions = hearingBrief?.benchQuestions ?? [];
   const authorities = hearingBrief?.authorities ?? [];
@@ -830,27 +834,40 @@ export const LegalAffairsView: React.FC = () => {
                 {language === 'tr' ? 'Duruşma ve Karar Geçmişi' : 'Key Orders & Decrees'}
               </h3>
               <div className="space-y-3 text-xs">
-                {activeCase.orders.map((ord, idx) => (
-                  <div
-                    key={idx}
-                    className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-1"
-                  >
-                    <div className="flex items-center justify-between text-[11px]">
-                      <span className="font-mono text-amber-800 font-bold">{ord.date}</span>
-                      <span
-                        className={`px-1.5 py-0.5 rounded text-[10px] uppercase font-mono ${
-                          ord.status === 'active'
-                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                            : 'bg-slate-200 text-slate-700'
-                        }`}
-                      >
-                        {ord.status}
-                      </span>
+                {caseOrders.length === 0 ? (
+                  <p className="text-[11px] text-slate-500">
+                    {language === 'tr'
+                      ? 'Bu dosya için kayıtlı mahkeme kararı yok.'
+                      : 'No court order recorded on this file.'}
+                  </p>
+                ) : (
+                  caseOrders.map((ord) => (
+                    <div
+                      key={ord.id}
+                      className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-1"
+                    >
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="font-mono text-amber-800 font-bold">{ord.madeOn}</span>
+                        <span
+                          className={`px-1.5 py-0.5 rounded text-[10px] uppercase font-mono ${
+                            ord.state === 'in_force'
+                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                              : 'bg-slate-200 text-slate-700'
+                          }`}
+                        >
+                          {ord.state.replace('_', ' ')}
+                        </span>
+                      </div>
+                      {ord.referenceNo && (
+                        <div className="font-semibold text-slate-900">{ord.referenceNo}</div>
+                      )}
+                      <p className="text-slate-600 text-[11px] leading-relaxed">
+                        {(language === 'tr' ? ord.textTr : ord.textEn) ?? ord.textEn ?? ord.textTr}
+                      </p>
+                      {ord.madeBy && <p className="text-slate-400 text-[10px]">{ord.madeBy}</p>}
                     </div>
-                    <div className="font-semibold text-slate-900">{ord.title}</div>
-                    <p className="text-slate-600 text-[11px] leading-relaxed">{ord.detail}</p>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
 
