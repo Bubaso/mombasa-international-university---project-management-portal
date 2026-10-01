@@ -1548,6 +1548,69 @@ const TEST_STAKEHOLDERS = [
 ];
 
 /**
+ * Machine translations in the three states that matter (0034).
+ *
+ * The middle one is the point of the whole feature: the field no longer says
+ * what the machine said, so a person has already been there and there is
+ * nothing to approve. A queue that asked them to confirm their own edit would
+ * be asking the wrong question.
+ */
+const TEST_TRANSLATIONS = [
+  {
+    id: '00000000-0000-0000-0000-00000000c401',
+    entity_table: 'obligations',
+    entity_id: '00000000-0000-0000-0000-0000000000b1',
+    column_name: 'detail_tr',
+    into_language: 'tr',
+    from_language: 'en',
+    model: 'gemini-2.5-flash',
+    machine_text: 'Tadilin tapu siciline tevdi edilmesi gerekir.',
+    current_text: 'Tadilin tapu siciline tevdi edilmesi gerekir.',
+    still_the_machines_words: true,
+    translated_at: '2026-09-30T09:00:00Z',
+    approved_at: null,
+    corrected: false,
+  },
+  {
+    id: '00000000-0000-0000-0000-00000000c402',
+    entity_table: 'decisions',
+    entity_id: '00000000-0000-0000-0000-0000000000c1',
+    column_name: 'rationale_tr',
+    into_language: 'tr',
+    from_language: 'en',
+    model: 'gemini-2.5-flash',
+    machine_text: 'Kurul izni beklemeye karar verdi.',
+    current_text: 'Kurul, mahkeme kararını beklemeye karar verdi.',
+    still_the_machines_words: false,
+    translated_at: '2026-09-29T09:00:00Z',
+    approved_at: null,
+    corrected: false,
+  },
+  {
+    id: '00000000-0000-0000-0000-00000000c403',
+    entity_table: 'action_items',
+    entity_id: '00000000-0000-0000-0000-0000000000d1',
+    column_name: 'text_en',
+    into_language: 'en',
+    from_language: 'tr',
+    model: 'gemini-2.5-flash',
+    machine_text: 'Deliver the engineering report by Saturday.',
+    current_text: 'Deliver the engineering report by Saturday.',
+    still_the_machines_words: true,
+    translated_at: '2026-09-28T09:00:00Z',
+    approved_at: '2026-09-28T10:00:00Z',
+    corrected: false,
+  },
+];
+
+/** The single-language gap the feature exists to bring down. */
+const TEST_BACKLOG = [
+  { entity_table: 'obligations', base: 'detail', only_en: 10, only_tr: 0, in_both: 0 },
+  { entity_table: 'chronology_entries', base: 'detail', only_en: 8, only_tr: 0, in_both: 0 },
+  { entity_table: 'decisions', base: 'text', only_en: 0, only_tr: 1, in_both: 6 },
+];
+
+/**
  * Whether anything is raising notifications (0033).
  *
  * The strip this feeds is shown whether or not the inbox has anything in it,
@@ -2132,6 +2195,8 @@ try {
     );
 
   await serve('**/rest/v1/notification_health**', TEST_HEALTH);
+  await serve('**/rest/v1/rpc/translation_review', TEST_TRANSLATIONS);
+  await serve('**/rest/v1/rpc/translation_backlog', TEST_BACKLOG);
   await serve('**/rest/v1/action_triage**', TEST_TRIAGE);
   await serve('**/rest/v1/stakeholders**', TEST_STAKEHOLDERS);
   await serve('**/rest/v1/report_runs**', TEST_REPORT_RUNS);
@@ -2840,6 +2905,41 @@ try {
     /Son sorulanlar|Recently asked/.test(assistant) &&
       /What was decided about renewing the permit\?/.test(assistant),
     'what has been asked is on the screen, not only in the table (M13-10)',
+  );
+
+  // 0034: the machine translations, and the three states that are genuinely
+  // different. An unapproved one must read as a suggestion; one whose field has
+  // since been edited by hand must not ask anybody to confirm their own edit.
+  check(
+    /öneri bekliyor/.test(assistant) && /1 öneri bekliyor/.test(assistant),
+    'the queue counts translations nobody has stood behind yet (M3-10)',
+  );
+  check(
+    /öneri — onaylanmadı/.test(assistant),
+    'and calls an unapproved translation a suggestion rather than the record',
+  );
+  check(
+    /elle değiştirilmiş/.test(assistant) &&
+      /Kurul, mahkeme kararını beklemeye karar verdi\./.test(assistant),
+    'a field edited by hand since is marked as such, not queued for approval',
+  );
+  check(
+    /Makinenin yazdığı/.test(assistant) && /Kurul izni beklemeye karar verdi\./.test(assistant),
+    'and what the machine had written is kept beside it',
+  );
+  check(
+    /19 alan tek dilli/.test(assistant),
+    'the single-language gap is a number on the screen, not an impression',
+  );
+  check(/gemini-2\.5-flash/.test(assistant), 'each translation names the model that produced it');
+  // The approve control exists for the one awaiting a reader, and not for the
+  // two that are settled or already edited.
+  check(
+    (await page
+      .locator('button')
+      .filter({ hasText: /^Doğru, arkasında duruyorum$/ })
+      .count()) === 1,
+    'only the translation actually awaiting a reader offers approval',
   );
 
   // An answer, with its citations.

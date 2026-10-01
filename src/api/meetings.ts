@@ -406,20 +406,27 @@ export interface DecisionInput {
   confidentiality: Confidentiality;
 }
 
-export async function createDecision(input: DecisionInput): Promise<void> {
-  const { error } = await supabase.from('decisions').insert({
-    meeting_id: input.meetingId,
-    reference_no: input.referenceNo,
-    text_en: input.textEn,
-    text_tr: input.textTr,
-    rationale_en: input.rationaleEn,
-    organ: input.organ,
-    vote: input.vote,
-    decided_on: input.decidedOn,
-    status: input.status,
-    confidentiality: input.confidentiality,
-  });
+export async function createDecision(input: DecisionInput): Promise<string> {
+  const { data, error } = await supabase
+    .from('decisions')
+    .insert({
+      meeting_id: input.meetingId,
+      reference_no: input.referenceNo,
+      text_en: input.textEn,
+      text_tr: input.textTr,
+      rationale_en: input.rationaleEn,
+      organ: input.organ,
+      vote: input.vote,
+      decided_on: input.decidedOn,
+      status: input.status,
+      confidentiality: input.confidentiality,
+    })
+    // Returned so the caller can act on what was created — M3-10's automatic
+    // translation needs to know which row to look at.
+    .select('id')
+    .single();
   fail(error);
+  return (data as { id: string }).id;
 }
 
 export async function updateDecisionStatus(input: {
@@ -493,19 +500,24 @@ export interface ActionInput {
   confidentiality: Confidentiality;
 }
 
-export async function createAction(input: ActionInput): Promise<void> {
-  const { error } = await supabase.from('action_items').insert({
-    meeting_id: input.meetingId,
-    decision_id: input.decisionId,
-    text_en: input.textEn,
-    text_tr: input.textTr,
-    due_date: input.dueDate,
-    priority: input.priority,
-    owner_profile_id: input.ownerProfileId,
-    owner_stakeholder_id: input.ownerStakeholderId,
-    confidentiality: input.confidentiality,
-  });
+export async function createAction(input: ActionInput): Promise<string> {
+  const { data, error } = await supabase
+    .from('action_items')
+    .insert({
+      meeting_id: input.meetingId,
+      decision_id: input.decisionId,
+      text_en: input.textEn,
+      text_tr: input.textTr,
+      due_date: input.dueDate,
+      priority: input.priority,
+      owner_profile_id: input.ownerProfileId,
+      owner_stakeholder_id: input.ownerStakeholderId,
+      confidentiality: input.confidentiality,
+    })
+    .select('id')
+    .single();
   fail(error);
+  return (data as { id: string }).id;
 }
 
 /**
@@ -595,17 +607,22 @@ export async function createQuestion(input: {
   ownerProfileId: string | null;
   ownerStakeholderId: string | null;
   confidentiality: Confidentiality;
-}): Promise<void> {
-  const { error } = await supabase.from('open_questions').insert({
-    meeting_id: input.meetingId,
-    question_en: input.questionEn,
-    question_tr: input.questionTr,
-    target_resolution_date: input.targetResolutionDate,
-    owner_profile_id: input.ownerProfileId,
-    owner_stakeholder_id: input.ownerStakeholderId,
-    confidentiality: input.confidentiality,
-  });
+}): Promise<string> {
+  const { data, error } = await supabase
+    .from('open_questions')
+    .insert({
+      meeting_id: input.meetingId,
+      question_en: input.questionEn,
+      question_tr: input.questionTr,
+      target_resolution_date: input.targetResolutionDate,
+      owner_profile_id: input.ownerProfileId,
+      owner_stakeholder_id: input.ownerStakeholderId,
+      confidentiality: input.confidentiality,
+    })
+    .select('id')
+    .single();
   fail(error);
+  return (data as { id: string }).id;
 }
 
 export async function answerQuestion(input: {

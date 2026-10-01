@@ -400,11 +400,18 @@ Deno.serve(async (req: Request): Promise<Response> => {
   });
 
   return json({
-    // M13-08: the label is added here, not asked for.
-    text: labelled(text),
+    // M13-08: the label is added here, not asked for — except for a task whose
+    // output is stored in a field rather than read as prose, where it would
+    // corrupt the value. The label still travels, in labelEn/labelTr, and the
+    // marker row the client writes is what keeps that output from passing as
+    // somebody's own words.
+    text: 'storesAValue' in task && task.storesAValue ? text.trim() : labelled(text),
     draft: true,
     labelEn: DRAFT_LABEL_EN,
     labelTr: DRAFT_LABEL_TR,
+    // Provenance for the marker. The client must not guess which model
+    // answered, and this is the only place that knows.
+    model: MODEL,
     // M13-04: what the answer stands on, for the client to render as links.
     sources: citable(sources),
     task: taskName,

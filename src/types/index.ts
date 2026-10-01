@@ -1586,11 +1586,19 @@ export interface AiSource {
  */
 export interface AiAnswer {
   text: string | null;
-  /** Always true for generated text — the label is added server-side. */
+  /**
+   * Always true for generated text. For every task but one the M13-08 label is
+   * already inside `text`; for `translation` it is not, because that output is
+   * written into a field where two lines of prose would corrupt the value
+   * rather than caption it. There, the warning is carried by the
+   * machine_translations marker instead.
+   */
   draft: boolean;
   refused: 'legal_advice' | 'no_sources' | 'uncited' | null;
   messageEn: string | null;
   messageTr: string | null;
+  /** Which model answered. Provenance the client must not guess. */
+  model: string | null;
   sources: AiSource[];
   task: AiTask | null;
 }

@@ -97,6 +97,14 @@ export const TASKS = {
   translation: {
     retrieval: 'none',
     takesText: true,
+    // The output of this one is written INTO a field — title_tr, detail_tr —
+    // rather than shown as prose. So the M13-08 label must not be glued to
+    // the front of it: a title that began "TASLAK — insan onayı gerekir." is
+    // not a labelled translation, it is a corrupted title. The warning is
+    // carried instead by the machine_translations marker and the badge the
+    // screen draws from it, which survive a copy and paste and two lines of
+    // prose do not.
+    storesAValue: true,
     instruction: [
       'Translate the text below between Turkish and English, in whichever',
       'direction it is not already in.',

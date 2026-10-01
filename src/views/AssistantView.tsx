@@ -39,6 +39,7 @@ import { useApp } from '../context/AppContext';
 import { useAsk, useAiQueries } from '../api/assistantHooks';
 import { assistantConfigured } from '../api/assistant';
 import { QueryStatus } from '../components/QueryStatus';
+import { TranslationPanel } from '../components/assistant/TranslationPanel';
 import { Pill, WriteError } from '../components/ui/Controls';
 import { kindLabel, routeFor } from '../lib/search';
 import { formatDate } from '../lib/site';
@@ -466,6 +467,12 @@ export const AssistantView: React.FC = () => {
           </p>
         </section>
       )}
+
+      {/* The other thing a model produces here, and the one that reaches the
+          records rather than the screen. It belongs beside the log for the
+          same reason the log exists: generated text that nobody can tell from
+          the record is the risk, and both of these are how it is managed. */}
+      <TranslationPanel />
 
       {/* M13-10, shown rather than merely stored. */}
       <section className="rounded-xl border border-slate-200 bg-white p-4">

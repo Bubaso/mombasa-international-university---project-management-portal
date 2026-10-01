@@ -5532,6 +5532,198 @@ select pg_temp.check('a swept notification lands in its recipient''s inbox only'
 
 reset role;
 
+-- ===========================================================================
+-- Machine translation, marked as such (0034)
+-- ===========================================================================
+--
+-- 55 of the portal's 149 filled bilingual fields hold one language only, so
+-- translating automatically is worth doing. The danger is exact: a machine
+-- translation indistinguishable from the record IS the record as far as any
+-- reader can tell, which is the "SHA-256 verified" badge in a different
+-- column. These test the marking, not the translating.
+
+set role authenticated;
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- director
+
+-- --- the whitelist --------------------------------------------------------
+--
+-- The review function builds dynamic SQL from a table and column name, so what
+-- counts as a bilingual field has to be decided somewhere narrow.
+
+select pg_temp.check('a half of a bilingual pair is translatable',
+  (select app.translatable('obligations', 'detail_tr')), true);
+select pg_temp.check('and meetings.title_tr, which does not follow the convention',
+  (select app.translatable('meetings', 'title_tr')), true);
+select pg_temp.check('a column that is not one half of a pair is not',
+  (select app.translatable('obligations', 'due_on')), false);
+select pg_temp.check('nor is something that is not a column at all',
+  (select app.translatable('obligations', 'detail_tr; drop table profiles')), false);
+
+do $$
+begin
+  begin
+    perform public.record_machine_translation(
+      'obligations', '0b000000-0000-0000-0000-000000000001', 'state',
+      'tr', 'en', 'test-model', 'bir şey');
+    raise exception 'FAIL a non-bilingual column was marked as translated';
+  exception
+    when check_violation then
+      raise notice 'ok   only a bilingual field can be marked as translated';
+  end;
+end;
+$$;
+
+-- --- the marker and what it is for ----------------------------------------
+
+insert into obligations
+  (id, title_en, title_tr, detail_en, source, obligor_name, due_on, state, confidentiality)
+values
+  ('b1000000-0000-0000-0000-00000000f101', 'Register the lease variation',
+   'Kira tadilini tescil et', 'The variation must be lodged with the registry.',
+   'lease', 'AUTK', current_date + 120, 'open', 'internal');
+
+-- The text is written by the ordinary update; the marker records where it came
+-- from. Both halves are needed, and the test does them in that order because
+-- that is the order the client does them in.
+update obligations
+   set detail_tr = 'Tadilin tapu siciline tevdi edilmesi gerekir.'
+ where id = 'b1000000-0000-0000-0000-00000000f101';
+
+select public.record_machine_translation(
+  'obligations', 'b1000000-0000-0000-0000-00000000f101', 'detail_tr',
+  'tr', 'en', 'gemini-2.5-flash', 'Tadilin tapu siciline tevdi edilmesi gerekir.');
+
+select pg_temp.check('a translated field is marked, and unapproved',
+  (select approved_at is null from machine_translations
+    where entity_table = 'obligations' and column_name = 'detail_tr'
+      and entity_id = 'b1000000-0000-0000-0000-00000000f101'), true);
+select pg_temp.check('and the review queue shows it beside what the field now says',
+  (select still_the_machines_words from public.translation_review()
+    where entity_id = 'b1000000-0000-0000-0000-00000000f101'
+      and column_name = 'detail_tr'), true);
+
+-- --- an ordinary edit resolves the review --------------------------------
+--
+-- Nobody has to mark anything: if the field no longer says what the machine
+-- said, a person has been here.
+
+update obligations
+   set detail_tr = 'Tadilin tapu siciline şerh edilmesi gerekir.'
+ where id = 'b1000000-0000-0000-0000-00000000f101';
+
+select pg_temp.check('a field edited by hand is no longer the machine''s words',
+  (select still_the_machines_words from public.translation_review()
+    where entity_id = 'b1000000-0000-0000-0000-00000000f101'
+      and column_name = 'detail_tr'), false);
+
+-- --- approving is a person's act, and attributed -------------------------
+
+select public.approve_translation(
+  (select id from machine_translations
+    where entity_id = 'b1000000-0000-0000-0000-00000000f101'
+      and column_name = 'detail_tr'));
+
+select pg_temp.check('approval carries the name and the moment',
+  (select approved_by = '22222222-2222-2222-2222-222222222222' and approved_at is not null
+     from machine_translations
+    where entity_id = 'b1000000-0000-0000-0000-00000000f101'
+      and column_name = 'detail_tr'), true);
+
+do $$
+begin
+  begin
+    perform public.approve_translation(
+      (select id from machine_translations
+        where entity_id = 'b1000000-0000-0000-0000-00000000f101'
+          and column_name = 'detail_tr'));
+    raise exception 'FAIL the same translation was approved twice';
+  exception
+    when no_data_found then
+      raise notice 'ok   an approved translation is not approved again';
+  end;
+end;
+$$;
+
+-- --- re-translating withdraws the approval -------------------------------
+--
+-- Approval is of a wording, not of a field. A second pass at the same field is
+-- a new wording and nobody has stood behind it yet.
+
+select public.record_machine_translation(
+  'obligations', 'b1000000-0000-0000-0000-00000000f101', 'detail_tr',
+  'tr', 'en', 'gemini-2.5-flash', 'Tadil tapuya şerh edilmelidir.');
+
+select pg_temp.check('a re-translation is unapproved again',
+  (select approved_at is null and not corrected from machine_translations
+    where entity_id = 'b1000000-0000-0000-0000-00000000f101'
+      and column_name = 'detail_tr'), true);
+select pg_temp.check('and there is still one marker for the field, not two',
+  (select count(*) from machine_translations
+    where entity_id = 'b1000000-0000-0000-0000-00000000f101'
+      and column_name = 'detail_tr'), 1::bigint);
+
+-- --- the backlog this is meant to bring down -----------------------------
+
+-- A record with English detail and no Turkish: exactly what the 53 look like.
+insert into obligations
+  (id, title_en, title_tr, detail_en, source, obligor_name, due_on, state, confidentiality)
+values
+  ('b1000000-0000-0000-0000-00000000f103', 'English detail only',
+   'Yalnız İngilizce ayrıntı', 'Lodged under section 44.', 'statute', 'AUTK',
+   current_date + 120, 'open', 'internal');
+
+select pg_temp.check('the backlog counts fields holding one language only',
+  (select only_en > 0 from public.translation_backlog()
+    where entity_table = 'obligations' and base = 'detail'), true);
+select pg_temp.check('and counts the bilingual ones separately rather than as a gap',
+  (select in_both > 0 from public.translation_backlog()
+    where entity_table = 'obligations' and base = 'detail'), true);
+
+-- --- the review reads under the caller's own visibility ------------------
+--
+-- A reviewer is not shown the detail of a restricted record by virtue of its
+-- being untranslated. This is the whole reason the function is invoker and not
+-- definer.
+
+insert into obligations
+  (id, title_en, title_tr, detail_en, source, obligor_name, due_on, state, confidentiality)
+values
+  ('b1000000-0000-0000-0000-00000000f102', 'A restricted undertaking',
+   'Kısıtlı bir taahhüt', 'Restricted detail.', 'lease', 'AUTK',
+   current_date + 120, 'open', 'restricted');
+update obligations set detail_tr = 'Kısıtlı ayrıntı.'
+ where id = 'b1000000-0000-0000-0000-00000000f102';
+select public.record_machine_translation(
+  'obligations', 'b1000000-0000-0000-0000-00000000f102', 'detail_tr',
+  'tr', 'en', 'gemini-2.5-flash', 'Kısıtlı ayrıntı.');
+
+select pg_temp.check('a director cleared for it sees it in the queue',
+  (select count(*) from public.translation_review()
+    where entity_id = 'b1000000-0000-0000-0000-00000000f102'), 1::bigint);
+
+select pg_temp.act_as('55555555-5555-5555-5555-555555555555');  -- counsel, internal
+select pg_temp.check('somebody without the clearance does not, text included',
+  (select count(*) from public.translation_review()
+    where entity_id = 'b1000000-0000-0000-0000-00000000f102'), 0::bigint);
+
+-- And marking one is not everybody's to do.
+select pg_temp.act_as('88888888-8888-8888-8888-888888888888');  -- donor
+do $$
+begin
+  begin
+    perform public.record_machine_translation(
+      'obligations', 'b1000000-0000-0000-0000-00000000f101', 'title_tr',
+      'tr', 'en', 'gemini-2.5-flash', 'Bir şey');
+    raise exception 'FAIL an outside reader marked a translation';
+  exception
+    when insufficient_privilege or check_violation then
+      raise notice 'ok   marking a translation needs the authority to write records';
+  end;
+end;
+$$;
+
+reset role;
+
 -- ---------------------------------------------------------------------------
 -- The anon key is given nothing (0026)
 -- ---------------------------------------------------------------------------

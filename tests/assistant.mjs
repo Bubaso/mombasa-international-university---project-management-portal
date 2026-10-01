@@ -82,6 +82,28 @@ check(
   'and the label survives whatever whitespace the model sends',
 );
 
+// The exception, and the reason it is one. A translation is written into a
+// field — title_tr, detail_tr — so prefixing it would not label a translation,
+// it would corrupt a title. Exactly one task may be exempt, and the exemption
+// is a property of the task rather than of the request, so nothing a caller
+// sends can claim it.
+const storing = Object.entries(TASKS).filter(([, spec]) => spec.storesAValue);
+check(
+  storing.length === 1 && storing[0][0] === 'translation',
+  'exactly one task writes its output into a field rather than onto the screen',
+  storing.map(([n]) => n).join(', ') || '(none)',
+);
+check(
+  storing.every(([, spec]) => spec.takesText === true),
+  'and it works on text the caller supplied, so there is nothing to cite',
+);
+check(
+  Object.entries(TASKS)
+    .filter(([name]) => name !== 'translation')
+    .every(([, spec]) => !spec.storesAValue),
+  'every other task is read as prose and keeps the draft label',
+);
+
 const ASKS = [
   'Should we appeal the order?',
   'Can we sue the county over the boundary?',

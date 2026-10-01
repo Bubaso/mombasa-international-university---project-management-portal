@@ -39,6 +39,7 @@ interface ProxyResponse {
     confidentiality: Confidentiality;
   }[];
   task?: AiTask;
+  model?: string;
   error?: string;
 }
 
@@ -83,6 +84,7 @@ export async function ask(input: AskInput): Promise<AiAnswer> {
       refused: payload.refused,
       messageEn: payload.messageEn ?? null,
       messageTr: payload.messageTr ?? null,
+      model: payload.model ?? null,
       sources: (payload.sources ?? []) as AiSource[],
       task: payload.task ?? input.task,
     };
@@ -98,6 +100,7 @@ export async function ask(input: AskInput): Promise<AiAnswer> {
     refused: null,
     messageEn: null,
     messageTr: null,
+    model: payload.model ?? null,
     sources: (payload.sources ?? []) as AiSource[],
     task: payload.task ?? input.task,
   };

@@ -73,9 +73,12 @@ entegrasyonunun "API Live" rozeti, kimsenin koymadığı sabit rakamlar.
   İstemci kuralı uygulamaz, kuralın cevabını gösterir.
 - **Migration'lar sıralı ve geri alınamaz.** `supabase/migrations/NNNN_*.sql`.
   Her biri neden var olduğunu yorumunda anlatır — ölçümle, varsa.
-- **Fonksiyon oluşturan her migration revoke ile biter.** Postgres yeni
-  fonksiyonun EXECUTE'unu PUBLIC'e verir ve bunu varsayılan ACL ile geri
-  alamazsın (ölçüm 0026'da). Politika testi bunu zorlar.
+- **Fonksiyon oluşturan her migration `select app.reset_function_grants();`
+  ile biter.** Postgres yeni fonksiyonun EXECUTE'unu PUBLIC'e verir ve bunu
+  varsayılan ACL ile geri alamazsın (ölçüm 0026'da). Revoke satırlarını elle
+  yazma: toptan `grant`, daha önce ismen kapatılmış her fonksiyonu yeniden
+  açar — 0033 ile 0034 arasında tam bunu yaptı. İstisnalar o fonksiyonun
+  içinde, tek yerde durur. Politika testi bunu zorlar.
 - **Canlıya uygulama:** `node scripts/apply-migrations.mjs --project <ref>`.
   `SUPABASE_ACCESS_TOKEN` gerekir.
 
