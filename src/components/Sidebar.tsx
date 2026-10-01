@@ -17,6 +17,7 @@ import {
   MessagesSquare,
   ShieldCheck,
   TriangleAlert,
+  Bot,
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
@@ -82,6 +83,7 @@ export const Sidebar: React.FC = () => {
     },
     // Everyone signed in belongs here: for most people it is where they read
     // what their own access consists of, not where they change anyone else's.
+    { tab: 'assistant', path: '/assistant', label: t.nav.assistant, icon: Bot },
     { tab: 'admin', path: '/admin', label: t.nav.admin, icon: ShieldCheck },
   ];
 

@@ -18,7 +18,6 @@ import {
 } from 'lucide-react';
 
 import { useNavigate } from 'react-router-dom';
-import { ContextualAIAssistant } from '../components/ContextualAIAssistant';
 import { CaseStrip } from '../components/legal/CaseStrip';
 import { HearingList } from '../components/legal/HearingList';
 import { FilingList } from '../components/legal/FilingList';
@@ -1513,11 +1512,14 @@ export const LegalAffairsView: React.FC = () => {
         </div>
       )}
 
-      <ContextualAIAssistant
-        contextData={JSON.stringify(activeCase)}
-        systemInstruction="You are an expert legal AI assistant. Provide concise, legally sound analysis based ONLY on the provided case data."
-        title={language === 'tr' ? 'Hukuk Asistanı' : 'Legal AI Assistant'}
-      />
+      {/* The embedded assistant is gone from here, and the instruction it
+          carried is why: it asked a model for "concise, legally sound
+          analysis", which is a legal opinion, and M13-08 says the assistant
+          does not produce one. It also handed over JSON.stringify(activeCase)
+          as context, with no notion of who was asking or what tier the case
+          sat at. Both are fixed on the Assistant screen, where retrieval runs
+          under the reader's own token and restricted material never reaches
+          the model at all. */}
     </div>
   );
 };

@@ -62,6 +62,9 @@ const RisksView = lazy(() => import('./views/RisksView').then((m) => ({ default:
 const AdminConsoleView = lazy(() =>
   import('./views/AdminConsoleView').then((m) => ({ default: m.AdminConsoleView })),
 );
+const AssistantView = lazy(() =>
+  import('./views/AssistantView').then((m) => ({ default: m.AssistantView })),
+);
 
 const MainLayout: React.FC = () => {
   const { language } = useApp();
@@ -193,6 +196,10 @@ const Gate: React.FC = () => {
         <Route path="/meetings" element={<MeetingsView />} />
         <Route path="/meetings/:id" element={<MeetingDetailView />} />
         <Route path="/communication" element={<CommunicationView />} />
+        {/* Open to anyone signed in. The assistant reads the archive with
+            the caller's own token, so it can only ever show somebody what
+            they could already open — and never anything restricted. */}
+        <Route path="/assistant" element={<AssistantView />} />
         {/* Open to anyone signed in: the console shows each person only the
             parts their policies let them use, and everyone has a right to see
             what their own access consists of. */}

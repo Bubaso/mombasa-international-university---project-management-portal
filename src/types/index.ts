@@ -62,6 +62,7 @@ export type ActiveTab =
   | 'finance'
   | 'documents'
   | 'communication'
+  | 'assistant'
   | 'admin';
 
 export interface LegalCase {
@@ -1366,4 +1367,98 @@ export interface PendingDecision {
   dueOn: string | null;
   waitingOn: string[];
   confidentiality: Confidentiality;
+}
+
+// ---------------------------------------------------------------------------
+// Search and the assistant (M13)
+// ---------------------------------------------------------------------------
+
+/** Mirrors search_kind in supabase/migrations/0019. */
+export type SearchKind =
+  | 'legal_case'
+  | 'legal_order'
+  | 'legal_opinion'
+  | 'hearing'
+  | 'filing'
+  | 'document'
+  | 'stakeholder'
+  | 'meeting'
+  | 'meeting_note'
+  | 'decision'
+  | 'action_item'
+  | 'open_question'
+  | 'obligation'
+  | 'transaction'
+  | 'risk'
+  | 'issue'
+  | 'assumption'
+  | 'block'
+  | 'site_task';
+
+/**
+ * One hit from search_records (M13-05).
+ *
+ * `snippet` carries the matched phrase between guillemets — « » rather than
+ * markup, because the component renders it as text and must not be handed
+ * HTML it would have to trust.
+ */
+export interface SearchResult {
+  kind: SearchKind;
+  id: string;
+  titleEn: string | null;
+  titleTr: string | null;
+  subtitle: string | null;
+  snippet: string | null;
+  occurredOn: string | null;
+  confidentiality: Confidentiality;
+  parentKind: SearchKind | null;
+  parentId: string | null;
+  rank: number;
+}
+
+/** A search somebody keeps (M13-11). Private to its owner. */
+export interface SavedSearch {
+  id: string;
+  name: string;
+  query: string;
+  kinds: SearchKind[] | null;
+  createdAt: string;
+}
+
+/** The five defined uses, and no sixth (M13-07). Mirrors ai_task in 0019. */
+export type AiTask =
+  'archive_question' | 'meeting_minutes' | 'translation' | 'weekly_digest' | 'document_summary';
+
+/**
+ * A record an answer rested on (M13-04).
+ *
+ * `marker` is the exact string the model was told to cite, so the component
+ * can find each citation in the text and turn it into a link.
+ */
+export interface AiSource {
+  marker: string;
+  kind: SearchKind;
+  id: string;
+  titleEn: string | null;
+  titleTr: string | null;
+  subtitle: string | null;
+  confidentiality: Confidentiality;
+}
+
+/**
+ * What came back.
+ *
+ * A refusal is a first-class outcome rather than an error: being told that
+ * nothing in the archive answers the question, or that a legal question
+ * belongs with the advocate, is the assistant working (M13-04, M13-08).
+ */
+export interface AiAnswer {
+  text: string | null;
+  /** Always true for generated text — the label is added server-side. */
+  draft: boolean;
+  refused: 'legal_advice' | 'no_sources' | 'uncited' | null;
+  messageEn: string | null;
+  messageTr: string | null;
+  sources: AiSource[];
+  task: AiTask | null;
 }

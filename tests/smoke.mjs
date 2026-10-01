@@ -439,6 +439,145 @@ const TEST_DECISIONS = [
   },
 ];
 
+/**
+ * What search_records answers. Three of these four are registers the old
+ * client-side search could not reach at all, which is the regression this
+ * fixture exists to catch.
+ */
+const TEST_SEARCH_HITS = [
+  {
+    kind: 'legal_case',
+    id: '00000000-0000-0000-0000-0000000000b1',
+    title_en: 'Smoke Trust v County Government',
+    title_tr: null,
+    subtitle: 'ELC/134/2013 · ELC Mombasa',
+    snippet: 'Boundary of plot «MN/I/5141» pending determination',
+    occurred_on: '2013-04-02',
+    confidentiality: 'internal',
+    parent_kind: null,
+    parent_id: null,
+    rank: 1.4,
+  },
+  {
+    kind: 'meeting_note',
+    id: '00000000-0000-0000-0000-0000000000b2',
+    title_en: 'Trustee sitting, March',
+    title_tr: 'Mütevelli toplantısı, Mart',
+    subtitle: 'discussed · tr',
+    snippet: 'İnşaat «ruhsatı» yenilenmesi görüşüldü',
+    occurred_on: '2026-03-11',
+    confidentiality: 'confidential',
+    parent_kind: 'meeting',
+    parent_id: '00000000-0000-0000-0000-0000000000e1',
+    rank: 1.1,
+  },
+  {
+    kind: 'obligation',
+    id: '00000000-0000-0000-0000-0000000000b3',
+    title_en: 'Keep the access road passable',
+    title_tr: 'Servis yolunu açık tut',
+    subtitle: 'court_order · open',
+    snippet: 'Access road to remain «passable» at all times',
+    occurred_on: '2026-11-30',
+    confidentiality: 'internal',
+    parent_kind: null,
+    parent_id: null,
+    rank: 0.9,
+  },
+  {
+    kind: 'risk',
+    id: '00000000-0000-0000-0000-0000000000b4',
+    title_en: 'Hearings keep being adjourned',
+    title_tr: 'Duruşmalar sürekli erteleniyor',
+    subtitle: 'legal · open · score 16',
+    snippet: 'The «permit» cannot be renewed while the matter is pending',
+    occurred_on: '2026-12-01',
+    confidentiality: 'internal',
+    parent_kind: null,
+    parent_id: null,
+    rank: 0.8,
+  },
+];
+
+/** The usage log the assistant screen shows back (M13-10). */
+const TEST_AI_QUERIES = [
+  {
+    id: '00000000-0000-0000-0000-0000000000f1',
+    asked_by: '00000000-0000-0000-0000-0000000000aa',
+    task: 'archive_question',
+    question: 'What was decided about renewing the permit?',
+    source_count: 3,
+    refusal: null,
+    model: 'gemini-2.5-flash',
+    asked_at: '2026-09-30T08:00:00Z',
+    asker: { full_name: 'Smoke Test' },
+  },
+  {
+    id: '00000000-0000-0000-0000-0000000000f2',
+    asked_by: '00000000-0000-0000-0000-0000000000aa',
+    task: 'archive_question',
+    question: 'Should we appeal the order?',
+    source_count: 1,
+    refusal: 'The assistant does not give legal opinions.',
+    model: 'gemini-2.5-flash',
+    asked_at: '2026-09-30T09:00:00Z',
+    asker: { full_name: 'Smoke Test' },
+  },
+];
+
+/** An answer with its citations, as the proxy returns one. */
+const TEST_AI_ANSWER = {
+  text:
+    'TASLAK — insan onayı gerekir.\nDRAFT — needs human approval.\n\n' +
+    'The board resolved to renew the permit before the next hearing ' +
+    '[legal_case:00000000-0000-0000-0000-0000000000b1]. The minute recording it ' +
+    'is confidential [meeting_note:00000000-0000-0000-0000-0000000000b2].',
+  draft: true,
+  sources: [
+    {
+      marker: '[legal_case:00000000-0000-0000-0000-0000000000b1]',
+      kind: 'legal_case',
+      id: '00000000-0000-0000-0000-0000000000b1',
+      titleEn: 'Smoke Trust v County Government',
+      titleTr: null,
+      subtitle: 'ELC/134/2013 · ELC Mombasa',
+      confidentiality: 'internal',
+    },
+    {
+      marker: '[meeting_note:00000000-0000-0000-0000-0000000000b2]',
+      kind: 'meeting_note',
+      id: '00000000-0000-0000-0000-0000000000b2',
+      titleEn: 'Trustee sitting, March',
+      titleTr: 'Mütevelli toplantısı, Mart',
+      subtitle: 'discussed · tr',
+      confidentiality: 'confidential',
+    },
+  ],
+  task: 'archive_question',
+};
+
+/** And the refusal M13-08 requires when somebody asks for an opinion. */
+const TEST_AI_REFUSAL = {
+  refused: 'legal_advice',
+  messageEn:
+    'This is a question for the project advocate, not for the assistant. ' +
+    'The opinions on record that mention it are listed below.',
+  messageTr:
+    'Bu, asistanın değil proje avukatının cevaplayacağı bir soru. ' +
+    'Konuyla ilgili kayıtlı görüşler aşağıda.',
+  sources: [
+    {
+      marker: '[legal_opinion:00000000-0000-0000-0000-0000000000c9]',
+      kind: 'legal_opinion',
+      id: '00000000-0000-0000-0000-0000000000c9',
+      titleEn: 'Prospects on the contempt application',
+      titleTr: null,
+      subtitle: 'ELC/134/2013 · Opinion of counsel',
+      confidentiality: 'confidential',
+    },
+  ],
+};
+
 const ROUTES = [
   '/',
   '/project_info',
@@ -453,6 +592,7 @@ const ROUTES = [
   '/finance',
   '/documents',
   '/communication',
+  '/assistant',
   '/admin',
 ];
 
@@ -659,6 +799,35 @@ try {
       body: JSON.stringify(TEST_VERSIONS),
     }),
   );
+
+  await page.route('**/rest/v1/rpc/search_records', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(TEST_SEARCH_HITS),
+    }),
+  );
+
+  await page.route('**/rest/v1/ai_queries**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(TEST_AI_QUERIES),
+    }),
+  );
+
+  /** Swaps what the AI proxy answers, so both outcomes can be exercised. */
+  const proxyReturns = (payload, status = 200) =>
+    page.route('https://smoke.functions.test/ai-assistant', (route) =>
+      route.fulfill({
+        status,
+        contentType: 'application/json',
+        headers: { 'access-control-allow-origin': '*' },
+        body: JSON.stringify(payload),
+      }),
+    );
+
+  await proxyReturns(TEST_AI_ANSWER);
 
   // Served as an object or an array depending on which call it is, the way
   // PostgREST answers .maybeSingle() and a plain select differently.
@@ -1049,6 +1218,142 @@ try {
   await page.waitForTimeout(400);
   const path = new URL(page.url()).pathname;
   check(path === '/documents', 'in-app navigation', `→ ${path} (expected /documents)`);
+
+  // --- the one search box (M13-05, M13-06) ----------------------------------
+  //
+  // The box this replaces loaded five registers into the browser and filtered
+  // them with String.includes, so three of the four hits below were
+  // unreachable by it at any query. The fixture is the assertion.
+  pageErrors = [];
+  await page.goto(BASE + '/', { waitUntil: 'networkidle' });
+  await page.keyboard.press('Control+k');
+  await page.waitForTimeout(300);
+  const emptyBox = (await page.textContent('body')) ?? '';
+  check(
+    /On dokuz kütüğün|all nineteen registers/.test(emptyBox),
+    'the search box says it covers every register',
+  );
+  // The chips it used to open with asserted a capital figure and a court
+  // posture that no query produced — the same copy Faz 0 took off the footer.
+  check(
+    !/807\.3M/.test(emptyBox) && !/Status Quo|Mevcut Durum/.test(emptyBox),
+    'and no longer opens with typed-in figures and claims',
+  );
+
+  await page.keyboard.type('r');
+  await page.waitForTimeout(500);
+  const oneChar = (await page.textContent('body')) ?? '';
+  check(
+    /En az iki harf|Two characters at least/.test(oneChar),
+    'one character asks for another rather than matching the archive',
+  );
+
+  await page.keyboard.type('uhsat');
+  await page.waitForTimeout(900);
+  const searched = (await page.textContent('body')) ?? '';
+  check(
+    /Smoke Trust v County Government/.test(searched) &&
+      /Mütevelli toplantısı, Mart|Trustee sitting, March/.test(searched),
+    'a query reaches the legal register and the minutes in one list',
+  );
+  check(
+    /Servis yolunu açık tut|Keep the access road passable/.test(searched) &&
+      /Duruşmalar sürekli erteleniyor|Hearings keep being adjourned/.test(searched),
+    'and the obligations and the risk register too',
+  );
+  check(/MN\/I\/5141/.test(searched), 'the snippet shows why each row matched');
+  // Somebody about to forward a result should be able to see from the result
+  // that they must not.
+  check(/gizli|confidential/.test(searched), 'and each result is marked with the tier it sits at');
+  check(
+    /Bu aramayı kaydet|Save this search/.test(searched),
+    'a search worth repeating can be kept (M13-11)',
+  );
+  check(pageErrors.length === 0, 'the search box renders without a runtime error');
+
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(200);
+
+  // --- the assistant (M13-04, M13-07, M13-08, M13-09) -----------------------
+  pageErrors = [];
+  await page.goto(BASE + '/assistant', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(400);
+  const assistant = (await page.textContent('body')) ?? '';
+
+  // M13-07: five jobs, offered as a choice. There is no free-form system
+  // instruction field, because the instruction is the server's.
+  check(
+    /Arşive soru sor|Ask the archive/.test(assistant) &&
+      /Notları tutanağa|Notes into minutes/.test(assistant) &&
+      /Çeviri önerisi|Translation suggestion/.test(assistant) &&
+      /Haftalık özet|Weekly digest/.test(assistant) &&
+      /Uzun belge özeti|Long document summary/.test(assistant),
+    'the assistant offers the five defined uses and no chat box',
+  );
+  check(
+    /Kısıtlı kayıtlar hiçbir koşulda|Restricted records never reach the model/.test(assistant),
+    'and says plainly that restricted material never reaches the model',
+  );
+  check(
+    /Son sorulanlar|Recently asked/.test(assistant) &&
+      /What was decided about renewing the permit\?/.test(assistant),
+    'what has been asked is on the screen, not only in the table (M13-10)',
+  );
+
+  // An answer, with its citations.
+  await page
+    .locator('input[aria-label="Soru"], input[aria-label="Question"]')
+    .first()
+    .fill('What was decided about renewing the permit?');
+  await page.locator('button[type="submit"]').first().click();
+  await page.waitForTimeout(900);
+  const answered = (await page.textContent('body')) ?? '';
+  check(
+    /TASLAK — insan onayı gerekir|DRAFT — needs human approval/.test(answered),
+    'every answer comes out labelled a draft needing approval (M13-08)',
+  );
+  check(
+    /Dayandığı kayıtlar|What it rests on/.test(answered) &&
+      /Smoke Trust v County Government/.test(answered),
+    'and carries the records it rests on (M13-04)',
+  );
+  // M13-09. There is no save button; copying is the only thing offered,
+  // because putting this into a record is a person's act on that record's
+  // own screen.
+  check(
+    /kopyala|copy/.test(answered) && !/Kaydet ve|Save to record|Kayda yaz/.test(answered),
+    'and no way to write it into a record (M13-09)',
+  );
+  // The raw markers should not be left in the prose — they become links.
+  check(
+    !/\[legal_case:00000000/.test(answered),
+    'the citation markers are rendered as links rather than left as text',
+  );
+  check(pageErrors.length === 0, 'the assistant renders an answer without a runtime error');
+
+  // M13-08: asked for an opinion, it refuses and points at the record.
+  pageErrors = [];
+  await proxyReturns(TEST_AI_REFUSAL);
+  await page
+    .locator('input[aria-label="Soru"], input[aria-label="Question"]')
+    .first()
+    .fill('Should we appeal the order?');
+  await page.locator('button[type="submit"]').first().click();
+  await page.waitForTimeout(900);
+  const refused = (await page.textContent('body')) ?? '';
+  check(
+    /proje avukatının|question for the project advocate/.test(refused),
+    'a request for a legal opinion is refused and sent to the advocate (M13-08)',
+  );
+  check(
+    /Prospects on the contempt application/.test(refused),
+    'and the opinions already on record are what it points at',
+  );
+  check(
+    !/DRAFT — needs human approval/.test(refused),
+    'a refusal is not dressed up as a draft answer',
+  );
+  check(pageErrors.length === 0, 'and the refusal renders without a runtime error');
 } finally {
   await browser?.close();
   server.kill();
