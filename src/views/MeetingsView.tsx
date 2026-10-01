@@ -7,6 +7,7 @@ import { useAuthority } from '../api/adminHooks';
 import { QueryStatus } from '../components/QueryStatus';
 import { EmptyState } from '../components/EmptyState';
 import { AgendaPanel } from '../components/meetings/AgendaPanel';
+import { CapturePanel } from '../components/meetings/CapturePanel';
 import { TriagePanel } from '../components/meetings/TriagePanel';
 import { MINUTE_KEEPERS, actsAs, clearanceLabel, clearanceStyle } from '../lib/authority';
 import {
@@ -74,6 +75,11 @@ export const MeetingsView: React.FC = () => {
       <QueryStatus queries={[list]} />
 
       <AgendaPanel />
+
+      {/* Above the queue because it is what a person reaches for in a
+          room with no signal, and below the agenda because that is what
+          they came to the screen for. */}
+      <CapturePanel />
 
       {/* The queue sits above the list because it is the thing that is
           actually owed. The list is what happened; the queue is what was

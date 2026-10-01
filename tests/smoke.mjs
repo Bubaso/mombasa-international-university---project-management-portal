@@ -2155,15 +2155,31 @@ try {
 
   await proxyReturns(TEST_AI_ANSWER);
 
+  // Counts the writes M3-11 is about. A capture that is still on the device
+  // must not have produced any of these, and one that reached the record
+  // must have produced all three — which is only checkable by counting.
+  const writes = { meetings: 0, notes: 0, candidates: 0 };
+
   // Served as an object or an array depending on which call it is, the way
   // PostgREST answers .maybeSingle() and a plain select differently.
   await page.route('**/rest/v1/meetings**', (route) => {
+    if (route.request().method() === 'POST') writes.meetings += 1;
     const single = route.request().url().includes('id=eq.');
     return route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify(single ? TEST_MEETING : [TEST_MEETING]),
     });
+  });
+
+  await page.route('**/rest/v1/meeting_notes**', (route) => {
+    if (route.request().method() === 'POST') writes.notes += 1;
+    return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+  });
+
+  await page.route('**/rest/v1/action_candidates**', (route) => {
+    if (route.request().method() === 'POST') writes.candidates += 1;
+    return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
   });
 
   // A session in storage is what supabase-js reads on start, so this puts the
@@ -2315,6 +2331,91 @@ try {
     'a dropped line keeps its reason instead of vanishing (M3-07)',
   );
   check(pageErrors.length === 0, 'the triage queue renders without a page error');
+
+  // --- capturing a meeting with no connection (M3-11) ------------------------
+  // The browser is actually taken offline here rather than being asked to
+  // pretend. What is being checked is the distinction the panel exists to
+  // keep: a capture held on the device has sent NOTHING, and the screen says
+  // so in those words; when the connection returns it goes, and only then
+  // does anything call it recorded.
+  pageErrors = [];
+  await page.goto(BASE + '/meetings', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(300);
+
+  writes.meetings = 0;
+  writes.notes = 0;
+  writes.candidates = 0;
+
+  await page.context().setOffline(true);
+  await page.waitForTimeout(300);
+  const offline = (await page.textContent('body')) ?? '';
+  check(/bağlantı yok/.test(offline), 'the screen says the connection is gone (M3-11)');
+
+  await page
+    .locator('button')
+    .filter({ hasText: /^Toplantı yaz$/ })
+    .first()
+    .click();
+  await page.waitForTimeout(200);
+  const captureForm = page.locator('form[aria-label="Bağlantısız toplantı kaydı"]');
+  await captureForm.locator('input').first().fill('Saha toplantısı — bağlantısız');
+  const areas = captureForm.locator('textarea');
+  await areas.nth(0).fill('Şantiyede görüşüldü; jeneratör arızası ve beton dökümü gecikmesi.');
+  await areas
+    .nth(1)
+    .fill('Mühendislik raporu Cumartesiye kadar teslim edilecek\nJeneratör için teklif alınacak');
+  await page
+    .locator('button')
+    .filter({ hasText: /^Bu cihazda tut$/ })
+    .first()
+    .click();
+  await page.waitForTimeout(500);
+
+  const heldText = (await page.textContent('body')) ?? '';
+  check(
+    /bu cihazda — kayıtta değil/.test(heldText),
+    'a capture says it is on the device and not on the record',
+  );
+  check(
+    /1 kayıt bu cihazda, kayıtta değil/.test(heldText),
+    'and the count is of what has NOT reached the record',
+  );
+  check(!/kaydedildi|Kaydedildi/.test(heldText), 'nothing on the offline screen calls it saved');
+  // The measure that matters: no write was attempted while offline.
+  check(
+    writes.meetings === 0 && writes.notes === 0 && writes.candidates === 0,
+    'and not one byte went to the server while the connection was down',
+    `meetings=${writes.meetings} notes=${writes.notes} candidates=${writes.candidates}`,
+  );
+
+  // It survives a reload, which is the whole point of holding it in a store
+  // rather than in React state.
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(600);
+  const afterReload = (await page.textContent('body')) ?? '';
+  check(
+    /Saha toplantısı — bağlantısız/.test(afterReload),
+    'the capture is still there after the tab is reloaded',
+  );
+
+  // The connection returns. Nobody presses anything.
+  await page.context().setOffline(false);
+  await page.waitForTimeout(1200);
+  const afterSync = (await page.textContent('body')) ?? '';
+  check(
+    writes.meetings === 1 && writes.notes === 1 && writes.candidates === 1,
+    'the connection returning sends the meeting, the minute and the lines',
+    `meetings=${writes.meetings} notes=${writes.notes} candidates=${writes.candidates}`,
+  );
+  check(
+    /1 kayıt kütüğe geçti/.test(afterSync),
+    'and the screen reports how many reached the record',
+  );
+  check(
+    !/bu cihazda — kayıtta değil/.test(afterSync),
+    'the queue is empty because the record now holds it',
+  );
+  check(pageErrors.length === 0, 'the capture panel renders without a page error');
 
   // --- the meeting record ---------------------------------------------------
   // Every M3 record type renders at once here, so a shape mistake in any of

@@ -4956,6 +4956,106 @@ $$;
 reset role;
 
 -- ===========================================================================
+-- Re-sending a capture (M3-11)
+-- ===========================================================================
+--
+-- A meeting written down with no connection is sent when the connection
+-- returns, and the interesting failure is the partial one: the meeting goes,
+-- the link drops, the lines do not. The next attempt therefore repeats all
+-- three writes, which is only safe if repeating them cannot double anything.
+--
+-- That safety is not in the client. It is these three keys, and this section
+-- exists so the claim is a tested fact rather than a comment in a TypeScript
+-- file: the meeting's own primary key, the note's (meeting, section,
+-- language), and the candidate's (meeting, sequence).
+
+set role authenticated;
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- director
+
+-- The device picks the id, which is what lets a retry recognise its own work.
+insert into meetings (id, title, held_at, kind, status, minutes_status, confidentiality)
+values ('0e000000-0000-0000-0000-00000000ca91', 'Saha toplantısı — bağlantısız',
+        '2026-04-20 09:00+03', 'internal', 'completed', 'draft', 'internal');
+
+select pg_temp.check('a capture may name its own meeting id',
+  (select count(*) from meetings where id = '0e000000-0000-0000-0000-00000000ca91'), 1::bigint);
+
+do $$
+begin
+  begin
+    insert into meetings (id, title, held_at, kind, status, minutes_status, confidentiality)
+    values ('0e000000-0000-0000-0000-00000000ca91', 'Saha toplantısı — bağlantısız',
+            '2026-04-20 09:00+03', 'internal', 'completed', 'draft', 'internal');
+    raise exception 'FAIL re-sending a capture made a second meeting';
+  exception
+    when unique_violation then
+      raise notice 'ok   re-sending one does not make a second meeting (M3-11)';
+  end;
+end;
+$$;
+
+-- The minute: upserted on its own key, so sending it twice leaves one note
+-- holding the later text rather than two notes disagreeing.
+insert into meeting_notes (meeting_id, section, language, body)
+values ('0e000000-0000-0000-0000-00000000ca91', 'discussed', 'tr', 'Jeneratör arızası görüşüldü.')
+on conflict (meeting_id, section, language) do update set body = excluded.body;
+
+insert into meeting_notes (meeting_id, section, language, body)
+values ('0e000000-0000-0000-0000-00000000ca91', 'discussed', 'tr',
+        'Jeneratör arızası ve beton dökümü gecikmesi görüşüldü.')
+on conflict (meeting_id, section, language) do update set body = excluded.body;
+
+select pg_temp.check('the minute arrives once however many times it is sent',
+  (select count(*) from meeting_notes
+    where meeting_id = '0e000000-0000-0000-0000-00000000ca91'), 1::bigint);
+
+-- The action lines. A second send inserts the same (meeting, sequence) pairs
+-- and must add nothing — and must not rewrite what is there either, because
+-- the sentence is the record.
+insert into action_candidates (meeting_id, sequence, text_tr, confidentiality)
+values ('0e000000-0000-0000-0000-00000000ca91', 1,
+        'Mühendislik raporu Cumartesiye kadar teslim edilecek', 'internal'),
+       ('0e000000-0000-0000-0000-00000000ca91', 2,
+        'Jeneratör için teklif alınacak', 'internal');
+
+insert into action_candidates (meeting_id, sequence, text_tr, confidentiality)
+values ('0e000000-0000-0000-0000-00000000ca91', 1,
+        'Mühendislik raporu Cumartesiye kadar teslim edilecek', 'internal'),
+       ('0e000000-0000-0000-0000-00000000ca91', 2,
+        'Jeneratör için teklif alınacak', 'internal')
+on conflict (meeting_id, sequence) do nothing;
+
+select pg_temp.check('and the lines arrive once, not twice',
+  (select count(*) from action_candidates
+    where meeting_id = '0e000000-0000-0000-0000-00000000ca91'), 2::bigint);
+
+do $$
+begin
+  begin
+    insert into action_candidates (meeting_id, sequence, text_tr, confidentiality)
+    values ('0e000000-0000-0000-0000-00000000ca91', 1, 'Başka bir cümle', 'internal');
+    raise exception 'FAIL two candidates took the same place in one minute';
+  exception
+    when unique_violation then
+      raise notice 'ok   without the on-conflict clause the second send is refused outright';
+  end;
+end;
+$$;
+
+-- What the whole arrangement is for: the lines came off a device with no
+-- signal and they are candidates, not actions. Nobody invented an owner or a
+-- date in a room with no network.
+select pg_temp.check('a captured line is a candidate and not an action',
+  (select count(*) from action_items
+    where meeting_id = '0e000000-0000-0000-0000-00000000ca91'), 0::bigint);
+select pg_temp.check('waiting in the queue with nothing to go on',
+  (select count(*) from action_triage
+    where meeting_id = '0e000000-0000-0000-0000-00000000ca91'
+      and state = 'pending' and not names_an_owner and not names_a_date), 2::bigint);
+
+reset role;
+
+-- ===========================================================================
 -- Compiled reports (M12-06 … M12-09)
 -- ===========================================================================
 
