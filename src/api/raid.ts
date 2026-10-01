@@ -24,8 +24,11 @@ import type {
   RiskEscalation,
   RiskMatrixCell,
   RiskResponse,
+  RiskScenario,
   RiskScoreChange,
   RiskState,
+  ScenarioOverlap,
+  ScenarioState,
 } from '../types';
 
 interface NamedRef {
@@ -490,5 +493,130 @@ export async function createDependency(input: {
 
 export async function deleteDependency(id: string): Promise<void> {
   const { error } = await supabase.from('dependencies').delete().eq('id', id);
+  fail(error);
+}
+
+// ---------------------------------------------------------------------------
+// Scenario and sensitivity analysis (M6-12)
+// ---------------------------------------------------------------------------
+
+export async function fetchScenarios(): Promise<RiskScenario[]> {
+  const { data, error } = await supabase
+    .from('scenario_register')
+    .select('*')
+    .order('worst_recorded_score', { ascending: false, nullsFirst: false });
+  fail(error);
+  return (
+    (data ?? []) as {
+      scenario_id: string;
+      name_en: string;
+      name_tr: string | null;
+      rationale_en: string;
+      rationale_tr: string | null;
+      horizon_on: string | null;
+      state: ScenarioState;
+      retired_reason: string | null;
+      members: number;
+      is_a_scenario: boolean;
+      worst_recorded_score: number | null;
+      recorded_scores: number[] | null;
+      members_without_an_owner: number;
+      members_without_a_trigger: number;
+      members_without_a_response: number;
+      members_already_materialised: number;
+      members_rescored_upward_lately: number;
+      confidentiality: RiskScenario['confidentiality'];
+    }[]
+  ).map((row) => ({
+    scenarioId: row.scenario_id,
+    nameEn: row.name_en,
+    nameTr: row.name_tr,
+    rationaleEn: row.rationale_en,
+    rationaleTr: row.rationale_tr,
+    horizonOn: row.horizon_on,
+    state: row.state,
+    retiredReason: row.retired_reason,
+    members: Number(row.members),
+    isAScenario: row.is_a_scenario,
+    worstRecordedScore: row.worst_recorded_score == null ? null : Number(row.worst_recorded_score),
+    recordedScores: (row.recorded_scores ?? []).map(Number),
+    membersWithoutAnOwner: Number(row.members_without_an_owner),
+    membersWithoutATrigger: Number(row.members_without_a_trigger),
+    membersWithoutAResponse: Number(row.members_without_a_response),
+    membersAlreadyMaterialised: Number(row.members_already_materialised),
+    membersRescoredUpwardLately: Number(row.members_rescored_upward_lately),
+    confidentiality: row.confidentiality,
+  }));
+}
+
+/** The analysis: what more than one risk in each scenario reaches. */
+export async function fetchScenarioOverlaps(): Promise<ScenarioOverlap[]> {
+  const { data, error } = await supabase
+    .from('scenario_overlap')
+    .select('*')
+    .order('risks_reaching', { ascending: false });
+  fail(error);
+  return (
+    (data ?? []) as {
+      scenario_id: string;
+      kind: string;
+      target_id: string | null;
+      target_label: string | null;
+      risks_reaching: number;
+      risk_ids: string[] | null;
+    }[]
+  ).map((row) => ({
+    scenarioId: row.scenario_id,
+    kind: row.kind,
+    targetId: row.target_id,
+    targetLabel: row.target_label,
+    risksReaching: Number(row.risks_reaching),
+    riskIds: row.risk_ids ?? [],
+  }));
+}
+
+export async function createScenario(input: {
+  nameEn: string;
+  rationaleEn: string;
+  horizonOn: string | null;
+  riskIds: string[];
+}): Promise<string> {
+  const { data, error } = await supabase
+    .from('risk_scenarios')
+    .insert({
+      name_en: input.nameEn,
+      rationale_en: input.rationaleEn,
+      horizon_on: input.horizonOn,
+    })
+    .select('id')
+    .single();
+  fail(error);
+  const id = (data as { id: string }).id;
+
+  if (input.riskIds.length > 0) {
+    const { error: memberError } = await supabase
+      .from('risk_scenario_members')
+      .insert(input.riskIds.map((riskId) => ({ scenario_id: id, risk_id: riskId })));
+    fail(memberError);
+  }
+  return id;
+}
+
+export async function addToScenario(input: { scenarioId: string; riskId: string }): Promise<void> {
+  const { error } = await supabase
+    .from('risk_scenario_members')
+    .insert({ scenario_id: input.scenarioId, risk_id: input.riskId });
+  fail(error);
+}
+
+export async function removeFromScenario(input: {
+  scenarioId: string;
+  riskId: string;
+}): Promise<void> {
+  const { error } = await supabase
+    .from('risk_scenario_members')
+    .delete()
+    .eq('scenario_id', input.scenarioId)
+    .eq('risk_id', input.riskId);
   fail(error);
 }

@@ -6979,6 +6979,275 @@ begin
   end;
 end;
 $$;
+-- ===========================================================================
+-- A scenario that refuses a number (0040): M6-12
+-- ===========================================================================
+--
+-- The one thing this must not do is produce a figure. Likelihood and impact
+-- are ordinal scales from one to five, so they cannot be added across risks,
+-- and the risks are correlated with nothing recording the correlation, so
+-- they cannot be multiplied either. What it can do is say what the risks in
+-- a set have in common, and every assertion below is about one of those two
+-- halves.
+
+set role authenticated;
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- director
+
+-- An assumption two risks both rest on, so breaking it takes both.
+insert into assumptions
+  (id, statement_en, risk_category, state, last_checked_on, confidentiality)
+values
+  ('ab000000-0000-0000-0000-000000000001',
+   'The partner trust keeps prosecuting the appeal', 'legal', 'shaky',
+   current_date - 14, 'internal');
+
+insert into risks
+  (id, title_en, category, likelihood, impact, owner_profile_id, state, response,
+   response_plan_en, trigger_en, source_assumption_id, confidentiality)
+values
+  -- Worst in the set: 4 x 4 = 16.
+  ('ac000000-0000-0000-0000-000000000001', 'The partner withdraws from the appeal',
+   'legal', 4, 4, '22222222-2222-2222-2222-222222222222', 'open', 'reduce',
+   'Brief counsel to be ready to carry it alone',
+   'Notice of withdrawal filed', 'ab000000-0000-0000-0000-000000000001', 'internal'),
+  -- 3 x 3 = 9, same assumption, same owner.
+  ('ac000000-0000-0000-0000-000000000002', 'Costs are awarded against the trust',
+   'financial', 3, 3, '22222222-2222-2222-2222-222222222222', 'open', 'accept',
+   'Hold a reserve against it', 'A costs ruling is listed',
+   'ab000000-0000-0000-0000-000000000001', 'internal'),
+  -- 2 x 3 = 6, no owner, no trigger and no response: three things the set
+  -- does not know about itself.
+  ('ac000000-0000-0000-0000-000000000003', 'An early monsoon floods the open slab',
+   'climate', 2, 3, null, 'open', null, null, null, null, 'internal');
+
+insert into risk_scenarios
+  (id, name_en, rationale_en, horizon_on, confidentiality)
+values
+  ('ad000000-0000-0000-0000-000000000001',
+   'The appeal collapses in the rainy season',
+   'All three rest on the partner continuing, and the costs ruling and the '
+   'monsoon fall in the same six weeks.',
+   current_date + 60, 'internal');
+
+insert into risk_scenario_members (scenario_id, risk_id) values
+  ('ad000000-0000-0000-0000-000000000001', 'ac000000-0000-0000-0000-000000000001'),
+  ('ad000000-0000-0000-0000-000000000001', 'ac000000-0000-0000-0000-000000000002'),
+  ('ad000000-0000-0000-0000-000000000001', 'ac000000-0000-0000-0000-000000000003');
+
+-- The worst recorded score, and nothing that looks like a combined one.
+select pg_temp.check('a scenario reports the worst recorded score in it',
+  (select worst_recorded_score from scenario_register
+    where scenario_id = 'ad000000-0000-0000-0000-000000000001'), 16);
+select pg_temp.check('and the scores themselves, in order',
+  (select recorded_scores from scenario_register
+    where scenario_id = 'ad000000-0000-0000-0000-000000000001'), '{16,9,6}'::int[]);
+-- 16 + 9 + 6 = 31, and 16 x 9 x 6 = 864. Neither appears anywhere in the
+-- row, because either would be a number with the shape of a measurement and
+-- none of its meaning.
+select pg_temp.check(
+  'and no column holds the sum of them, which an ordinal scale cannot support',
+  (select count(*) from (
+    select (to_jsonb(r) - 'recorded_scores') as row_json from scenario_register r
+    where r.scenario_id = 'ad000000-0000-0000-0000-000000000001') j,
+    jsonb_each_text(j.row_json) f
+   where f.value in ('31', '864')), 0::bigint);
+
+-- What the set does not know about itself.
+select pg_temp.check('a risk in the set with no owner is counted',
+  (select members_without_an_owner from scenario_register
+    where scenario_id = 'ad000000-0000-0000-0000-000000000001'), 1);
+select pg_temp.check('and one with no trigger, because nobody can tell whether it is happening',
+  (select members_without_a_trigger from scenario_register
+    where scenario_id = 'ad000000-0000-0000-0000-000000000001'), 1);
+select pg_temp.check('and one with no response decided',
+  (select members_without_a_response from scenario_register
+    where scenario_id = 'ad000000-0000-0000-0000-000000000001'), 1);
+select pg_temp.check('three risks make a scenario',
+  (select is_a_scenario from scenario_register
+    where scenario_id = 'ad000000-0000-0000-0000-000000000001'), true);
+
+-- The overlap. This is the analysis: what makes them land together.
+select pg_temp.check('the assumption two of them rest on is reported as shared',
+  (select risks_reaching from scenario_overlap
+    where scenario_id = 'ad000000-0000-0000-0000-000000000001'
+      and kind = 'assumption'), 2);
+select pg_temp.check('and named, so a reader knows which assumption to go and check',
+  (select target_label from scenario_overlap
+    where scenario_id = 'ad000000-0000-0000-0000-000000000001'
+      and kind = 'assumption'),
+  'The partner trust keeps prosecuting the appeal');
+select pg_temp.check('the owner holding two of them is reported too',
+  (select risks_reaching from scenario_overlap
+    where scenario_id = 'ad000000-0000-0000-0000-000000000001'
+      and kind = 'owner'), 2);
+
+-- One mitigation between two risks: if that action slips, both land. This is
+-- the overlap nobody finds reading the register risk by risk.
+insert into action_items
+  (id, text_en, due_date, owner_profile_id, confidentiality)
+values
+  ('ae000000-0000-0000-0000-000000000001', 'Brief leading counsel to carry the appeal alone',
+   current_date + 20, '22222222-2222-2222-2222-222222222222', 'internal');
+insert into risk_actions (risk_id, action_item_id) values
+  ('ac000000-0000-0000-0000-000000000001', 'ae000000-0000-0000-0000-000000000001'),
+  ('ac000000-0000-0000-0000-000000000002', 'ae000000-0000-0000-0000-000000000001');
+
+select pg_temp.check('one action mitigating two of them is named as the single point it is',
+  (select risks_reaching from scenario_overlap
+    where scenario_id = 'ad000000-0000-0000-0000-000000000001'
+      and kind = 'mitigating_action'), 2);
+
+-- A thing two of them block.
+insert into dependencies
+  (blocker_risk_id, dependent_label, note_en, confidentiality)
+values
+  ('ac000000-0000-0000-0000-000000000001', 'Handover of the first teaching block',
+   'No handover while title is contested', 'internal'),
+  ('ac000000-0000-0000-0000-000000000003', 'Handover of the first teaching block',
+   'No handover with the slab under water', 'internal');
+
+select pg_temp.check('and the work two of them block is reported as one piece of work',
+  (select risks_reaching from scenario_overlap
+    where scenario_id = 'ad000000-0000-0000-0000-000000000001'
+      and kind = 'blocks the same work'), 2);
+
+-- Something only one risk reaches is not an overlap, which is what makes the
+-- rows above mean anything. Both of the new links below are held by exactly
+-- one member: an assumption of its own, and an owner of its own. Without
+-- them the whole "> 1" rule would be untestable — a register that called
+-- every link an overlap would pass.
+insert into assumptions
+  (id, statement_en, risk_category, state, last_checked_on, confidentiality)
+values
+  ('ab000000-0000-0000-0000-000000000002',
+   'The rains come no earlier than the ten-year mean', 'climate', 'unverified',
+   null, 'internal');
+update risks set source_assumption_id = 'ab000000-0000-0000-0000-000000000002'
+ where id = 'ac000000-0000-0000-0000-000000000003';
+
+insert into risks
+  (id, title_en, category, likelihood, impact, owner_profile_id, state, response,
+   response_plan_en, trigger_en, confidentiality)
+values
+  ('ac000000-0000-0000-0000-000000000004', 'A second court lists a conflicting hearing',
+   'legal', 2, 2, '11111111-1111-1111-1111-111111111111', 'open', 'accept',
+   'Live with the clash', 'Two hearings listed on one day', 'internal');
+insert into risk_scenario_members (scenario_id, risk_id) values
+  ('ad000000-0000-0000-0000-000000000001', 'ac000000-0000-0000-0000-000000000004');
+
+select pg_temp.check('a link only one risk in the set reaches is not called an overlap',
+  (select count(*) from scenario_overlap
+    where scenario_id = 'ad000000-0000-0000-0000-000000000001'
+      and risks_reaching < 2), 0::bigint);
+select pg_temp.check('and the set does hold two such links, so the rule has something to exclude',
+  (select count(*) from risks r
+    join risk_scenario_members m on m.risk_id = r.id
+   where m.scenario_id = 'ad000000-0000-0000-0000-000000000001'
+     and (r.source_assumption_id = 'ab000000-0000-0000-0000-000000000002'
+          or r.owner_profile_id = '11111111-1111-1111-1111-111111111111')),
+  2::bigint);
+
+-- A scenario holding a risk that has already landed is not hypothetical, and
+-- the register says so rather than leaving it in the list.
+update risks set state = 'materialised'
+ where id = 'ac000000-0000-0000-0000-000000000004';
+select pg_temp.check('a scenario holding a risk that already happened says so',
+  (select members_already_materialised from scenario_register
+    where scenario_id = 'ad000000-0000-0000-0000-000000000001'), 1);
+
+-- The honest half of sensitivity: which of them are moving, from the score
+-- history rather than from an impression.
+-- 3 x 3 becomes 5 x 3, which is 15: a real rise that does not overtake the
+-- worst risk in the set.
+update risks set likelihood = 5 where id = 'ac000000-0000-0000-0000-000000000002';
+select pg_temp.check('a risk rescored upward lately is counted as one that is moving',
+  (select members_rescored_upward_lately from scenario_register
+    where scenario_id = 'ad000000-0000-0000-0000-000000000001'), 1);
+select pg_temp.check('and a rise that does not overtake the worst risk leaves the worst case alone',
+  (select worst_recorded_score from scenario_register
+    where scenario_id = 'ad000000-0000-0000-0000-000000000001'), 16);
+
+-- 5 x 4 is 20, which does overtake it. The worst case is a maximum of
+-- recorded scores, so it follows the register rather than being stored.
+update risks set impact = 4 where id = 'ac000000-0000-0000-0000-000000000002';
+select pg_temp.check('while one that does overtake it moves the worst case',
+  (select worst_recorded_score from scenario_register
+    where scenario_id = 'ad000000-0000-0000-0000-000000000001'), 20);
+select pg_temp.check('and the scores stay the real ones, in order',
+  (select recorded_scores from scenario_register
+    where scenario_id = 'ad000000-0000-0000-0000-000000000001'), '{20,16,6,4}'::int[]);
+
+-- A scenario is a reason, not a list.
+do $$
+begin
+  begin
+    insert into risk_scenarios (name_en, rationale_en, confidentiality)
+    values ('Everything goes wrong', '   ', 'internal');
+    raise exception 'FAIL a scenario was recorded with no reasoning';
+  exception
+    when check_violation then
+      raise notice 'ok   a scenario has to say why those risks land together';
+  end;
+end;
+$$;
+
+do $$
+begin
+  begin
+    update risk_scenarios set state = 'retired'
+     where id = 'ad000000-0000-0000-0000-000000000001';
+    raise exception 'FAIL a scenario was retired with no reason';
+  exception
+    when check_violation then
+      raise notice 'ok   and why it was retired, when it is';
+  end;
+end;
+$$;
+
+-- A scenario must not become a way to learn that a restricted risk exists.
+update risks set confidentiality = 'restricted'
+ where id = 'ac000000-0000-0000-0000-000000000001';
+
+-- A restricted risk that is not already in the set, so the refusal below is
+-- the policy's rather than the primary key's.
+insert into risks
+  (id, title_en, category, likelihood, impact, state, response, response_plan_en,
+   trigger_en, confidentiality)
+values
+  ('ac000000-0000-0000-0000-000000000005', 'A named individual is approached directly',
+   'reputational', 2, 4, 'open', 'avoid', 'Nothing in writing',
+   'An approach is reported', 'restricted');
+
+select pg_temp.act_as('44444444-4444-4444-4444-444444444444');  -- field team
+select pg_temp.check('somebody below the tier does not see the restricted risk in the set',
+  (select count(*) from risk_scenario_members
+    where scenario_id = 'ad000000-0000-0000-0000-000000000001'), 3::bigint);
+do $$
+begin
+  begin
+    insert into risk_scenario_members (scenario_id, risk_id)
+    values ('ad000000-0000-0000-0000-000000000001', 'ac000000-0000-0000-0000-000000000005');
+    raise exception 'FAIL a risk nobody may read was added to a scenario';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   nor can they add one they cannot read';
+  end;
+end;
+$$;
+
+select pg_temp.act_as('77777777-7777-7777-7777-777777777777');  -- contractor
+do $$
+begin
+  begin
+    insert into risk_scenarios (name_en, rationale_en, confidentiality)
+    values ('Outsider scenario', 'Because.', 'internal');
+    raise exception 'FAIL an outside firm wrote a scenario into the register';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   an outside firm does not write scenarios';
+  end;
+end;
+$$;
 reset role;
 
 \echo ''

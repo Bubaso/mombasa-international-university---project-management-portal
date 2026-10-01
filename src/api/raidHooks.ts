@@ -97,3 +97,31 @@ export const useDeleteDependency = () => {
   const invalidate = useInvalidator(['dependencies']);
   return useMutation({ mutationFn: raid.deleteDependency, onSuccess: invalidate });
 };
+
+// --- scenario and sensitivity analysis (M6-12) ------------------------------
+
+export const useScenarios = () =>
+  useQuery({ queryKey: ['riskScenarios'], queryFn: raid.fetchScenarios });
+
+export const useScenarioOverlaps = () =>
+  useQuery({ queryKey: ['scenarioOverlaps'], queryFn: raid.fetchScenarioOverlaps });
+
+const SCENARIO_KEYS = ['riskScenarios', 'scenarioOverlaps'];
+
+export const useCreateScenario = () => {
+  // The name and the reasoning are bilingual like every other register, so
+  // the sweep runs: a scenario a trustee can only read in English is a
+  // scenario the board cannot discuss.
+  const onSuccess = useTranslatingInvalidator(SCENARIO_KEYS, 'risk_scenarios');
+  return useMutation({ mutationFn: raid.createScenario, onSuccess });
+};
+
+export const useAddToScenario = () => {
+  const invalidate = useInvalidator(SCENARIO_KEYS);
+  return useMutation({ mutationFn: raid.addToScenario, onSuccess: invalidate });
+};
+
+export const useRemoveFromScenario = () => {
+  const invalidate = useInvalidator(SCENARIO_KEYS);
+  return useMutation({ mutationFn: raid.removeFromScenario, onSuccess: invalidate });
+};

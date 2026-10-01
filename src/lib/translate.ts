@@ -119,6 +119,7 @@ const BASES: Record<string, string[]> = {
   procurement_candidates: ['decision_note', 'references', 'scope', 'strengths', 'weaknesses'],
   procurement_requests: ['justification', 'need'],
   project_phases: ['name', 'objective', 'scope'],
+  risk_scenarios: ['name', 'rationale'],
   risks: ['detail', 'early_warning', 'response_plan', 'title', 'trigger'],
   site_incidents: ['description', 'intervention'],
   site_inspections: ['summary'],

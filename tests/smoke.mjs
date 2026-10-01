@@ -1562,6 +1562,79 @@ const TEST_PERIODS = [
   },
 ];
 
+// ---------------------------------------------------------------------------
+// Scenario and sensitivity analysis (M6-12, 0040)
+// ---------------------------------------------------------------------------
+//
+// Scores 16, 15 and 6. Their sum is 37 and their product 1440, and the screen
+// must show neither: the scales are ordinal and the risks are correlated, so
+// either figure would be invented. What it shows is the maximum and the
+// overlap.
+
+const TEST_SCENARIOS = [
+  {
+    scenario_id: '00000000-0000-0000-0000-000000000e81',
+    name_en: 'The appeal collapses in the rainy season',
+    name_tr: null,
+    rationale_en:
+      'All three rest on the partner continuing, and the costs ruling and the monsoon fall in the same six weeks.',
+    rationale_tr: null,
+    horizon_on: '2026-12-01',
+    state: 'considered',
+    retired_reason: null,
+    members: 3,
+    is_a_scenario: true,
+    worst_recorded_score: 16,
+    recorded_scores: [16, 15, 6],
+    members_without_an_owner: 1,
+    members_without_a_trigger: 1,
+    members_without_a_response: 1,
+    members_already_materialised: 1,
+    members_rescored_upward_lately: 1,
+    confidentiality: 'internal',
+  },
+  {
+    // One risk is not a scenario. Reported rather than refused.
+    scenario_id: '00000000-0000-0000-0000-000000000e82',
+    name_en: 'A single worry somebody started writing',
+    name_tr: null,
+    rationale_en: 'Not finished yet.',
+    rationale_tr: null,
+    horizon_on: null,
+    state: 'considered',
+    retired_reason: null,
+    members: 1,
+    is_a_scenario: false,
+    worst_recorded_score: 9,
+    recorded_scores: [9],
+    members_without_an_owner: 0,
+    members_without_a_trigger: 0,
+    members_without_a_response: 0,
+    members_already_materialised: 0,
+    members_rescored_upward_lately: 0,
+    confidentiality: 'internal',
+  },
+];
+
+const TEST_SCENARIO_OVERLAPS = [
+  {
+    scenario_id: '00000000-0000-0000-0000-000000000e81',
+    kind: 'assumption',
+    target_id: '00000000-0000-0000-0000-000000000e91',
+    target_label: 'The partner trust keeps prosecuting the appeal',
+    risks_reaching: 2,
+    risk_ids: ['00000000-0000-0000-0000-000000000ea1', '00000000-0000-0000-0000-000000000ea2'],
+  },
+  {
+    scenario_id: '00000000-0000-0000-0000-000000000e81',
+    kind: 'mitigating_action',
+    target_id: '00000000-0000-0000-0000-000000000eb1',
+    target_label: 'Brief leading counsel to carry the appeal alone',
+    risks_reaching: 2,
+    risk_ids: ['00000000-0000-0000-0000-000000000ea1', '00000000-0000-0000-0000-000000000ea2'],
+  },
+];
+
 const TEST_REVIEWS = [
   {
     id: '00000000-0000-0000-0000-000000000f41',
@@ -2839,6 +2912,8 @@ try {
   await serve('**/rest/v1/contract_terms**', TEST_CONTRACT_TERMS);
   await serve('**/rest/v1/contract_settlement**', TEST_SETTLEMENT);
   await serve('**/rest/v1/financial_close**', TEST_PERIODS);
+  await serve('**/rest/v1/scenario_register**', TEST_SCENARIOS);
+  await serve('**/rest/v1/scenario_overlap**', TEST_SCENARIO_OVERLAPS);
   await serve('**/rest/v1/contract_milestones**', TEST_CONTRACT_MILESTONES);
   await serve('**/rest/v1/milestone_matching**', TEST_MILESTONE_MATCHING);
   await serve('**/rest/v1/unscheduled_valuations**', TEST_UNSCHEDULED_VALUATIONS);
@@ -3472,6 +3547,48 @@ try {
   check(
     pageErrors.length === 0 && /portal bilemiyor|the portal cannot say/.test(dependencyView),
     'a dependency the portal cannot judge says so instead of guessing',
+  );
+
+  // M6-12: a scenario that refuses a number.
+  await page
+    .locator('button')
+    .filter({ hasText: /^Senaryolar$|^Scenarios$/ })
+    .first()
+    .click();
+  await page.waitForTimeout(400);
+  const scenarioView = (await page.textContent('body')) ?? '';
+  const scenarioList = (await page.textContent('ul[aria-label="Senaryolar"]')) ?? '';
+  // 16 + 15 + 6 = 37, and 16 x 15 x 6 = 1440. Neither may appear.
+  check(
+    /kümedeki en yüksek gerçek skor 16|highest real score in the set 16/.test(scenarioList) &&
+      !/\b37\b/.test(scenarioList) &&
+      !/\b1440\b/.test(scenarioList),
+    'a scenario shows the highest real score and no combined figure (M6-12)',
+  );
+  check(
+    /sıralı ölçekler|ordinal scales/.test(scenarioView) &&
+      /korelasyonu hiçbir yerde kayıtlı değil|correlation is recorded nowhere/.test(scenarioView),
+    'and says why there is none, so the missing number does not read as an oversight',
+  );
+  check(
+    /aynı varsayıma dayanıyor|rest on the same assumption/.test(scenarioList) &&
+      /aynı aksiyonla azaltılıyor|mitigated by the same action/.test(scenarioList),
+    'the analysis is what the risks share, named from recorded links',
+  );
+  check(
+    /zaten gerçekleşti|already happened/.test(scenarioList) &&
+      /tetikleyici kayıtlı değil|no trigger recorded/.test(scenarioList),
+    'and the set says what it does not know about itself',
+  );
+  check(
+    /iki riskten azı senaryo değil|fewer than two is not a scenario/.test(scenarioList),
+    'a set of one is named as not yet a scenario rather than refused',
+  );
+  check(
+    /son 180 günde yukarı yeniden puanlandı|rescored upward in the last 180 days/.test(
+      scenarioList,
+    ),
+    'and sensitivity is the recorded score history, not a simulation',
   );
 
   await actAs(EXTERNAL_AUTHORITY);

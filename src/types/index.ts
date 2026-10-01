@@ -2504,3 +2504,53 @@ export interface FinancialPeriod {
   addedAfterTheCloseKes: number;
   confidentiality: Confidentiality;
 }
+
+// ---------------------------------------------------------------------------
+// Scenario and sensitivity analysis (M6-12, 0040)
+// ---------------------------------------------------------------------------
+
+export type ScenarioState = 'considered' | 'retired';
+
+/**
+ * A set of risks somebody thinks could land together, and what the register
+ * can honestly say about it.
+ *
+ * There is no combined score and no combined likelihood, here or in the
+ * database. `likelihood` and `impact` are ordinal scales from one to five, so
+ * they cannot be added across risks; and the risks are correlated with
+ * nothing recording the correlation, so they cannot be multiplied either.
+ * `worstRecordedScore` is a maximum of real scores, which is a comparison the
+ * data supports.
+ */
+export interface RiskScenario {
+  scenarioId: string;
+  nameEn: string;
+  nameTr: string | null;
+  rationaleEn: string;
+  rationaleTr: string | null;
+  horizonOn: string | null;
+  state: ScenarioState;
+  retiredReason: string | null;
+  members: number;
+  /** Two risks or it is not a scenario. Reported, not refused. */
+  isAScenario: boolean;
+  worstRecordedScore: number | null;
+  recordedScores: number[];
+  membersWithoutAnOwner: number;
+  membersWithoutATrigger: number;
+  membersWithoutAResponse: number;
+  membersAlreadyMaterialised: number;
+  /** The honest half of sensitivity, from the recorded score history. */
+  membersRescoredUpwardLately: number;
+  confidentiality: Confidentiality;
+}
+
+/** A thing more than one risk in a scenario reaches. */
+export interface ScenarioOverlap {
+  scenarioId: string;
+  kind: string;
+  targetId: string | null;
+  targetLabel: string | null;
+  risksReaching: number;
+  riskIds: string[];
+}

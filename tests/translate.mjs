@@ -65,17 +65,19 @@ const {
 
 // --- the registry ----------------------------------------------------------
 
-// 42 tables and 70 pairs: the 41 and 68 measured when the registry was built,
-// plus site_incidents' narrative and response, which 0037 added. The numbers
+// 43 tables and 72 pairs: the 41 and 68 measured when the registry was built,
+// plus site_incidents' narrative and response (0037) and a scenario's name
+// and reasoning (0040) — a scenario a trustee can only read in English is a
+// scenario the board cannot discuss. The numbers
 // are hard-coded so a new bilingual table cannot arrive without somebody
 // deciding whether a machine may write into it.
 check(
-  TRANSLATED_TABLES.length === 42,
+  TRANSLATED_TABLES.length === 43,
   'the registry covers every bilingual table it may write to',
   `${TRANSLATED_TABLES.length}`,
 );
 check(
-  TRANSLATED_TABLES.reduce((n, t) => n + fieldsOf(t).length, 0) === 70,
+  TRANSLATED_TABLES.reduce((n, t) => n + fieldsOf(t).length, 0) === 72,
   'and every bilingual field pair in them',
   `${TRANSLATED_TABLES.reduce((n, t) => n + fieldsOf(t).length, 0)}`,
 );

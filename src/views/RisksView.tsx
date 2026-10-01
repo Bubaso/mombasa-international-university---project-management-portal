@@ -19,7 +19,14 @@
  *     of them breaks.
  */
 import React, { useState } from 'react';
-import { AlertTriangle, GitBranch, HelpCircle, ShieldAlert, TriangleAlert } from 'lucide-react';
+import {
+  AlertTriangle,
+  GitBranch,
+  HelpCircle,
+  Layers,
+  ShieldAlert,
+  TriangleAlert,
+} from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useAuthority } from '../api/adminHooks';
 import { RiskMatrix } from '../components/raid/RiskMatrix';
@@ -27,8 +34,9 @@ import { RiskList } from '../components/raid/RiskList';
 import { IssueList } from '../components/raid/IssueList';
 import { AssumptionList } from '../components/raid/AssumptionList';
 import { DependencyList } from '../components/raid/DependencyList';
+import { ScenarioList } from '../components/raid/ScenarioList';
 
-type Tab = 'risks' | 'issues' | 'assumptions' | 'dependencies';
+type Tab = 'risks' | 'issues' | 'assumptions' | 'dependencies' | 'scenarios';
 
 const acts = (roles: string[] | undefined, ...wanted: string[]) =>
   roles != null && wanted.some((role) => roles.includes(role));
@@ -55,6 +63,7 @@ export const RisksView: React.FC = () => {
     { key: 'issues', icon: AlertTriangle, label: tr ? 'Sorunlar' : 'Issues' },
     { key: 'assumptions', icon: HelpCircle, label: tr ? 'Varsayımlar' : 'Assumptions' },
     { key: 'dependencies', icon: GitBranch, label: tr ? 'Bağımlılıklar' : 'Dependencies' },
+    { key: 'scenarios', icon: Layers, label: tr ? 'Senaryolar' : 'Scenarios' },
   ];
 
   return (
@@ -99,6 +108,7 @@ export const RisksView: React.FC = () => {
       {tab === 'issues' && <IssueList canKeep={canKeep} />}
       {tab === 'assumptions' && <AssumptionList canKeep={canKeep} />}
       {tab === 'dependencies' && <DependencyList canKeep={canKeep} />}
+      {tab === 'scenarios' && <ScenarioList canKeep={canKeep} />}
     </div>
   );
 };
