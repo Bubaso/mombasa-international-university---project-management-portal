@@ -479,6 +479,35 @@ const TEST_SEARCH_HITS = [
     parent_id: '00000000-0000-0000-0000-0000000000e1',
     rank: 1.1,
   },
+  // Two more sections of the SAME minute. A meeting carries its note as four
+  // sections in two languages, so one record can match eight times; the
+  // modal must show one row and say how many places matched.
+  {
+    kind: 'meeting_note',
+    id: '00000000-0000-0000-0000-0000000000b2a',
+    title_en: 'Trustee sitting, March',
+    title_tr: 'Mütevelli toplantısı, Mart',
+    subtitle: 'outcomes · tr',
+    snippet: '«Ruhsat» yenilemesi için başvuru kararı',
+    occurred_on: '2026-03-11',
+    confidentiality: 'confidential',
+    parent_kind: 'meeting',
+    parent_id: '00000000-0000-0000-0000-0000000000e1',
+    rank: 1.05,
+  },
+  {
+    kind: 'meeting_note',
+    id: '00000000-0000-0000-0000-0000000000b2b',
+    title_en: 'Trustee sitting, March',
+    title_tr: 'Mütevelli toplantısı, Mart',
+    subtitle: 'actions · en',
+    snippet: 'Renew the «permit» before the end of the quarter',
+    occurred_on: '2026-03-11',
+    confidentiality: 'confidential',
+    parent_kind: 'meeting',
+    parent_id: '00000000-0000-0000-0000-0000000000e1',
+    rank: 1.0,
+  },
   {
     kind: 'obligation',
     id: '00000000-0000-0000-0000-0000000000b3',
@@ -2274,6 +2303,17 @@ try {
     'and the obligations and the risk register too',
   );
   check(/MN\/I\/5141/.test(searched), 'the snippet shows why each row matched');
+  // Three of the fixture's hits are three sections of ONE minute. A list that
+  // shows them as three rows is a list where one meeting crowds out the rest,
+  // which is what the real imported archive did.
+  check(
+    /\+2 yerde daha geçiyor|\+2 more matches here/.test(searched),
+    'sections of one minute collapse into one row that says how many matched',
+  );
+  check(
+    (searched.match(/Mütevelli toplantısı, Mart/g) ?? []).length === 1,
+    'so the meeting appears once, not once per paragraph',
+  );
   // Somebody about to forward a result should be able to see from the result
   // that they must not.
   check(/gizli|confidential/.test(searched), 'and each result is marked with the tier it sits at');

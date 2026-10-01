@@ -115,5 +115,38 @@ export function routeFor(hit: { kind: SearchKind; id: string; parentId: string |
   return shape.base;
 }
 
+/**
+ * One row per record, not one per matching paragraph.
+ *
+ * Found on the real archive. A meeting carries its minute as four note rows —
+ * agenda, discussed, actions, outcomes — in two languages, so eight rows can
+ * belong to one meeting. Searching the imported archive for a name that runs
+ * through two meetings returned nine results that were two records, and the
+ * nine all opened the same two screens.
+ *
+ * Collapsing is by DESTINATION, and only where the destination names a
+ * record. A register root must not collapse: ten risks all route to /risks,
+ * and folding them into one row would hide nine risks rather than nine
+ * paragraphs. The ordering survives because the search returns its hits by
+ * rank and the first of a group is kept.
+ */
+export function collapseByRecord<
+  T extends { kind: SearchKind; id: string; parentId: string | null },
+>(hits: T[]): { hit: T; alsoMatched: number }[] {
+  const groups = new Map<string, { hit: T; alsoMatched: number }>();
+  for (const hit of hits) {
+    const shape = SHAPE[hit.kind];
+    // A record-specific destination is groupable; a register root is not.
+    const key =
+      shape && (shape.viaParent || hit.kind === 'meeting')
+        ? `route:${routeFor(hit)}`
+        : `row:${hit.kind}:${hit.id}`;
+    const seen = groups.get(key);
+    if (seen) seen.alsoMatched += 1;
+    else groups.set(key, { hit, alsoMatched: 0 });
+  }
+  return [...groups.values()];
+}
+
 /** Every register, in the order the search box offers them as filters. */
 export const ALL_KINDS: SearchKind[] = Object.keys(SHAPE) as SearchKind[];

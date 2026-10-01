@@ -3701,6 +3701,38 @@ select pg_temp.check('four candidates can be compared side by side',
   (select count(*) from procurement_candidates
     where request_id = 'a1000000-0000-0000-0000-000000000001'), 4::bigint);
 
+-- --- a candidate who has not quoted (0029) --------------------------------
+--
+-- Found by importing the real archive: of seven advocates approached, one had
+-- quoted. The fee was NOT NULL, so the other six would have appeared on the
+-- comparison offering to work for nothing.
+
+insert into procurement_candidates
+  (id, request_id, name, scope_en, fee_amount, fee_basis, confidentiality)
+values
+  ('a2000000-0000-0000-0000-000000000005', 'a1000000-0000-0000-0000-000000000001',
+   'Asked and has not answered', 'Appeal', null, 'fixed', 'internal');
+
+select pg_temp.check('a candidate who has not quoted a fee has no fee, not nought',
+  (select fee_amount is null and fee_amount_kes is null from procurement_candidates
+    where id = 'a2000000-0000-0000-0000-000000000005'), true);
+
+-- But the price has to be known at the moment the work is awarded.
+do $$
+begin
+  begin
+    update procurement_candidates set outcome = 'selected',
+      decision_note_en = 'Chosen on the strength of the appellate record'
+     where id = 'a2000000-0000-0000-0000-000000000005';
+    raise exception 'FAIL work was awarded at a price nobody had quoted';
+  exception
+    when check_violation then
+      raise notice 'ok   but nobody is selected at a price they never quoted (0029)';
+  end;
+end;
+$$;
+
+
 -- The half that went missing in the meeting notes: why the other three were
 -- not chosen.
 do $$
@@ -4015,9 +4047,11 @@ select pg_temp.check('a schedule that outgrows the contract is named, not blocke
 select pg_temp.act_as('dddd1111-1111-1111-1111-111111111111');  -- external auditor
 select pg_temp.check('an outside auditor reads the procurement register',
   (select count(*) from procurement_requests), 3::bigint);
+-- Five by now: the four advocates plus the one who was asked and has not
+-- answered, which 0029 lets the register hold.
 select pg_temp.check('and the candidate comparison with its fees',
   (select count(*) from procurement_candidates
-    where request_id = 'a1000000-0000-0000-0000-000000000001'), 4::bigint);
+    where request_id = 'a1000000-0000-0000-0000-000000000001'), 5::bigint);
 select pg_temp.check('and the contracts',
   (select count(*) from contracts), 2::bigint);
 -- Reading is not keeping: an auditor does not award contracts.
@@ -4445,6 +4479,15 @@ begin
   end;
 end;
 $$;
+
+
+-- --- a reference number is a label, not an event (0030) --------------------
+
+select pg_temp.act_as('33333333-3333-3333-3333-333333333333');  -- trustee
+select pg_temp.check('a numbered resolution still says what was decided',
+  (select title_en from project_chronology
+    where source = 'decision' and id = '10000000-0000-0000-0000-000000000001'),
+  'D-2026-01 — File our own Record of Appeal.');
 
 
 -- --- a meeting minuted in two languages is one meeting (G-02, 0028) ---------

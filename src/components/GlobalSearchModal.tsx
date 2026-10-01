@@ -29,7 +29,7 @@ import {
 import { MIN_QUERY } from '../api/search';
 import { QueryStatus } from './QueryStatus';
 import { Pill } from './ui/Controls';
-import { ALL_KINDS, kindIcon, kindLabel, routeFor } from '../lib/search';
+import { ALL_KINDS, collapseByRecord, kindIcon, kindLabel, routeFor } from '../lib/search';
 import { formatDate } from '../lib/site';
 import type { Confidentiality, SearchKind } from '../types';
 
@@ -120,6 +120,8 @@ export const GlobalSearchModal: React.FC = () => {
   }, [isSearchOpen]);
 
   const rows = results.data ?? [];
+  /** One row per record: a minute matching in four sections is one meeting. */
+  const grouped = useMemo(() => collapseByRecord(rows), [rows]);
 
   /** Which registers the current results actually came from, for the filters. */
   const present = useMemo(() => {
@@ -343,7 +345,7 @@ export const GlobalSearchModal: React.FC = () => {
               </div>
 
               <ul className="divide-y divide-slate-100">
-                {rows.map((hit) => {
+                {grouped.map(({ hit, alsoMatched }) => {
                   const Icon = kindIcon(hit.kind);
                   const title = tr ? (hit.titleTr ?? hit.titleEn) : (hit.titleEn ?? hit.titleTr);
                   return (
@@ -374,6 +376,16 @@ export const GlobalSearchModal: React.FC = () => {
                             {hit.occurredOn && (
                               <span className="font-mono text-[11px] text-slate-500">
                                 {formatDate(hit.occurredOn, language)}
+                              </span>
+                            )}
+                            {/* A minute that matched in four sections is one
+                                record, and saying how many places it matched
+                                in is more useful than four identical rows. */}
+                            {alsoMatched > 0 && (
+                              <span className="text-[11px] text-slate-400">
+                                {tr
+                                  ? `+${alsoMatched} yerde daha geçiyor`
+                                  : `+${alsoMatched} more ${alsoMatched === 1 ? 'match' : 'matches'} here`}
                               </span>
                             )}
                           </div>
