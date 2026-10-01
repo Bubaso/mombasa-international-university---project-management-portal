@@ -1292,6 +1292,221 @@ const TEST_CONTRACT_MILESTONES = [
   },
 ];
 
+// ---------------------------------------------------------------------------
+// The other half of the match (M14-07, 0038)
+// ---------------------------------------------------------------------------
+//
+// Four rows, one per disagreement the schedule could not see, plus one that
+// agrees so the panel can be shown to leave it alone.
+
+const TEST_MILESTONE_MATCHING = [
+  {
+    contract_milestone_id: '00000000-0000-0000-0000-000000000f31',
+    contract_id: '00000000-0000-0000-0000-000000000f01',
+    reference_no: 'CT-2026-01',
+    counterparty_name: 'Mwangi & Co Advocates',
+    contract_contractor_id: null,
+    sequence: 1,
+    title_en: 'On signature',
+    title_tr: 'İmzada',
+    state: 'paid',
+    due_on: '2026-01-25',
+    amount: 1400000,
+    currency: 'KES',
+    amount_kes: 1400000,
+    valuation_id: '00000000-0000-0000-0000-000000000e01',
+    payment_voucher_id: '00000000-0000-0000-0000-0000000000c1',
+    valuation_amount: 1400000,
+    valuation_currency: 'KES',
+    valuation_contractor_id: null,
+    construction_block_id: null,
+    period_start: '2026-01-01',
+    period_end: '2026-01-20',
+    valuation_state: 'director_approved',
+    qs_certified_at: '2026-01-21T09:00:00Z',
+    director_approved_at: '2026-01-22T09:00:00Z',
+    amount_verdict: 'agree',
+    claims_a_certification_the_works_do_not: false,
+    matched_to_another_firms_work: false,
+    confidentiality: 'internal',
+  },
+  {
+    // Two numbers for one piece of work.
+    contract_milestone_id: '00000000-0000-0000-0000-000000000f32',
+    contract_id: '00000000-0000-0000-0000-000000000f01',
+    reference_no: 'CT-2026-01',
+    counterparty_name: 'Mwangi & Co Advocates',
+    contract_contractor_id: null,
+    sequence: 2,
+    title_en: 'Substructure, second period',
+    title_tr: null,
+    state: 'planned',
+    due_on: '2026-03-10',
+    amount: 2000000,
+    currency: 'KES',
+    amount_kes: 2000000,
+    valuation_id: '00000000-0000-0000-0000-000000000e02',
+    payment_voucher_id: null,
+    valuation_amount: 2200000,
+    valuation_currency: 'KES',
+    valuation_contractor_id: null,
+    construction_block_id: null,
+    period_start: '2026-02-01',
+    period_end: '2026-02-28',
+    valuation_state: 'qs_certified',
+    qs_certified_at: '2026-03-01T09:00:00Z',
+    director_approved_at: null,
+    amount_verdict: 'disagree',
+    claims_a_certification_the_works_do_not: false,
+    matched_to_another_firms_work: false,
+    confidentiality: 'internal',
+  },
+  {
+    // Two currencies and no rate between them. Not a disagreement.
+    contract_milestone_id: '00000000-0000-0000-0000-000000000f33',
+    contract_id: '00000000-0000-0000-0000-000000000f01',
+    reference_no: 'CT-2026-01',
+    counterparty_name: 'Mwangi & Co Advocates',
+    contract_contractor_id: null,
+    sequence: 3,
+    title_en: 'Imported formwork',
+    title_tr: null,
+    state: 'planned',
+    due_on: '2026-04-01',
+    amount: 1000000,
+    currency: 'KES',
+    amount_kes: 1000000,
+    valuation_id: '00000000-0000-0000-0000-000000000e03',
+    payment_voucher_id: null,
+    valuation_amount: 15000,
+    valuation_currency: 'USD',
+    valuation_contractor_id: null,
+    construction_block_id: null,
+    period_start: '2026-03-01',
+    period_end: '2026-03-31',
+    valuation_state: 'draft',
+    qs_certified_at: null,
+    director_approved_at: null,
+    amount_verdict: 'different_currencies',
+    claims_a_certification_the_works_do_not: false,
+    matched_to_another_firms_work: false,
+    confidentiality: 'internal',
+  },
+  {
+    // Certified by the schedule, measured by nobody.
+    contract_milestone_id: '00000000-0000-0000-0000-000000000f34',
+    contract_id: '00000000-0000-0000-0000-000000000f01',
+    reference_no: 'CT-2026-01',
+    counterparty_name: 'Mwangi & Co Advocates',
+    contract_contractor_id: null,
+    sequence: 4,
+    title_en: 'Site establishment',
+    title_tr: null,
+    state: 'certified',
+    due_on: '2025-12-01',
+    amount: 500000,
+    currency: 'KES',
+    amount_kes: 500000,
+    valuation_id: null,
+    payment_voucher_id: null,
+    valuation_amount: null,
+    valuation_currency: null,
+    valuation_contractor_id: null,
+    construction_block_id: null,
+    period_start: null,
+    period_end: null,
+    valuation_state: null,
+    qs_certified_at: null,
+    director_approved_at: null,
+    amount_verdict: 'unmatched',
+    claims_a_certification_the_works_do_not: true,
+    matched_to_another_firms_work: false,
+    confidentiality: 'internal',
+  },
+  {
+    // Citing work measured for a different firm.
+    contract_milestone_id: '00000000-0000-0000-0000-000000000f35',
+    contract_id: '00000000-0000-0000-0000-000000000f01',
+    reference_no: 'CT-2026-01',
+    counterparty_name: 'Mwangi & Co Advocates',
+    contract_contractor_id: '00000000-0000-0000-0000-0000000000b1',
+    sequence: 5,
+    title_en: 'Blockwork',
+    title_tr: null,
+    state: 'planned',
+    due_on: '2026-05-01',
+    amount: 640000,
+    currency: 'KES',
+    amount_kes: 640000,
+    valuation_id: '00000000-0000-0000-0000-000000000e04',
+    payment_voucher_id: null,
+    valuation_amount: 640000,
+    valuation_currency: 'KES',
+    valuation_contractor_id: '00000000-0000-0000-0000-0000000000b2',
+    construction_block_id: null,
+    period_start: '2026-04-01',
+    period_end: '2026-04-30',
+    valuation_state: 'qs_certified',
+    qs_certified_at: '2026-05-01T09:00:00Z',
+    director_approved_at: null,
+    amount_verdict: 'agree',
+    claims_a_certification_the_works_do_not: false,
+    matched_to_another_firms_work: true,
+    confidentiality: 'internal',
+  },
+];
+
+const TEST_UNSCHEDULED_VALUATIONS = [
+  {
+    valuation_id: '00000000-0000-0000-0000-000000000e11',
+    construction_block_id: '00000000-0000-0000-0000-0000000000b1',
+    block_code: 'A1',
+    contractor_id: '00000000-0000-0000-0000-0000000000b1',
+    contractor_name: 'Coast Engineering',
+    period_start: '2026-05-01',
+    period_end: '2026-05-31',
+    amount: 410000,
+    currency: 'KES',
+    state: 'qs_certified',
+    qs_certified_at: '2026-06-01T09:00:00Z',
+    director_approved_at: null,
+    paid_at: null,
+    certified: true,
+    // Two live contracts name this firm, so the register says nothing rather
+    // than pointing at one.
+    the_only_live_contract_for_that_firm: null,
+    confidentiality: 'internal',
+  },
+  {
+    valuation_id: '00000000-0000-0000-0000-000000000e12',
+    construction_block_id: '00000000-0000-0000-0000-0000000000b1',
+    block_code: 'A1',
+    contractor_id: '00000000-0000-0000-0000-0000000000b1',
+    contractor_name: 'Coast Engineering',
+    period_start: '2026-06-01',
+    period_end: '2026-06-15',
+    amount: 95000,
+    currency: 'KES',
+    state: 'draft',
+    qs_certified_at: null,
+    director_approved_at: null,
+    paid_at: null,
+    certified: false,
+    the_only_live_contract_for_that_firm: '00000000-0000-0000-0000-000000000f01',
+    confidentiality: 'internal',
+  },
+];
+
+const TEST_PAYMENT_MATCHING_HEALTH = {
+  instalments_whose_amount_disagrees: 1,
+  instalments_that_cannot_be_compared: 1,
+  instalments_claiming_an_uncertified_measurement: 1,
+  instalments_matched_to_another_firms_work: 1,
+  settled_instalments_with_no_measurement: 1,
+  measured_work_with_no_instalment: 2,
+  certified_work_with_no_instalment: 1,
+};
+
 const TEST_REVIEWS = [
   {
     id: '00000000-0000-0000-0000-000000000f41',
@@ -2569,6 +2784,9 @@ try {
   await serve('**/rest/v1/contract_terms**', TEST_CONTRACT_TERMS);
   await serve('**/rest/v1/contract_settlement**', TEST_SETTLEMENT);
   await serve('**/rest/v1/contract_milestones**', TEST_CONTRACT_MILESTONES);
+  await serve('**/rest/v1/milestone_matching**', TEST_MILESTONE_MATCHING);
+  await serve('**/rest/v1/unscheduled_valuations**', TEST_UNSCHEDULED_VALUATIONS);
+  await serve('**/rest/v1/payment_matching_health**', TEST_PAYMENT_MATCHING_HEALTH);
   await serve('**/rest/v1/supplier_reviews**', TEST_REVIEWS);
 
   await proxyReturns(TEST_AI_ANSWER);
@@ -3719,6 +3937,90 @@ try {
     ),
     'a schedule that outgrew the contract is reported, not blocked (M14-07)',
   );
+
+  // M14-07, the other half: the four disagreements the schedule could not see.
+  const owedList = (await page.textContent('ul[aria-label="Ödemesi planlanmamış hakediş"]')) ?? '';
+  check(
+    /Coast Engineering/.test(owedList) &&
+      /ölçüm onaylanmış, planda karşılığı yok|certified, and nothing scheduled/.test(owedList),
+    'measured work with no instalment against it is on the screen at last (M14-07)',
+  );
+  check(
+    /henüz onaylanmamış bir çalışma rakamı|a working figure, not yet certified/.test(owedList),
+    'and a draft figure is told apart from a certified measurement',
+  );
+  check(
+    /tek bir yürürlükteki sözleşmesi yok|no single live contract/.test(owedList),
+    'where the contract cannot be named the screen says so instead of picking one',
+  );
+
+  const partedList =
+    (await page.textContent('ul[aria-label="Hakedişiyle ayrışan taksitler"]')) ?? '';
+  check(
+    /tutarlar uyuşmuyor|the amounts disagree/.test(partedList) &&
+      /2,000,000/.test(partedList) &&
+      /2,200,000/.test(partedList),
+    'an instalment whose amount disagrees shows both numbers',
+  );
+  check(
+    /karşılaştırılamıyor|not comparable/.test(partedList) &&
+      !/iki ayrı para birimi[^·]*uyuşmuyor/.test(partedList),
+    'while two currencies with no rate are called incomparable rather than unequal',
+  );
+  check(
+    /ölçüm kaydında onay yok|no certification in the works register/.test(partedList),
+    'an instalment claiming a certification the works register lacks is named',
+  );
+  check(
+    /başka firmanın işi|another firm's work/.test(partedList),
+    'and one citing another firm’s measured work is named too',
+  );
+  // The instalment that agrees must not be dragged into the list of problems.
+  check(
+    !/On signature|İmzada/.test(partedList),
+    'an instalment that agrees with its valuation is left out of the list',
+  );
+  check(
+    /İki kaydın ayrıldığı yerler|part company/.test(contract) &&
+      /engellenmiyor|is blocked/.test(contract),
+    'the panel says the disagreements are reported rather than blocked',
+  );
+
+  // Nothing to match is not the same as everything matching. The live project
+  // is in exactly this state — no instalments and no valuations — and the
+  // first version of this panel told it "every measured valuation has an
+  // instalment against it", which is a reassurance about an empty register.
+  await serve('**/rest/v1/milestone_matching**', []);
+  await serve('**/rest/v1/unscheduled_valuations**', []);
+  await serve('**/rest/v1/payment_matching_health**', {
+    instalments_whose_amount_disagrees: 0,
+    instalments_that_cannot_be_compared: 0,
+    instalments_claiming_an_uncertified_measurement: 0,
+    instalments_matched_to_another_firms_work: 0,
+    settled_instalments_with_no_measurement: 0,
+    measured_work_with_no_instalment: 0,
+    certified_work_with_no_instalment: 0,
+  });
+  pageErrors = [];
+  await page.goto(BASE + '/procurement', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(500);
+  const emptyMatch = (await page.textContent('body')) ?? '';
+  check(
+    pageErrors.length === 0 &&
+      /Eşleştirilecek bir şey yok|nothing to match/.test(emptyMatch) &&
+      !/Her ölçülmüş iş bir taksite bağlı|Every measured valuation has an instalment/.test(
+        emptyMatch,
+      ),
+    'an empty register says there is nothing to match, not that everything matches',
+  );
+  check(
+    /Kayıtlı hakediş yok|No valuation is recorded/.test(emptyMatch) &&
+      /Kayıtlı ödeme planı taksiti yok|No schedule instalment is recorded/.test(emptyMatch),
+    'and names which of the two registers is empty',
+  );
+  await serve('**/rest/v1/milestone_matching**', TEST_MILESTONE_MATCHING);
+  await serve('**/rest/v1/unscheduled_valuations**', TEST_UNSCHEDULED_VALUATIONS);
+  await serve('**/rest/v1/payment_matching_health**', TEST_PAYMENT_MATCHING_HEALTH);
 
   // M14-06: dated, scored, append-only.
   check(

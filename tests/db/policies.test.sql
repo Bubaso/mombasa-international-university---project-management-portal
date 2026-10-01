@@ -6423,6 +6423,228 @@ select pg_temp.check(
       and confrelid = 'document_vault'::regclass),
   'r'::"char");
 
+-- ===========================================================================
+-- The other half of the contract-to-valuation match (0038): M14-07
+-- ===========================================================================
+--
+-- 0022 could see from an instalment to the work behind it. These assertions
+-- are the four disagreements it could not see, and the one it now refuses.
+
+set role authenticated;
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- director
+
+-- A second firm, so "matched to another firm's work" has another firm to be
+-- matched to.
+insert into contractors (id, name, contract_reference, starts_on) values
+  ('1c000000-0000-0000-0000-000000000011', 'Nyali Builders', 'C-2024-02', current_date - 100);
+
+insert into contracts
+  (id, reference_no, counterparty_name, contractor_id, subject_en,
+   value_amount, value_currency, value_basis, signed_on, starts_on,
+   document_id, state, confidentiality)
+values
+  ('a3000000-0000-0000-0000-000000000009', 'CT-2026-09', 'Coast Engineering',
+   '1c000000-0000-0000-0000-000000000010', 'Substructure of block A1',
+   8000000, 'KES', 'fixed', current_date - 150, current_date - 150,
+   '1b000000-0000-0000-0000-000000000001', 'active', 'internal');
+
+-- Five more measurements. 0060, already certified and approved above, is the
+-- one that agrees.
+insert into valuations
+  (id, construction_block_id, contractor_id, period_start, period_end, amount, currency)
+values
+  -- Another firm's work.
+  ('1c000000-0000-0000-0000-000000000061', 'bbbb0000-0000-0000-0000-000000000001',
+   '1c000000-0000-0000-0000-000000000011', current_date - 60, current_date - 30,
+   640000, 'KES'),
+  -- Measured at 2,200,000; the instalment below says 2,000,000.
+  ('1c000000-0000-0000-0000-000000000062', 'bbbb0000-0000-0000-0000-000000000001',
+   '1c000000-0000-0000-0000-000000000010', current_date - 60, current_date - 30,
+   2200000, 'KES'),
+  -- Measured in dollars. A valuation carries no exchange rate, so this one
+  -- cannot be compared with a shilling instalment at all.
+  ('1c000000-0000-0000-0000-000000000063', 'bbbb0000-0000-0000-0000-000000000001',
+   '1c000000-0000-0000-0000-000000000010', current_date - 90, current_date - 60,
+   15000, 'USD'),
+  -- Certified, and nothing in the schedule against it.
+  ('1c000000-0000-0000-0000-000000000064', 'bbbb0000-0000-0000-0000-000000000001',
+   '1c000000-0000-0000-0000-000000000010', current_date - 20, current_date - 10,
+   410000, 'KES'),
+  -- A draft figure, also unscheduled, which is a different thing.
+  ('1c000000-0000-0000-0000-000000000065', 'bbbb0000-0000-0000-0000-000000000001',
+   '1c000000-0000-0000-0000-000000000010', current_date - 10, current_date,
+   95000, 'KES');
+
+update valuations
+set qs_certified_by = 'cccc1111-1111-1111-1111-111111111111',
+    qs_certified_at = now(),
+    state = 'qs_certified'
+where id = '1c000000-0000-0000-0000-000000000064';
+
+-- A rejected measurement is not work owed, so the register must not count it
+-- as unscheduled.
+insert into valuations
+  (id, construction_block_id, contractor_id, period_start, period_end, amount,
+   currency, state)
+values
+  ('1c000000-0000-0000-0000-000000000066', 'bbbb0000-0000-0000-0000-000000000001',
+   '1c000000-0000-0000-0000-000000000010', current_date - 40, current_date - 35,
+   770000, 'KES', 'rejected');
+
+insert into contract_milestones
+  (id, contract_id, sequence, title_en, due_on, amount, currency, state,
+   valuation_id, confidentiality)
+values
+  -- Agrees, and the measurement behind it is certified.
+  ('a6000000-0000-0000-0000-000000000011', 'a3000000-0000-0000-0000-000000000009',
+   1, 'Substructure, first period', current_date - 25, 1850000, 'KES', 'certified',
+   '1c000000-0000-0000-0000-000000000060', 'internal'),
+  -- Two numbers for one piece of work.
+  ('a6000000-0000-0000-0000-000000000012', 'a3000000-0000-0000-0000-000000000009',
+   2, 'Substructure, second period', current_date - 15, 2000000, 'KES', 'planned',
+   '1c000000-0000-0000-0000-000000000062', 'internal'),
+  -- Two currencies and no rate between them.
+  ('a6000000-0000-0000-0000-000000000013', 'a3000000-0000-0000-0000-000000000009',
+   3, 'Imported formwork', current_date - 5, 1000000, 'KES', 'planned',
+   '1c000000-0000-0000-0000-000000000063', 'internal'),
+  -- Certified by the schedule, measured by nobody.
+  ('a6000000-0000-0000-0000-000000000014', 'a3000000-0000-0000-0000-000000000009',
+   4, 'Site establishment', current_date - 100, 500000, 'KES', 'certified',
+   null, 'internal'),
+  -- Citing work measured for the other firm.
+  ('a6000000-0000-0000-0000-000000000015', 'a3000000-0000-0000-0000-000000000009',
+   5, 'Blockwork', current_date, 640000, 'KES', 'planned',
+   '1c000000-0000-0000-0000-000000000061', 'internal');
+
+-- Four answers, not two. The first two are the ones 0022 could already have
+-- had; the last two are the reason the column is not a boolean.
+select pg_temp.check('an instalment that matches its measurement agrees',
+  (select amount_verdict from milestone_matching
+    where contract_milestone_id = 'a6000000-0000-0000-0000-000000000011'), 'agree');
+select pg_temp.check('two numbers for one piece of work is a disagreement',
+  (select amount_verdict from milestone_matching
+    where contract_milestone_id = 'a6000000-0000-0000-0000-000000000012'), 'disagree');
+select pg_temp.check(
+  'but two currencies with no rate between them is not — it cannot be compared',
+  (select amount_verdict from milestone_matching
+    where contract_milestone_id = 'a6000000-0000-0000-0000-000000000013'),
+  'different_currencies');
+select pg_temp.check('and an instalment with no measurement yet is not a disagreement either',
+  (select amount_verdict from milestone_matching
+    where contract_milestone_id = 'a6000000-0000-0000-0000-000000000014'), 'unmatched');
+
+-- The schedule claiming a signature the works register does not hold.
+select pg_temp.check('a certified instalment with no measurement behind it is named',
+  (select claims_a_certification_the_works_do_not from milestone_matching
+    where contract_milestone_id = 'a6000000-0000-0000-0000-000000000014'), true);
+select pg_temp.check('while one whose surveyor did certify is not',
+  (select claims_a_certification_the_works_do_not from milestone_matching
+    where contract_milestone_id = 'a6000000-0000-0000-0000-000000000011'), false);
+select pg_temp.check('and a planned instalment is never accused of claiming one',
+  (select claims_a_certification_the_works_do_not from milestone_matching
+    where contract_milestone_id = 'a6000000-0000-0000-0000-000000000012'), false);
+
+select pg_temp.check('an instalment citing another firm''s measurement is named',
+  (select matched_to_another_firms_work from milestone_matching
+    where contract_milestone_id = 'a6000000-0000-0000-0000-000000000015'), true);
+select pg_temp.check('and one citing its own firm''s is not',
+  (select matched_to_another_firms_work from milestone_matching
+    where contract_milestone_id = 'a6000000-0000-0000-0000-000000000011'), false);
+
+-- The half that was missing: measured work nobody has scheduled a payment
+-- for. Two of them, one certified.
+select pg_temp.check('measured work with no instalment against it is listed at last',
+  (select count(*) from unscheduled_valuations), 2::bigint);
+select pg_temp.check('and a rejected measurement is not counted as work owed',
+  (select count(*) from unscheduled_valuations
+    where valuation_id = '1c000000-0000-0000-0000-000000000066'), 0::bigint);
+select pg_temp.check('the certified one is told apart from the draft figure',
+  (select count(*) from unscheduled_valuations where certified), 1::bigint);
+
+-- The contract is named only where there is exactly one it could be.
+select pg_temp.check('an unscheduled measurement names the one live contract for that firm',
+  (select the_only_live_contract_for_that_firm from unscheduled_valuations
+    where valuation_id = '1c000000-0000-0000-0000-000000000064'),
+  'a3000000-0000-0000-0000-000000000009'::uuid);
+
+insert into contracts
+  (id, reference_no, counterparty_name, contractor_id, subject_en,
+   value_amount, value_basis, signed_on, starts_on, document_id, state,
+   confidentiality)
+values
+  ('a3000000-0000-0000-0000-000000000010', 'CT-2026-10', 'Coast Engineering',
+   '1c000000-0000-0000-0000-000000000010', 'Superstructure of block A1',
+   5000000, 'fixed', current_date - 60, current_date - 60,
+   '1b000000-0000-0000-0000-000000000001', 'active', 'internal');
+
+select pg_temp.check('and says nothing once there are two it could be',
+  (select the_only_live_contract_for_that_firm from unscheduled_valuations
+    where valuation_id = '1c000000-0000-0000-0000-000000000064'), null::uuid);
+
+-- One measurement, one instalment. This is the one of the five that is
+-- refused rather than reported: there is no reading of two instalments
+-- against one measurement that is not an error or a double payment.
+do $$
+begin
+  begin
+    insert into contract_milestones
+      (contract_id, sequence, title_en, amount, currency, state, valuation_id,
+       confidentiality)
+    values
+      ('a3000000-0000-0000-0000-000000000010', 1, 'The same period again',
+       1850000, 'KES', 'planned', '1c000000-0000-0000-0000-000000000060', 'internal');
+    raise exception 'FAIL one measurement was scheduled for payment twice';
+  exception
+    when unique_violation then
+      raise notice 'ok   one measurement settles one instalment, not two';
+  end;
+end;
+$$;
+
+-- And the instalments that cite nothing do not collide with each other,
+-- which is what the index being partial is for.
+do $$
+begin
+  insert into contract_milestones
+    (contract_id, sequence, title_en, amount, currency, state, confidentiality)
+  values
+    ('a3000000-0000-0000-0000-000000000010', 2, 'Retention', 250000, 'KES',
+     'planned', 'internal'),
+    ('a3000000-0000-0000-0000-000000000010', 3, 'Final account', 400000, 'KES',
+     'planned', 'internal');
+  raise notice 'ok   while instalments that cite no measurement do not collide';
+end;
+$$;
+
+-- Where the two registers disagree, counted.
+select pg_temp.check('the disagreements are counted for somebody to work through',
+  (select instalments_whose_amount_disagrees from payment_matching_health), 1::bigint);
+select pg_temp.check('with the incomparable pair kept apart from them',
+  (select instalments_that_cannot_be_compared from payment_matching_health), 1::bigint);
+select pg_temp.check('and the schedule claiming an uncertified measurement',
+  (select instalments_claiming_an_uncertified_measurement from payment_matching_health),
+  1::bigint);
+select pg_temp.check('and the one pointing at another firm''s work',
+  (select instalments_matched_to_another_firms_work from payment_matching_health),
+  1::bigint);
+select pg_temp.check('and the settled instalments with nothing measured behind them',
+  (select settled_instalments_with_no_measurement from payment_matching_health), 1::bigint);
+select pg_temp.check('and the measured work nobody has scheduled',
+  (select measured_work_with_no_instalment from payment_matching_health), 2::bigint);
+select pg_temp.check('of which the certified half is its own number',
+  (select certified_work_with_no_instalment from payment_matching_health), 1::bigint);
+
+-- A planned instalment with no measurement yet is the normal state of a
+-- payment plan. Counting it would bury the one that matters.
+select pg_temp.check('a planned instalment with nothing measured yet is not a finding',
+  (select count(*) from milestone_matching
+    where amount_verdict = 'unmatched' and state = 'planned') > 0, true);
+
+-- The firm reads its own schedule; the measurements behind it stay in the
+-- commercial register, which M7-10 keeps from it.
+select pg_temp.act_as('77777777-7777-7777-7777-777777777777');  -- contractor
+select pg_temp.check('a contractor sees no measurement it was not shown before',
+  (select count(*) from unscheduled_valuations), 0::bigint);
 reset role;
 
 \echo ''

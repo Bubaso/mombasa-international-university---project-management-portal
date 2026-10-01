@@ -2400,3 +2400,77 @@ export interface WatchHealth {
   seriousIncidentsWithNoNotificationDecision: number;
   incidentsNotYetConfirmed: number;
 }
+
+// ---------------------------------------------------------------------------
+// The other half of the contract-to-valuation match (M14-07, 0038)
+// ---------------------------------------------------------------------------
+
+/**
+ * Four answers, not two. "No valuation yet" is the normal state of a payment
+ * plan, and two amounts in different currencies cannot be compared at all —
+ * a valuation carries no exchange rate, so calling them unequal would be
+ * inventing the comparison.
+ */
+export type AmountVerdict = 'unmatched' | 'different_currencies' | 'agree' | 'disagree';
+
+export interface MilestoneMatch {
+  contractMilestoneId: string;
+  contractId: string;
+  referenceNo: string | null;
+  counterpartyName: string;
+  sequence: number;
+  titleEn: string;
+  titleTr: string | null;
+  state: MilestoneState;
+  dueOn: string | null;
+  amount: number;
+  currency: CurrencyCode;
+  valuationId: string | null;
+  paymentVoucherId: string | null;
+  valuationAmount: number | null;
+  valuationCurrency: CurrencyCode | null;
+  constructionBlockId: string | null;
+  periodStart: string | null;
+  periodEnd: string | null;
+  valuationState: ValuationState | null;
+  qsCertifiedAt: string | null;
+  directorApprovedAt: string | null;
+  amountVerdict: AmountVerdict;
+  /** The schedule claiming a signature the works register does not hold. */
+  claimsACertificationTheWorksDoNot: boolean;
+  matchedToAnotherFirmsWork: boolean;
+  confidentiality: Confidentiality;
+}
+
+/**
+ * Measured work with no instalment against it — the direction every earlier
+ * view was blind to, because they all started from the schedule.
+ */
+export interface UnscheduledValuation {
+  valuationId: string;
+  constructionBlockId: string | null;
+  blockCode: string | null;
+  contractorId: string | null;
+  contractorName: string | null;
+  periodStart: string;
+  periodEnd: string;
+  amount: number;
+  currency: CurrencyCode;
+  state: ValuationState;
+  certified: boolean;
+  paidAt: string | null;
+  /** Null where there is not exactly one live contract it could belong to. */
+  theOnlyLiveContractForThatFirm: string | null;
+  confidentiality: Confidentiality;
+}
+
+/** Where the payment schedule and the works register disagree. */
+export interface PaymentMatchingHealth {
+  instalmentsWhoseAmountDisagrees: number;
+  instalmentsThatCannotBeCompared: number;
+  instalmentsClaimingAnUncertifiedMeasurement: number;
+  instalmentsMatchedToAnotherFirmsWork: number;
+  settledInstalmentsWithNoMeasurement: number;
+  measuredWorkWithNoInstalment: number;
+  certifiedWorkWithNoInstalment: number;
+}

@@ -105,3 +105,35 @@ export function useAddReview() {
     },
   });
 }
+
+// --- the other half of the match (M14-07, 0038) -----------------------------
+
+export const useMilestoneMatching = () =>
+  useQuery({ queryKey: ['milestoneMatching'], queryFn: api.fetchMilestoneMatching });
+
+export const useUnscheduledValuations = () =>
+  useQuery({ queryKey: ['unscheduledValuations'], queryFn: api.fetchUnscheduledValuations });
+
+export const usePaymentMatchingHealth = () =>
+  useQuery({ queryKey: ['paymentMatchingHealth'], queryFn: api.fetchPaymentMatchingHealth });
+
+export function useMatchMilestoneToValuation() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: api.matchMilestoneToValuation,
+    onSuccess: () => {
+      // Both directions of the match go stale at once, and so does the
+      // settlement total, because an instalment that has found its
+      // measurement leaves the unscheduled list.
+      for (const key of [
+        'milestoneMatching',
+        'unscheduledValuations',
+        'paymentMatchingHealth',
+        'contractMilestones',
+        'contractSettlement',
+      ]) {
+        void client.invalidateQueries({ queryKey: [key] });
+      }
+    },
+  });
+}

@@ -21,6 +21,7 @@ import { useApp } from '../context/AppContext';
 import { RequestPanel } from '../components/procurement/RequestPanel';
 import { ContractPanel } from '../components/procurement/ContractPanel';
 import { ReviewPanel } from '../components/procurement/ReviewPanel';
+import { MatchingPanel } from '../components/procurement/MatchingPanel';
 import { DataFreshness } from '../components/DataFreshness';
 import { fetchContractAlerts } from '../api/procurement';
 
@@ -53,6 +54,10 @@ export const ProcurementView: React.FC = () => {
 
       <RequestPanel />
       <ContractPanel />
+      {/* After the contracts, because it reads across all of them, and before
+          the performance reviews, because a disagreement about what a firm is
+          owed is the thing to settle before scoring them (M14-07). */}
+      <MatchingPanel />
       <ReviewPanel />
     </div>
   );

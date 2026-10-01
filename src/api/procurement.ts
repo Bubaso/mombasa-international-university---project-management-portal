@@ -16,13 +16,20 @@
  */
 import { supabase } from '../lib/supabase';
 import type {
+  AmountVerdict,
   ContractAlert,
   ContractMilestone,
   ContractSettlement,
   ContractTerm,
+  CurrencyCode,
+  MilestoneMatch,
+  MilestoneState,
+  PaymentMatchingHealth,
   ProcurementCandidate,
   ProcurementRequest,
   SupplierReview,
+  UnscheduledValuation,
+  ValuationState,
 } from '../types';
 
 function fail(error: { message: string } | null): void {
@@ -455,5 +462,157 @@ export async function addReview(input: {
     note_en: input.noteEn.trim(),
     reviewed_by: me,
   });
+  fail(error);
+}
+
+// ---------------------------------------------------------------------------
+// The other half of the match (M14-07, 0038)
+// ---------------------------------------------------------------------------
+
+/**
+ * Every instalment against the valuation it cites. Read from a view, because
+ * the verdicts are computed and a client that recomputed them would be a
+ * second copy of the rule that drifts — and because the one verdict most
+ * easily got wrong, "these two amounts are in different currencies and there
+ * is no rate between them", is a refusal to compare rather than a comparison.
+ */
+export async function fetchMilestoneMatching(): Promise<MilestoneMatch[]> {
+  const { data, error } = await supabase
+    .from('milestone_matching')
+    .select('*')
+    .order('contract_id')
+    .order('sequence');
+  fail(error);
+  return (
+    (data ?? []) as {
+      contract_milestone_id: string;
+      contract_id: string;
+      reference_no: string | null;
+      counterparty_name: string;
+      sequence: number;
+      title_en: string;
+      title_tr: string | null;
+      state: MilestoneState;
+      due_on: string | null;
+      amount: number | string;
+      currency: CurrencyCode;
+      valuation_id: string | null;
+      payment_voucher_id: string | null;
+      valuation_amount: number | string | null;
+      valuation_currency: CurrencyCode | null;
+      construction_block_id: string | null;
+      period_start: string | null;
+      period_end: string | null;
+      valuation_state: ValuationState | null;
+      qs_certified_at: string | null;
+      director_approved_at: string | null;
+      amount_verdict: AmountVerdict;
+      claims_a_certification_the_works_do_not: boolean;
+      matched_to_another_firms_work: boolean;
+      confidentiality: MilestoneMatch['confidentiality'];
+    }[]
+  ).map((row) => ({
+    contractMilestoneId: row.contract_milestone_id,
+    contractId: row.contract_id,
+    referenceNo: row.reference_no,
+    counterpartyName: row.counterparty_name,
+    sequence: row.sequence,
+    titleEn: row.title_en,
+    titleTr: row.title_tr,
+    state: row.state,
+    dueOn: row.due_on,
+    amount: Number(row.amount),
+    currency: row.currency,
+    valuationId: row.valuation_id,
+    paymentVoucherId: row.payment_voucher_id,
+    valuationAmount: row.valuation_amount == null ? null : Number(row.valuation_amount),
+    valuationCurrency: row.valuation_currency,
+    constructionBlockId: row.construction_block_id,
+    periodStart: row.period_start,
+    periodEnd: row.period_end,
+    valuationState: row.valuation_state,
+    qsCertifiedAt: row.qs_certified_at,
+    directorApprovedAt: row.director_approved_at,
+    amountVerdict: row.amount_verdict,
+    claimsACertificationTheWorksDoNot: row.claims_a_certification_the_works_do_not,
+    matchedToAnotherFirmsWork: row.matched_to_another_firms_work,
+    confidentiality: row.confidentiality,
+  }));
+}
+
+/** Measured work nobody has scheduled a payment for. */
+export async function fetchUnscheduledValuations(): Promise<UnscheduledValuation[]> {
+  const { data, error } = await supabase
+    .from('unscheduled_valuations')
+    .select('*')
+    .order('period_end', { ascending: false });
+  fail(error);
+  return (
+    (data ?? []) as {
+      valuation_id: string;
+      construction_block_id: string | null;
+      block_code: string | null;
+      contractor_id: string | null;
+      contractor_name: string | null;
+      period_start: string;
+      period_end: string;
+      amount: number | string;
+      currency: CurrencyCode;
+      state: ValuationState;
+      certified: boolean;
+      paid_at: string | null;
+      the_only_live_contract_for_that_firm: string | null;
+      confidentiality: UnscheduledValuation['confidentiality'];
+    }[]
+  ).map((row) => ({
+    valuationId: row.valuation_id,
+    constructionBlockId: row.construction_block_id,
+    blockCode: row.block_code,
+    contractorId: row.contractor_id,
+    contractorName: row.contractor_name,
+    periodStart: row.period_start,
+    periodEnd: row.period_end,
+    amount: Number(row.amount),
+    currency: row.currency,
+    state: row.state,
+    certified: row.certified,
+    paidAt: row.paid_at,
+    theOnlyLiveContractForThatFirm: row.the_only_live_contract_for_that_firm,
+    confidentiality: row.confidentiality,
+  }));
+}
+
+export async function fetchPaymentMatchingHealth(): Promise<PaymentMatchingHealth> {
+  const { data, error } = await supabase.from('payment_matching_health').select('*').maybeSingle();
+  fail(error);
+  const row = (data ?? {}) as Record<string, number | string | null>;
+  const n = (value: number | string | null | undefined): number =>
+    value == null ? 0 : Number(value);
+  return {
+    instalmentsWhoseAmountDisagrees: n(row.instalments_whose_amount_disagrees),
+    instalmentsThatCannotBeCompared: n(row.instalments_that_cannot_be_compared),
+    instalmentsClaimingAnUncertifiedMeasurement: n(
+      row.instalments_claiming_an_uncertified_measurement,
+    ),
+    instalmentsMatchedToAnotherFirmsWork: n(row.instalments_matched_to_another_firms_work),
+    settledInstalmentsWithNoMeasurement: n(row.settled_instalments_with_no_measurement),
+    measuredWorkWithNoInstalment: n(row.measured_work_with_no_instalment),
+    certifiedWorkWithNoInstalment: n(row.certified_work_with_no_instalment),
+  };
+}
+
+/**
+ * Point an instalment at the measurement behind it. The database refuses a
+ * second instalment against the same measurement, and that refusal is passed
+ * through: two payments for one period of work is the error this is for.
+ */
+export async function matchMilestoneToValuation(input: {
+  id: string;
+  valuationId: string;
+}): Promise<void> {
+  const { error } = await supabase
+    .from('contract_milestones')
+    .update({ valuation_id: input.valuationId })
+    .eq('id', input.id);
   fail(error);
 }
