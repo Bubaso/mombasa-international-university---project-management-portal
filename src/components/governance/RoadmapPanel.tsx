@@ -12,6 +12,7 @@
  * when it is not is a road map people stop reading.
  */
 import React from 'react';
+import { Bilingual } from '../ui/Bilingual';
 import { ArrowDown, Flag, Lock, TriangleAlert } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useRoadmap } from '../../api/governanceHooks';
@@ -69,7 +70,13 @@ export const RoadmapPanel: React.FC = () => {
                     <div className="flex flex-wrap items-center gap-1.5">
                       <span className="font-mono text-[11px] text-slate-400">{stage.sequence}</span>
                       <span className="text-xs font-medium text-slate-900">
-                        {(tr ? stage.titleTr : stage.titleEn) ?? stage.titleEn}
+                        <Bilingual
+                          table="charter_stages"
+                          id={stage.id}
+                          base="title"
+                          en={stage.titleEn}
+                          tr={stage.titleTr}
+                        />
                       </span>
                       <Pill className={STAGE_TONE[stage.state]}>
                         {stageLabel(stage.state, language)}

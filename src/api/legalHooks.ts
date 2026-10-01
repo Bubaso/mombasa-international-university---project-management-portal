@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTranslatingInvalidator } from './translatingMutation';
 import * as legal from './legal';
 
 export const useHearings = (caseId: string | undefined) =>
@@ -51,8 +52,8 @@ function useInvalidator(keys: string[]) {
 
 export const useCreateHearing = () => {
   // A hearing is a date, so the unified calendar changes with it.
-  const invalidate = useInvalidator(['hearings', 'projectCalendar']);
-  return useMutation({ mutationFn: legal.createHearing, onSuccess: invalidate });
+  const onSuccess = useTranslatingInvalidator(['hearings', 'projectCalendar'], 'hearings');
+  return useMutation({ mutationFn: legal.createHearing, onSuccess });
 };
 
 export const useSetHearingPreparation = () => {
@@ -71,8 +72,8 @@ export const useUpdateFiling = () => {
 };
 
 export const useCreateOrder = () => {
-  const invalidate = useInvalidator(['caseOrders']);
-  return useMutation({ mutationFn: legal.createOrder, onSuccess: invalidate });
+  const onSuccess = useTranslatingInvalidator(['caseOrders'], 'legal_orders');
+  return useMutation({ mutationFn: legal.createOrder, onSuccess });
 };
 
 export const useSetOrderState = () => {

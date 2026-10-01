@@ -727,6 +727,31 @@ const TEST_RESOLUTIONS = [
     days_since: 40,
     confidentiality: 'internal',
   },
+  // English only, and marked on text_tr. A Turkish reader is shown its
+  // English, so the badge must NOT appear on it: the one that does appear
+  // belongs to the row above, whose Turkish a machine wrote. Without this row
+  // a component keyed to the reader's language instead of to the source column
+  // passes every test.
+  {
+    decision_id: '00000000-0000-0000-0000-0000000009c2',
+    reference_no: 'BOT/2026/02',
+    text_en: 'Open the second tender for the perimeter works',
+    text_tr: null,
+    decided_on: '2026-03-11',
+    status: 'in_force',
+    signed_at: '2026-03-12T10:00:00Z',
+    organ_kind: 'board_of_trustees',
+    organ_name_en: 'Board of Trustees',
+    organ_name_tr: 'Mütevelli Heyeti',
+    actions: 0,
+    done: 0,
+    cancelled: 0,
+    overdue: 0,
+    next_due: null,
+    implementation: 'no_actions_recorded',
+    days_since: 40,
+    confidentiality: 'internal',
+  },
 ];
 
 const TEST_COMPLIANCE = [
@@ -1562,6 +1587,12 @@ const TEST_MACHINE_MARKS = {
     { entity_id: '00000000-0000-0000-0000-00000000a402', column_name: 'text_tr' },
   ],
   meetings: [{ entity_id: '00000000-0000-0000-0000-0000000000bb', column_name: 'title_tr' }],
+  // A register rather than a detail screen, and reached through <Bilingual>,
+  // which asks about the whole table because it is handed one row at a time.
+  decisions: [
+    { entity_id: '00000000-0000-0000-0000-0000000009c1', column_name: 'text_tr' },
+    { entity_id: '00000000-0000-0000-0000-0000000009c2', column_name: 'text_tr' },
+  ],
 };
 
 /**
@@ -3078,6 +3109,28 @@ try {
   check(
     !/34\.3M/.test(governance) && !/Enacted/.test(governance),
     'the typed-in resolutions and their computed-by-nobody status are gone',
+  );
+
+  // 0036: the badge on a register, reached through <Bilingual> — which asks
+  // about the whole table because it is handed one row at a time, and seventeen
+  // registers would otherwise each have needed their own hook and their own
+  // chance to key the badge to the reader's language instead of to the column
+  // the words came from.
+  check(
+    (await page
+      .locator('tr, li, article', { hasText: 'Kira sözleşmesini sonraki alımdan önce yenile' })
+      .locator('text=makine çevirisi')
+      .first()
+      .count()) === 1,
+    'a register marks machine-written text through one shared query (0036)',
+  );
+  check(
+    (await page
+      .locator('tr, li, article', { hasText: 'Open the second tender for the perimeter works' })
+      .locator('text=makine çevirisi')
+      .first()
+      .count()) === 0,
+    'and leaves alone a row whose Turkish is empty, so its English is on screen',
   );
   // M10-02: the quorum is read off the attendance against the organ's rule.
   check(

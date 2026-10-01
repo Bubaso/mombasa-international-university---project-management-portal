@@ -1,75 +1,146 @@
 /**
- * Which fields may be filled by a machine, and what they are called (M3-10).
+ * Which fields a machine may fill, and what they are called (M3-10).
  *
- * The portal is bilingual in 43 tables and 70 field pairs; measured on the
- * live database, 55 filled fields hold one language only. This registry is
- * not that list — it is the subset this feature writes into, which for now is
- * the meeting record and everything the meeting form produces, because that
- * is where the minutes are taken and where a Turkish-only or English-only
- * entry is created every week.
+ * Derived from a measurement of the live schema: 43 tables carry a bilingual
+ * field pair, 70 pairs in all, and 55 of the filled fields held one language
+ * only — mostly the registers derived from the Notion archive, written in
+ * English because that is the language the derivation was done in. A Turkish
+ * trustee opening the obligations register read English or nothing.
  *
- * It is deliberately a short, hand-written list rather than the schema-derived
- * `translatable_fields` view, for one reason: the view says what COULD be
- * translated, and a machine writing into a field nobody asked it to is the
- * failure mode worth avoiding. The database's whitelist is the safety net; this
- * is the intent.
+ * The registry is a table-to-bases map rather than seventy hand-written
+ * entries, and `notifications` is the one pair deliberately left out: a
+ * notification is raised by the sweep in 0033 with both languages already
+ * written, so there is never a half to fill and translating one would be
+ * rewriting a message that has already been delivered.
  *
- * Two things every entry needs and the schema cannot supply: which column is
- * English and which is Turkish — `meetings` breaks the convention, its English
- * title being the NOT NULL `title` because every screen falls back to it — and
- * a name for the field that a reviewer would recognise on a review screen.
+ * Two things the schema cannot supply:
+ *
+ *   `meetings` breaks the naming convention — its English title is the NOT
+ *   NULL `title`, because every screen falls back to it.
+ *
+ *   A name for each field that a reviewer would recognise on the review
+ *   screen. Thirty-three base names cover all seventy pairs, so the labels are
+ *   a map over those rather than per table.
  */
 import type { ContentLanguage } from '../types';
 
+/** What each base name is called, for the review screen. */
+const LABELS: Record<string, { en: string; tr: string }> = {
+  answer: { en: 'Answer', tr: 'Cevap' },
+  basis: { en: 'Basis', tr: 'Dayanak' },
+  decision_note: { en: 'Award note', tr: 'Karar notu' },
+  description: { en: 'Description', tr: 'Açıklama' },
+  detail: { en: 'Detail', tr: 'Ayrıntı' },
+  early_warning: { en: 'Early warning', tr: 'Erken uyarı' },
+  interest: { en: 'Interest declared', tr: 'Beyan edilen menfaat' },
+  justification: { en: 'Justification', tr: 'Gerekçe' },
+  legal_basis: { en: 'Legal basis', tr: 'Hukukî dayanak' },
+  name: { en: 'Name', tr: 'Ad' },
+  need: { en: 'Need', tr: 'İhtiyaç' },
+  note: { en: 'Note', tr: 'Not' },
+  objective: { en: 'Objective', tr: 'Amaç' },
+  outcome: { en: 'Outcome', tr: 'Sonuç' },
+  position: { en: 'Position', tr: 'Tutum' },
+  purpose: { en: 'Purpose', tr: 'Amaç' },
+  question: { en: 'Question', tr: 'Soru' },
+  rationale: { en: 'Rationale', tr: 'Gerekçe' },
+  references: { en: 'References', tr: 'Referanslar' },
+  remit: { en: 'Remit', tr: 'Görev alanı' },
+  resolution: { en: 'Resolution', tr: 'Çözüm' },
+  response_plan: { en: 'Response plan', tr: 'Müdahale planı' },
+  scope: { en: 'Scope', tr: 'Kapsam' },
+  seat: { en: 'Seat', tr: 'Koltuk' },
+  statement: { en: 'Statement', tr: 'İfade' },
+  strengths: { en: 'Strengths', tr: 'Güçlü yönler' },
+  subject: { en: 'Subject', tr: 'Konu' },
+  summary: { en: 'Summary', tr: 'Özet' },
+  termination: { en: 'Termination', tr: 'Fesih' },
+  text: { en: 'Text', tr: 'Metin' },
+  title: { en: 'Title', tr: 'Başlık' },
+  trigger: { en: 'Trigger', tr: 'Tetikleyici' },
+  weaknesses: { en: 'Weaknesses', tr: 'Zayıf yönler' },
+};
+
+/** Every bilingual pair in the portal, by table. */
+const BASES: Record<string, string[]> = {
+  academic_programmes: ['name'],
+  accreditation_requirements: ['detail', 'position', 'title'],
+  action_candidates: ['text'],
+  action_items: ['text'],
+  assumptions: ['statement'],
+  boq_items: ['description'],
+  budget_categories: ['name'],
+  budget_lines: ['title'],
+  charter_stages: ['detail', 'title'],
+  chronology_entries: ['detail', 'title'],
+  compliance_requirements: ['detail', 'title'],
+  conflict_declarations: ['interest'],
+  construction_blocks: ['purpose'],
+  contract_milestones: ['title'],
+  contract_terms: ['detail', 'title'],
+  contractors: ['scope'],
+  contracts: ['subject', 'termination'],
+  correspondence: ['subject'],
+  decisions: ['rationale', 'text'],
+  dependencies: ['note'],
+  document_vault: ['description'],
+  donations: ['purpose'],
+  governance_organs: ['name', 'remit'],
+  hearings: ['outcome'],
+  inspection_findings: ['description'],
+  issues: ['detail', 'resolution', 'title'],
+  legal_cases: ['description'],
+  legal_orders: ['text'],
+  meetings: ['title'],
+  milestones: ['detail', 'title'],
+  obligation_targets: ['basis'],
+  obligations: ['detail', 'title'],
+  open_question_parties: ['position'],
+  open_questions: ['answer', 'detail', 'question'],
+  procurement_candidates: ['decision_note', 'references', 'scope', 'strengths', 'weaknesses'],
+  procurement_requests: ['justification', 'need'],
+  project_phases: ['name', 'objective', 'scope'],
+  risks: ['detail', 'early_warning', 'response_plan', 'title', 'trigger'],
+  site_inspections: ['summary'],
+  site_tasks: ['legal_basis', 'title'],
+  supplier_reviews: ['note'],
+  trustees: ['seat'],
+  work_packages: ['title'],
+};
+
 export interface FieldPair {
+  base: string;
   en: string;
   tr: string;
   labelEn: string;
   labelTr: string;
 }
 
-export interface TranslatableEntity {
-  table: string;
-  fields: FieldPair[];
+/** The English column of a pair. `meetings.title` is the one exception. */
+export function enColumn(table: string, base: string): string {
+  return table === 'meetings' && base === 'title' ? 'title' : `${base}_en`;
 }
 
-export const TRANSLATES: Record<string, TranslatableEntity> = {
-  meeting: {
-    table: 'meetings',
-    fields: [{ en: 'title', tr: 'title_tr', labelEn: 'Title', labelTr: 'Başlık' }],
-  },
-  decision: {
-    table: 'decisions',
-    fields: [
-      { en: 'text_en', tr: 'text_tr', labelEn: 'Decision', labelTr: 'Karar' },
-      { en: 'rationale_en', tr: 'rationale_tr', labelEn: 'Rationale', labelTr: 'Gerekçe' },
-    ],
-  },
-  action_item: {
-    table: 'action_items',
-    fields: [{ en: 'text_en', tr: 'text_tr', labelEn: 'Action', labelTr: 'Aksiyon' }],
-  },
-  action_candidate: {
-    table: 'action_candidates',
-    fields: [{ en: 'text_en', tr: 'text_tr', labelEn: 'Action line', labelTr: 'Aksiyon cümlesi' }],
-  },
-  open_question: {
-    table: 'open_questions',
-    fields: [
-      { en: 'question_en', tr: 'question_tr', labelEn: 'Question', labelTr: 'Soru' },
-      { en: 'detail_en', tr: 'detail_tr', labelEn: 'Detail', labelTr: 'Ayrıntı' },
-      { en: 'answer_en', tr: 'answer_tr', labelEn: 'Answer', labelTr: 'Cevap' },
-    ],
-  },
-};
+export function fieldsOf(table: string): FieldPair[] {
+  return (BASES[table] ?? []).map((base) => ({
+    base,
+    en: enColumn(table, base),
+    tr: `${base}_tr`,
+    labelEn: LABELS[base]?.en ?? base,
+    labelTr: LABELS[base]?.tr ?? base,
+  }));
+}
+
+export const TRANSLATED_TABLES = Object.keys(BASES);
+
+export function translates(table: string): boolean {
+  return table in BASES;
+}
 
 /** What a field pair needs doing, if anything. */
 export interface Missing {
-  /** The column to write into. */
   column: string;
-  /** The text to translate. */
   source: string;
-  /** Which language the source is in, and which the result will be. */
   from: ContentLanguage;
   into: ContentLanguage;
   labelEn: string;
@@ -80,22 +151,16 @@ const filled = (value: unknown): value is string =>
   typeof value === 'string' && value.trim() !== '';
 
 /**
- * The gaps in one record: a side that is empty while the other side says
- * something.
+ * The gaps in one row: a side that is empty while the other says something.
  *
  * A pair with both sides filled is left alone — the point is never to
  * overwrite what a person wrote, in either language. A pair with neither side
- * filled has nothing to translate from, and is not a gap but an empty field.
+ * filled has nothing to translate from, and is an empty field rather than a
+ * gap.
  */
-export function missingHalves(
-  entityKind: keyof typeof TRANSLATES | string,
-  row: Record<string, unknown>,
-): Missing[] {
-  const entity = TRANSLATES[entityKind];
-  if (!entity) return [];
-
+export function missingHalves(table: string, row: Record<string, unknown>): Missing[] {
   const gaps: Missing[] = [];
-  for (const pair of entity.fields) {
+  for (const pair of fieldsOf(table)) {
     const en = row[pair.en];
     const tr = row[pair.tr];
     if (filled(en) && !filled(tr)) {
@@ -121,8 +186,10 @@ export function missingHalves(
   return gaps;
 }
 
-export function tableFor(entityKind: string): string | null {
-  return TRANSLATES[entityKind]?.table ?? null;
+/** The columns to read when looking for gaps in a table. */
+export function columnsOf(table: string): string[] {
+  const pairs = fieldsOf(table);
+  return ['id', ...pairs.flatMap((p) => [p.en, p.tr])];
 }
 
 /**
@@ -137,13 +204,10 @@ export function tableFor(entityKind: string): string | null {
  *   null side      — the field is empty in both languages, so nothing is on
  *                    screen and there is nothing to mark. Badging it would
  *                    claim a machine wrote a sentence that is not there.
- *   meetings.title — the one pair that breaks the convention: the English
- *                    title is the NOT NULL `title`, because every screen falls
- *                    back to it.
+ *   meetings.title — the pair that breaks the convention.
  *   everything else is <base>_<side>.
  */
 export function markedColumn(table: string, base: string, side: 'en' | 'tr' | null): string | null {
   if (!side) return null;
-  if (table === 'meetings' && base === 'title' && side === 'en') return 'title';
-  return `${base}_${side}`;
+  return side === 'en' ? enColumn(table, base) : `${base}_tr`;
 }

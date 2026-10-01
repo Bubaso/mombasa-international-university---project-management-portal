@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTranslatingInvalidator } from './translatingMutation';
 import * as site from './site';
 
 export const useBlocks = () => useQuery({ queryKey: ['blocks'], queryFn: site.fetchBlocks });
@@ -73,20 +74,18 @@ function useInvalidator(keys: string[]) {
 }
 
 export const useCreateWorkPackage = () => {
-  const invalidate = useInvalidator(['workPackages', 'siteTasks']);
-  return useMutation({ mutationFn: site.createWorkPackage, onSuccess: invalidate });
+  const onSuccess = useTranslatingInvalidator(['workPackages', 'siteTasks'], 'work_packages');
+  return useMutation({ mutationFn: site.createWorkPackage, onSuccess });
 };
 
 export const useCreateTask = () => {
   // A new task changes the denominator the block's progress is averaged over,
   // and may fall under a prohibition, so both of those go stale with it.
-  const invalidate = useInvalidator([
-    'siteTasks',
-    'blockProgress',
-    'taskConflicts',
-    'workPackages',
-  ]);
-  return useMutation({ mutationFn: site.createTask, onSuccess: invalidate });
+  const onSuccess = useTranslatingInvalidator(
+    ['siteTasks', 'blockProgress', 'taskConflicts', 'workPackages'],
+    'site_tasks',
+  );
+  return useMutation({ mutationFn: site.createTask, onSuccess });
 };
 
 export const useSetTaskState = () => {
@@ -100,13 +99,13 @@ export const useReportProgress = () => {
 };
 
 export const useCreateInspection = () => {
-  const invalidate = useInvalidator(['inspections']);
-  return useMutation({ mutationFn: site.createInspection, onSuccess: invalidate });
+  const onSuccess = useTranslatingInvalidator(['inspections'], 'site_inspections');
+  return useMutation({ mutationFn: site.createInspection, onSuccess });
 };
 
 export const useAddFinding = () => {
-  const invalidate = useInvalidator(['findings', 'inspections']);
-  return useMutation({ mutationFn: site.addFinding, onSuccess: invalidate });
+  const onSuccess = useTranslatingInvalidator(['findings', 'inspections'], 'inspection_findings');
+  return useMutation({ mutationFn: site.addFinding, onSuccess });
 };
 
 export const useResolveFinding = () => {
@@ -130,8 +129,8 @@ export const useCreateBoqVersion = () => {
 };
 
 export const useAddBoqItem = () => {
-  const invalidate = useInvalidator(['boqItems', 'boqVersions']);
-  return useMutation({ mutationFn: site.addBoqItem, onSuccess: invalidate });
+  const onSuccess = useTranslatingInvalidator(['boqItems', 'boqVersions'], 'boq_items');
+  return useMutation({ mutationFn: site.addBoqItem, onSuccess });
 };
 
 export const useIssueBoqVersion = () => {

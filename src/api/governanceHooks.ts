@@ -1,5 +1,6 @@
 /** Query hooks for the governance, compliance and readiness registers (M10). */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useAutoTranslate } from './translateHooks';
 import * as api from './governance';
 
 export const useOrgans = () => useQuery({ queryKey: ['organs'], queryFn: api.fetchOrgans });
@@ -46,6 +47,7 @@ export const useReadiness = () =>
 
 export function useAddTrustee() {
   const client = useQueryClient();
+  const translate = useAutoTranslate();
   return useMutation({
     mutationFn: api.addTrustee,
     onSuccess: () => {
@@ -53,6 +55,7 @@ export function useAddTrustee() {
       // A new seat changes the quorum arithmetic on every past sitting the
       // register covers, so the sittings have to be refetched with it.
       client.invalidateQueries({ queryKey: ['sittings'] });
+      void translate('trustees');
     },
   });
 }
@@ -92,8 +95,12 @@ export function useRaiseCompliance() {
 
 export function useDeclareInterest() {
   const client = useQueryClient();
+  const translate = useAutoTranslate();
   return useMutation({
     mutationFn: api.declareInterest,
-    onSuccess: () => client.invalidateQueries({ queryKey: ['conflicts'] }),
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: ['conflicts'] });
+      void translate('conflict_declarations');
+    },
   });
 }

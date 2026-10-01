@@ -5772,6 +5772,18 @@ select pg_temp.check('and is told the field is machine-written anyway (0035)',
 
 select pg_temp.act_as('22222222-2222-2222-2222-222222222222');
 
+-- 0036: the whole register at once, which is what a list of a hundred rows
+-- needs — the component that draws a badge is handed one row and cannot know
+-- the others.
+select pg_temp.check('asked about the whole table, it answers for every marker in it',
+  (select count(*) > 0 from public.machine_marked('obligations')), true);
+select pg_temp.check('and that answer includes the row asked about by id',
+  (select count(*) from public.machine_marked('obligations')
+    where entity_id = 'b1000000-0000-0000-0000-00000000f201'
+      and column_name = 'detail_tr'), 1::bigint);
+select pg_temp.check('a table with no markers answers with nothing, not with everything',
+  (select count(*) from public.machine_marked('risks')), 0::bigint);
+
 -- Only the ids the caller names, and only those that carry a marker.
 select pg_temp.check('a record with no marker is reported as nothing',
   (select count(*) from public.machine_marked(

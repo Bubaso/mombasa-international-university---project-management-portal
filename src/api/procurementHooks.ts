@@ -1,5 +1,6 @@
 /** Query hooks for the procurement and contract registers (M14). */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useAutoTranslate } from './translateHooks';
 import * as api from './procurement';
 
 export const useRequests = () =>
@@ -39,9 +40,13 @@ export const useReviews = () =>
 
 export function useAddRequest() {
   const client = useQueryClient();
+  const translate = useAutoTranslate();
   return useMutation({
     mutationFn: api.addRequest,
-    onSuccess: () => client.invalidateQueries({ queryKey: ['procurementRequests'] }),
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: ['procurementRequests'] });
+      void translate('procurement_requests');
+    },
   });
 }
 
@@ -56,11 +61,13 @@ export function useApproveRequest() {
 
 export function useAddCandidate() {
   const client = useQueryClient();
+  const translate = useAutoTranslate();
   return useMutation({
     mutationFn: api.addCandidate,
     onSuccess: (_data, input) => {
       client.invalidateQueries({ queryKey: ['procurementCandidates', input.requestId] });
       client.invalidateQueries({ queryKey: ['procurementRequests'] });
+      void translate('procurement_candidates');
     },
   });
 }
@@ -89,8 +96,12 @@ export function useRejectCandidate() {
 
 export function useAddReview() {
   const client = useQueryClient();
+  const translate = useAutoTranslate();
   return useMutation({
     mutationFn: api.addReview,
-    onSuccess: () => client.invalidateQueries({ queryKey: ['supplierReviews'] }),
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: ['supplierReviews'] });
+      void translate('supplier_reviews');
+    },
   });
 }

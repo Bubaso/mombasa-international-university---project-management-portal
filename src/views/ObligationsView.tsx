@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { Bilingual } from '../components/ui/Bilingual';
 import { ScrollText, ShieldAlert, Plus, FileCheck2, FileX2 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import * as register from '../api/obligationHooks';
@@ -9,7 +10,6 @@ import { useStakeholders } from '../api/stakeholderHooks';
 import { QueryStatus } from '../components/QueryStatus';
 import { EmptyState } from '../components/EmptyState';
 import { ASSESSORS, MINUTE_KEEPERS, actsAs } from '../lib/authority';
-import { bilingual } from '../lib/meetings';
 import {
   BAND_STYLES,
   OBLIGATION_SOURCES,
@@ -209,7 +209,13 @@ export const ObligationsView: React.FC = () => {
                                 />
                               )}
                               <span className="text-xs font-medium text-slate-900">
-                                {bilingual(o.titleEn, o.titleTr, language)}
+                                <Bilingual
+                                  table="obligations"
+                                  id={o.id}
+                                  base="title"
+                                  en={o.titleEn}
+                                  tr={o.titleTr}
+                                />
                               </span>
                             </div>
                             <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-slate-500">

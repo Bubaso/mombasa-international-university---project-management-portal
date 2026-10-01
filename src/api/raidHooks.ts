@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTranslatingInvalidator } from './translatingMutation';
 import * as raid from './raid';
 
 export const useRisks = () => useQuery({ queryKey: ['risks'], queryFn: raid.fetchRisks });
@@ -35,8 +36,8 @@ function useInvalidator(keys: string[]) {
 const SCORE_KEYS = ['risks', 'riskMatrix', 'riskScoreHistory', 'riskEscalations'];
 
 export const useCreateRisk = () => {
-  const invalidate = useInvalidator(SCORE_KEYS);
-  return useMutation({ mutationFn: raid.createRisk, onSuccess: invalidate });
+  const onSuccess = useTranslatingInvalidator(SCORE_KEYS, 'risks');
+  return useMutation({ mutationFn: raid.createRisk, onSuccess });
 };
 
 export const useRescoreRisk = () => {
@@ -66,8 +67,8 @@ export const useMaterialiseRisk = () => {
 };
 
 export const useCreateIssue = () => {
-  const invalidate = useInvalidator(['issues']);
-  return useMutation({ mutationFn: raid.createIssue, onSuccess: invalidate });
+  const onSuccess = useTranslatingInvalidator(['issues'], 'issues');
+  return useMutation({ mutationFn: raid.createIssue, onSuccess });
 };
 
 export const useResolveIssue = () => {
@@ -76,8 +77,8 @@ export const useResolveIssue = () => {
 };
 
 export const useCreateAssumption = () => {
-  const invalidate = useInvalidator(['assumptions']);
-  return useMutation({ mutationFn: raid.createAssumption, onSuccess: invalidate });
+  const onSuccess = useTranslatingInvalidator(['assumptions'], 'assumptions');
+  return useMutation({ mutationFn: raid.createAssumption, onSuccess });
 };
 
 export const useSetAssumptionState = () => {
@@ -88,8 +89,8 @@ export const useSetAssumptionState = () => {
 };
 
 export const useCreateDependency = () => {
-  const invalidate = useInvalidator(['dependencies']);
-  return useMutation({ mutationFn: raid.createDependency, onSuccess: invalidate });
+  const onSuccess = useTranslatingInvalidator(['dependencies'], 'dependencies');
+  return useMutation({ mutationFn: raid.createDependency, onSuccess });
 };
 
 export const useDeleteDependency = () => {

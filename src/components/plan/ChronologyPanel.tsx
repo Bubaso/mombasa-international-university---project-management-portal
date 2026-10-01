@@ -13,6 +13,7 @@
  * day the portal does not know is how an invention becomes a fact.
  */
 import React, { useState } from 'react';
+import { Bilingual } from '../ui/Bilingual';
 import { BookMarked, FileCheck2, Plus, Quote } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
@@ -309,7 +310,13 @@ export const ChronologyPanel: React.FC = () => {
                     </Pill>
                   </div>
                   <p className="mt-0.5 text-xs text-slate-900">
-                    {(tr ? event.titleTr : event.titleEn) ?? event.titleEn}
+                    <Bilingual
+                      table="chronology_entries"
+                      id={event.id}
+                      base="title"
+                      en={event.titleEn}
+                      tr={event.titleTr}
+                    />
                   </p>
                   {event.detailEn && (
                     <p className="mt-0.5 line-clamp-2 text-[11px] text-slate-600">

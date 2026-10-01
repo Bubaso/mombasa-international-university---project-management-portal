@@ -8,6 +8,7 @@
  * hopes, and this project already has one of those.
  */
 import React from 'react';
+import { Bilingual } from '../ui/Bilingual';
 import { useNavigate } from 'react-router-dom';
 import { BadgeCheck, FileCheck2, TriangleAlert } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
@@ -79,7 +80,13 @@ export const AccreditationPanel: React.FC = () => {
                       <span className="font-mono text-[11px] text-slate-500">{row.code}</span>
                     )}
                     <span className="text-xs font-medium text-slate-900">
-                      {(tr ? row.titleTr : row.titleEn) ?? row.titleEn}
+                      <Bilingual
+                        table="accreditation_requirements"
+                        id={row.id}
+                        base="title"
+                        en={row.titleEn}
+                        tr={row.titleTr}
+                      />
                     </span>
                     <Pill className={ACCREDITATION_TONE[row.state]}>
                       {accreditationLabel(row.state, language)}

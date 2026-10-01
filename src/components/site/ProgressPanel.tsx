@@ -11,6 +11,7 @@
  * writing straight onto the block.
  */
 import React, { useState } from 'react';
+import { Bilingual } from '../ui/Bilingual';
 import { CalendarClock, Camera, ChevronDown, ChevronUp, Plus } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import * as site from '../../api/siteHooks';
@@ -135,7 +136,6 @@ const TaskGroup: React.FC<{
   canReport: boolean;
 }> = ({ heading, note, tasks, openTask, onToggle, canReport }) => {
   const { language } = useApp();
-  const tr = language === 'tr';
   if (tasks.length === 0) return null;
 
   return (
@@ -155,7 +155,13 @@ const TaskGroup: React.FC<{
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-1.5">
                   <span className="text-xs font-medium text-slate-900">
-                    {tr ? (task.titleTr ?? task.titleEn) : task.titleEn}
+                    <Bilingual
+                      table="site_tasks"
+                      id={task.id}
+                      base="title"
+                      en={task.titleEn}
+                      tr={task.titleTr}
+                    />
                   </span>
                   <Pill className={workStateStyle(task.state)}>
                     {workStateLabel(task.state, language)}

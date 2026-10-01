@@ -18,12 +18,13 @@
  * queue says so rather than asking them to confirm their own edit.
  */
 import React, { useState } from 'react';
-import { Check, Languages, Pencil, TriangleAlert } from 'lucide-react';
+import { Check, Languages, Pencil, RefreshCw, TriangleAlert } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import {
   translationConfigured,
   useApproveTranslation,
   useCorrectTranslation,
+  useSweepTranslations,
   useTranslationBacklog,
   useTranslationReview,
 } from '../../api/translateHooks';
@@ -41,8 +42,14 @@ export const TranslationPanel: React.FC = () => {
   const approve = useApproveTranslation();
   const correct = useCorrectTranslation();
 
+  const sweep = useSweepTranslations();
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
+  // What the backfill did, table by table, so a run that half worked says so.
+  const [swept, setSwept] = useState<{ filled: number; refused: number; left: number } | null>(
+    null,
+  );
+  const [sweeping, setSweeping] = useState<string | null>(null);
 
   const rows = review.data ?? [];
   // Three states, genuinely different: waiting for a reader, already edited by
@@ -91,6 +98,73 @@ export const TranslationPanel: React.FC = () => {
           )}
         </div>
       </header>
+
+      {/* The backlog, and the one control that clears it.
+          Deliberately a button rather than something that happens on its own:
+          this is tens of calls to a metered model, and the person who pays for
+          them should be the one who starts them. Every field it fills is
+          marked unapproved and badged wherever it is read, so the queue below
+          grows by exactly as much as this empties. */}
+      {gap > 0 && translationConfigured && (
+        <div className="mb-2 flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+          <span className="text-[11px] text-slate-700">
+            {tr
+              ? `${gap} alan tek dilli. Çevirmek, her birini onay bekleyen bir öneri olarak işaretler.`
+              : `${gap} fields hold one language. Translating marks each as a suggestion awaiting approval.`}
+          </span>
+          <ActionButton
+            className="ml-auto"
+            onClick={async () => {
+              const tables = [...new Set((backlog.data ?? []).map((r) => r.entityTable))];
+              let filled = 0;
+              let refused = 0;
+              for (const table of tables) {
+                setSweeping(table);
+                const outcome = await sweep.mutateAsync(table).catch(() => null);
+                if (outcome) {
+                  filled += outcome.filled.length;
+                  refused += outcome.refused.length;
+                }
+              }
+              setSweeping(null);
+              setSwept({ filled, refused, left: Math.max(0, gap - filled) });
+            }}
+            disabled={sweep.isPending}
+          >
+            <RefreshCw
+              className={`h-3.5 w-3.5 ${sweep.isPending ? 'animate-spin' : ''}`}
+              aria-hidden="true"
+            />
+            {tr ? 'Eksik dilleri çevir' : 'Translate what is missing'}
+          </ActionButton>
+          {sweeping && (
+            <span className="w-full font-mono text-[11px] text-slate-500">{sweeping}…</span>
+          )}
+        </div>
+      )}
+
+      {swept && (
+        <p
+          className={`mb-2 rounded-lg px-3 py-2 text-[11px] ${
+            swept.refused > 0 || swept.left > 0
+              ? 'border border-amber-200 bg-amber-50 text-amber-900'
+              : 'border border-emerald-200 bg-emerald-50 text-emerald-900'
+          }`}
+        >
+          {/* Never "hepsi çevrildi" unless nothing was refused and nothing is
+              left. A half-finished backfill that reported success would be the
+              same defect as a delivery that reports sent. */}
+          {tr
+            ? `${swept.filled} alan çevrildi ve onay bekliyor` +
+              (swept.refused > 0 ? `, ${swept.refused} tanesi reddedildi` : '') +
+              (swept.left > 0 ? `, ${swept.left} alan hâlâ tek dilli.` : '.')
+            : `${swept.filled} fields translated and awaiting approval` +
+              (swept.refused > 0 ? `, ${swept.refused} refused` : '') +
+              (swept.left > 0 ? `, ${swept.left} still single-language.` : '.')}
+        </p>
+      )}
+
+      <WriteError error={sweep.error} />
 
       {!translationConfigured && (
         <p className="mb-2 flex items-start gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-900">

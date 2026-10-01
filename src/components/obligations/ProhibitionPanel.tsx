@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
+import { Bilingual } from '../ui/Bilingual';
 import { ShieldAlert, ChevronDown, ChevronUp, Pen } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import * as register from '../../api/obligationHooks';
 import { useConstructionBlocks } from '../../api/hooks';
-import { bilingual } from '../../lib/meetings';
 import { ActionButton, Field, Select, TextInput, WriteError } from '../ui/Controls';
 import type { Obligation } from '../../types';
 
@@ -77,7 +77,13 @@ export const ProhibitionPanel: React.FC<{ canRecord: boolean }> = ({ canRecord }
               <li key={o.id} className="rounded-lg border border-rose-200 bg-white px-3 py-2">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <p className="min-w-0 flex-1 text-xs font-medium text-slate-900">
-                    {bilingual(o.titleEn, o.titleTr, language)}
+                    <Bilingual
+                      table="obligations"
+                      id={o.id}
+                      base="title"
+                      en={o.titleEn}
+                      tr={o.titleTr}
+                    />
                   </p>
                   {canRecord && recordingFor !== o.id && (
                     <ActionButton tone="danger" onClick={() => setRecordingFor(o.id)}>

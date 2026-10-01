@@ -12,6 +12,7 @@
  * they do the register says so rather than quietly carrying on.
  */
 import React, { useState } from 'react';
+import { Bilingual } from '../ui/Bilingual';
 import { ArrowUpRight, Bell, ChevronDown, ChevronUp, Plus, ShieldAlert } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
@@ -235,7 +236,13 @@ const RiskRow: React.FC<{
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="text-xs font-medium text-slate-900">
-              {tr ? (risk.titleTr ?? risk.titleEn) : risk.titleEn}
+              <Bilingual
+                table="risks"
+                id={risk.id}
+                base="title"
+                en={risk.titleEn}
+                tr={risk.titleTr}
+              />
             </span>
             <Pill>{riskCategoryLabel(risk.category, language)}</Pill>
             <Pill>{riskStateLabel(risk.state, language)}</Pill>

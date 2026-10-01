@@ -16,6 +16,7 @@
  * second. This one keeps both and shows them in adjacent columns.
  */
 import React, { useState } from 'react';
+import { Bilingual } from '../ui/Bilingual';
 import { CameraOff, History, Plus } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useBaselines, useTakeBaseline, useVariance } from '../../api/planHooks';
@@ -228,7 +229,13 @@ export const BaselinePanel: React.FC = () => {
                       </span>
                     )}
                     <span className="text-xs text-slate-900">
-                      {(tr ? row.titleTr : row.titleEn) ?? row.titleEn}
+                      <Bilingual
+                        table="milestones"
+                        id={row.milestoneId}
+                        base="title"
+                        en={row.titleEn}
+                        tr={row.titleTr}
+                      />
                     </span>
                     {row.baselineState !== row.currentState && (
                       <Pill className="ml-1.5 border-sky-300 bg-sky-50 text-sky-900">

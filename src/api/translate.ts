@@ -19,7 +19,7 @@
  */
 import { supabase } from '../lib/supabase';
 import { ask } from './assistant';
-import { missingHalves, tableFor } from '../lib/translate';
+import { columnsOf, missingHalves, translates } from '../lib/translate';
 import type { Missing } from '../lib/translate';
 import type { ContentLanguage } from '../types';
 
@@ -96,37 +96,52 @@ async function oneField(
  * succeeded, and a translation that could not be made is not a reason to tell
  * somebody their minute failed to save.
  */
-export async function translateRecord(input: {
-  entityKind: string;
-  id: string;
-}): Promise<TranslationOutcome> {
-  const table = tableFor(input.entityKind);
+/**
+ * Translates whatever is missing in one table.
+ *
+ * Keyed on the table rather than on a record id, and that is what made the
+ * rest of the portal reachable. A create mutation knows which table it wrote
+ * but not always what the new row's id is — twenty-three of them returned
+ * void — and changing all of their signatures to find out would have been a
+ * great deal of churn for a fact this does not need. Sweeping the table it
+ * just wrote finds the new row's gap and, as a side effect, any gap an earlier
+ * record was left with.
+ *
+ * Returns rather than throws: this runs after a save that has already
+ * succeeded, and a translation that could not be made is not a reason to tell
+ * somebody their record failed to save. The gap simply stays, visible as an
+ * empty field, which is the honest state.
+ */
+export async function translateTable(
+  table: string,
+  options: { limit?: number } = {},
+): Promise<TranslationOutcome> {
   const outcome: TranslationOutcome = { filled: [], refused: [] };
-  if (!table) return outcome;
+  if (!translates(table)) return outcome;
 
-  // The row is read back rather than taken from the caller. Two reasons, and
-  // the first one was a bug before it was a reason: the client's objects are
-  // camelCase (`titleTr`) while the registry names columns (`title_tr`), so a
-  // filled field read through the wrong name looks empty and gets overwritten
-  // by a translation of itself. And a row read back shows what the database
-  // actually holds after defaults and triggers, which is what is being
-  // translated.
-  const { data, error } = await supabase.from(table).select('*').eq('id', input.id).maybeSingle();
-  if (error || !data) {
-    outcome.refused.push({
-      column: '(the record)',
-      reason: error?.message ?? 'the record could not be read back',
-    });
+  // Read only the bilingual columns. These registers are small — the largest
+  // is 103 rows — so the gaps are found by reading rather than by a filter
+  // expression that would have to be built per pair.
+  const { data, error } = await supabase.from(table).select(columnsOf(table).join(', ')).limit(500);
+  if (error) {
+    outcome.refused.push({ column: `(${table})`, reason: error.message });
     return outcome;
   }
-  const row = data as Record<string, unknown>;
 
-  for (const gap of missingHalves(input.entityKind, row)) {
-    const result = await oneField(table, input.id, gap);
-    if (result.ok) {
-      outcome.filled.push({ column: gap.column, labelEn: gap.labelEn, labelTr: gap.labelTr });
-    } else {
-      outcome.refused.push({ column: gap.column, reason: result.reason });
+  const rows = (data ?? []) as unknown as Record<string, unknown>[];
+  const limit = options.limit ?? 40;
+
+  for (const row of rows) {
+    const id = row.id as string | undefined;
+    if (!id) continue;
+    for (const gap of missingHalves(table, row)) {
+      if (outcome.filled.length >= limit) return outcome;
+      const result = await oneField(table, id, gap);
+      if (result.ok) {
+        outcome.filled.push({ column: gap.column, labelEn: gap.labelEn, labelTr: gap.labelTr });
+      } else {
+        outcome.refused.push({ column: gap.column, reason: result.reason });
+      }
     }
   }
   return outcome;
@@ -241,10 +256,15 @@ export async function fetchTranslationBacklog(): Promise<BacklogRow[]> {
  * with nothing to say so — the readers who most need telling. The function
  * returns a location and never a wording, and only for the ids it is given.
  */
-export async function fetchMachineMarked(table: string, ids: string[]): Promise<Set<string>> {
-  if (ids.length === 0) return new Set();
+export async function fetchMachineMarked(
+  table: string,
+  ids: string[] | null,
+): Promise<Set<string>> {
+  if (ids !== null && ids.length === 0) return new Set();
   const { data, error } = await supabase.rpc('machine_marked', {
     p_table: table,
+    // Null asks about the whole register, which is what a component handed one
+    // row of it needs: the marks are then fetched once and shared.
     p_ids: ids,
   });
   if (error) throw new Error(error.message);

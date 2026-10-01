@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTranslatingInvalidator } from './translatingMutation';
 import * as documents from './documents';
 
 export const useDocuments = () =>
@@ -40,8 +41,8 @@ function useInvalidator(keys: string[]) {
 }
 
 export const useCreateDocument = () => {
-  const invalidate = useInvalidator(['documents']);
-  return useMutation({ mutationFn: documents.createDocument, onSuccess: invalidate });
+  const onSuccess = useTranslatingInvalidator(['documents'], 'document_vault');
+  return useMutation({ mutationFn: documents.createDocument, onSuccess });
 };
 
 export const useUploadVersion = () => {

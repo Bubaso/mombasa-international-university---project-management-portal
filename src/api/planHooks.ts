@@ -1,5 +1,6 @@
 /** Query hooks for the project backbone (M15). */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useAutoTranslate } from './translateHooks';
 import * as api from './plan';
 
 export const usePlanMilestones = () =>
@@ -47,7 +48,14 @@ function invalidatePlan(client: ReturnType<typeof useQueryClient>) {
 
 export function useAddMilestone() {
   const client = useQueryClient();
-  return useMutation({ mutationFn: api.addMilestone, onSuccess: () => invalidatePlan(client) });
+  const translate = useAutoTranslate();
+  return useMutation({
+    mutationFn: api.addMilestone,
+    onSuccess: () => {
+      invalidatePlan(client);
+      void translate('milestones');
+    },
+  });
 }
 
 export function useMoveTarget() {
@@ -87,9 +95,13 @@ export function useTakeBaseline() {
 
 export function useAddChronologyEntry() {
   const client = useQueryClient();
+  const translate = useAutoTranslate();
   return useMutation({
     mutationFn: api.addChronologyEntry,
-    onSuccess: () => client.invalidateQueries({ queryKey: ['chronology'] }),
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: ['chronology'] });
+      void translate('chronology_entries');
+    },
   });
 }
 

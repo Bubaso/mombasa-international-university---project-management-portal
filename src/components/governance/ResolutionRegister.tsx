@@ -15,6 +15,7 @@
  * is coloured amber rather than grey for exactly that reason.
  */
 import React from 'react';
+import { Bilingual } from '../ui/Bilingual';
 import { useNavigate } from 'react-router-dom';
 import { Gavel, PenLine, Signature } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
@@ -91,7 +92,13 @@ export const ResolutionRegister: React.FC = () => {
                       </span>
                     )}
                     <span className="text-xs font-medium text-slate-900">
-                      {(tr ? row.textTr : row.textEn) ?? row.textEn ?? row.textTr}
+                      <Bilingual
+                        table="decisions"
+                        id={row.decisionId}
+                        base="text"
+                        en={row.textEn}
+                        tr={row.textTr}
+                      />
                     </span>
                   </div>
                   <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-500">

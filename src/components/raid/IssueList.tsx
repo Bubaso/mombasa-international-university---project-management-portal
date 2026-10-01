@@ -7,6 +7,7 @@
  * is discovering it.
  */
 import React, { useState } from 'react';
+import { Bilingual } from '../ui/Bilingual';
 import { AlertTriangle, Link2, Plus } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import * as raid from '../../api/raidHooks';
@@ -135,7 +136,13 @@ export const IssueList: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-1.5">
                     <span className="text-xs font-medium text-slate-900">
-                      {tr ? (issue.titleTr ?? issue.titleEn) : issue.titleEn}
+                      <Bilingual
+                        table="issues"
+                        id={issue.id}
+                        base="title"
+                        en={issue.titleEn}
+                        tr={issue.titleTr}
+                      />
                     </span>
                     <Pill>{riskCategoryLabel(issue.category, language)}</Pill>
                     <Pill>{issueStateLabel(issue.state, language)}</Pill>

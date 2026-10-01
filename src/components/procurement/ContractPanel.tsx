@@ -14,6 +14,7 @@
  * the register that carries its evidence and its breach state.
  */
 import React, { useState } from 'react';
+import { Bilingual } from '../ui/Bilingual';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowUpRight,
@@ -223,7 +224,13 @@ export const ContractPanel: React.FC = () => {
                                     </span>
                                   )}
                                   <span className="text-xs text-slate-900">
-                                    {(tr ? term.titleTr : term.titleEn) ?? term.titleEn}
+                                    <Bilingual
+                                      table="contract_terms"
+                                      id={term.id}
+                                      base="title"
+                                      en={term.titleEn}
+                                      tr={term.titleTr}
+                                    />
                                   </span>
                                   <Pill>
                                     {tr ? 'borçlu: ' : 'owed by '}
@@ -287,7 +294,13 @@ export const ContractPanel: React.FC = () => {
                                   {m.sequence}
                                 </span>
                                 <span className="text-xs text-slate-900">
-                                  {(tr ? m.titleTr : m.titleEn) ?? m.titleEn}
+                                  <Bilingual
+                                    table="contract_milestones"
+                                    id={m.id}
+                                    base="title"
+                                    en={m.titleEn}
+                                    tr={m.titleTr}
+                                  />
                                 </span>
                                 <Pill>{milestoneLabel(m.state, language)}</Pill>
                                 {m.valuationId && (

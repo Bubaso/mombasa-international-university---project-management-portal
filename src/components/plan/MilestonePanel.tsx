@@ -15,6 +15,7 @@
  *   abandoned → a reason
  */
 import React, { useState } from 'react';
+import { Bilingual } from '../ui/Bilingual';
 import { CalendarClock, CircleCheck, CircleX, Flag, Plus, TriangleAlert } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import {
@@ -271,7 +272,13 @@ export const MilestonePanel: React.FC = () => {
                         <span className="font-mono text-[11px] text-slate-500">{m.code}</span>
                       )}
                       <span className="text-xs font-medium text-slate-900">
-                        {(tr ? m.titleTr : m.titleEn) ?? m.titleEn}
+                        <Bilingual
+                          table="milestones"
+                          id={m.id}
+                          base="title"
+                          en={m.titleEn}
+                          tr={m.titleTr}
+                        />
                       </span>
                       <Pill className={STATE[m.state].tone}>
                         {tr ? STATE[m.state].tr : STATE[m.state].en}

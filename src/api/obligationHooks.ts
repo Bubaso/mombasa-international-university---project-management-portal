@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTranslatingInvalidator } from './translatingMutation';
 import * as obligations from './obligations';
 
 export const useObligations = () =>
@@ -25,8 +26,8 @@ function useInvalidator(keys: string[]) {
 }
 
 export const useCreateObligation = () => {
-  const invalidate = useInvalidator(['obligations', 'commitmentRecords']);
-  return useMutation({ mutationFn: obligations.createObligation, onSuccess: invalidate });
+  const onSuccess = useTranslatingInvalidator(['obligations', 'commitmentRecords'], 'obligations');
+  return useMutation({ mutationFn: obligations.createObligation, onSuccess });
 };
 
 export const useSetObligationState = () => {

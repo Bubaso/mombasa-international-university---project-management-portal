@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTranslatingInvalidator } from './translatingMutation';
 import * as money from './money';
 
 export const useBudgetCategories = () =>
@@ -48,13 +49,16 @@ function useInvalidator(keys: string[]) {
 const POSITION_KEYS = ['budgetPositions', 'categorySpend', 'budgetLines'];
 
 export const useCreateCategory = () => {
-  const invalidate = useInvalidator(['budgetCategories', 'categorySpend']);
-  return useMutation({ mutationFn: money.createCategory, onSuccess: invalidate });
+  const onSuccess = useTranslatingInvalidator(
+    ['budgetCategories', 'categorySpend'],
+    'budget_categories',
+  );
+  return useMutation({ mutationFn: money.createCategory, onSuccess });
 };
 
 export const useCreateBudgetLine = () => {
-  const invalidate = useInvalidator(POSITION_KEYS);
-  return useMutation({ mutationFn: money.createBudgetLine, onSuccess: invalidate });
+  const onSuccess = useTranslatingInvalidator(POSITION_KEYS, 'budget_lines');
+  return useMutation({ mutationFn: money.createBudgetLine, onSuccess });
 };
 
 export const useRequestVoucher = () => {
@@ -85,8 +89,8 @@ export const useMarkAudited = () => {
 };
 
 export const usePledgeDonation = () => {
-  const invalidate = useInvalidator(['donations']);
-  return useMutation({ mutationFn: money.pledgeDonation, onSuccess: invalidate });
+  const onSuccess = useTranslatingInvalidator(['donations'], 'donations');
+  return useMutation({ mutationFn: money.pledgeDonation, onSuccess });
 };
 
 export const useRecordTranche = () => {

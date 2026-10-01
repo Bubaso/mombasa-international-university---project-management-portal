@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Bilingual } from '../ui/Bilingual';
 import { ShieldCheck, Plus, ScrollText, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
@@ -84,7 +85,13 @@ export const OrderList: React.FC<{ caseId: string; canWrite: boolean; canOblige:
                       )}
                     </div>
                     <p className="mt-1 text-xs leading-relaxed text-slate-700">
-                      {(tr ? order.textTr : order.textEn) ?? order.textEn ?? order.textTr}
+                      <Bilingual
+                        table="legal_orders"
+                        id={order.id}
+                        base="text"
+                        en={order.textEn}
+                        tr={order.textTr}
+                      />
                     </p>
                   </div>
                   <Pill className={ORDER_STATE_STYLES[order.state]}>

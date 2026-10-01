@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Bilingual } from '../ui/Bilingual';
 import { X, Plus, FileCheck2, FileX2, ShieldAlert, Link2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
@@ -45,7 +46,13 @@ export const ObligationDetail: React.FC<{
       <header className="flex items-start justify-between gap-3 border-b border-slate-200 px-4 py-3">
         <div className="min-w-0">
           <h2 className="text-sm font-bold text-slate-900">
-            {bilingual(obligation.titleEn, obligation.titleTr, language)}
+            <Bilingual
+              table="obligations"
+              id={obligation.id}
+              base="title"
+              en={obligation.titleEn}
+              tr={obligation.titleTr}
+            />
           </h2>
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
             <Pill className={SOURCE_STYLES[obligation.source]}>

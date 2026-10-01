@@ -11,6 +11,7 @@
  * which is why it changes when the budget does (M8-09).
  */
 import React, { useState } from 'react';
+import { Bilingual } from '../ui/Bilingual';
 import { PieChart, Plus, Wallet } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import * as money from '../../api/moneyHooks';
@@ -235,7 +236,15 @@ export const BudgetPanel: React.FC<{ canSpend: boolean }> = ({ canSpend }) => {
           >
             {rows.map((row) => (
               <tr key={row.budgetLineId} className="border-t border-slate-100">
-                <Td>{tr ? (row.titleTr ?? row.titleEn) : row.titleEn}</Td>
+                <Td>
+                  <Bilingual
+                    table="budget_lines"
+                    id={row.budgetLineId}
+                    base="title"
+                    en={row.titleEn}
+                    tr={row.titleTr}
+                  />
+                </Td>
                 <Td className="text-right font-mono">{fmt(row.budgetKes, 'KES')}</Td>
                 <Td className="text-right font-mono text-sky-800">
                   {fmt(row.committedKes, 'KES')}

@@ -53,48 +53,85 @@ try {
   process.exit(1);
 }
 
-const { TRANSLATES, markedColumn, missingHalves, tableFor } = await import(
-  join(out, 'lib', 'translate.js')
-);
+const {
+  TRANSLATED_TABLES,
+  columnsOf,
+  enColumn,
+  fieldsOf,
+  markedColumn,
+  missingHalves,
+  translates,
+} = await import(join(out, 'lib', 'translate.js'));
 
 // --- the registry ----------------------------------------------------------
 
-check(Object.keys(TRANSLATES).length > 0, 'the registry names at least one entity');
 check(
-  Object.values(TRANSLATES).every((e) => e.table && e.fields.length > 0),
-  'and every entry names a table and at least one field pair',
+  TRANSLATED_TABLES.length === 43,
+  'the registry covers every bilingual table',
+  `${TRANSLATED_TABLES.length}`,
 );
 check(
-  Object.values(TRANSLATES).every((e) =>
-    e.fields.every((f) => f.en && f.tr && f.en !== f.tr && f.labelEn && f.labelTr),
+  TRANSLATED_TABLES.reduce((n, t) => n + fieldsOf(t).length, 0) === 70,
+  'and every bilingual field pair in them',
+  `${TRANSLATED_TABLES.reduce((n, t) => n + fieldsOf(t).length, 0)}`,
+);
+check(
+  TRANSLATED_TABLES.every((t) =>
+    fieldsOf(t).every((f) => f.en && f.tr && f.en !== f.tr && f.labelEn && f.labelTr),
   ),
-  'every pair has two different columns and a name a reviewer would recognise',
+  'each pair has two different columns and a name a reviewer would recognise',
 );
-check(tableFor('meeting') === 'meetings', 'an entity kind resolves to its table');
-check(tableFor('nothing_like_it') === null, 'and an unknown one resolves to nothing');
+check(
+  TRANSLATED_TABLES.every((t) => fieldsOf(t).every((f) => f.labelEn !== f.base)),
+  'and no field falls back to showing a reviewer its column name',
+  TRANSLATED_TABLES.flatMap((t) =>
+    fieldsOf(t)
+      .filter((f) => f.labelEn === f.base)
+      .map((f) => f.base),
+  ).join(', '),
+);
+// `notifications` is the one pair left out on purpose: a notification is
+// raised with both languages already written, so translating one would be
+// rewriting a message that has already been delivered.
+check(!translates('notifications'), 'a notification is not translated after it has been sent');
+check(
+  translates('obligations') && !translates('profiles'),
+  'a table is in the registry or it is not',
+);
+
+check(
+  enColumn('meetings', 'title') === 'title',
+  'meetings.title is the pair that breaks the convention',
+);
+check(enColumn('obligations', 'title') === 'title_en', 'and the exception is for that table alone');
+check(
+  columnsOf('decisions').includes('id') && columnsOf('decisions').length === 5,
+  'a sweep reads the id and both halves of each pair, and nothing else',
+  columnsOf('decisions').join(', '),
+);
 
 // --- the rule --------------------------------------------------------------
 
 check(
-  missingHalves('meeting', { title: 'Meeting with the Governor', title_tr: null }).length === 1,
+  missingHalves('meetings', { title: 'Meeting with the Governor', title_tr: null }).length === 1,
   'an English title with no Turkish is a gap',
 );
 check(
-  missingHalves('meeting', { title: 'Meeting with the Governor', title_tr: 'Valiyle görüşme' })
+  missingHalves('meetings', { title: 'Meeting with the Governor', title_tr: 'Valiyle görüşme' })
     .length === 0,
   'a title that has both languages is left alone',
 );
 check(
-  missingHalves('meeting', { title: 'Meeting', title_tr: '   ' }).length === 1,
+  missingHalves('meetings', { title: 'Meeting', title_tr: '   ' }).length === 1,
   'whitespace is not a translation',
 );
 check(
-  missingHalves('meeting', { title: '', title_tr: '' }).length === 0,
+  missingHalves('meetings', { title: '', title_tr: '' }).length === 0,
   'and an empty pair is an empty field, not a gap — there is nothing to translate from',
 );
 
 // The direction has to come out of which side is filled, not out of a default.
-const intoTr = missingHalves('decision', {
+const intoTr = missingHalves('decisions', {
   text_en: 'The board resolved to wait.',
   text_tr: null,
   rationale_en: null,
@@ -104,7 +141,7 @@ check(
   intoTr.length === 1 && intoTr[0].into === 'tr' && intoTr[0].from === 'en',
   'an English-only field is translated into Turkish',
 );
-const intoEn = missingHalves('decision', {
+const intoEn = missingHalves('decisions', {
   text_en: null,
   text_tr: 'Kurul beklemeye karar verdi.',
   rationale_en: null,
@@ -129,7 +166,7 @@ const crowded = {
   answer_en: null,
   answer_tr: 'Mütevelli heyeti.',
 };
-const gaps = missingHalves('open_question', crowded);
+const gaps = missingHalves('open_questions', crowded);
 check(
   gaps.every((g) => !crowded[g.column] || crowded[g.column].trim() === ''),
   'no gap ever names a column that already says something',
@@ -145,8 +182,8 @@ check(
 
 // An entity nobody registered is not translated by accident.
 check(
-  missingHalves('obligation', { title_en: 'Something', title_tr: null }).length === 0,
-  'an entity that is not in the registry is not translated',
+  missingHalves('profiles', { full_name: 'Somebody', title_tr: null }).length === 0,
+  'a table that is not in the registry is not translated',
 );
 
 // --- which column a badge is about (0035) ---------------------------------

@@ -1,5 +1,6 @@
 /** Query hooks for communication and notification (M11). */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useAutoTranslate } from './translateHooks';
 import * as api from './comms';
 import type { DigestAudience } from '../types';
 
@@ -112,9 +113,13 @@ export function useSetPreference() {
 
 export function useAddCorrespondence() {
   const client = useQueryClient();
+  const translate = useAutoTranslate();
   return useMutation({
     mutationFn: api.addCorrespondence,
-    onSuccess: () => client.invalidateQueries({ queryKey: ['correspondence'] }),
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: ['correspondence'] });
+      void translate('correspondence');
+    },
   });
 }
 

@@ -13,6 +13,7 @@
  * this kind — they fall due whether or not anybody wrote them down.
  */
 import React from 'react';
+import { Bilingual } from '../ui/Bilingual';
 import { useNavigate } from 'react-router-dom';
 import { CalendarCheck, CircleAlert, Scale } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
@@ -85,7 +86,13 @@ export const CompliancePanel: React.FC = () => {
                   <div className="flex flex-wrap items-center gap-1.5">
                     <Pill>{regimeLabel(row.regime, language)}</Pill>
                     <span className="text-xs font-medium text-slate-900">
-                      {(tr ? row.titleTr : row.titleEn) ?? row.titleEn}
+                      <Bilingual
+                        table="compliance_requirements"
+                        id={row.requirementId}
+                        base="title"
+                        en={row.titleEn}
+                        tr={row.titleTr}
+                      />
                     </span>
                     {row.reference && (
                       <span className="font-mono text-[11px] text-slate-500">{row.reference}</span>
