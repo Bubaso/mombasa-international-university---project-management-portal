@@ -90,3 +90,123 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #c7bc9f;
 }
+
+/* ---------------------------------------------------------------------------
+   Printing (M12-12)
+   ---------------------------------------------------------------------------
+   A printed page is the one output that leaves this system completely. The
+   database decides who may read a record; a sheet of paper on a table is read
+   by whoever is at the table, and a filing cabinet has no row level security.
+   So printing is treated as an export rather than as a visual variant, and
+   three things follow.
+
+   WHAT IS NOT WORTH IRONING ON PAPER comes out: the navigation, the search
+   box, every button and form, the mobile bar. A printed page covered in
+   controls nobody can press wastes the paper and buries the record.
+
+   COLOUR CANNOT BE THE ONLY CARRIER. Browsers drop background colours when
+   printing unless the user opts in, so a pill that says "overdue" only by
+   being red says nothing at all on paper. print-color-adjust keeps the fills
+   where a reader has allowed them, and the pills keep their borders either
+   way — a bordered outline survives a monochrome printer.
+
+   A SHEET HAS TO SAY WHAT IT IS. PrintHeader puts the screen, the moment, the
+   person who printed it and the classification at the top of the first page,
+   because an unmarked print of a confidential register is the paper version of
+   an unmarked machine translation.
+*/
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm 12mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  /* The app's scroll container clips at the viewport; on paper there is no
+     viewport and everything has to flow. */
+  main,
+  .overflow-y-auto,
+  .overflow-auto,
+  .max-h-80,
+  .max-h-96 {
+    overflow: visible !important;
+    max-height: none !important;
+    height: auto !important;
+    padding: 0 !important;
+  }
+
+  /* Nothing a reader could press belongs on paper.
+     The chrome is marked rather than matched by element name: this app's
+     navigation is an <aside>, its top bar a <header> and only its mobile bar a
+     <nav>, so a rule written against `nav` hid the one piece that was already
+     hidden at desktop width and would have printed the other two.
+
+     Two things measured while testing this, both worth writing down rather
+     than leaving as folklore. The smoke test reads the computed display of
+     each marked element rather than whether it looks visible, because hiding
+     the buttons inside the chrome collapses it to no height and it then reads
+     as invisible either way. And removing the attribute from this selector
+     changes nothing on paper today: all three pieces of chrome are sticky or
+     fixed, and Chromium drops those when printing anyway. So this line is
+     redundant for the chrome as it stands and is kept for the next piece that
+     is neither — which the test will not catch, because nothing can isolate a
+     rule whose job something else is already doing. */
+  [data-print='hide'],
+  nav,
+  button,
+  input,
+  select,
+  textarea,
+  form,
+  [role='dialog'] {
+    display: none !important;
+  }
+
+  /* A card is a card on screen; on paper a box with a shadow is noise. */
+  .shadow-xs,
+  .shadow-sm,
+  .shadow,
+  .shadow-md,
+  .shadow-lg {
+    box-shadow: none !important;
+  }
+
+  section,
+  article,
+  li,
+  tr {
+    break-inside: avoid;
+  }
+
+  h1,
+  h2,
+  h3 {
+    break-after: avoid;
+  }
+
+  table {
+    width: 100% !important;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  /* Keep the fills a reader has allowed, and never rely on them: every pill
+     in this app carries a border, which a monochrome printer still renders. */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  a[href^='http']::after {
+    content: ' (' attr(href) ')';
+    font-size: 9px;
+    color: #555;
+  }
+}

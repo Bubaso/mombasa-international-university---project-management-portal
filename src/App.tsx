@@ -10,6 +10,7 @@ import { AppProvider, useApp } from './context/AppContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SignInPage } from './components/SignInPage';
 import { Navbar } from './components/Navbar';
+import { PrintHeader } from './components/PrintHeader';
 import { Sidebar } from './components/Sidebar';
 import { DeadlineAlertBanner } from './components/DeadlineAlertBanner';
 import { OfflineIndicator } from './components/OfflineIndicator';
@@ -103,6 +104,8 @@ const MainLayout: React.FC = () => {
 
         {/* Dynamic Main View with mobile safe bottom spacing */}
         <main className="flex-1 p-3 sm:p-6 lg:p-8 pb-24 md:pb-8 overflow-y-auto relative">
+          {/* Invisible on screen, first on paper (M12-12). */}
+          <PrintHeader />
           <ErrorBoundary>
             <Suspense
               fallback={

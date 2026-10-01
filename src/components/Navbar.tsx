@@ -18,7 +18,10 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenMenu }) => {
   const lentFrom = useAuthority().data?.delegations[0]?.lenderName;
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 border-b border-slate-200 backdrop-blur-md shadow-xs">
+    <header
+      data-print="hide"
+      className="sticky top-0 z-40 bg-white/95 border-b border-slate-200 backdrop-blur-md shadow-xs"
+    >
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-3">
         {/* Left: Sandwich Menu + Clean Brand */}
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">

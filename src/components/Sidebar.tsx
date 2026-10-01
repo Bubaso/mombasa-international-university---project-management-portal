@@ -97,7 +97,10 @@ export const Sidebar: React.FC = () => {
   ];
 
   return (
-    <aside className="hidden md:flex md:sticky top-16 z-30 h-[calc(100vh-4rem)] w-64 bg-white border-r border-slate-200 flex-col justify-between shrink-0 shadow-xs">
+    <aside
+      data-print="hide"
+      className="hidden md:flex md:sticky top-16 z-30 h-[calc(100vh-4rem)] w-64 bg-white border-r border-slate-200 flex-col justify-between shrink-0 shadow-xs"
+    >
       {/* Nav Items */}
       <div className="p-3 space-y-1 overflow-y-auto">
         {navItems.map((item) => {

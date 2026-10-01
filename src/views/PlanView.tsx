@@ -15,6 +15,7 @@
 import React from 'react';
 import { GanttChartSquare } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { GanttPanel } from '../components/plan/GanttPanel';
 import { MilestonePanel } from '../components/plan/MilestonePanel';
 import { PhasePanel } from '../components/plan/PhasePanel';
 import { ChainPanel } from '../components/plan/ChainPanel';
@@ -52,6 +53,11 @@ export const PlanView: React.FC = () => {
         </div>
         <DataFreshness queries={[milestones]} />
       </header>
+
+      {/* The overview, above the table that details it — and the table is
+          also the relief the dataviz rules require for a chart whose fills sit
+          under 3:1 against the surface. */}
+      <GanttPanel />
 
       <MilestonePanel />
       <PhasePanel />

@@ -55,7 +55,10 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenMore, is
   ];
 
   return (
-    <nav className="fixed bottom-0 inset-x-0 z-40 md:hidden bg-white/95 backdrop-blur-md border-t border-slate-200 px-2 py-1 flex items-center justify-around shadow-lg safe-area-bottom">
+    <nav
+      data-print="hide"
+      className="fixed bottom-0 inset-x-0 z-40 md:hidden bg-white/95 backdrop-blur-md border-t border-slate-200 px-2 py-1 flex items-center justify-around shadow-lg safe-area-bottom"
+    >
       {navItems.map((item) => {
         const Icon = item.icon;
         const isActive = location.pathname === item.path && !isMoreOpen;

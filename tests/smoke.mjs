@@ -822,7 +822,7 @@ const TEST_ROADMAP = [
     title_tr: 'CUE geçici yetki yazısı',
     detail_en: null,
     detail_tr: null,
-    state: 'not_started',
+    state: 'planned',
     target_on: '2026-12-31',
     completed_on: null,
     depends_on_stage_id: '00000000-0000-0000-0000-0000000009f1',
@@ -1228,6 +1228,27 @@ const TEST_MILESTONES = [
     owner: null,
     phase: { name_en: 'Phase 1 — enabling works' },
   },
+  // No target date, so it cannot be placed either.
+  {
+    id: '00000000-0000-0000-0000-000000001a03',
+    code: 'M3',
+    phase_id: '00000000-0000-0000-0000-000000001b01',
+    phase_name: 'Phase 1 — enabling works',
+    title_en: 'Hand over the perimeter wall',
+    title_tr: 'Çevre duvarını teslim al',
+    detail_en: null,
+    detail_tr: null,
+    target_on: null,
+    achieved_on: null,
+    slip_days: null,
+    state: 'planned',
+    critical: false,
+    owner_name: null,
+    owner_profile_id: null,
+    evidence_document_id: null,
+    note: null,
+    confidentiality: 'internal',
+  },
 ];
 
 const TEST_PHASES = [
@@ -1252,6 +1273,30 @@ const TEST_PHASES = [
     budget_kes: 48000000,
     // Computed in SQL from the end date and the open work, not typed in.
     overran: true,
+    confidentiality: 'internal',
+  },
+  // No end date. A timeline must not place this: giving it one would say
+  // something the plan does not say.
+  {
+    phase_id: '00000000-0000-0000-0000-000000001b02',
+    code: 'P2',
+    name_en: 'Phase 2 — teaching block',
+    name_tr: 'Faz 2 — eğitim bloğu',
+    sequence: 2,
+    starts_on: '2026-04-01',
+    ends_on: null,
+    scope_en: null,
+    scope_tr: null,
+    objective_en: null,
+    objective_tr: null,
+    blocks: 0,
+    blocks_complete: 0,
+    milestones: 0,
+    milestones_achieved: 0,
+    milestones_missed: 0,
+    next_target: null,
+    budget_kes: null,
+    overran: false,
     confidentiality: 'internal',
   },
 ];
@@ -2586,6 +2631,78 @@ try {
   );
   check(pageErrors.length === 0, 'the capture panel renders without a page error');
 
+  // --- printing (M12-12) ----------------------------------------------------
+  //
+  // The browser is actually put into print media here rather than being asked
+  // to pretend. A print is the one output that leaves this system completely:
+  // the database decides who may read a record, and a sheet on a table is read
+  // by whoever is at the table. So what is checked is that the paper says what
+  // it is, and that the parts of a screen nobody can press on paper are gone.
+  pageErrors = [];
+  await page.goto(BASE + '/obligations', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(400);
+
+  const headerOnScreen = await page
+    .locator('header', { hasText: 'Mombasa International University' })
+    .first()
+    .isVisible()
+    .catch(() => false);
+  check(!headerOnScreen, 'the print header is invisible on screen');
+
+  await page.emulateMedia({ media: 'print' });
+  await page.waitForTimeout(250);
+
+  const onPaper = (await page.textContent('body')) ?? '';
+  check(
+    await page
+      .locator('header', { hasText: 'Mombasa International University' })
+      .first()
+      .isVisible(),
+    'and the first thing on paper (M12-12)',
+  );
+  check(
+    /Yazdıran:/.test(onPaper) && /Yetki seviyesi:/.test(onPaper),
+    'the sheet says who printed it and at what clearance',
+  );
+  check(
+    /erişim denetiminin dışındadır/.test(onPaper),
+    'and that the paper carries no access control of its own',
+  );
+  check(/Yükümlülükler/.test(onPaper), 'it names the screen it came from');
+
+  // Nothing a reader could press belongs on paper.
+  //
+  // Computed display rather than visibility, and the difference is the whole
+  // reason this reads the way it does. Visibility alone passed for the wrong
+  // reason: hiding the buttons inside the chrome collapses it to zero height,
+  // so it reads as invisible whether or not the rule meant to remove it
+  // exists — a mutation that deleted the rule survived. The first version of
+  // those rules also matched `nav`, and this app's navigation is an <aside>
+  // and its top bar a <header>, so both would have printed.
+  const chromeOnPaper = await page.$$eval('[data-print="hide"]', (nodes) =>
+    nodes.map((node) => getComputedStyle(node).display),
+  );
+  const buttonsOnPaper = await page.locator('button:visible').count();
+  check(
+    chromeOnPaper.length > 0 && chromeOnPaper.every((d) => d === 'none'),
+    'the navigation and the top bar are removed on paper, not merely emptied',
+    chromeOnPaper.join(', ') || '(nothing marked)',
+  );
+  check(buttonsOnPaper === 0, 'nor does a single button', `${buttonsOnPaper} visible`);
+
+  await page.emulateMedia({ media: 'screen' });
+  await page.waitForTimeout(200);
+  const chromeOnScreen = await page.$$eval('[data-print="hide"]', (nodes) =>
+    nodes.map((node) => getComputedStyle(node).display),
+  );
+  const buttonsOnScreen = await page.locator('button:visible').count();
+  check(
+    chromeOnScreen.some((d) => d !== 'none') && buttonsOnScreen > 0,
+    'and the screen is itself again afterwards',
+    `chrome=${chromeOnScreen.join(',')} buttons=${buttonsOnScreen}`,
+  );
+  check(pageErrors.length === 0, 'printing renders without a page error');
+
   // --- the meeting record ---------------------------------------------------
   // Every M3 record type renders at once here, so a shape mistake in any of
   // them shows up as a page error rather than as a quiet blank.
@@ -3621,6 +3738,41 @@ try {
   check(
     /tarihi geçti|past its target/.test(plan),
     'a target that has passed with the work open is marked, not left to the eye',
+  );
+
+  // M15-08: the timeline, and the two records it must refuse to place.
+  //
+  // A milestone is a point, not a span: the register holds a target date and
+  // no duration, so every Gantt tool's default bar would be an assertion the
+  // plan does not make. Phases are bars because a phase has both ends; a phase
+  // missing one, or a milestone with no target, is listed with the reason
+  // instead of being placed at today or at the project's first date.
+  check(
+    /Zaman çizgisi/.test(plan) && /bir kilometre taşı bir nokta, bir süre değil/.test(plan),
+    'the timeline says why a milestone is a mark rather than a bar (M15-08)',
+  );
+  check(
+    (await page.locator('svg[role="img"]').count()) >= 1,
+    'and there is a timeline drawn, not a placeholder',
+  );
+  check(
+    /Çizilemeyenler|Not drawn/.test(plan),
+    'a record that cannot be placed is named rather than given a date',
+  );
+  check(
+    /Faz 2 — eğitim bloğu/.test(plan) && /bitişi yok/.test(plan),
+    'a phase with no end date says which end is missing',
+  );
+  check(
+    /Çevre duvarını teslim al/.test(plan) && /hedef tarihi yok/.test(plan),
+    'and a milestone with no target date says so',
+  );
+  // Shape, not colour, carries the state: the dataviz validator measured the
+  // status palette's red and green at ΔE 4.1 under deuteranopia, which is
+  // below the floor for telling two marks apart by hue.
+  check(
+    /daire: oldu/.test(plan) && /baklava: hâlâ borçlu/.test(plan),
+    'the legend names the shapes, because red and green are ΔE 4.1 apart under deuteranopia',
   );
 
   // M15-02: the scope in prose beside the contents by count.
