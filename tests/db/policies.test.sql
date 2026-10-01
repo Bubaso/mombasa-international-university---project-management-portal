@@ -6645,6 +6645,340 @@ select pg_temp.check('a planned instalment with nothing measured yet is not a fi
 select pg_temp.act_as('77777777-7777-7777-7777-777777777777');  -- contractor
 select pg_temp.check('a contractor sees no measurement it was not shown before',
   (select count(*) from unscheduled_valuations), 0::bigint);
+-- ===========================================================================
+-- The close that says what it leaves out (0039): M8-16
+-- ===========================================================================
+--
+-- The whole of this section is about the difference between a total and a
+-- statement. A total sums what happens to be recorded; a statement says what
+-- it leaves out.
+
+set role authenticated;
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- director
+
+-- A quarter that has ended, and the one running now.
+insert into financial_periods (id, code, starts_on, ends_on, confidentiality) values
+  ('a9000000-0000-0000-0000-000000000001', '2026-Q1',
+   date_trunc('month', current_date - interval '5 months')::date,
+   (date_trunc('month', current_date - interval '3 months') - interval '1 day')::date,
+   'internal'),
+  ('a9000000-0000-0000-0000-000000000002', 'current',
+   date_trunc('month', current_date)::date,
+   (date_trunc('month', current_date) + interval '1 month' - interval '1 day')::date,
+   'internal');
+
+-- Two periods cannot both hold one transaction, each with its own frozen
+-- figures containing it.
+do $$
+begin
+  begin
+    insert into financial_periods (code, starts_on, ends_on, confidentiality)
+    values ('overlapping',
+            date_trunc('month', current_date - interval '4 months')::date,
+            current_date, 'internal');
+    raise exception 'FAIL two periods were allowed to overlap';
+  exception
+    when check_violation then
+      raise notice 'ok   two financial periods cannot overlap';
+  end;
+end;
+$$;
+
+-- Three things inside the quarter, each one of them a gap: a payment with no
+-- document and no voucher and no audit, a receipt with no receipt, and a
+-- voucher nobody ruled on.
+insert into financial_transactions
+  (id, reference_no, date, category, amount, currency, confidentiality)
+values
+  ('a9100000-0000-0000-0000-000000000001', 'PV-Q1-1',
+   date_trunc('month', current_date - interval '4 months')::date,
+   'civil_construction', 450000, 'KES', 'internal'),
+  -- Restricted, so the manifest has something to withhold from a reader who
+  -- cannot see it.
+  ('a9100000-0000-0000-0000-000000000002', 'PV-Q1-2',
+   date_trunc('month', current_date - interval '4 months')::date + 5,
+   'legal', 300000, 'KES', 'restricted');
+
+insert into payment_vouchers
+  (id, reference_no, payee, purpose, amount, currency, requested_by, requested_at,
+   confidentiality)
+values
+  ('a9200000-0000-0000-0000-000000000001', 'VCH-Q1-1', 'Coast Hardware',
+   'Cement for block A1', 220000, 'KES', '22222222-2222-2222-2222-222222222222',
+   date_trunc('month', current_date - interval '4 months'), 'internal');
+
+-- A period still running cannot be closed: that would freeze figures for days
+-- that have not happened.
+do $$
+begin
+  begin
+    perform public.close_financial_period('a9000000-0000-0000-0000-000000000002');
+    raise exception 'FAIL a period that has not ended was closed';
+  exception
+    when check_violation then
+      raise notice 'ok   a period that is still running cannot be closed';
+  end;
+end;
+$$;
+
+-- Closing is not something everybody does.
+select pg_temp.act_as('44444444-4444-4444-4444-444444444444');  -- field team
+do $$
+begin
+  begin
+    perform public.close_financial_period('a9000000-0000-0000-0000-000000000001');
+    raise exception 'FAIL the field team closed the quarter';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   closing a period is the director''s or the administrator''s';
+  end;
+end;
+$$;
+
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- director
+
+select pg_temp.check('the close reports what it leaves out, not just its total',
+  (select (public.close_financial_period('a9000000-0000-0000-0000-000000000001')
+            -> 'ledger_entries_with_no_document')::int), 2);
+select pg_temp.check('and the voucher nobody ruled on',
+  (select (gaps -> 'vouchers_never_decided')::int from financial_periods
+    where id = 'a9000000-0000-0000-0000-000000000001'), 1);
+select pg_temp.check('and the entries with no voucher behind them',
+  (select (gaps -> 'ledger_entries_with_no_voucher')::int from financial_periods
+    where id = 'a9000000-0000-0000-0000-000000000001'), 2);
+select pg_temp.check('and the ones nobody audited',
+  (select (gaps -> 'ledger_entries_never_audited')::int from financial_periods
+    where id = 'a9000000-0000-0000-0000-000000000001'), 2);
+
+select pg_temp.check('and the frozen total is stored rather than recomputed',
+  (select closing_ledger_kes from financial_periods
+    where id = 'a9000000-0000-0000-0000-000000000001'), 750000.00::numeric);
+
+-- The close counts every row, including the ones the closer cannot read. The
+-- director above could read all four tiers, so closing as them proves
+-- nothing about this: the test needs a closer who is genuinely short of the
+-- top tier, which a deputy director is. A close computed under one person's
+-- clearance would be a different close for each closer, and the figure would
+-- depend on who pressed the button.
+reset role;
+insert into auth.users (id, email, email_confirmed_at) values
+  ('a9900000-0000-0000-0000-000000000001', 'deputy@example.test', now());
+insert into profiles
+  (id, full_name, email, role, organization, clearance, is_active, expires_at)
+values
+  ('a9900000-0000-0000-0000-000000000001', 'Deputy Director', 'deputy@example.test',
+   'project_director', 'AUTK', 'confidential', true, null);
+set role authenticated;
+
+select pg_temp.act_as('a9900000-0000-0000-0000-000000000001');  -- deputy director
+select pg_temp.check('the deputy cannot read the restricted payment',
+  (select count(*) from financial_transactions
+    where id = 'a9100000-0000-0000-0000-000000000002'), 0::bigint);
+
+insert into financial_periods (id, code, starts_on, ends_on, confidentiality) values
+  ('a9000000-0000-0000-0000-000000000003', '2025-Q4',
+   date_trunc('month', current_date - interval '11 months')::date,
+   (date_trunc('month', current_date - interval '9 months') - interval '1 day')::date,
+   'internal');
+
+reset role;
+insert into financial_transactions
+  (id, reference_no, date, category, amount, currency, confidentiality)
+values
+  ('a9100000-0000-0000-0000-000000000011', 'PV-Q4-1',
+   date_trunc('month', current_date - interval '10 months')::date,
+   'civil_construction', 200000, 'KES', 'internal'),
+  ('a9100000-0000-0000-0000-000000000012', 'PV-Q4-2',
+   date_trunc('month', current_date - interval '10 months')::date + 3,
+   'legal', 80000, 'KES', 'restricted');
+set role authenticated;
+select pg_temp.act_as('a9900000-0000-0000-0000-000000000001');  -- deputy director
+
+select pg_temp.check('the deputy sees one of the two payments in that quarter',
+  (select count(*) from financial_transactions
+    where date between date_trunc('month', current_date - interval '11 months')::date
+                   and (date_trunc('month', current_date - interval '9 months') - interval '1 day')::date),
+  1::bigint);
+
+-- Taken in its own statement: a function called inside the where clause of
+-- the select that reads the result reads the snapshot from before it ran.
+do $$
+begin
+  perform public.close_financial_period('a9000000-0000-0000-0000-000000000003');
+end;
+$$;
+
+select pg_temp.check('but the close they take counts both',
+  (select closing_transactions from financial_periods
+    where id = 'a9000000-0000-0000-0000-000000000003'), 2);
+select pg_temp.check('and totals both, not only the half they can read',
+  (select closing_ledger_kes from financial_periods
+    where id = 'a9000000-0000-0000-0000-000000000003'), 280000.00::numeric);
+-- And the manifest tells them their own file would be short of one of them.
+select pg_temp.check('while their own audit file is reported as short by one row',
+  (select rows_withheld from public.audit_file_manifest(
+    'a9000000-0000-0000-0000-000000000003')), 1::bigint);
+
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- director
+
+-- Closing twice would overwrite a figure that has been reported.
+do $$
+begin
+  begin
+    perform public.close_financial_period('a9000000-0000-0000-0000-000000000001');
+    raise exception 'FAIL a closed period was closed again';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   a period cannot be closed twice';
+  end;
+end;
+$$;
+
+do $$
+begin
+  begin
+    update financial_periods set state = 'open', closed_at = null, closed_by = null
+     where id = 'a9000000-0000-0000-0000-000000000001';
+    raise exception 'FAIL a closed period was reopened';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   nor reopened';
+  end;
+end;
+$$;
+
+do $$
+begin
+  begin
+    update financial_periods set closing_ledger_kes = 1
+     where id = 'a9000000-0000-0000-0000-000000000001';
+    raise exception 'FAIL the figures of a closed period were edited by hand';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   nor its figures edited by hand';
+  end;
+end;
+$$;
+
+-- A late invoice is a real payment. Accepted, and stamped, so the reported
+-- figure and the register can be seen to differ.
+insert into financial_transactions
+  (id, reference_no, date, category, amount, currency, confidentiality)
+values
+  ('a9100000-0000-0000-0000-000000000003', 'PV-Q1-LATE',
+   date_trunc('month', current_date - interval '4 months')::date + 10,
+   'civil_construction', 125000, 'KES', 'internal');
+
+select pg_temp.check('an entry dated inside a closed period is accepted, not refused',
+  (select count(*) from financial_transactions
+    where id = 'a9100000-0000-0000-0000-000000000003'), 1::bigint);
+select pg_temp.check('and stamped with the close it arrived after',
+  (select closed_period_id from financial_transactions
+    where id = 'a9100000-0000-0000-0000-000000000003'),
+  'a9000000-0000-0000-0000-000000000001'::uuid);
+select pg_temp.check('so the drift against the reported figure is on the record',
+  (select entries_added_after_the_close from financial_close
+    where financial_period_id = 'a9000000-0000-0000-0000-000000000001'), 1::bigint);
+select pg_temp.check('with the amount it carries',
+  (select added_after_the_close_kes from financial_close
+    where financial_period_id = 'a9000000-0000-0000-0000-000000000001'), 125000.00::numeric);
+select pg_temp.check('while the frozen total stays where it was',
+  (select closing_ledger_kes from financial_close
+    where financial_period_id = 'a9000000-0000-0000-0000-000000000001'), 750000.00::numeric);
+
+-- A row that was in the close is not retrospectively called a late arrival.
+select pg_temp.check('a row that was in the close is not stamped as late',
+  (select closed_period_id from financial_transactions
+    where id = 'a9100000-0000-0000-0000-000000000001'), null::uuid);
+
+-- Rewriting a closed figure is refused; completing the paperwork is not.
+do $$
+begin
+  begin
+    update financial_transactions set amount = 999
+     where id = 'a9100000-0000-0000-0000-000000000001';
+    raise exception 'FAIL an amount inside a closed period was rewritten';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   an amount inside a closed period cannot be rewritten';
+  end;
+end;
+$$;
+
+do $$
+begin
+  begin
+    update financial_transactions
+       set date = date_trunc('month', current_date)::date
+     where id = 'a9100000-0000-0000-0000-000000000001';
+    raise exception 'FAIL a transaction was moved out of a closed period';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   nor moved out of the period it was reported in';
+  end;
+end;
+$$;
+
+do $$
+begin
+  update financial_transactions
+     set document_id = '1b000000-0000-0000-0000-000000000001'
+   where id = 'a9100000-0000-0000-0000-000000000001';
+  raise notice 'ok   but the document can still be attached afterwards';
+end;
+$$;
+
+-- The manifest: what a file would hold, and what it would not.
+select pg_temp.check('the director reads every row in the period',
+  (select rows_you_can_read from public.audit_file_manifest(
+    'a9000000-0000-0000-0000-000000000001')), 3::bigint);
+select pg_temp.check('and nothing is withheld from them',
+  (select rows_withheld from public.audit_file_manifest(
+    'a9000000-0000-0000-0000-000000000001')), 0::bigint);
+
+select pg_temp.act_as('44444444-4444-4444-4444-444444444444');  -- field team
+select pg_temp.check('somebody below the tier is told how many rows their file would miss',
+  (select rows_withheld from public.audit_file_manifest(
+    'a9000000-0000-0000-0000-000000000001')), 1::bigint);
+select pg_temp.check('and the total they are counted against',
+  (select rows_in_the_period from public.audit_file_manifest(
+    'a9000000-0000-0000-0000-000000000001')), 3::bigint);
+select pg_temp.check('with the tier named, and none of the content',
+  (select withheld_by_tier from public.audit_file_manifest(
+    'a9000000-0000-0000-0000-000000000001')), '{"restricted": 1}'::jsonb);
+select pg_temp.check('the gaps are in the manifest too, so a partial file still carries them',
+  (select (gaps -> 'ledger_entries_with_no_voucher')::int from public.audit_file_manifest(
+    'a9000000-0000-0000-0000-000000000001')), 2);
+
+-- Reading the period at all is gated the ordinary way: somebody who cannot
+-- see it is told nothing about its shape.
+update financial_periods set confidentiality = 'restricted'
+ where id = 'a9000000-0000-0000-0000-000000000002';
+select pg_temp.act_as('88888888-8888-8888-8888-888888888888');  -- donor
+do $$
+begin
+  begin
+    perform public.audit_file_manifest('a9000000-0000-0000-0000-000000000002');
+    raise exception 'FAIL a manifest was returned for a period nobody may read';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   a period somebody cannot read has no manifest for them either';
+  end;
+end;
+$$;
+
+select pg_temp.act_as('11111111-1111-1111-1111-111111111111');  -- admin
+do $$
+begin
+  begin
+    delete from financial_periods where id = 'a9000000-0000-0000-0000-000000000001';
+    raise exception 'FAIL a closed period was deleted';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   a period that reported a figure cannot be deleted';
+  end;
+end;
+$$;
 reset role;
 
 \echo ''

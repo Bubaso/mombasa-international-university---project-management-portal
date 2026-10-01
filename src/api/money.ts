@@ -28,11 +28,14 @@ import type {
   CurrencyCode,
   Donation,
   DonationTranche,
+  FinancialPeriod,
   FinancialTransaction,
   PaymentVoucher,
+  PeriodState,
   VoucherApproval,
   VoucherState,
 } from '../types';
+import type { AuditManifest, AuditRow } from '../lib/auditFile';
 
 interface NamedRef {
   full_name: string;
@@ -590,4 +593,150 @@ export async function recordTranche(input: {
     document_id: input.documentId,
   });
   fail(error);
+}
+
+// ---------------------------------------------------------------------------
+// Periodic financial close (M8-16)
+// ---------------------------------------------------------------------------
+
+export async function fetchPeriods(): Promise<FinancialPeriod[]> {
+  const { data, error } = await supabase
+    .from('financial_close')
+    .select('*')
+    .order('starts_on', { ascending: false });
+  fail(error);
+  return (
+    (data ?? []) as {
+      financial_period_id: string;
+      code: string;
+      starts_on: string;
+      ends_on: string;
+      state: PeriodState;
+      closed_at: string | null;
+      closing_transactions: number | null;
+      closing_ledger_kes: number | string | null;
+      closing_vouchers_paid_kes: number | string | null;
+      closing_receipts_kes: number | string | null;
+      gaps: Record<string, number> | null;
+      note: string | null;
+      entries_added_after_the_close: number | string;
+      added_after_the_close_kes: number | string;
+      confidentiality: FinancialPeriod['confidentiality'];
+    }[]
+  ).map((row) => ({
+    financialPeriodId: row.financial_period_id,
+    code: row.code,
+    startsOn: row.starts_on,
+    endsOn: row.ends_on,
+    state: row.state,
+    closedAt: row.closed_at,
+    closingTransactions: row.closing_transactions == null ? null : Number(row.closing_transactions),
+    closingLedgerKes: row.closing_ledger_kes == null ? null : Number(row.closing_ledger_kes),
+    closingVouchersPaidKes:
+      row.closing_vouchers_paid_kes == null ? null : Number(row.closing_vouchers_paid_kes),
+    closingReceiptsKes: row.closing_receipts_kes == null ? null : Number(row.closing_receipts_kes),
+    gaps: row.gaps,
+    note: row.note,
+    entriesAddedAfterTheClose: Number(row.entries_added_after_the_close ?? 0),
+    addedAfterTheCloseKes: Number(row.added_after_the_close_kes ?? 0),
+    confidentiality: row.confidentiality,
+  }));
+}
+
+export async function openPeriod(input: {
+  code: string;
+  startsOn: string;
+  endsOn: string;
+}): Promise<void> {
+  const { error } = await supabase.from('financial_periods').insert({
+    code: input.code,
+    starts_on: input.startsOn,
+    ends_on: input.endsOn,
+  });
+  fail(error);
+}
+
+/**
+ * Taking the close. Goes through the function rather than an update, because
+ * the figures have to cover every row in the period and not only the rows
+ * the person pressing the button can read — a close computed under one
+ * person's clearance would be a different close for each closer.
+ */
+export async function closePeriod(id: string): Promise<void> {
+  const { error } = await supabase.rpc('close_financial_period', { p_period: id });
+  fail(error);
+}
+
+/**
+ * The manifest, and then the rows. In that order on purpose: the manifest
+ * says how many rows the period holds, so a file that is short can say so.
+ * Asking for the rows first and counting them would only ever produce the
+ * number the caller could already see.
+ */
+export async function fetchAuditFileParts(
+  id: string,
+): Promise<{ manifest: AuditManifest; rows: AuditRow[] }> {
+  const { data: manifestRows, error: manifestError } = await supabase.rpc('audit_file_manifest', {
+    p_period: id,
+  });
+  fail(manifestError);
+  const m = ((manifestRows ?? []) as Record<string, unknown>[])[0];
+  if (!m) throw new Error('That period is no longer there.');
+
+  const manifest: AuditManifest = {
+    code: String(m.code),
+    startsOn: String(m.starts_on),
+    endsOn: String(m.ends_on),
+    state: m.state as AuditManifest['state'],
+    closedAt: (m.closed_at as string | null) ?? null,
+    rowsInThePeriod: Number(m.rows_in_the_period ?? 0),
+    rowsYouCanRead: Number(m.rows_you_can_read ?? 0),
+    rowsWithheld: Number(m.rows_withheld ?? 0),
+    withheldByTier: (m.withheld_by_tier as Record<string, number> | null) ?? {},
+    gaps: (m.gaps as Record<string, number> | null) ?? null,
+    entriesAddedAfterTheClose: Number(m.entries_added_after_the_close ?? 0),
+  };
+
+  const { data, error } = await supabase
+    .from('financial_transactions')
+    .select(
+      'reference_no, date, category, description, amount, currency, amount_kes, payee, ' +
+        'payment_voucher_id, document_id, audited_at, confidentiality',
+    )
+    .gte('date', manifest.startsOn)
+    .lte('date', manifest.endsOn)
+    .order('date');
+  fail(error);
+
+  const rows: AuditRow[] = (
+    (data ?? []) as unknown as {
+      reference_no: string;
+      date: string;
+      category: string;
+      description: string | null;
+      amount: number | string;
+      currency: string;
+      amount_kes: number | string | null;
+      payee: string | null;
+      payment_voucher_id: string | null;
+      document_id: string | null;
+      audited_at: string | null;
+      confidentiality: string;
+    }[]
+  ).map((row) => ({
+    referenceNo: row.reference_no,
+    date: row.date,
+    category: row.category,
+    description: row.description,
+    amount: Number(row.amount),
+    currency: row.currency,
+    amountKes: row.amount_kes == null ? null : Number(row.amount_kes),
+    payee: row.payee,
+    paymentVoucherId: row.payment_voucher_id,
+    documentId: row.document_id,
+    auditedAt: row.audited_at,
+    confidentiality: row.confidentiality,
+  }));
+
+  return { manifest, rows };
 }

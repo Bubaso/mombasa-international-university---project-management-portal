@@ -1507,6 +1507,61 @@ const TEST_PAYMENT_MATCHING_HEALTH = {
   certified_work_with_no_instalment: 1,
 };
 
+// ---------------------------------------------------------------------------
+// Periodic financial close (M8-16, 0039)
+// ---------------------------------------------------------------------------
+//
+// A closed quarter with gaps and a late arrival, and the quarter still
+// running. The second one matters as much as the first: a period with no
+// close has no frozen figure and no counted gaps, and saying "no gaps" about
+// it would be the same mistake as reporting a block at nought per cent.
+
+const TEST_PERIODS = [
+  {
+    financial_period_id: '00000000-0000-0000-0000-000000000d91',
+    code: '2026-Q3',
+    starts_on: '2026-07-01',
+    ends_on: '2026-09-30',
+    state: 'open',
+    closed_at: null,
+    closing_transactions: null,
+    closing_ledger_kes: null,
+    closing_vouchers_paid_kes: null,
+    closing_receipts_kes: null,
+    gaps: null,
+    note: null,
+    entries_added_after_the_close: 0,
+    added_after_the_close_kes: 0,
+    confidentiality: 'internal',
+  },
+  {
+    financial_period_id: '00000000-0000-0000-0000-000000000d92',
+    code: '2026-Q2',
+    starts_on: '2026-04-01',
+    ends_on: '2026-06-30',
+    state: 'closed',
+    closed_at: '2026-07-02T09:00:00Z',
+    closing_transactions: 44,
+    closing_ledger_kes: 18450000,
+    closing_vouchers_paid_kes: 17900000,
+    closing_receipts_kes: 9000000,
+    gaps: {
+      vouchers_never_decided: 2,
+      vouchers_approved_not_paid: 0,
+      vouchers_paid_with_no_ledger_entry: 0,
+      ledger_entries_with_no_document: 7,
+      ledger_entries_never_audited: 31,
+      ledger_entries_with_no_voucher: 5,
+      receipts_with_no_document: 3,
+      certified_work_not_paid: 1,
+    },
+    note: null,
+    entries_added_after_the_close: 2,
+    added_after_the_close_kes: 325000,
+    confidentiality: 'internal',
+  },
+];
+
 const TEST_REVIEWS = [
   {
     id: '00000000-0000-0000-0000-000000000f41',
@@ -2783,6 +2838,7 @@ try {
   await serve('**/rest/v1/contract_alerts**', TEST_CONTRACT_ALERTS);
   await serve('**/rest/v1/contract_terms**', TEST_CONTRACT_TERMS);
   await serve('**/rest/v1/contract_settlement**', TEST_SETTLEMENT);
+  await serve('**/rest/v1/financial_close**', TEST_PERIODS);
   await serve('**/rest/v1/contract_milestones**', TEST_CONTRACT_MILESTONES);
   await serve('**/rest/v1/milestone_matching**', TEST_MILESTONE_MATCHING);
   await serve('**/rest/v1/unscheduled_valuations**', TEST_UNSCHEDULED_VALUATIONS);
@@ -3350,6 +3406,41 @@ try {
       /KShs 1,200,000/.test(donationView) &&
       /KShs 2,800,000/.test(donationView),
     'a pledge, what arrived and the gap are three separate figures',
+  );
+
+  // M8-16: the close, and the three things it is required to say.
+  await page
+    .locator('button')
+    .filter({ hasText: /^Kapanış$|^Close$/ })
+    .first()
+    .click();
+  await page.waitForTimeout(400);
+  const periodList = (await page.textContent('ul[aria-label="Mali dönemler"]')) ?? '';
+  check(
+    /31 denetlenmemiş kayıt|31 never audited/.test(periodList) &&
+      /7 belgesi olmayan kayıt|7 with no document/.test(periodList),
+    'a close says what it leaves out, beside the figures it reports (M8-16)',
+  );
+  check(
+    /Kapanışın dışında bıraktıkları|What the close leaves out/.test(periodList) &&
+      !/onaylanıp ödenmemiş fiş|approved and not paid/.test(periodList),
+    'and names only the gaps above zero, so the list is the work and not a form',
+  );
+  check(
+    /2 kayıt girildi|2 entr/.test(periodList) &&
+      /Dondurulmuş rakam yerinde duruyor|The frozen figure stands/.test(periodList),
+    'a late entry is reported as a drift against the frozen figure, not folded into it',
+  );
+  // The open quarter is the case a reassuring screen gets wrong.
+  check(
+    /Kapanış alınmadı, bu yüzden dondurulmuş bir rakam yok|has not been taken, so there is no frozen figure/.test(
+      periodList,
+    ) && /sıfır oldukları anlamına gelmez|does not mean they are zero/.test(periodList),
+    'an unclosed period says its gaps were never counted rather than showing none',
+  );
+  check(
+    /2026-Q2/.test(periodList) && /44/.test(periodList),
+    'the frozen record count is on the row that reported it',
   );
 
   // --- the register is loud about what it does not know ---------------------

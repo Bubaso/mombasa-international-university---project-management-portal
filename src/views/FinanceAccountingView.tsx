@@ -17,15 +17,16 @@
  * spender never can.
  */
 import React, { useState } from 'react';
-import { BadgeCheck, HandCoins, Receipt, Wallet } from 'lucide-react';
+import { BadgeCheck, CalendarCheck, HandCoins, Receipt, Wallet } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useAuthority } from '../api/adminHooks';
 import { BudgetPanel } from '../components/money/BudgetPanel';
 import { VoucherPanel } from '../components/money/VoucherPanel';
 import { LedgerPanel } from '../components/money/LedgerPanel';
 import { DonationPanel } from '../components/money/DonationPanel';
+import { ClosePanel } from '../components/money/ClosePanel';
 
-type Tab = 'budget' | 'vouchers' | 'ledger' | 'donations';
+type Tab = 'budget' | 'vouchers' | 'ledger' | 'donations' | 'close';
 
 const acts = (roles: string[] | undefined, ...wanted: string[]) =>
   roles != null && wanted.some((role) => roles.includes(role));
@@ -49,6 +50,7 @@ export const FinanceAccountingView: React.FC = () => {
     { key: 'vouchers', icon: Receipt, label: tr ? 'Ödeme fişleri' : 'Vouchers' },
     { key: 'ledger', icon: BadgeCheck, label: tr ? 'Kasa defteri' : 'Ledger' },
     { key: 'donations', icon: HandCoins, label: tr ? 'Bağışlar' : 'Donations' },
+    { key: 'close', icon: CalendarCheck, label: tr ? 'Kapanış' : 'Close' },
   ];
 
   return (
@@ -89,6 +91,10 @@ export const FinanceAccountingView: React.FC = () => {
       {tab === 'vouchers' && <VoucherPanel canRule={canRule} />}
       {tab === 'ledger' && <LedgerPanel canSpend={canSpend} canAudit={canAudit} />}
       {tab === 'donations' && <DonationPanel canSpend={canSpend} />}
+      {/* Closing is the director's or the administrator's, and the database
+          says so too: the close function tests the authority itself, because
+          it runs as definer to count every row (M8-16). */}
+      {tab === 'close' && <ClosePanel canClose={acts(roles, 'admin', 'project_director')} />}
     </div>
   );
 };

@@ -97,3 +97,20 @@ export const useRecordTranche = () => {
   const invalidate = useInvalidator(['donations', 'donationTranches']);
   return useMutation({ mutationFn: money.recordTranche, onSuccess: invalidate });
 };
+
+// --- periodic financial close (M8-16) ---------------------------------------
+
+export const usePeriods = () =>
+  useQuery({ queryKey: ['financialPeriods'], queryFn: money.fetchPeriods });
+
+export const useOpenPeriod = () => {
+  const invalidate = useInvalidator(['financialPeriods']);
+  return useMutation({ mutationFn: money.openPeriod, onSuccess: invalidate });
+};
+
+export const useClosePeriod = () => {
+  // The ledger goes stale with the close because every row dated inside the
+  // period is now frozen, and a row entered afterwards will be stamped.
+  const invalidate = useInvalidator(['financialPeriods', 'ledger']);
+  return useMutation({ mutationFn: money.closePeriod, onSuccess: invalidate });
+};

@@ -28,6 +28,7 @@ try {
       'tsc',
       'src/lib/ics.ts',
       'src/lib/contacts.ts',
+      'src/lib/auditFile.ts',
       '--outDir',
       out,
       '--module',
@@ -49,6 +50,7 @@ try {
 
 const { toIcs } = await import(join(out, 'lib', 'ics.js'));
 const { toVCard, toCsv, splitCsv, parseContacts } = await import(join(out, 'lib', 'contacts.js'));
+const { toAuditFile, auditFileName } = await import(join(out, 'lib', 'auditFile.js'));
 
 const NOW = '2026-10-01T12:00:00.000Z';
 const entry = (over = {}) => ({
@@ -391,6 +393,137 @@ const extra = parseContacts('full_name,twitter_handle\nSomebody,@x\n', existing)
 check(
   extra.ignoredColumns.includes('twitter_handle'),
   'a column this portal has no field for is named rather than dropped in silence',
+);
+
+// --- the audit file (M8-16) ------------------------------------------------
+//
+// This file is the one export that is dangerous when it is merely incomplete.
+// Forty payments under the heading "2026-Q1" will be read as the quarter's
+// payments by everybody who opens it afterwards, and nothing in a plain CSV
+// would say otherwise.
+
+const MANIFEST = {
+  code: '2026-Q1',
+  startsOn: '2026-01-01',
+  endsOn: '2026-03-31',
+  state: 'closed',
+  closedAt: '2026-04-02T09:00:00.000Z',
+  rowsInThePeriod: 44,
+  rowsYouCanRead: 40,
+  rowsWithheld: 4,
+  withheldByTier: { restricted: 4 },
+  gaps: {
+    vouchers_never_decided: 2,
+    vouchers_approved_not_paid: 1,
+    vouchers_paid_with_no_ledger_entry: 0,
+    ledger_entries_with_no_document: 7,
+    ledger_entries_never_audited: 31,
+    ledger_entries_with_no_voucher: 5,
+    receipts_with_no_document: 3,
+    certified_work_not_paid: 1,
+  },
+  entriesAddedAfterTheClose: 1,
+};
+
+const auditRow = (over = {}) => ({
+  referenceNo: 'PV-001',
+  date: '2026-02-11',
+  category: 'civil_construction',
+  description: 'Cement, 400 bags',
+  amount: 450000,
+  currency: 'KES',
+  amountKes: 450000,
+  payee: 'Coast Hardware',
+  paymentVoucherId: null,
+  documentId: null,
+  auditedAt: null,
+  confidentiality: 'internal',
+  ...over,
+});
+
+const partial = toAuditFile([auditRow()], MANIFEST, { language: 'tr' });
+
+check(
+  /DİKKAT: bu dosya dönemin tam kaydı DEĞİLDİR/.test(partial.text),
+  'a file missing rows says so in words before it says it in a number',
+);
+check(
+  partial.text.indexOf('DİKKAT') < partial.text.indexOf('44'),
+  'and says it first, because a figure in a header is a figure a reader scrolls past',
+);
+check(partial.complete === false, 'and reports itself as not the complete record');
+check(
+  /restricted: 4/.test(partial.text),
+  'the tier of what was withheld is named, and none of its content is',
+);
+check(
+  !/Cement, 400 bags.*restricted/s.test(partial.text.split('Kayıtlar')[0] ?? ''),
+  'no withheld row leaks into the manifest',
+);
+check(
+  /,1\r?\n/.test(partial.text) && /Kapanıştan sonra girilen/.test(partial.text),
+  'entries added after the close are in the manifest, not folded into the total',
+);
+check(
+  /Denetlenmemiş kayıt,31/.test(partial.text),
+  'the gaps counted at the close travel with the file',
+);
+
+const whole = toAuditFile(
+  [auditRow()],
+  { ...MANIFEST, rowsInThePeriod: 1, rowsYouCanRead: 1, rowsWithheld: 0, withheldByTier: {} },
+  { language: 'tr' },
+);
+check(
+  whole.complete === true && !/DİKKAT/.test(whole.text),
+  'a file with nothing withheld carries no warning it does not need',
+);
+
+// An open period's figures are not a close, and a file taken mid-quarter is
+// otherwise indistinguishable from one taken after it.
+const openFile = toAuditFile(
+  [auditRow()],
+  { ...MANIFEST, state: 'open', closedAt: null, gaps: null },
+  { language: 'tr' },
+);
+check(
+  /Dönem kapanmadı; bu rakamlar bir kapanış değil/.test(openFile.text),
+  'a file taken before the close says the figures are not a close',
+);
+check(
+  /eksikler sayılmadı — bu sıfır demek değil/.test(openFile.text) &&
+    !/Denetlenmemiş kayıt,0/.test(openFile.text),
+  'and an uncounted gap list is said to be uncounted rather than printed as zeroes',
+);
+
+// RFC 4180, the same rules the contact export is held to.
+const quoted = toAuditFile(
+  [auditRow({ description: 'Cement, 400 bags; "urgent"', payee: 'Coast\r\nHardware' })],
+  MANIFEST,
+  { language: 'tr' },
+);
+check(
+  /"Cement, 400 bags; ""urgent"""/.test(quoted.text),
+  'a comma and a quote in a description survive the file intact',
+);
+check(
+  /"Coast\r\nHardware"/.test(quoted.text),
+  'and a newline inside a cell is quoted rather than breaking the row',
+);
+check(quoted.text.startsWith('﻿'), 'the file opens with a byte-order mark for Excel');
+check(
+  (quoted.text.match(/\r\n/g) ?? []).length > 10,
+  'and the rows are separated the way the format says',
+);
+
+check(
+  auditFileName('2026-Q1', new Date('2026-04-02T09:00:00Z')) === 'denetim-2026-Q1-2026-04-02.csv',
+  'the file is named for its period and the day it was taken',
+);
+check(
+  auditFileName('2026/Q1 (revised)', new Date('2026-04-02T09:00:00Z')) ===
+    'denetim-2026-Q1--revised--2026-04-02.csv',
+  'and a period code with a slash in it does not become a path',
 );
 
 rmSync(out, { recursive: true, force: true });

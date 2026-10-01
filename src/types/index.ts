@@ -2474,3 +2474,33 @@ export interface PaymentMatchingHealth {
   measuredWorkWithNoInstalment: number;
   certifiedWorkWithNoInstalment: number;
 }
+
+// ---------------------------------------------------------------------------
+// Periodic financial close (M8-16, 0039)
+// ---------------------------------------------------------------------------
+
+export type PeriodState = 'open' | 'closed';
+
+/**
+ * A period, the figures frozen at its close, and what has been entered into
+ * it since. The last two are why the frozen figures are stored rather than
+ * recomputed: a total that moves when a late invoice arrives is not a close.
+ */
+export interface FinancialPeriod {
+  financialPeriodId: string;
+  code: string;
+  startsOn: string;
+  endsOn: string;
+  state: PeriodState;
+  closedAt: string | null;
+  closingTransactions: number | null;
+  closingLedgerKes: number | null;
+  closingVouchersPaidKes: number | null;
+  closingReceiptsKes: number | null;
+  /** Counted at the close and frozen with it. Null until the close is taken. */
+  gaps: Record<string, number> | null;
+  note: string | null;
+  entriesAddedAfterTheClose: number;
+  addedAfterTheCloseKes: number;
+  confidentiality: Confidentiality;
+}
