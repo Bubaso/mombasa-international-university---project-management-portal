@@ -17,6 +17,7 @@ import { EmptyState } from '../components/EmptyState';
 import { bilingual, bilingualFrom } from '../lib/meetings';
 import { useMachineMarks } from '../api/translateHooks';
 import { MachineBadge } from '../components/ui/MachineBadge';
+import { IcsExport } from '../components/calendar/IcsExport';
 import { Pill } from '../components/ui/Controls';
 import type { CalendarEntry, CalendarKind, Language } from '../types';
 
@@ -193,6 +194,8 @@ export const CalendarView: React.FC = () => {
       </header>
 
       <QueryStatus queries={[calendar]} />
+
+      <IcsExport entries={entries} />
 
       <div className="flex flex-wrap gap-1.5">
         <FilterChip active={kind === ''} onClick={() => setKind('')}>

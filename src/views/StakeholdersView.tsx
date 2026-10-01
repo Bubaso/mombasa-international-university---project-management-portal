@@ -6,6 +6,7 @@ import { useAuthority, useProfiles } from '../api/adminHooks';
 import { QueryStatus } from '../components/QueryStatus';
 import { EmptyState } from '../components/EmptyState';
 import { AttentionStrip } from '../components/stakeholders/AttentionStrip';
+import { ContactsExchange } from '../components/stakeholders/ContactsExchange';
 import { PowerInterestGrid } from '../components/stakeholders/PowerInterestGrid';
 import { StakeholderDetail } from '../components/stakeholders/StakeholderDetail';
 import { ASSESSORS, MINUTE_KEEPERS, actsAs } from '../lib/authority';
@@ -100,6 +101,8 @@ export const StakeholdersView: React.FC = () => {
       <QueryStatus queries={[stakeholders]} />
 
       <AttentionStrip onOpen={setSelectedId} />
+
+      <ContactsExchange people={rows} />
 
       {adding && (
         <AddStakeholderForm

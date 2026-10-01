@@ -2846,6 +2846,22 @@ try {
   const directorRegister = (await page.textContent('body')) ?? '';
   check(/Paydaş ekle|Add a stakeholder/.test(directorRegister), 'director may keep the register');
 
+  // M4-15 and M3-16: the two files this portal hands to another program, and
+  // the sentence each has to carry. Both leave the portal's access control
+  // behind, and the vCard additionally must not carry the trust's reading of
+  // a person into somebody's address book.
+  check(
+    /vCard indir/.test(directorRegister) && /CSV indir/.test(directorRegister),
+    'the register can be taken out as a vCard or a CSV (M4-15)',
+  );
+  check(
+    /tutum, nüfuz, ilgi ve notlar portalda kalır/.test(directorRegister),
+    'and says the assessment stays in the portal rather than going to a phone',
+  );
+  check(
+    /Gizli ve kısıtlı kişileri de koy/.test(directorRegister),
+    'closed records go into a file only when somebody says so',
+  );
   await actAs(EXTERNAL_AUTHORITY);
   pageErrors = [];
   await page.goto(BASE + '/stakeholders', { waitUntil: 'networkidle' });

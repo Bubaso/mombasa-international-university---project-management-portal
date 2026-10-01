@@ -14,13 +14,14 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test:smoke": "npm run build:smoke && node tests/smoke.mjs",
-    "verify": "npm run typecheck && npm run lint && npm run format:check && npm run build && npm run test:smoke && npm run test:policies && npm run test:assistant && npm run test:translate",
+    "verify": "npm run typecheck && npm run lint && npm run format:check && npm run build && npm run test:smoke && npm run test:policies && npm run test:assistant && npm run test:translate && npm run test:exports",
     "test:policies": "bash tests/db/run.sh",
     "test:assistant": "node tests/assistant.mjs",
     "sql:bundle": "node scripts/bundle-migrations.mjs",
     "build:smoke": "VITE_SUPABASE_URL=https://smoke.supabase.co VITE_SUPABASE_ANON_KEY=smoke-anon-key VITE_AI_PROXY_URL=https://smoke.functions.test/ai-assistant vite build",
     "import:notion": "node scripts/import-notion.mjs",
-    "test:translate": "node tests/translate.mjs"
+    "test:translate": "node tests/translate.mjs",
+    "test:exports": "node tests/exports.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.2",
