@@ -1548,6 +1548,23 @@ const TEST_STAKEHOLDERS = [
 ];
 
 /**
+ * Which fields hold unapproved machine text (0035), per table.
+ *
+ * The second action-candidate entry is the one that earns its place. That
+ * candidate has no Turkish, so a Turkish reader is shown its English — and a
+ * badge keyed to the reader's language rather than to the column the words
+ * came from would mark a sentence no machine wrote. It is marked here
+ * precisely so the screen can be checked for NOT badging it.
+ */
+const TEST_MACHINE_MARKS = {
+  action_candidates: [
+    { entity_id: '00000000-0000-0000-0000-00000000a401', column_name: 'text_tr' },
+    { entity_id: '00000000-0000-0000-0000-00000000a402', column_name: 'text_tr' },
+  ],
+  meetings: [{ entity_id: '00000000-0000-0000-0000-0000000000bb', column_name: 'title_tr' }],
+};
+
+/**
  * Machine translations in the three states that matter (0034).
  *
  * The middle one is the point of the whole feature: the field no longer says
@@ -2195,6 +2212,21 @@ try {
     );
 
   await serve('**/rest/v1/notification_health**', TEST_HEALTH);
+  // Answers per table, the way the function does: the client asks once per
+  // register on a screen that mixes them.
+  await page.route('**/rest/v1/rpc/machine_marked', (route) => {
+    let table = '';
+    try {
+      table = JSON.parse(route.request().postData() ?? '{}').p_table ?? '';
+    } catch {
+      // keep the default
+    }
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(TEST_MACHINE_MARKS[table] ?? []),
+    });
+  });
   await serve('**/rest/v1/rpc/translation_review', TEST_TRANSLATIONS);
   await serve('**/rest/v1/rpc/translation_backlog', TEST_BACKLOG);
   await serve('**/rest/v1/action_triage**', TEST_TRIAGE);
@@ -2378,6 +2410,42 @@ try {
     'the sentence somebody actually wrote is what is shown',
   );
   check(/ikisi de yok/.test(triage), 'a line naming neither says so rather than guessing');
+
+  // 0035: the badge, where the sentence is actually read.
+  //
+  // The review queue on the assistant screen is where this work is managed.
+  // The badge is where the warning has to be, because a reader of the sentence
+  // is the only person it is any use to — and a machine translation a reader
+  // cannot tell from the record IS the record to them.
+  //
+  // These run before anything on this screen is clicked. Written after the
+  // settled-filter toggle they passed for the wrong reason: the rows they name
+  // had left the screen and the one badge they found was the meeting title's.
+  const badged = async (text) =>
+    page.locator('li', { hasText: text }).locator('text=makine çevirisi').count();
+
+  check(
+    (await badged('Mr. Tariq mühendislik raporunu')) === 1,
+    'a machine-written sentence is marked where it is read, not only in a queue (0035)',
+  );
+  // The rule that is easy to get wrong and silent when wrong. This candidate is
+  // marked on text_tr and has no Turkish, so its English is what a Turkish
+  // reader is shown — and no machine wrote that.
+  check(
+    (await badged('Explore discreet channels to communicate diplomatic pressure')) === 0,
+    'and the badge follows the column the words came from, not the reader’s language',
+  );
+  check(
+    (await page
+      .locator('li', { hasText: 'Duman toplantısı' })
+      .locator('text=makine çevirisi')
+      .count()) === 1,
+    'the meeting record carries it too, on the title the machine translated',
+  );
+  check(
+    (await page.locator('text=makine çevirisi — onaylanmadı').count()) === 2,
+    'and nothing else on the screen is badged',
+  );
 
   // Adopting the line that names neither. The warning is the point of the
   // form: the date is not a field being filled, it is a decision being made.

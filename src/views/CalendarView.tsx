@@ -14,7 +14,9 @@ import { useApp } from '../context/AppContext';
 import { fetchCalendar } from '../api/calendar';
 import { QueryStatus } from '../components/QueryStatus';
 import { EmptyState } from '../components/EmptyState';
-import { bilingual } from '../lib/meetings';
+import { bilingual, bilingualFrom } from '../lib/meetings';
+import { useMachineMarks } from '../api/translateHooks';
+import { MachineBadge } from '../components/ui/MachineBadge';
 import { Pill } from '../components/ui/Controls';
 import type { CalendarEntry, CalendarKind, Language } from '../types';
 
@@ -115,6 +117,29 @@ export const CalendarView: React.FC = () => {
   const [kind, setKind] = useState<CalendarKind | ''>('');
 
   const entries = calendar.data ?? [];
+
+  // The calendar mixes six registers; three of them can hold machine text
+  // today. A badge here matters as much as on the record's own screen: this is
+  // the list people plan a week from.
+  const actionMarks = useMachineMarks(
+    'action_items',
+    entries.filter((e) => e.kind === 'action').map((e) => e.id),
+  );
+  const questionMarks = useMachineMarks(
+    'open_questions',
+    entries.filter((e) => e.kind === 'question').map((e) => e.id),
+  );
+  const meetingMarks = useMachineMarks(
+    'meetings',
+    entries.filter((e) => e.kind === 'meeting').map((e) => e.id),
+  );
+  const machineWritten = (entry: (typeof entries)[number]): boolean => {
+    const side = bilingualFrom(entry.titleEn, entry.titleTr, language).side;
+    if (entry.kind === 'action') return actionMarks.is(entry.id, 'text', side);
+    if (entry.kind === 'question') return questionMarks.is(entry.id, 'question', side);
+    if (entry.kind === 'meeting') return meetingMarks.is(entry.id, 'title', side);
+    return false;
+  };
   const shown = useMemo(
     () => (kind ? entries.filter((e) => e.kind === kind) : entries),
     [entries, kind],
@@ -246,6 +271,7 @@ export const CalendarView: React.FC = () => {
                             <p className="text-xs text-slate-900">
                               {bilingual(entry.titleEn, entry.titleTr, language) ||
                                 (tr ? '(başlıksız)' : '(untitled)')}
+                              {machineWritten(entry) && <MachineBadge className="ml-1.5" />}
                             </p>
                             <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] text-slate-500">
                               <span>{KINDS[entry.kind][language]}</span>

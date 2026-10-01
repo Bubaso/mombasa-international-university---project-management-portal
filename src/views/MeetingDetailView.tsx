@@ -22,10 +22,13 @@ import {
   MEETING_STATUS_VALUES,
   MINUTES_STATUS_STYLES,
   MINUTES_STATUS_VALUES,
+  bilingualFrom,
   meetingKindLabel,
   meetingStatusLabel,
   minutesStatusLabel,
 } from '../lib/meetings';
+import { useMachineMarks } from '../api/translateHooks';
+import { MachineBadge } from '../components/ui/MachineBadge';
 import { ActionButton, Field, Pill, Select, WriteError } from '../components/ui/Controls';
 import type { MeetingStatus, MinutesStatus } from '../types';
 
@@ -50,6 +53,9 @@ export const MeetingDetailView: React.FC = () => {
   const canKeep = actsAs(authority.data, ...MINUTE_KEEPERS);
   const canDecide = actsAs(authority.data, ...ASSESSORS);
   const meeting = meetingQuery.data;
+  // Called unconditionally, with an empty list until the record arrives: a
+  // hook inside the branch below would run on some renders and not others.
+  const marks = useMachineMarks('meetings', meeting ? [meeting.id] : []);
 
   const [confirmingFinal, setConfirmingFinal] = useState(false);
 
@@ -83,6 +89,11 @@ export const MeetingDetailView: React.FC = () => {
           <div className="min-w-0">
             <h1 className="text-base font-bold text-slate-900">
               {(tr ? meeting.titleTr : meeting.title) ?? meeting.title}
+              {marks.is(
+                meeting.id,
+                'title',
+                bilingualFrom(meeting.title, meeting.titleTr, language).side,
+              ) && <MachineBadge className="ml-2" />}
             </h1>
             <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
               <span className="font-mono">{meeting.heldAt.slice(0, 16).replace('T', ' ')}</span>

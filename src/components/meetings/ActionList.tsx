@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { CircleAlert, Plus, Check } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { useMachineMarks } from '../../api/translateHooks';
+import { MachineBadge } from '../ui/MachineBadge';
 import { useAuth } from '../../context/AuthContext';
 import * as meetings from '../../api/meetingHooks';
 import { useStakeholders } from '../../api/stakeholderHooks';
@@ -11,6 +13,7 @@ import {
   PRIORITY_VALUES,
   actionStatusLabel,
   bilingual,
+  bilingualFrom,
   daysUntil,
   isOverdue,
   priorityLabel,
@@ -39,6 +42,12 @@ export const ActionList: React.FC<{
   const [adding, setAdding] = useState(false);
 
   const rows = actions.data ?? [];
+  // One query for the screenful. The row component takes a boolean rather than
+  // calling the hook itself, which would be one request per action.
+  const marks = useMachineMarks(
+    'action_items',
+    rows.map((a) => a.id),
+  );
 
   // Imported meetings carry their action text under the "actions" heading of
   // the note, because Notion holds no owner and no date as fields and the
@@ -97,14 +106,30 @@ export const ActionList: React.FC<{
               : 'Nothing came out of this meeting. If something should have, adding it now beats remembering later.'}
           </p>
         ) : (
-          rows.map((action) => <ActionRow key={action.id} action={action} canKeep={canKeep} />)
+          rows.map((action) => (
+            <ActionRow
+              key={action.id}
+              action={action}
+              canKeep={canKeep}
+              machineWritten={marks.is(
+                action.id,
+                'text',
+                bilingualFrom(action.textEn, action.textTr, language).side,
+              )}
+            />
+          ))
         )}
       </div>
     </section>
   );
 };
 
-const ActionRow: React.FC<{ action: ActionItem; canKeep: boolean }> = ({ action, canKeep }) => {
+const ActionRow: React.FC<{
+  action: ActionItem;
+  canKeep: boolean;
+  /** Whether the sentence shown is a machine's and nobody has approved it. */
+  machineWritten: boolean;
+}> = ({ action, canKeep, machineWritten }) => {
   const { language } = useApp();
   const { user } = useAuth();
   const tr = language === 'tr';
@@ -131,6 +156,7 @@ const ActionRow: React.FC<{ action: ActionItem; canKeep: boolean }> = ({ action,
       <div className="flex flex-wrap items-start justify-between gap-2">
         <p className="min-w-0 flex-1 text-xs text-slate-900">
           {bilingual(action.textEn, action.textTr, language)}
+          {machineWritten && <MachineBadge className="ml-1.5" />}
         </p>
         <div className="flex shrink-0 items-center gap-1.5">
           {action.priority !== 'normal' && (

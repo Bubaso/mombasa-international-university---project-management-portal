@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Gavel, Plus, UserMinus } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { useMachineMarks } from '../../api/translateHooks';
+import { MachineBadge } from '../ui/MachineBadge';
 import * as meetings from '../../api/meetingHooks';
 import { todayIso } from '../../lib/date';
 import {
@@ -8,6 +10,7 @@ import {
   DECISION_STATUS_VALUES,
   VOTE_OUTCOME_VALUES,
   bilingual,
+  bilingualFrom,
   decisionStatusLabel,
   voteOutcomeLabel,
 } from '../../lib/meetings';
@@ -38,6 +41,12 @@ export const DecisionList: React.FC<{
   const [adding, setAdding] = useState(false);
 
   const rows = decisions.data ?? [];
+  // Which of these sentences a machine wrote and nobody has approved. Asked
+  // once for the screenful rather than once per row.
+  const marks = useMachineMarks(
+    'decisions',
+    rows.map((d) => d.id),
+  );
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white shadow-xs">
@@ -81,6 +90,11 @@ export const DecisionList: React.FC<{
                   <span className="text-xs text-slate-900">
                     {bilingual(decision.textEn, decision.textTr, language)}
                   </span>
+                  {marks.is(
+                    decision.id,
+                    'text',
+                    bilingualFrom(decision.textEn, decision.textTr, language).side,
+                  ) && <MachineBadge className="ml-1.5" />}
                 </div>
                 <Pill className={DECISION_STATUS_STYLES[decision.status]}>
                   {decisionStatusLabel(decision.status, language)}
@@ -96,6 +110,11 @@ export const DecisionList: React.FC<{
               {bilingual(decision.rationaleEn, decision.rationaleTr, language) && (
                 <p className="mt-1 text-[11px] italic leading-relaxed text-slate-600">
                   {bilingual(decision.rationaleEn, decision.rationaleTr, language)}
+                  {marks.is(
+                    decision.id,
+                    'rationale',
+                    bilingualFrom(decision.rationaleEn, decision.rationaleTr, language).side,
+                  ) && <MachineBadge className="ml-1.5" />}
                 </p>
               )}
 

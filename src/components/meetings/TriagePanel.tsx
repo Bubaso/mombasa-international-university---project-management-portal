@@ -25,10 +25,13 @@ import {
   useAdoptCandidate,
   useDismissCandidate,
 } from '../../api/candidateHooks';
+import { useMachineMarks } from '../../api/translateHooks';
 import { useProfiles } from '../../api/adminHooks';
 import { useStakeholders } from '../../api/stakeholderHooks';
 import { QueryStatus } from '../QueryStatus';
 import { ActionButton, Field, Pill, Select, TextInput, WriteError } from '../ui/Controls';
+import { MachineBadge } from '../ui/MachineBadge';
+import { bilingualFrom } from '../../lib/meetings';
 import { formatDate } from '../../lib/site';
 import type { ActionCandidate } from '../../types';
 
@@ -53,6 +56,10 @@ export const TriagePanel: React.FC = () => {
   const [filter, setFilter] = useState<'pending' | 'settled'>('pending');
 
   const all = candidates.data ?? [];
+  const marks = useMachineMarks(
+    'action_candidates',
+    all.map((c) => c.id),
+  );
   const pending = all.filter((c) => c.state === 'pending');
   const settled = all.filter((c) => c.state !== 'pending');
   const shown = filter === 'pending' ? pending : settled;
@@ -177,6 +184,11 @@ export const TriagePanel: React.FC = () => {
                       <span className="font-mono text-[10px] text-slate-400">{c.sequence}</span>
                       <p className="min-w-0 flex-1 text-xs text-slate-900">
                         {(tr ? c.textTr : c.textEn) ?? c.textEn}
+                        {marks.is(
+                          c.id,
+                          'text',
+                          bilingualFrom(c.textEn, c.textTr, language).side,
+                        ) && <MachineBadge className="ml-1.5" />}
                       </p>
                       {c.state === 'pending' ? (
                         <div className="flex shrink-0 items-center gap-2">

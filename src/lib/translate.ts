@@ -124,3 +124,26 @@ export function missingHalves(
 export function tableFor(entityKind: string): string | null {
   return TRANSLATES[entityKind]?.table ?? null;
 }
+
+/**
+ * Which column a badge would be about, given the side that actually supplied
+ * the text on screen.
+ *
+ * Pure, and here rather than in the hook, because two of its three rules are
+ * easy to get wrong and silent when wrong — and a rule nothing can test is a
+ * rule nobody is keeping. A mutation that ignored the null case survived the
+ * browser tests, which is how this function came to exist.
+ *
+ *   null side      — the field is empty in both languages, so nothing is on
+ *                    screen and there is nothing to mark. Badging it would
+ *                    claim a machine wrote a sentence that is not there.
+ *   meetings.title — the one pair that breaks the convention: the English
+ *                    title is the NOT NULL `title`, because every screen falls
+ *                    back to it.
+ *   everything else is <base>_<side>.
+ */
+export function markedColumn(table: string, base: string, side: 'en' | 'tr' | null): string | null {
+  if (!side) return null;
+  if (table === 'meetings' && base === 'title' && side === 'en') return 'title';
+  return `${base}_${side}`;
+}

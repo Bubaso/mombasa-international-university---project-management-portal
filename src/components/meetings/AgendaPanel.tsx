@@ -6,7 +6,15 @@ import { useAuth } from '../../context/AuthContext';
 import { useAgenda } from '../../api/meetingHooks';
 import { useProfiles } from '../../api/adminHooks';
 import { useStakeholders } from '../../api/stakeholderHooks';
-import { bilingual, daysUntil, priorityLabel, PRIORITY_STYLES } from '../../lib/meetings';
+import {
+  PRIORITY_STYLES,
+  bilingual,
+  bilingualFrom,
+  daysUntil,
+  priorityLabel,
+} from '../../lib/meetings';
+import { useMachineMarks } from '../../api/translateHooks';
+import { MachineBadge } from '../ui/MachineBadge';
 import { Pill } from '../ui/Controls';
 import { EmptyState } from '../EmptyState';
 
@@ -47,6 +55,23 @@ export const AgendaPanel: React.FC<{ limit?: number; compact?: boolean }> = ({
     return (a.dueOn ?? '9999').localeCompare(b.dueOn ?? '9999');
   });
   const shown = limit ? sorted.slice(0, limit) : sorted;
+
+  // The agenda mixes two registers, so it takes two queries. Both are asked
+  // for the screenful at once, and `item_kind` decides which answer applies.
+  const actionMarks = useMachineMarks(
+    'action_items',
+    shown.filter((i) => i.itemKind === 'action').map((i) => i.id),
+  );
+  const questionMarks = useMachineMarks(
+    'open_questions',
+    shown.filter((i) => i.itemKind === 'question').map((i) => i.id),
+  );
+  const machineWritten = (item: (typeof shown)[number]): boolean => {
+    const side = bilingualFrom(item.textEn, item.textTr, language).side;
+    return item.itemKind === 'action'
+      ? actionMarks.is(item.id, 'text', side)
+      : questionMarks.is(item.id, 'question', side);
+  };
   const overdue = all.filter((i) => i.overdue).length;
 
   return (
@@ -117,6 +142,7 @@ export const AgendaPanel: React.FC<{ limit?: number; compact?: boolean }> = ({
                     <span className="min-w-0 flex-1">
                       <span className="block text-xs text-slate-900">
                         {bilingual(item.textEn, item.textTr, language)}
+                        {machineWritten(item) && <MachineBadge className="ml-1.5" />}
                       </span>
                       <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-slate-500">
                         {who && (

@@ -228,3 +228,29 @@ export async function fetchTranslationBacklog(): Promise<BacklogRow[]> {
     .filter((row) => row.onlyEn + row.onlyTr > 0)
     .sort((a, b) => b.onlyEn + b.onlyTr - (a.onlyEn + a.onlyTr));
 }
+
+// ---------------------------------------------------------------------------
+// The badge, for every reader
+// ---------------------------------------------------------------------------
+
+/**
+ * Which of these records hold unapproved machine text, and in which column.
+ *
+ * Deliberately not a read of machine_translations: that table is internal-only,
+ * which would leave a donor or outside counsel reading machine-written Turkish
+ * with nothing to say so — the readers who most need telling. The function
+ * returns a location and never a wording, and only for the ids it is given.
+ */
+export async function fetchMachineMarked(table: string, ids: string[]): Promise<Set<string>> {
+  if (ids.length === 0) return new Set();
+  const { data, error } = await supabase.rpc('machine_marked', {
+    p_table: table,
+    p_ids: ids,
+  });
+  if (error) throw new Error(error.message);
+  return new Set(
+    ((data ?? []) as Record<string, unknown>[]).map(
+      (row) => `${row.entity_id as string}:${row.column_name as string}`,
+    ),
+  );
+}

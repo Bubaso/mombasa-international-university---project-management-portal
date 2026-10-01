@@ -5724,6 +5724,100 @@ $$;
 
 reset role;
 
+-- ===========================================================================
+-- The badge, for every reader (0035)
+-- ===========================================================================
+--
+-- 0034's queue is on the assistant screen and is readable by internal users
+-- only. A donor or outside counsel reading a machine-written sentence would
+-- see nothing marking it as one, which is the gap. machine_marked answers the
+-- badge question and nothing else.
+
+set role authenticated;
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- director
+
+-- It returns exactly two columns, and that is the security property rather
+-- than a style choice: a definer function that answers for any id must not be
+-- able to hand back wording.
+select pg_temp.check('the badge function returns a location and no text',
+  (select pg_get_function_result('public.machine_marked(text, uuid[])'::regprocedure)),
+  'TABLE(entity_id uuid, column_name text)');
+
+insert into obligations
+  (id, title_en, title_tr, detail_en, source, obligor_name, due_on, state, confidentiality)
+values
+  ('b1000000-0000-0000-0000-00000000f201', 'A public undertaking',
+   'Açık bir taahhüt', 'Lodged under section 44.', 'statute', 'AUTK',
+   current_date + 200, 'open', 'public');
+update obligations set detail_tr = 'Madde 44 uyarınca tevdi edildi.'
+ where id = 'b1000000-0000-0000-0000-00000000f201';
+select public.record_machine_translation(
+  'obligations', 'b1000000-0000-0000-0000-00000000f201', 'detail_tr',
+  'tr', 'en', 'gemini-2.5-flash', 'Madde 44 uyarınca tevdi edildi.');
+
+select pg_temp.check('an unapproved field is reported as machine-written',
+  (select count(*) from public.machine_marked(
+     'obligations', array['b1000000-0000-0000-0000-00000000f201'::uuid])
+    where column_name = 'detail_tr'), 1::bigint);
+
+-- The point of the whole migration: the reader who cannot read the marker
+-- table still gets the badge.
+select pg_temp.act_as('88888888-8888-8888-8888-888888888888');  -- donor
+select pg_temp.check('somebody who cannot read the marker table still sees it',
+  (select count(*) from machine_translations), 0::bigint);
+select pg_temp.check('and is told the field is machine-written anyway (0035)',
+  (select count(*) from public.machine_marked(
+     'obligations', array['b1000000-0000-0000-0000-00000000f201'::uuid])
+    where column_name = 'detail_tr'), 1::bigint);
+
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');
+
+-- Only the ids the caller names, and only those that carry a marker.
+select pg_temp.check('a record with no marker is reported as nothing',
+  (select count(*) from public.machine_marked(
+     'obligations', array['b1000000-0000-0000-0000-00000000f103'::uuid])), 0::bigint);
+
+-- The disclosure this function makes, asserted rather than left incidental:
+-- it will say that a RESTRICTED record holds machine text, to a caller with no
+-- clearance for it. That is provenance and not content — the function cannot
+-- return wording, by its own return type above — and it is the trade 0035
+-- makes on purpose, because the alternative is a reader shown machine-written
+-- Turkish with nothing to say so.
+select pg_temp.act_as('88888888-8888-8888-8888-888888888888');  -- donor
+select pg_temp.check('provenance is disclosed where content is not',
+  (select count(*) from public.machine_marked(
+     'obligations', array['b1000000-0000-0000-0000-00000000f102'::uuid])), 1::bigint);
+select pg_temp.check('and the restricted text itself stays unreadable',
+  (select count(*) from obligations
+    where id = 'b1000000-0000-0000-0000-00000000f102'), 0::bigint);
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');
+select pg_temp.check('and about nothing at all when asked about nothing',
+  (select count(*) from public.machine_marked('obligations', '{}'::uuid[])), 0::bigint);
+
+-- Edited by hand: the field holds a person's words now.
+update obligations set detail_tr = 'Madde 44 gereğince tapuya tevdi edildi.'
+ where id = 'b1000000-0000-0000-0000-00000000f201';
+select pg_temp.check('a field edited by hand is no longer badged',
+  (select count(*) from public.machine_marked(
+     'obligations', array['b1000000-0000-0000-0000-00000000f201'::uuid])), 0::bigint);
+
+-- Approved: it is the approver's wording now, and saying otherwise would be
+-- telling the reader something that stopped being true.
+update obligations set detail_tr = 'Madde 44 uyarınca tevdi edildi.'
+ where id = 'b1000000-0000-0000-0000-00000000f201';
+select pg_temp.check('and badged again once the hand edit is reverted',
+  (select count(*) from public.machine_marked(
+     'obligations', array['b1000000-0000-0000-0000-00000000f201'::uuid])), 1::bigint);
+
+select public.approve_translation(
+  (select id from machine_translations
+    where entity_id = 'b1000000-0000-0000-0000-00000000f201'));
+select pg_temp.check('an approved translation is not badged — it is the approver''s wording',
+  (select count(*) from public.machine_marked(
+     'obligations', array['b1000000-0000-0000-0000-00000000f201'::uuid])), 0::bigint);
+
+reset role;
+
 -- ---------------------------------------------------------------------------
 -- The anon key is given nothing (0026)
 -- ---------------------------------------------------------------------------

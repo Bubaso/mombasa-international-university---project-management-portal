@@ -9,6 +9,9 @@ import { EmptyState } from '../components/EmptyState';
 import { AgendaPanel } from '../components/meetings/AgendaPanel';
 import { CapturePanel } from '../components/meetings/CapturePanel';
 import { TriagePanel } from '../components/meetings/TriagePanel';
+import { useMachineMarks } from '../api/translateHooks';
+import { MachineBadge } from '../components/ui/MachineBadge';
+import { bilingualFrom } from '../lib/meetings';
 import { MINUTE_KEEPERS, actsAs, clearanceLabel, clearanceStyle } from '../lib/authority';
 import {
   MEETING_KIND_VALUES,
@@ -47,6 +50,10 @@ export const MeetingsView: React.FC = () => {
 
   const [creating, setCreating] = useState(false);
   const rows = list.data ?? [];
+  const marks = useMachineMarks(
+    'meetings',
+    rows.map((m) => m.id),
+  );
 
   return (
     <div className="space-y-4">
@@ -136,6 +143,11 @@ export const MeetingsView: React.FC = () => {
                               because it is the one that is never null. */}
                           {(tr ? meeting.titleTr : meeting.title) ?? meeting.title}
                         </span>
+                        {marks.is(
+                          meeting.id,
+                          'title',
+                          bilingualFrom(meeting.title, meeting.titleTr, language).side,
+                        ) && <MachineBadge />}
                         <Pill>{meetingKindLabel(meeting.kind, language)}</Pill>
                         <Pill className={MINUTES_STATUS_STYLES[meeting.minutesStatus]}>
                           {minutesStatusLabel(meeting.minutesStatus, language)}

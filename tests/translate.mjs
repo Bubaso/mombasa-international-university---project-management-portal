@@ -53,7 +53,9 @@ try {
   process.exit(1);
 }
 
-const { TRANSLATES, missingHalves, tableFor } = await import(join(out, 'lib', 'translate.js'));
+const { TRANSLATES, markedColumn, missingHalves, tableFor } = await import(
+  join(out, 'lib', 'translate.js')
+);
 
 // --- the registry ----------------------------------------------------------
 
@@ -145,6 +147,32 @@ check(
 check(
   missingHalves('obligation', { title_en: 'Something', title_tr: null }).length === 0,
   'an entity that is not in the registry is not translated',
+);
+
+// --- which column a badge is about (0035) ---------------------------------
+//
+// The badge follows the column the words came from, not the language the
+// reader asked for, because bilingualFrom falls back. These three rules were
+// in the hook, where nothing could test them, and a mutation that dropped the
+// null case survived the browser tests — which is why they are here.
+
+check(markedColumn('decisions', 'text', 'tr') === 'text_tr', 'a badge names <base>_<side>');
+check(markedColumn('decisions', 'text', 'en') === 'text_en', 'in either direction');
+check(
+  markedColumn('decisions', 'text', null) === null,
+  'a field empty in both languages has nothing on screen to mark',
+);
+check(
+  markedColumn('meetings', 'title', 'en') === 'title',
+  'and meetings.title keeps its name, being the pair that breaks the convention',
+);
+check(
+  markedColumn('meetings', 'title', 'tr') === 'title_tr',
+  'while its Turkish half follows the convention like everything else',
+);
+check(
+  markedColumn('obligations', 'title', 'en') === 'title_en',
+  'the exception is for that one table, not for every title',
 );
 
 rmSync(out, { recursive: true, force: true });

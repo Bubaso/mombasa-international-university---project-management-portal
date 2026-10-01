@@ -173,8 +173,30 @@ export function bilingual(
   tr: string | null | undefined,
   language: Language,
 ): string {
-  const preferred = language === 'tr' ? tr : en;
-  return (preferred ?? '').trim() || (language === 'tr' ? en : tr) || '';
+  return bilingualFrom(en, tr, language).text;
+}
+
+/**
+ * The same text, and which side of the pair actually supplied it.
+ *
+ * The fallback above is why this exists. A reader in Turkish whose record has
+ * no Turkish gets the English, and a machine-translation badge keyed to the
+ * reader's language would then be put on a sentence no machine wrote. The
+ * badge has to follow the column the words came from, not the column the
+ * reader asked for.
+ */
+export function bilingualFrom(
+  en: string | null | undefined,
+  tr: string | null | undefined,
+  language: Language,
+): { text: string; side: 'en' | 'tr' | null } {
+  const first = language === 'tr' ? 'tr' : 'en';
+  const second = first === 'tr' ? 'en' : 'tr';
+  const value = (side: 'en' | 'tr') => ((side === 'tr' ? tr : en) ?? '').trim();
+
+  if (value(first) !== '') return { text: value(first), side: first };
+  if (value(second) !== '') return { text: value(second), side: second };
+  return { text: '', side: null };
 }
 
 /** Whether a date has passed, for a date-only column. */

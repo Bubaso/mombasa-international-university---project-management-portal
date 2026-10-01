@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { HelpCircle, Plus } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { useMachineMarks } from '../../api/translateHooks';
+import { MachineBadge } from '../ui/MachineBadge';
 import * as meetings from '../../api/meetingHooks';
 import {
   QUESTION_STATUS_VALUES,
   bilingual,
+  bilingualFrom,
   isOverdue,
   questionStatusLabel,
 } from '../../lib/meetings';
@@ -42,6 +45,10 @@ export const QuestionList: React.FC<{
   const [adding, setAdding] = useState(false);
 
   const rows = questions.data ?? [];
+  const marks = useMachineMarks(
+    'open_questions',
+    rows.map((q) => q.id),
+  );
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white shadow-xs">
@@ -87,6 +94,11 @@ export const QuestionList: React.FC<{
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <p className="min-w-0 flex-1 text-xs text-slate-900">
                     {bilingual(question.questionEn, question.questionTr, language)}
+                    {marks.is(
+                      question.id,
+                      'question',
+                      bilingualFrom(question.questionEn, question.questionTr, language).side,
+                    ) && <MachineBadge className="ml-1.5" />}
                   </p>
                   <Pill className={STATUS_STYLES[question.status]}>
                     {questionStatusLabel(question.status, language)}

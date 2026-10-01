@@ -12,6 +12,7 @@
 import { useCallback } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as api from './translate';
+import { markedColumn } from '../lib/translate';
 import { assistantConfigured } from './assistant';
 
 const KEY = ['translationReview'];
@@ -82,3 +83,33 @@ export function useCorrectTranslation() {
 
 export const useTranslationBacklog = () =>
   useQuery({ queryKey: ['translationBacklog'], queryFn: api.fetchTranslationBacklog });
+
+/**
+ * The badge for a screenful of records.
+ *
+ * `is(id, base)` takes the field's base name and the side the text actually
+ * came from, because `bilingualFrom` falls back: a reader in Turkish whose
+ * record has no Turkish is shown the English, and badging that would put a
+ * machine-translation warning on a sentence no machine wrote.
+ */
+export function useMachineMarks(table: string, ids: string[]) {
+  // Sorted and joined so the key is stable while the list is the same set,
+  // rather than refetching whenever the parent re-renders a new array.
+  const key = [...ids].sort().join(',');
+  const query = useQuery({
+    queryKey: ['machineMarked', table, key],
+    queryFn: () => api.fetchMachineMarked(table, ids),
+    enabled: ids.length > 0,
+  });
+
+  const marks = query.data;
+  return {
+    is: (id: string, base: string, side: 'en' | 'tr' | null): boolean => {
+      if (!marks) return false;
+      // The three rules behind this live in markedColumn, where they can be
+      // tested: a null side means nothing is on screen to mark.
+      const column = markedColumn(table, base, side);
+      return column != null && marks.has(`${id}:${column}`);
+    },
+  };
+}
