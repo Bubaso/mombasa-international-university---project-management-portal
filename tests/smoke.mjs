@@ -880,6 +880,242 @@ const TEST_CONFLICTS = [
   },
 ];
 
+// --- M14 procurement fixtures ----------------------------------------------
+
+/** The four counsel candidates the requirement is actually about. */
+const TEST_PROCUREMENTS = [
+  {
+    id: '00000000-0000-0000-0000-000000000d01',
+    reference_no: 'PR-2026-01',
+    kind: 'legal_counsel',
+    need_en: 'Lead counsel for the appeal',
+    need_tr: 'Temyiz için baş avukat',
+    justification_en: 'The present advocate is retiring and the appeal is listed for February.',
+    justification_tr: null,
+    estimated_amount: 3000000,
+    estimated_currency: 'KES',
+    estimated_amount_kes: 3000000,
+    requested_by: '00000000-0000-0000-0000-0000000000aa',
+    requested_at: '2026-01-04T09:00:00Z',
+    needed_by: '2026-02-01',
+    state: 'awarded',
+    approved_at: '2026-01-06T09:00:00Z',
+    decision_note: 'Four candidates to be invited.',
+    cancelled_reason: null,
+    confidentiality: 'internal',
+    requester: { full_name: 'Smoke Test' },
+    approver: { full_name: 'Smoke Director' },
+    procurement_candidates: [{ count: 4 }],
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000d02',
+    reference_no: 'PR-2026-02',
+    kind: 'auditor',
+    need_en: 'External auditor for the 2026 accounts',
+    need_tr: '2026 hesapları için dış denetçi',
+    justification_en: 'Cap 164 requires audited accounts and the donor agreement repeats it.',
+    justification_tr: null,
+    estimated_amount: 1200000,
+    estimated_currency: 'KES',
+    estimated_amount_kes: 1200000,
+    requested_by: '00000000-0000-0000-0000-0000000000aa',
+    requested_at: '2026-03-02T09:00:00Z',
+    needed_by: '2026-06-30',
+    // The state that puts somebody on the hook.
+    state: 'drafted',
+    approved_at: null,
+    decision_note: null,
+    cancelled_reason: null,
+    confidentiality: 'internal',
+    requester: { full_name: 'Smoke Test' },
+    approver: null,
+    procurement_candidates: [{ count: 0 }],
+  },
+];
+
+const TEST_CANDIDATES = [
+  {
+    id: '00000000-0000-0000-0000-000000000e01',
+    request_id: '00000000-0000-0000-0000-000000000d01',
+    organization_id: null,
+    stakeholder_id: null,
+    name: 'Mwangi & Co Advocates',
+    scope_en: 'Appeal, from record to judgment',
+    scope_tr: null,
+    fee_amount: 2800000,
+    fee_currency: 'KES',
+    fee_amount_kes: 2800000,
+    fee_basis: 'fixed',
+    references_en: null,
+    strengths_en: 'Argued two ELC appeals last year',
+    weaknesses_en: 'No Mombasa office',
+    score: 82,
+    proposal_document_id: null,
+    outcome: 'selected',
+    decision_note_en: 'Only candidate with an ELC appellate record; fee within the estimate.',
+    decision_note_tr: null,
+    decided_on: '2026-01-20',
+    confidentiality: 'internal',
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000e02',
+    request_id: '00000000-0000-0000-0000-000000000d01',
+    organization_id: null,
+    stakeholder_id: null,
+    name: 'Otieno Advocates',
+    scope_en: 'Appeal only',
+    scope_tr: null,
+    fee_amount: 2200000,
+    fee_currency: 'KES',
+    fee_amount_kes: 2200000,
+    fee_basis: 'fixed',
+    references_en: null,
+    strengths_en: 'Cheapest proposal',
+    weaknesses_en: 'No appellate record in land matters',
+    score: 54,
+    proposal_document_id: null,
+    // The half that went missing in the meeting notes.
+    outcome: 'rejected',
+    decision_note_en: 'No appellate record in land matters, which is the whole brief.',
+    decision_note_tr: null,
+    decided_on: '2026-01-20',
+    confidentiality: 'internal',
+  },
+];
+
+const TEST_CONTRACT_ALERTS = [
+  {
+    contract_id: '00000000-0000-0000-0000-000000000f01',
+    reference_no: 'CT-2026-01',
+    counterparty_name: 'Mwangi & Co Advocates',
+    subject_en: 'Conduct of the ELC appeal',
+    subject_tr: 'ELC temyizinin yürütülmesi',
+    state: 'active',
+    starts_on: '2026-01-25',
+    ends_on: '2026-10-25',
+    renewal_on: '2026-09-25',
+    notice_days: 30,
+    value_amount: 2800000,
+    value_currency: 'KES',
+    value_amount_kes: 2800000,
+    value_basis: 'fixed',
+    renewal_band: 'within_30',
+    expiry_band: 'within_60',
+    next_date: '2026-09-25',
+    days_to_expiry: 55,
+    days_to_renewal: 25,
+    // Nobody has written the next one, which is what the alert is for.
+    renewal_drafted: false,
+    confidentiality: 'internal',
+  },
+  {
+    contract_id: '00000000-0000-0000-0000-000000000f02',
+    reference_no: 'CT-2025-04',
+    counterparty_name: 'Coast Engineering',
+    subject_en: 'Phase one civil works',
+    subject_tr: 'Birinci faz inşaat işleri',
+    state: 'active',
+    starts_on: '2025-03-01',
+    ends_on: '2026-12-31',
+    renewal_on: null,
+    notice_days: 60,
+    value_amount: 180000000,
+    value_currency: 'KES',
+    value_amount_kes: 180000000,
+    // An hourly or rate-based engagement has no fixed sum, and saying so
+    // beats leaving the column blank.
+    value_basis: 'rate_based',
+    renewal_band: null,
+    expiry_band: 'later',
+    next_date: '2026-12-31',
+    days_to_expiry: 300,
+    days_to_renewal: null,
+    renewal_drafted: true,
+    confidentiality: 'internal',
+  },
+];
+
+const TEST_CONTRACT_TERMS = [
+  {
+    id: '00000000-0000-0000-0000-000000000f11',
+    contract_id: '00000000-0000-0000-0000-000000000f01',
+    clause: 'cl. 4.1',
+    title_en: 'File the record of appeal',
+    title_tr: 'Temyiz dosyasını sun',
+    detail_en: 'Within sixty days of the retainer.',
+    owed_by: 'counterparty',
+    due_on: '2026-03-25',
+    obligation_id: '00000000-0000-0000-0000-000000000f21',
+    confidentiality: 'internal',
+    obligation: { state: 'open' },
+  },
+];
+
+const TEST_SETTLEMENT = [
+  {
+    contract_id: '00000000-0000-0000-0000-000000000f01',
+    reference_no: 'CT-2026-01',
+    counterparty_name: 'Mwangi & Co Advocates',
+    subject_en: 'Conduct of the ELC appeal',
+    state: 'active',
+    value_basis: 'fixed',
+    value_kes: 2800000,
+    milestones: 3,
+    scheduled_kes: 3700000,
+    paid_kes: 1400000,
+    next_due: '2026-06-30',
+    percent_paid: 50.0,
+    // Reported, not refused: a variation that raises the price is real.
+    over_committed: true,
+    confidentiality: 'internal',
+  },
+];
+
+const TEST_MILESTONES = [
+  {
+    id: '00000000-0000-0000-0000-000000000f31',
+    contract_id: '00000000-0000-0000-0000-000000000f01',
+    sequence: 1,
+    title_en: 'On signature',
+    title_tr: 'İmzada',
+    due_on: '2026-01-25',
+    state: 'paid',
+    amount: 1400000,
+    currency: 'KES',
+    amount_kes: 1400000,
+    valuation_id: null,
+    payment_voucher_id: '00000000-0000-0000-0000-0000000000c1',
+    note: null,
+    confidentiality: 'internal',
+  },
+];
+
+const TEST_REVIEWS = [
+  {
+    id: '00000000-0000-0000-0000-000000000f41',
+    contract_id: '00000000-0000-0000-0000-000000000f01',
+    organization_id: null,
+    stakeholder_id: '00000000-0000-0000-0000-0000000000b9',
+    contractor_id: null,
+    period_start: '2026-01-25',
+    period_end: '2026-04-25',
+    quality: 4,
+    timeliness: 2,
+    cost_control: 5,
+    cooperation: 4,
+    overall: 3.75,
+    note_en: 'Sound on the law, late with the record twice.',
+    note_tr: null,
+    document_id: null,
+    reviewed_at: '2026-04-26T09:00:00Z',
+    confidentiality: 'internal',
+    reviewer: { full_name: 'Smoke Test' },
+    organization: null,
+    stakeholder: { full_name: 'Mwangi & Co Advocates' },
+    contractor: null,
+  },
+];
+
 const ROUTES = [
   '/',
   '/project_info',
@@ -892,6 +1128,7 @@ const ROUTES = [
   '/obligations',
   '/risks',
   '/calendar',
+  '/procurement',
   '/finance',
   '/documents',
   '/communication',
@@ -1151,6 +1388,13 @@ try {
   await serve('**/rest/v1/obligation_progress**', TEST_TARGETS);
   await serve('**/rest/v1/intake_readiness**', TEST_READINESS);
   await serve('**/rest/v1/conflict_declarations**', TEST_CONFLICTS);
+  await serve('**/rest/v1/procurement_requests**', TEST_PROCUREMENTS);
+  await serve('**/rest/v1/procurement_candidates**', TEST_CANDIDATES);
+  await serve('**/rest/v1/contract_alerts**', TEST_CONTRACT_ALERTS);
+  await serve('**/rest/v1/contract_terms**', TEST_CONTRACT_TERMS);
+  await serve('**/rest/v1/contract_settlement**', TEST_SETTLEMENT);
+  await serve('**/rest/v1/contract_milestones**', TEST_MILESTONES);
+  await serve('**/rest/v1/supplier_reviews**', TEST_REVIEWS);
 
   await proxyReturns(TEST_AI_ANSWER);
 
@@ -1795,6 +2039,113 @@ try {
     'and an obligation with no target set is not reported at nought per cent',
   );
   check(pageErrors.length === 0, 'the readiness screen renders without a runtime error');
+
+  // --- procurement and contracts (M14) --------------------------------------
+  //
+  // The requirement names the actual situation: four counsel were compared in
+  // parallel and the reasoning sits in scattered meeting notes. So the
+  // assertions are mostly about reasons being on the screen next to the
+  // decisions they belong to.
+  pageErrors = [];
+  await page.goto(BASE + '/procurement', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(500);
+  const procurement = (await page.textContent('body')) ?? '';
+
+  // M14-01: the need and the reason, together.
+  check(
+    /Lead counsel for the appeal|Temyiz için baş avukat/.test(procurement) &&
+      /present advocate is retiring/.test(procurement),
+    'a request shows the need and the justification together (M14-01)',
+  );
+  check(
+    /onay bekliyor|awaiting approval/.test(procurement),
+    'and a request nobody has approved says so',
+  );
+  check(
+    /aynı tutar bandı|same money bands as a payment/.test(procurement),
+    'the screen says approval goes through the payment bands, not a second set',
+  );
+
+  // M14-02: the comparison, including the reason the others were not chosen.
+  await page
+    .locator('button')
+    .filter({ hasText: /Lead counsel for the appeal|Temyiz için baş avukat/ })
+    .first()
+    .click();
+  await page.waitForTimeout(600);
+  const candidates = (await page.textContent('body')) ?? '';
+  check(
+    /Mwangi & Co Advocates/.test(candidates) && /Otieno Advocates/.test(candidates),
+    'opening a request shows the candidates side by side (M14-02)',
+  );
+  check(
+    /ELC appellate record; fee within the estimate/.test(candidates),
+    'with the reason the winner was chosen',
+  );
+  check(
+    /No appellate record in land matters, which is the whole brief/.test(candidates),
+    'and the reason the others were not — the half that went missing',
+  );
+  check(
+    /82/.test(candidates) && /2,800,000|2800000/.test(candidates.replace(/\u00a0/g, ' ')),
+    'the fee and the score are both on the comparison',
+  );
+
+  // M14-03 / M14-05: the register, and the alert that closes the loop.
+  check(
+    /CT-2026-01/.test(procurement) && /Mwangi & Co Advocates/.test(procurement),
+    'the contract register names the party and the reference (M14-03)',
+  );
+  check(
+    /30 gün içinde|within 30 days/.test(procurement),
+    'a renewal date inside thirty days is banded as such (M14-05)',
+  );
+  check(
+    /devamı yazılmamış|no successor drafted/.test(procurement),
+    'and a renewal nobody has drafted is called out — the column the alert is for',
+  );
+  check(
+    /devamı yazıldı|successor drafted/.test(procurement),
+    'while one that has been drafted is not treated as a worry',
+  );
+  // The honest answer to a contract with no fixed sum.
+  check(
+    /birim fiyat|rate based/.test(procurement),
+    'a contract with no fixed sum says what kind of number its value is',
+  );
+
+  // M14-04: the term, and the obligation it raised in M2.
+  await page
+    .locator('button')
+    .filter({ hasText: /Conduct of the ELC appeal|ELC temyizinin/ })
+    .first()
+    .click();
+  await page.waitForTimeout(600);
+  const contract = (await page.textContent('body')) ?? '';
+  check(
+    /File the record of appeal|Temyiz dosyasını sun/.test(contract) &&
+      /yükümlülüğe git|open the obligation/.test(contract),
+    'a contract term links to the obligation it raised in M2 (M14-04)',
+  );
+  check(/borçlu|owed by/.test(contract), 'and says which side owes it');
+  // M14-07: the schedule, and the overrun reported rather than hidden.
+  check(
+    /Plan, kayıtlı sözleşme tutarını aşıyor|schedule exceeds the recorded contract value/.test(
+      contract,
+    ),
+    'a schedule that outgrew the contract is reported, not blocked (M14-07)',
+  );
+
+  // M14-06: dated, scored, append-only.
+  check(
+    /3\.75/.test(procurement) && /Sound on the law, late with the record twice/.test(procurement),
+    'a performance review carries its score and its words (M14-06)',
+  );
+  check(
+    /sonradan değiştirilemez|not editable afterwards/.test(procurement),
+    'and the screen says it cannot be edited afterwards',
+  );
+  check(pageErrors.length === 0, 'the procurement screen renders without a runtime error');
 } finally {
   await browser?.close();
   server.kill();

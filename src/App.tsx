@@ -68,6 +68,9 @@ const AssistantView = lazy(() =>
 const ReadinessView = lazy(() =>
   import('./views/ReadinessView').then((m) => ({ default: m.ReadinessView })),
 );
+const ProcurementView = lazy(() =>
+  import('./views/ProcurementView').then((m) => ({ default: m.ProcurementView })),
+);
 
 const MainLayout: React.FC = () => {
   const { language } = useApp();
@@ -191,6 +194,7 @@ const Gate: React.FC = () => {
         <Route path="/construction" element={<ConstructionView />} />
         <Route path="/governance" element={<GovernanceCharterView />} />
         <Route path="/readiness" element={<ReadinessView />} />
+        <Route path="/procurement" element={<ProcurementView />} />
         <Route path="/finance" element={<FinanceAccountingView />} />
         <Route path="/documents" element={<DocumentVaultView />} />
         <Route path="/stakeholders" element={<StakeholdersView />} />

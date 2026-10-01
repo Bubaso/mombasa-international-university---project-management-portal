@@ -60,6 +60,7 @@ export type ActiveTab =
   | 'obligations'
   | 'risks'
   | 'calendar'
+  | 'procurement'
   | 'finance'
   | 'documents'
   | 'communication'
@@ -154,9 +155,6 @@ export interface Contractor {
   endsOn: string | null;
   bondAmount: number | null;
   bondCurrency: CurrencyCode | null;
-  performanceNote: string | null;
-  performanceNotedByName: string | null;
-  performanceNotedAt: string | null;
 }
 
 export interface WorkPackage {
@@ -1717,4 +1715,190 @@ export interface ReadinessStrand {
   total: number;
   ready: number;
   impeded: number;
+}
+
+// ---------------------------------------------------------------------------
+// Procurement and contracts (M14)
+// ---------------------------------------------------------------------------
+
+export type ProcurementKind =
+  'legal_counsel' | 'contractor' | 'auditor' | 'consultant' | 'supplier' | 'other';
+
+export type ProcurementState =
+  'drafted' | 'approved' | 'candidates_invited' | 'awarded' | 'cancelled';
+
+/** What is needed, why, and roughly what it costs (M14-01). */
+export interface ProcurementRequest {
+  id: string;
+  referenceNo: string | null;
+  kind: ProcurementKind;
+  needEn: string;
+  needTr: string | null;
+  justificationEn: string;
+  justificationTr: string | null;
+  estimatedAmount: number;
+  estimatedCurrency: CurrencyCode;
+  estimatedAmountKes: number;
+  requestedByName: string | null;
+  requestedBy: string | null;
+  requestedAt: string;
+  neededBy: string | null;
+  state: ProcurementState;
+  approvedByName: string | null;
+  approvedAt: string | null;
+  decisionNote: string | null;
+  cancelledReason: string | null;
+  candidateCount: number;
+  confidentiality: Confidentiality;
+}
+
+export type CandidateOutcome =
+  'under_review' | 'shortlisted' | 'selected' | 'rejected' | 'withdrawn';
+
+export type FeeBasis = 'fixed' | 'hourly' | 'daily' | 'percentage' | 'retainer' | 'other';
+
+/**
+ * One candidate in the comparison (M14-02, M4-13).
+ *
+ * `decisionNoteEn` is required by the database for a selection AND for a
+ * rejection. The rejection note is the half that went missing when four
+ * advocates were compared in scattered meeting notes.
+ */
+export interface ProcurementCandidate {
+  id: string;
+  requestId: string;
+  organizationId: string | null;
+  stakeholderId: string | null;
+  name: string;
+  scopeEn: string | null;
+  scopeTr: string | null;
+  feeAmount: number;
+  feeCurrency: CurrencyCode;
+  feeAmountKes: number;
+  feeBasis: FeeBasis;
+  referencesEn: string | null;
+  strengthsEn: string | null;
+  weaknessesEn: string | null;
+  score: number | null;
+  proposalDocumentId: string | null;
+  outcome: CandidateOutcome;
+  decisionNoteEn: string | null;
+  decisionNoteTr: string | null;
+  decidedOn: string | null;
+  confidentiality: Confidentiality;
+}
+
+export type ContractState = 'draft' | 'signed' | 'active' | 'suspended' | 'expired' | 'terminated';
+
+export type ValueBasis = 'fixed' | 'estimated' | 'capped' | 'rate_based';
+
+export type NoticeBand = 'overdue' | 'within_30' | 'within_60' | 'within_90' | 'later';
+
+/** A contract approaching its renewal or its end (M14-03, M14-05). */
+export interface ContractAlert {
+  contractId: string;
+  referenceNo: string | null;
+  counterpartyName: string;
+  subjectEn: string;
+  subjectTr: string | null;
+  state: ContractState;
+  startsOn: string | null;
+  endsOn: string | null;
+  renewalOn: string | null;
+  noticeDays: number | null;
+  valueAmount: number;
+  valueCurrency: CurrencyCode;
+  valueAmountKes: number;
+  valueBasis: ValueBasis;
+  renewalBand: NoticeBand | null;
+  expiryBand: NoticeBand | null;
+  nextDate: string | null;
+  daysToExpiry: number | null;
+  daysToRenewal: number | null;
+  /** Whether a successor contract already exists. The loop-closing column. */
+  renewalDrafted: boolean;
+  confidentiality: Confidentiality;
+}
+
+export type ContractParty = 'us' | 'counterparty';
+
+/** A term of a contract, and the M2 obligation it raised (M14-04). */
+export interface ContractTerm {
+  id: string;
+  contractId: string;
+  clause: string | null;
+  titleEn: string;
+  titleTr: string | null;
+  detailEn: string | null;
+  owedBy: ContractParty;
+  dueOn: string | null;
+  obligationId: string | null;
+  obligationState: string | null;
+  confidentiality: Confidentiality;
+}
+
+/** A dated, scored, append-only performance review (M14-06). */
+export interface SupplierReview {
+  id: string;
+  contractId: string | null;
+  organizationId: string | null;
+  stakeholderId: string | null;
+  contractorId: string | null;
+  partyName: string | null;
+  periodStart: string | null;
+  periodEnd: string | null;
+  quality: number;
+  timeliness: number;
+  costControl: number;
+  cooperation: number;
+  overall: number;
+  noteEn: string;
+  noteTr: string | null;
+  documentId: string | null;
+  reviewedByName: string | null;
+  reviewedAt: string;
+  confidentiality: Confidentiality;
+}
+
+export type MilestoneState = 'planned' | 'due' | 'certified' | 'paid' | 'cancelled';
+
+/**
+ * Contract value against what is scheduled and what is paid (M14-07).
+ *
+ * `overCommitted` is reported rather than refused: a variation that raises
+ * the price is a real thing, and blocking the entry only moves the true
+ * figure into a spreadsheet.
+ */
+export interface ContractSettlement {
+  contractId: string;
+  referenceNo: string | null;
+  counterpartyName: string;
+  subjectEn: string;
+  state: ContractState;
+  valueBasis: ValueBasis;
+  valueKes: number | null;
+  milestones: number;
+  scheduledKes: number | null;
+  paidKes: number | null;
+  nextDue: string | null;
+  percentPaid: number | null;
+  overCommitted: boolean;
+  confidentiality: Confidentiality;
+}
+
+export interface ContractMilestone {
+  id: string;
+  contractId: string;
+  sequence: number;
+  titleEn: string;
+  titleTr: string | null;
+  dueOn: string | null;
+  state: MilestoneState;
+  amount: number;
+  currency: CurrencyCode;
+  amountKes: number;
+  valuationId: string | null;
+  paymentVoucherId: string | null;
+  note: string | null;
+  confidentiality: Confidentiality;
 }

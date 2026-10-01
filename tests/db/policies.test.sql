@@ -3510,6 +3510,524 @@ select pg_temp.check('a drafted curriculum is not an approved one',
   (select ready from intake_readiness where strand = 'curriculum'), 0);
 
 
+
+-- ===========================================================================
+-- Procurement and contracts (M14)
+-- ===========================================================================
+--
+-- The requirement says why this is not a convenience feature: "Bir vakıfta bu
+-- sadece verimlilik meselesi değil — bağışçıya ve denetime hesap
+-- verebilirliktir." So most of what is asserted below is about reasons being
+-- recorded at the moment the decision is taken, and about the money bands
+-- being the same ones that govern a payment.
+
+set role authenticated;
+
+-- --- the request, and who may commit the trust (M14-01) -------------------
+
+select pg_temp.act_as('44444444-4444-4444-4444-444444444444');  -- field team
+
+-- A need without a reason is a purchase somebody will later reconstruct a
+-- reason for.
+do $$
+begin
+  begin
+    insert into procurement_requests (kind, need_en, justification_en, estimated_amount)
+    values ('consultant', 'Somebody to look at the drainage', '   ', 400000);
+    raise exception 'FAIL a procurement was raised with no justification';
+  exception
+    when check_violation then
+      raise notice 'ok   a procurement request has to say why';
+  end;
+end;
+$$;
+
+insert into procurement_requests
+  (id, reference_no, kind, need_en, need_tr, justification_en, estimated_amount,
+   estimated_currency, needed_by, confidentiality)
+values
+  ('a1000000-0000-0000-0000-000000000001', 'PR-2026-01', 'legal_counsel',
+   'Lead counsel for the appeal',
+   'Temyiz için baş avukat',
+   'The present advocate is retiring and the appeal is listed for February.',
+   3000000, 'KES', current_date + 60, 'internal'),
+  ('a1000000-0000-0000-0000-000000000002', 'PR-2026-02', 'contractor',
+   'Main contractor for the second phase',
+   'İkinci faz için ana müteahhit',
+   'Phase one is complete and the preservation works cannot wait on a tender.',
+   40000000, 'KES', current_date + 120, 'internal');
+
+select pg_temp.check('anybody inside may ask for what they need',
+  (select count(*) from procurement_requests), 2::bigint);
+
+-- Somebody outside the approval band cannot approve at all, which is the
+-- money rule rather than the separation rule.
+do $$
+begin
+  begin
+    perform public.approve_procurement('a1000000-0000-0000-0000-000000000001');
+    raise exception 'FAIL the field team approved a three million commitment';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   somebody outside the band cannot approve at all';
+  end;
+end;
+$$;
+
+-- Asking and approving are two acts, and this is the assertion that proves
+-- it: the director IS in the band for three million, so the only thing that
+-- can refuse them is the separation rule. Catching insufficient_privilege
+-- here as well would let the test pass on the money rule and never notice if
+-- the separation rule were removed.
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- director
+insert into procurement_requests
+  (id, reference_no, kind, need_en, justification_en, estimated_amount,
+   estimated_currency, confidentiality)
+values ('a1000000-0000-0000-0000-000000000003', 'PR-2026-03', 'supplier',
+        'Site stationery and printing',
+        'The site office has been buying ad hoc against no budget line.',
+        120000, 'KES', 'internal');
+
+do $$
+begin
+  begin
+    perform public.approve_procurement('a1000000-0000-0000-0000-000000000003');
+    raise exception 'FAIL the requester approved their own procurement';
+  exception
+    when check_violation then
+      raise notice 'ok   the person who asked cannot be the one who approves';
+  end;
+end;
+$$;
+
+-- Three million is routine spending, which 0015 puts with the admin and the
+-- director. A trustee is not in that band — and that is the point of reading
+-- the band rather than assuming the most senior role may do everything.
+-- Request 01 was raised by the field team, so the director approving it is
+-- two people, as it should be.
+select public.approve_procurement('a1000000-0000-0000-0000-000000000001',
+  'Four candidates to be invited.');
+select pg_temp.check('a routine commitment is approved by the director',
+  (select state::text from procurement_requests
+    where id = 'a1000000-0000-0000-0000-000000000001'), 'approved');
+select pg_temp.check('and the approval carries their name',
+  (select approved_by from procurement_requests
+    where id = 'a1000000-0000-0000-0000-000000000001'),
+  '22222222-2222-2222-2222-222222222222'::uuid);
+
+-- Forty million is the trustees' band, and the director is not in it. The
+-- same thresholds that decide who may approve a payment decide who may
+-- commit the trust to a contract.
+do $$
+begin
+  begin
+    perform public.approve_procurement('a1000000-0000-0000-0000-000000000002');
+    raise exception 'FAIL the director committed forty million';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   forty million needs the band 0015 says it needs';
+  end;
+end;
+$$;
+
+select pg_temp.act_as('33333333-3333-3333-3333-333333333333');  -- trustee
+select public.approve_procurement('a1000000-0000-0000-0000-000000000002', 'Tender to proceed.');
+select pg_temp.check('and a trustee may approve it',
+  (select state::text from procurement_requests
+    where id = 'a1000000-0000-0000-0000-000000000002'), 'approved');
+
+do $$
+begin
+  begin
+    perform public.approve_procurement('a1000000-0000-0000-0000-000000000002');
+    raise exception 'FAIL a procurement was approved twice';
+  exception
+    when unique_violation then
+      raise notice 'ok   and cannot approve it a second time';
+  end;
+end;
+$$;
+
+-- --- the candidate comparison (M14-02) ------------------------------------
+
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- director
+
+-- The four advocates the requirement is actually about.
+insert into procurement_candidates
+  (id, request_id, name, scope_en, fee_amount, fee_currency, fee_basis,
+   strengths_en, weaknesses_en, score, confidentiality)
+values
+  ('a2000000-0000-0000-0000-000000000001', 'a1000000-0000-0000-0000-000000000001',
+   'Mwangi & Co Advocates', 'Appeal, from record to judgment', 2800000, 'KES', 'fixed',
+   'Argued two ELC appeals last year', 'No Mombasa office', 82, 'internal'),
+  ('a2000000-0000-0000-0000-000000000002', 'a1000000-0000-0000-0000-000000000001',
+   'Coast Legal LLP', 'Appeal and the contempt application', 3400000, 'KES', 'fixed',
+   'On the ground in Mombasa', 'Acted for the county in 2019', 71, 'internal'),
+  ('a2000000-0000-0000-0000-000000000003', 'a1000000-0000-0000-0000-000000000001',
+   'Otieno Advocates', 'Appeal only', 2200000, 'KES', 'fixed',
+   'Cheapest proposal', 'No appellate record in land matters', 54, 'internal'),
+  ('a2000000-0000-0000-0000-000000000004', 'a1000000-0000-0000-0000-000000000001',
+   'Nairobi Chambers', 'Appeal, with a second counsel', 5600000, 'KES', 'hourly',
+   'Senior counsel available', 'Fee basis is hourly with no cap', 66, 'internal');
+
+select pg_temp.check('four candidates can be compared side by side',
+  (select count(*) from procurement_candidates
+    where request_id = 'a1000000-0000-0000-0000-000000000001'), 4::bigint);
+
+-- The half that went missing in the meeting notes: why the other three were
+-- not chosen.
+do $$
+begin
+  begin
+    update procurement_candidates
+      set outcome = 'rejected', decided_on = current_date
+     where id = 'a2000000-0000-0000-0000-000000000003';
+    raise exception 'FAIL a candidate was rejected with no reason';
+  exception
+    when check_violation then
+      raise notice 'ok   a rejection has to say why, not only a selection';
+  end;
+end;
+$$;
+
+update procurement_candidates
+  set outcome = 'rejected', decided_on = current_date,
+      decision_note_en = 'No appellate record in land matters, which is the whole brief.'
+ where id = 'a2000000-0000-0000-0000-000000000003';
+select pg_temp.check('and goes through once it does',
+  (select count(*) from procurement_candidates where outcome = 'rejected'), 1::bigint);
+
+-- Awarding is one act over two tables, so there is no window in which two
+-- candidates are both selected.
+select public.award_procurement('a2000000-0000-0000-0000-000000000001',
+  'Only candidate with an ELC appellate record; fee within the estimate.');
+
+select pg_temp.check('the award selects the candidate',
+  (select outcome::text from procurement_candidates
+    where id = 'a2000000-0000-0000-0000-000000000001'), 'selected');
+select pg_temp.check('and closes the request in the same act',
+  (select state::text from procurement_requests
+    where id = 'a1000000-0000-0000-0000-000000000001'), 'awarded');
+
+-- "We selected two of them" is a request that was never decided.
+do $$
+begin
+  begin
+    update procurement_candidates
+      set outcome = 'selected', decided_on = current_date,
+          decision_note_en = 'Also good.'
+     where id = 'a2000000-0000-0000-0000-000000000002';
+    raise exception 'FAIL two candidates were selected for one request';
+  exception
+    when unique_violation then
+      raise notice 'ok   one request has one winner';
+  end;
+end;
+$$;
+
+do $$
+begin
+  begin
+    perform public.award_procurement('a2000000-0000-0000-0000-000000000002', 'Changed our minds.');
+    raise exception 'FAIL a closed request was awarded again';
+  exception
+    when unique_violation then
+      raise notice 'ok   and a closed request cannot be awarded again';
+  end;
+end;
+$$;
+
+-- An award with no reasoning is the thing this module exists to prevent.
+do $$
+begin
+  begin
+    perform public.award_procurement('a2000000-0000-0000-0000-000000000004', '  ');
+    raise exception 'FAIL an award was made with no reasoning';
+  exception
+    when check_violation then
+      raise notice 'ok   an award without a reason is refused outright';
+  end;
+end;
+$$;
+
+-- --- the contract register (M14-03) ---------------------------------------
+
+-- A register of contracts whose contracts are not attached is a list of
+-- assertions, which is the same rule M2, M9 and M10 already run on.
+do $$
+begin
+  begin
+    insert into contracts (counterparty_name, subject_en, value_amount, state, signed_on)
+    values ('Mwangi & Co Advocates', 'Appeal retainer', 2800000, 'active', current_date);
+    raise exception 'FAIL an active contract was recorded with no document';
+  exception
+    when check_violation then
+      raise notice 'ok   a contract past draft has its document in the vault';
+  end;
+end;
+$$;
+
+insert into contracts
+  (id, reference_no, request_id, candidate_id, counterparty_name, stakeholder_id,
+   subject_en, subject_tr, value_amount, value_currency, value_basis,
+   signed_on, starts_on, ends_on, renewal_on, notice_days,
+   termination_en, document_id, state, confidentiality)
+values
+  ('a3000000-0000-0000-0000-000000000001', 'CT-2026-01',
+   'a1000000-0000-0000-0000-000000000001', 'a2000000-0000-0000-0000-000000000001',
+   'Mwangi & Co Advocates', '0b000000-0000-0000-0000-000000000003',
+   'Conduct of the ELC appeal', 'ELC temyizinin yürütülmesi',
+   2800000, 'KES', 'fixed',
+   current_date - 10, current_date - 10, current_date + 20, current_date + 5, 30,
+   'Either party on thirty days written notice.',
+   '1b000000-0000-0000-0000-000000000001', 'active', 'internal');
+
+select pg_temp.check('the contract register holds the term and the renewal date',
+  (select count(*) from contracts where renewal_on is not null and ends_on is not null),
+  1::bigint);
+
+do $$
+begin
+  begin
+    update contracts set ends_on = starts_on - 1
+     where id = 'a3000000-0000-0000-0000-000000000001';
+    raise exception 'FAIL a contract ended before it started';
+  exception
+    when check_violation then
+      raise notice 'ok   a contract cannot end before it starts';
+  end;
+end;
+$$;
+
+do $$
+begin
+  begin
+    update contracts set state = 'terminated'
+     where id = 'a3000000-0000-0000-0000-000000000001';
+    raise exception 'FAIL a contract was torn up with no reason or date';
+  exception
+    when check_violation then
+      raise notice 'ok   tearing one up needs the date and the reason';
+  end;
+end;
+$$;
+
+-- --- the term becomes an obligation (M14-04) ------------------------------
+
+insert into contract_terms
+  (id, contract_id, clause, title_en, title_tr, detail_en, owed_by, due_on, confidentiality)
+values
+  ('a4000000-0000-0000-0000-000000000001', 'a3000000-0000-0000-0000-000000000001',
+   'cl. 4.1', 'File the record of appeal', 'Temyiz dosyasını sun',
+   'Within sixty days of the retainer.', 'counterparty', current_date + 50, 'internal'),
+  ('a4000000-0000-0000-0000-000000000002', 'a3000000-0000-0000-0000-000000000001',
+   'cl. 6.2', 'Pay the retainer on signature', 'İmzada vekâlet ücretini öde',
+   null, 'us', current_date - 5, 'internal');
+
+select pg_temp.check('a contract term lands in the obligations register by itself',
+  (select count(*) from contract_terms ct
+    join obligations o on o.id = ct.obligation_id
+    where ct.contract_id = 'a3000000-0000-0000-0000-000000000001'
+      and o.source = 'contract'), 2::bigint);
+
+-- Which side owes it decides who the obligor is, and getting that backwards
+-- would put the trust's own duties on the advocate's list.
+select pg_temp.check('a duty the other side owes names them as the obligor',
+  (select o.obligor_name from contract_terms ct
+    join obligations o on o.id = ct.obligation_id
+    where ct.id = 'a4000000-0000-0000-0000-000000000001'),
+  'Mwangi & Co Advocates');
+select pg_temp.check('and one we owe names the trust',
+  (select o.obligor_name from contract_terms ct
+    join obligations o on o.id = ct.obligation_id
+    where ct.id = 'a4000000-0000-0000-0000-000000000002'),
+  'African University Trust of Kenya');
+select pg_temp.check('the obligation carries the contract document as its source',
+  (select o.source_document_id from contract_terms ct
+    join obligations o on o.id = ct.obligation_id
+    where ct.id = 'a4000000-0000-0000-0000-000000000001'),
+  '1b000000-0000-0000-0000-000000000001'::uuid);
+
+-- --- the 90/60/30 warning (M14-05) ---------------------------------------
+
+select pg_temp.check('the renewal date lands in the nearest band',
+  (select renewal_band::text from contract_alerts
+    where contract_id = 'a3000000-0000-0000-0000-000000000001'), 'within_30');
+select pg_temp.check('and so does the end of the term',
+  (select expiry_band::text from contract_alerts
+    where contract_id = 'a3000000-0000-0000-0000-000000000001'), 'within_30');
+select pg_temp.check('nobody has drafted the successor yet',
+  (select renewal_drafted from contract_alerts
+    where contract_id = 'a3000000-0000-0000-0000-000000000001'), false);
+
+-- A renewal somebody has already written is not a worry, and the alert stops
+-- saying it is.
+insert into contracts
+  (id, reference_no, counterparty_name, subject_en, value_amount, value_basis,
+   supersedes_contract_id, state, confidentiality)
+values ('a3000000-0000-0000-0000-000000000002', 'CT-2027-01', 'Mwangi & Co Advocates',
+        'Conduct of the ELC appeal, renewed', 3000000, 'fixed',
+        'a3000000-0000-0000-0000-000000000001', 'draft', 'internal');
+
+select pg_temp.check('once a successor is drafted the alert says so',
+  (select renewal_drafted from contract_alerts
+    where contract_id = 'a3000000-0000-0000-0000-000000000001'), true);
+
+-- Both dates reach the one calendar anybody looks at a week in, as two rows,
+-- because deciding about a renewal and the contract ending are two different
+-- things to do.
+select pg_temp.check('a contract with both dates puts two rows on the calendar',
+  (select count(*) from project_calendar
+    where kind = 'contract' and id = 'a3000000-0000-0000-0000-000000000001'), 2::bigint);
+
+-- --- supplier performance (M14-06) ---------------------------------------
+
+insert into supplier_reviews
+  (id, contract_id, stakeholder_id, period_start, period_end,
+   quality, timeliness, cost_control, cooperation, note_en, confidentiality)
+values ('a5000000-0000-0000-0000-000000000001', 'a3000000-0000-0000-0000-000000000001',
+        '0b000000-0000-0000-0000-000000000003', current_date - 90, current_date,
+        4, 2, 5, 4, 'Sound on the law, late with the record twice.', 'internal');
+
+select pg_temp.check('the overall score is the average of the four, not a seventh number',
+  (select overall from supplier_reviews
+    where id = 'a5000000-0000-0000-0000-000000000001'), 3.75::numeric);
+
+-- A review the person it embarrasses can revise is not evidence.
+do $$
+begin
+  begin
+    update supplier_reviews set timeliness = 5
+     where id = 'a5000000-0000-0000-0000-000000000001';
+    raise exception 'FAIL a performance review was revised after the fact';
+  exception
+    when insufficient_privilege or raise_exception then
+      raise notice 'ok   a performance review is corrected by a new one, not an edit';
+  end;
+end;
+$$;
+
+-- Both parties exist, so this fails on the rule rather than on a dangling
+-- reference: a review about two suppliers is a review about neither.
+do $$
+begin
+  begin
+    insert into supplier_reviews
+      (stakeholder_id, contractor_id, quality, timeliness, cost_control, cooperation, note_en)
+    values ('0b000000-0000-0000-0000-000000000003',
+            '1c000000-0000-0000-0000-000000000010', 3, 3, 3, 3, 'Who is this about?');
+    raise exception 'FAIL a review named two parties';
+  exception
+    when check_violation then
+      raise notice 'ok   a review is about exactly one party';
+  end;
+end;
+$$;
+
+-- And none at all is the same mistake from the other side.
+do $$
+begin
+  begin
+    insert into supplier_reviews
+      (quality, timeliness, cost_control, cooperation, note_en)
+    values (3, 3, 3, 3, 'About nobody in particular.');
+    raise exception 'FAIL a review named no party';
+  exception
+    when check_violation then
+      raise notice 'ok   and never about none';
+  end;
+end;
+$$;
+
+-- --- the payment schedule (M14-07) ---------------------------------------
+
+insert into contract_milestones
+  (id, contract_id, sequence, title_en, due_on, amount, currency, state, confidentiality)
+values
+  ('a6000000-0000-0000-0000-000000000001', 'a3000000-0000-0000-0000-000000000001',
+   1, 'On signature', current_date - 10, 1400000, 'KES', 'planned', 'internal'),
+  ('a6000000-0000-0000-0000-000000000002', 'a3000000-0000-0000-0000-000000000001',
+   2, 'On judgment', current_date + 200, 1400000, 'KES', 'planned', 'internal');
+
+select pg_temp.check('the schedule adds up to the contract value',
+  (select scheduled_kes from contract_settlement
+    where contract_id = 'a3000000-0000-0000-0000-000000000001'), 2800000.00::numeric);
+select pg_temp.check('and nothing is over-committed yet',
+  (select over_committed from contract_settlement
+    where contract_id = 'a3000000-0000-0000-0000-000000000001'), false);
+
+-- Paid, with no voucher, would be a schedule that disagrees with the ledger.
+do $$
+begin
+  begin
+    update contract_milestones set state = 'paid'
+     where id = 'a6000000-0000-0000-0000-000000000001';
+    raise exception 'FAIL a milestone was marked paid with no voucher';
+  exception
+    when check_violation then
+      raise notice 'ok   a milestone marked paid has to name its voucher';
+  end;
+end;
+$$;
+
+-- A variation that raises the price is a real thing, so over-committing is
+-- reported rather than refused — blocking it only moves the true figure into
+-- a spreadsheet.
+insert into contract_milestones
+  (contract_id, sequence, title_en, amount, currency, state, confidentiality)
+values ('a3000000-0000-0000-0000-000000000001', 3, 'Variation: contempt application',
+        900000, 'KES', 'planned', 'internal');
+select pg_temp.check('a schedule that outgrows the contract is named, not blocked',
+  (select over_committed from contract_settlement
+    where contract_id = 'a3000000-0000-0000-0000-000000000001'), true);
+
+-- --- who sees the commercial detail --------------------------------------
+
+-- The module exists to be answerable to the auditors, so they are named in
+-- the rule rather than left to a per-record grant.
+select pg_temp.act_as('dddd1111-1111-1111-1111-111111111111');  -- external auditor
+select pg_temp.check('an outside auditor reads the procurement register',
+  (select count(*) from procurement_requests), 3::bigint);
+select pg_temp.check('and the candidate comparison with its fees',
+  (select count(*) from procurement_candidates
+    where request_id = 'a1000000-0000-0000-0000-000000000001'), 4::bigint);
+select pg_temp.check('and the contracts',
+  (select count(*) from contracts), 2::bigint);
+-- Reading is not keeping: an auditor does not award contracts.
+do $$
+begin
+  begin
+    insert into procurement_requests (kind, need_en, justification_en, estimated_amount)
+    values ('supplier', 'Something the auditor wants', 'Because.', 100);
+    raise exception 'FAIL an auditor raised a procurement';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   but does not run a procurement of their own';
+  end;
+end;
+$$;
+
+-- A contractor is inside the internal tier but this is none of their
+-- business; the fees of rival bidders least of all.
+select pg_temp.act_as('77777777-7777-7777-7777-777777777777');  -- contractor
+select pg_temp.check('a contractor sees no procurement register',
+  (select count(*) from procurement_requests), 0::bigint);
+select pg_temp.check('nor the fees their rivals quoted',
+  (select count(*) from procurement_candidates), 0::bigint);
+
+-- The advocate the contract is with sees their own engagement, because the
+-- counterparty is a person in the stakeholder register with a profile.
+select pg_temp.act_as('55555555-5555-5555-5555-555555555555');  -- advocate one
+select pg_temp.check('the counterparty reads their own contract',
+  (select count(*) from contracts where id = 'a3000000-0000-0000-0000-000000000001'),
+  1::bigint);
+select pg_temp.check('and its terms',
+  (select count(*) from contract_terms
+    where contract_id = 'a3000000-0000-0000-0000-000000000001'), 2::bigint);
+select pg_temp.check('but not the comparison that chose them',
+  (select count(*) from procurement_candidates), 0::bigint);
+
+
 reset role;
 
 \echo ''

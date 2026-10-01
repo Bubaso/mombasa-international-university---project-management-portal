@@ -18,6 +18,7 @@ import {
   ShieldCheck,
   TriangleAlert,
   Bot,
+  ShoppingBag,
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
@@ -61,6 +62,7 @@ export const Sidebar: React.FC = () => {
     { tab: 'risks', path: '/risks', label: t.nav.risks, icon: TriangleAlert },
     // Everything with a date, from every register at once.
     { tab: 'calendar', path: '/calendar', label: t.nav.calendar, icon: CalendarClock },
+    { tab: 'procurement', path: '/procurement', label: t.nav.procurement, icon: ShoppingBag },
     {
       tab: 'finance',
       path: '/finance',

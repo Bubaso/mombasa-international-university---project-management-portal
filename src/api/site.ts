@@ -165,10 +165,17 @@ export async function fetchPhases(): Promise<ProjectPhase[]> {
   }));
 }
 
+/**
+ * The performance columns are gone from here, and from the table.
+ *
+ * `contractors` carried a single `performance_note`, overwritten each time,
+ * with no period and no history — and nothing in this application ever
+ * rendered it. M14-06 replaces it with dated, scored, append-only reviews in
+ * `supplier_reviews`, which is where a judgement about a supplier belongs if
+ * the point is being answerable to a donor.
+ */
 const CONTRACTOR_COLUMNS =
-  'id, name, contract_reference, scope_en, starts_on, ends_on, bond_amount, bond_currency, ' +
-  'performance_note, performance_noted_at, ' +
-  'noted_by:profiles!contractors_performance_noted_by_fkey(full_name)';
+  'id, name, contract_reference, scope_en, starts_on, ends_on, bond_amount, bond_currency';
 
 export async function fetchContractors(): Promise<Contractor[]> {
   const { data, error } = await supabase
@@ -186,9 +193,6 @@ export async function fetchContractors(): Promise<Contractor[]> {
       ends_on: string | null;
       bond_amount: number | null;
       bond_currency: CurrencyCode | null;
-      performance_note: string | null;
-      performance_noted_at: string | null;
-      noted_by: NamedRef | NamedRef[] | null;
     }[]
   ).map((row) => ({
     id: row.id,
@@ -199,9 +203,6 @@ export async function fetchContractors(): Promise<Contractor[]> {
     endsOn: row.ends_on,
     bondAmount: row.bond_amount == null ? null : Number(row.bond_amount),
     bondCurrency: row.bond_currency,
-    performanceNote: row.performance_note,
-    performanceNotedByName: label(row.noted_by),
-    performanceNotedAt: row.performance_noted_at,
   }));
 }
 
