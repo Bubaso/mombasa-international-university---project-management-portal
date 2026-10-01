@@ -61,6 +61,16 @@ $$;
 grant usage on schema auth to authenticated, anon;
 grant select on auth.users to authenticated;
 
+-- Supabase's own default privileges, which are the reason 0026 exists: every
+-- table, sequence and function created in public is granted to anon as well
+-- as to authenticated, whatever the migrations ask for. Reproduced here
+-- because without it this database is kinder than the real project and 0026's
+-- assertions would pass for the wrong reason — they would be testing an
+-- absence the local Postgres gives away for free.
+alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
+alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;
+alter default privileges in schema public grant all on functions to anon, authenticated, service_role;
+
 -- ---------------------------------------------------------------------------
 -- A stand-in for Supabase Storage
 -- ---------------------------------------------------------------------------

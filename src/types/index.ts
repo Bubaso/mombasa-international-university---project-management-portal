@@ -60,6 +60,7 @@ export type ActiveTab =
   | 'obligations'
   | 'risks'
   | 'calendar'
+  | 'plan'
   | 'procurement'
   | 'finance'
   | 'documents'
@@ -551,18 +552,12 @@ export interface CommunicationThread {
   }[];
 }
 
-export interface DeadlineNotification {
-  id: string;
-  titleEn: string;
-  titleTr: string;
-  dueDate: string;
-  daysRemaining: number;
-  urgency: 'critical' | 'warning' | 'info';
-  category: 'legal' | 'construction' | 'governance' | 'finance';
-  actionRequiredEn: string;
-  actionRequiredTr: string;
-  targetRole: UserRole[];
-}
+/* DeadlineNotification is gone with the table it described (0024).
+ *
+ * It held hand-typed dates and decided who saw each one from a `targetRole`
+ * array — a second answer to "what falls due" beside the computed calendar,
+ * and a second access mechanism weaker than the policies. What falls due now
+ * comes from `critical_dates`; see CriticalDate below. */
 
 /* TrusteeMember is gone with the table it described.
  *
@@ -1319,10 +1314,13 @@ export interface Dependency {
   blockerSiteTaskId: string | null;
   blockerObligationId: string | null;
   blockerRiskId: string | null;
+  /** 0024 joined milestones to the one dependency mechanism (M15-01). */
+  blockerMilestoneId: string | null;
   blockerLabel: string | null;
   dependentSiteTaskId: string | null;
   dependentObligationId: string | null;
   dependentLegalCaseId: string | null;
+  dependentMilestoneId: string | null;
   dependentLabel: string | null;
   noteEn: string | null;
   /** Null means the portal cannot say, which is not the same as "no". */
@@ -1900,5 +1898,145 @@ export interface ContractMilestone {
   valuationId: string | null;
   paymentVoucherId: string | null;
   note: string | null;
+  confidentiality: Confidentiality;
+}
+
+// ---------------------------------------------------------------------------
+// The project backbone (M15)
+// ---------------------------------------------------------------------------
+
+export type MilestoneProgress = 'planned' | 'in_progress' | 'achieved' | 'missed' | 'abandoned';
+
+/**
+ * A milestone (M15-01).
+ *
+ * `targetOn` and `achievedOn` are separate, and `slipDays` is the
+ * subtraction. Null slip means one of the two dates is not known yet, which
+ * is not the same as a slip of nought; negative means it came in early, which
+ * is not the same either.
+ */
+export interface Milestone {
+  id: string;
+  code: string | null;
+  phaseId: string | null;
+  phaseName: string | null;
+  titleEn: string;
+  titleTr: string | null;
+  detailEn: string | null;
+  detailTr: string | null;
+  targetOn: string | null;
+  achievedOn: string | null;
+  slipDays: number | null;
+  state: MilestoneProgress;
+  critical: boolean;
+  ownerName: string | null;
+  ownerProfileId: string | null;
+  evidenceDocumentId: string | null;
+  note: string | null;
+  confidentiality: Confidentiality;
+}
+
+/** A phase with what is actually in it, counted from the registers (M15-02). */
+export interface PhasePosition {
+  phaseId: string;
+  code: string | null;
+  nameEn: string;
+  nameTr: string | null;
+  sequence: number;
+  startsOn: string | null;
+  endsOn: string | null;
+  scopeEn: string | null;
+  scopeTr: string | null;
+  objectiveEn: string | null;
+  objectiveTr: string | null;
+  blocks: number;
+  blocksComplete: number;
+  milestones: number;
+  milestonesAchieved: number;
+  milestonesMissed: number;
+  nextTarget: string | null;
+  budgetKes: number | null;
+  /** Computed: the phase's end has passed with work outstanding. */
+  overran: boolean;
+  confidentiality: Confidentiality;
+}
+
+/** What the plan said on a given day (M15-06). */
+export interface PlanBaseline {
+  id: string;
+  name: string;
+  takenOn: string;
+  takenByName: string | null;
+  note: string | null;
+}
+
+/**
+ * One milestone's target then against its target now (M15-06).
+ *
+ * The two numbers are deliberately apart. `targetMovedDays` is how far the
+ * date was moved; `deliverySlipDays` is how late the thing actually was. A
+ * project that moves its target four times and reports on time is exploiting
+ * the difference.
+ */
+export interface BaselineVariance {
+  baselineId: string;
+  baselineName: string;
+  takenOn: string;
+  milestoneId: string;
+  code: string | null;
+  titleEn: string;
+  titleTr: string | null;
+  baselineTarget: string | null;
+  currentTarget: string | null;
+  targetMovedDays: number | null;
+  baselineState: MilestoneProgress;
+  currentState: MilestoneProgress;
+  achievedOn: string | null;
+  deliverySlipDays: number | null;
+  confidentiality: Confidentiality;
+}
+
+export type DatePrecision = 'day' | 'month' | 'year';
+
+export type ChronologyCategory =
+  'founding' | 'land' | 'legal' | 'construction' | 'governance' | 'funding' | 'academic' | 'other';
+
+/**
+ * One event on the single time line (M15-07).
+ *
+ * `source` says which register it came out of, or 'recorded' for the years
+ * before the registers existed. `precision` matters: a 1993 event known only
+ * to the year must not be printed as a day.
+ */
+export interface ChronologyEvent {
+  source: string;
+  category: string;
+  id: string;
+  occurredOn: string;
+  precision: DatePrecision;
+  titleEn: string | null;
+  titleTr: string | null;
+  detailEn: string | null;
+  documentId: string | null;
+  sourceNote: string | null;
+  legalCaseId: string | null;
+  confidentiality: Confidentiality;
+}
+
+/** One of the dates that belongs at the top of every screen (M15-04). */
+export interface CriticalDate {
+  kind: string;
+  id: string;
+  titleEn: string | null;
+  titleTr: string | null;
+  dueOn: string;
+  dueAt: string | null;
+  detail: string | null;
+  legalCaseId: string | null;
+  meetingId: string | null;
+  state: string | null;
+  needsAttention: boolean;
+  /** Signed: negative means the date has already passed. */
+  daysAway: number;
   confidentiality: Confidentiality;
 }

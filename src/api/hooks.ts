@@ -34,9 +34,6 @@ export const useCaseOrders = (caseId: string | undefined) =>
     queryFn: () => legal.fetchOrders(caseId),
   });
 
-export const useDeadlines = () =>
-  useQuery({ queryKey: ['deadlines'], queryFn: api.fetchDeadlines });
-
 export const useAddLegalCase = () => {
   const queryClient = useQueryClient();
   return useMutation({

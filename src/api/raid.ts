@@ -445,10 +445,12 @@ export async function fetchDependencies(): Promise<Dependency[]> {
       blocker_site_task_id: string | null;
       blocker_obligation_id: string | null;
       blocker_risk_id: string | null;
+      blocker_milestone_id: string | null;
       blocker_label: string | null;
       dependent_site_task_id: string | null;
       dependent_obligation_id: string | null;
       dependent_legal_case_id: string | null;
+      dependent_milestone_id: string | null;
       dependent_label: string | null;
       note_en: string | null;
       blocker_settled: boolean | null;
@@ -460,10 +462,12 @@ export async function fetchDependencies(): Promise<Dependency[]> {
     blockerSiteTaskId: row.blocker_site_task_id,
     blockerObligationId: row.blocker_obligation_id,
     blockerRiskId: row.blocker_risk_id,
+    blockerMilestoneId: row.blocker_milestone_id,
     blockerLabel: row.blocker_label,
     dependentSiteTaskId: row.dependent_site_task_id,
     dependentObligationId: row.dependent_obligation_id,
     dependentLegalCaseId: row.dependent_legal_case_id,
+    dependentMilestoneId: row.dependent_milestone_id,
     dependentLabel: row.dependent_label,
     noteEn: row.note_en,
     blockerSettled: row.blocker_settled,

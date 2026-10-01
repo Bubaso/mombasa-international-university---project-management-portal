@@ -67,9 +67,12 @@ insert into communication_threads (id, title, channel, confidentiality) values
   ('dddd0000-0000-0000-0000-000000000001', 'Internal thread',   'legal',    'internal'),
   ('dddd0000-0000-0000-0000-000000000002', 'Restricted thread', 'trustees', 'restricted');
 
-insert into deadline_notifications (id, title_en, title_tr, due_date, urgency, category, target_roles, confidentiality) values
-  ('eeee0000-0000-0000-0000-000000000001', 'Hearing', 'Duruşma', current_date + 7, 'critical', 'legal', '{}', 'internal'),
-  ('eeee0000-0000-0000-0000-000000000002', 'Board only', 'Kurul', current_date + 14, 'warning', 'governance', '{trustee}', 'internal');
+-- deadline_notifications is gone (0024). It held hand-typed dates with a
+-- target_roles array, which was a second answer to "what falls due" and a
+-- second, weaker access mechanism beside the policies. What falls due now
+-- comes from project_calendar, computed from the registers, and a date worth
+-- putting in front of somebody is an action item or a meeting — both of which
+-- appear there with an owner and their own visibility.
 
 -- ---------------------------------------------------------------------------
 -- Scope and grants

@@ -402,10 +402,14 @@ const TEST_DEPENDENCIES = [
     blocker_obligation_id: null,
     blocker_risk_id: null,
     blocker_label: null,
+    blocker_milestone_id: null,
     dependent_site_task_id: null,
     dependent_obligation_id: null,
     dependent_legal_case_id: null,
-    dependent_label: 'Accreditation inspection',
+    // 0024 joined the plan to the one dependency mechanism, so the far end of
+    // this chain is now a milestone in a phase rather than a free-text label.
+    dependent_milestone_id: '00000000-0000-0000-0000-000000001a02',
+    dependent_label: null,
     note_en: 'The inspectors will not come while the boundary is before the court.',
     // The honest null: a case being open says nothing about the ruling.
     blocker_settled: null,
@@ -1071,7 +1075,7 @@ const TEST_SETTLEMENT = [
   },
 ];
 
-const TEST_MILESTONES = [
+const TEST_CONTRACT_MILESTONES = [
   {
     id: '00000000-0000-0000-0000-000000000f31',
     contract_id: '00000000-0000-0000-0000-000000000f01',
@@ -1116,6 +1120,171 @@ const TEST_REVIEWS = [
   },
 ];
 
+// --- M15 plan fixtures ------------------------------------------------------
+//
+// The numbers here are chosen to exercise the two subtractions the module is
+// for: a milestone delivered ninety days late, and a date that was pushed out
+// four months before being delivered "five days late". A portal that keeps
+// one date per milestone cannot tell those apart.
+
+const TEST_MILESTONES = [
+  {
+    id: '00000000-0000-0000-0000-000000001a01',
+    code: 'MS-04',
+    phase_id: '00000000-0000-0000-0000-000000001b01',
+    title_en: 'Block A roof closed',
+    title_tr: 'A blok çatısı kapandı',
+    detail_en: null,
+    detail_tr: null,
+    target_on: '2026-04-01',
+    achieved_on: '2026-06-30',
+    // The column the module exists for: 90, not a status saying "done".
+    slip_days: 90,
+    state: 'achieved',
+    critical: true,
+    owner_profile_id: '00000000-0000-0000-0000-0000000000aa',
+    evidence_document_id: '00000000-0000-0000-0000-0000000000d1',
+    note: null,
+    confidentiality: 'internal',
+    owner: { full_name: 'Smoke Test' },
+    phase: { name_en: 'Phase 1 — enabling works' },
+  },
+  {
+    id: '00000000-0000-0000-0000-000000001a02',
+    code: 'MS-07',
+    phase_id: '00000000-0000-0000-0000-000000001b01',
+    title_en: 'CUE inspection passed',
+    title_tr: 'CUE denetimi geçildi',
+    detail_en: null,
+    detail_tr: null,
+    target_on: '2026-05-15',
+    achieved_on: null,
+    // Null, not nought: neither delivered nor known to be on time.
+    slip_days: null,
+    state: 'in_progress',
+    critical: false,
+    owner_profile_id: null,
+    evidence_document_id: null,
+    note: null,
+    confidentiality: 'internal',
+    owner: null,
+    phase: { name_en: 'Phase 1 — enabling works' },
+  },
+];
+
+const TEST_PHASES = [
+  {
+    phase_id: '00000000-0000-0000-0000-000000001b01',
+    code: 'P1',
+    name_en: 'Phase 1 — enabling works',
+    name_tr: 'Faz 1 — altyapı işleri',
+    sequence: 1,
+    starts_on: '2025-10-01',
+    ends_on: '2026-03-31',
+    scope_en: 'Blocks A1 and B2, the access road and the perimeter wall',
+    scope_tr: 'A1 ve B2 blokları, ulaşım yolu ve çevre duvarı',
+    objective_en: 'A site the contractor can work on without a court order stopping it',
+    objective_tr: 'Müteahhitin mahkeme kararıyla durdurulmadan çalışabileceği bir saha',
+    blocks: 2,
+    blocks_complete: 1,
+    milestones: 2,
+    milestones_achieved: 1,
+    milestones_missed: 0,
+    next_target: '2026-05-15',
+    budget_kes: 48000000,
+    // Computed in SQL from the end date and the open work, not typed in.
+    overran: true,
+    confidentiality: 'internal',
+  },
+];
+
+const TEST_BASELINES = [
+  {
+    id: '00000000-0000-0000-0000-000000001c01',
+    name: 'February board plan',
+    taken_on: '2026-02-10',
+    note: 'Tabled at the February sitting.',
+    taker: { full_name: 'Smoke Test' },
+  },
+];
+
+/**
+ * The pair of numbers kept apart. The date was pushed out 120 days and the
+ * thing was then delivered 5 days after the NEW date — which most systems
+ * report as "5 days late" and nothing else.
+ */
+const TEST_VARIANCE = [
+  {
+    baseline_id: '00000000-0000-0000-0000-000000001c01',
+    baseline_name: 'February board plan',
+    taken_on: '2026-02-10',
+    milestone_id: '00000000-0000-0000-0000-000000001a01',
+    code: 'MS-04',
+    title_en: 'Block A roof closed',
+    title_tr: 'A blok çatısı kapandı',
+    baseline_target: '2026-04-01',
+    current_target: '2026-07-30',
+    target_moved_days: 120,
+    baseline_state: 'planned',
+    current_state: 'achieved',
+    achieved_on: '2026-08-04',
+    delivery_slip_days: 5,
+    confidentiality: 'internal',
+  },
+];
+
+const TEST_CHRONOLOGY = [
+  {
+    source: 'recorded',
+    category: 'founding',
+    id: '00000000-0000-0000-0000-000000001d01',
+    occurred_on: '1993-01-01',
+    // Only the year is known. Printing 1 January would invent a day.
+    precision: 'year',
+    title_en: 'The trust is constituted in Mombasa',
+    title_tr: null,
+    detail_en: null,
+    document_id: null,
+    source_note: 'Recited in the 2025 amended trust deed, recital 2.',
+    legal_case_id: null,
+    confidentiality: 'public',
+  },
+  {
+    source: 'legal_order',
+    category: 'legal',
+    id: '00000000-0000-0000-0000-000000001d02',
+    occurred_on: '2024-11-12',
+    precision: 'day',
+    title_en: 'Preservation order granted over the suit land',
+    title_tr: null,
+    detail_en: null,
+    document_id: '00000000-0000-0000-0000-0000000000d1',
+    source_note: null,
+    legal_case_id: '00000000-0000-0000-0000-0000000000cc',
+    confidentiality: 'internal',
+  },
+];
+
+/** What the strip at the top of every screen is given. */
+const TEST_CRITICAL_DATES = [
+  {
+    kind: 'milestone',
+    id: '00000000-0000-0000-0000-000000001a02',
+    title_en: 'CUE inspection passed',
+    title_tr: 'CUE denetimi geçildi',
+    due_on: '2026-05-15',
+    due_at: null,
+    detail: null,
+    legal_case_id: null,
+    meeting_id: null,
+    state: 'in_progress',
+    needs_attention: true,
+    // Signed, and in the past: the strip says "ago" rather than a minus sign.
+    days_away: -12,
+    confidentiality: 'internal',
+  },
+];
+
 const ROUTES = [
   '/',
   '/project_info',
@@ -1128,6 +1297,7 @@ const ROUTES = [
   '/obligations',
   '/risks',
   '/calendar',
+  '/plan',
   '/procurement',
   '/finance',
   '/documents',
@@ -1284,6 +1454,55 @@ try {
     }),
   );
 
+  // --- M15: the plan ------------------------------------------------------
+  await page.route('**/rest/v1/milestones**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(TEST_MILESTONES),
+    }),
+  );
+
+  await page.route('**/rest/v1/phase_position**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(TEST_PHASES),
+    }),
+  );
+
+  await page.route('**/rest/v1/plan_baselines**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(TEST_BASELINES),
+    }),
+  );
+
+  await page.route('**/rest/v1/baseline_variance**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(TEST_VARIANCE),
+    }),
+  );
+
+  await page.route('**/rest/v1/project_chronology**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(TEST_CHRONOLOGY),
+    }),
+  );
+
+  await page.route('**/rest/v1/critical_dates**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(TEST_CRITICAL_DATES),
+    }),
+  );
+
   await page.route('**/rest/v1/financial_transactions**', (route) =>
     route.fulfill({
       status: 200,
@@ -1393,7 +1612,7 @@ try {
   await serve('**/rest/v1/contract_alerts**', TEST_CONTRACT_ALERTS);
   await serve('**/rest/v1/contract_terms**', TEST_CONTRACT_TERMS);
   await serve('**/rest/v1/contract_settlement**', TEST_SETTLEMENT);
-  await serve('**/rest/v1/contract_milestones**', TEST_MILESTONES);
+  await serve('**/rest/v1/contract_milestones**', TEST_CONTRACT_MILESTONES);
   await serve('**/rest/v1/supplier_reviews**', TEST_REVIEWS);
 
   await proxyReturns(TEST_AI_ANSWER);
@@ -2146,6 +2365,97 @@ try {
     'and the screen says it cannot be edited afterwards',
   );
   check(pageErrors.length === 0, 'the procurement screen renders without a runtime error');
+
+  // --- the plan, the backbone (M15) -----------------------------------------
+  //
+  // Every assertion here is about a subtraction or a null. The module's whole
+  // claim is that it can tell you how late something was, how far a date was
+  // moved before that, and which of those two a report is quoting.
+  pageErrors = [];
+  await page.goto(BASE + '/plan', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(600);
+  const plan = (await page.textContent('body')) ?? '';
+
+  // M15-01: the target, the outcome, and the number between them.
+  check(
+    /Block A roof closed|A blok çatısı kapandı/.test(plan) &&
+      /90 gün gecikmeli|90d late/.test(plan),
+    'a milestone says how late it was, not just that it is done (M15-01)',
+  );
+  check(
+    /gecikme henüz bilinmiyor|slip not known yet/.test(plan),
+    'and one not yet delivered says the slip is unknown rather than nought',
+  );
+  check(
+    /tarihi geçti|past its target/.test(plan),
+    'a target that has passed with the work open is marked, not left to the eye',
+  );
+
+  // M15-02: the scope in prose beside the contents by count.
+  check(
+    /A1 ve B2 blokları|Blocks A1 and B2/.test(plan) && /1\/2/.test(plan),
+    'a phase shows its scope in prose and its contents by count (M15-02)',
+  );
+  check(
+    /süresini aştı|overran/.test(plan),
+    'and a phase still open past its end date says so without anybody ticking it',
+  );
+
+  // M15-05: the chain, and the three-valued verdict kept three-valued.
+  check(
+    /kilometre taşı|milestone/i.test(plan) && /söylenemiyor|cannot tell/.test(plan),
+    'a link waiting on a live court case is drawn as unknowable, not as blocked (M15-05)',
+  );
+
+  // M15-06: the two numbers that get conflated, in adjacent columns.
+  check(
+    /February board plan/.test(plan),
+    'the baseline taken in February is on the screen (M15-06)',
+  );
+  check(
+    /120 gün ertelendi|pushed out 120d/.test(plan),
+    'and it reports that the date itself was moved four months',
+  );
+  check(
+    /5 gün gecikmeli|5d late/.test(plan),
+    'beside the five days the delivery actually slipped — the number most systems report alone',
+  );
+
+  // M15-07: thirty years of memory, each entry naming its source.
+  check(
+    /The trust is constituted in Mombasa/.test(plan) &&
+      /Recited in the 2025 amended trust deed/.test(plan),
+    'a hand-recorded 1993 event names where it comes from (M15-07)',
+  );
+  check(
+    /1993/.test(plan) && !/1 January 1993|1 Ocak 1993/.test(plan),
+    'and a year-precision event prints the year only — a day nobody established is not invented',
+  );
+  check(
+    /belge kasada|document in the vault/.test(plan),
+    'while an event resting on a filed document is marked as evidence rather than recollection',
+  );
+
+  // M15-04: the strip, which is on every screen and reads one SQL view.
+  check(
+    /Kritik tarihler|Critical dates/.test(plan) && /12 gün önce|12d ago/.test(plan),
+    'the critical strip says how long ago a date passed, in words (M15-04)',
+  );
+  check(pageErrors.length === 0, 'the plan screen renders without a runtime error');
+
+  // Somebody who may not keep the plan gets it read-only.
+  await actAs(EXTERNAL_AUTHORITY);
+  pageErrors = [];
+  await page.goto(BASE + '/plan', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(500);
+  const outsidePlan = (await page.textContent('body')) ?? '';
+  check(
+    pageErrors.length === 0 &&
+      !/Kilometre taşı ekle|Add a milestone/.test(outsidePlan) &&
+      !/Temel plan al|Take a baseline/.test(outsidePlan),
+    'somebody outside the organisation cannot move a date or freeze a baseline',
+  );
+  await actAs(TEST_AUTHORITY);
 } finally {
   await browser?.close();
   server.kill();

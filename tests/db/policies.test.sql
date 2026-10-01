@@ -217,16 +217,27 @@ select pg_temp.act_as('77777777-7777-7777-7777-777777777777');  -- contractor
 select pg_temp.check('contractor cannot read the audit log', (select count(*) from audit_log), 0::bigint);
 
 -- ===========================================================================
--- Targeted deadlines
+-- Targeted deadlines: replaced rather than removed
 -- ===========================================================================
+--
+-- Two assertions used to live here, over deadline_notifications and its
+-- target_roles array. 0024 drops that table, so they are gone with it — and
+-- the reason is worth recording rather than leaving as a silent deletion.
+--
+-- It held dates somebody typed, with no record behind them, and decided who
+-- saw them from an array of roles rather than from the policies. Both halves
+-- were the thing Faz 0 spent itself removing: a date with no query behind it,
+-- and a second access mechanism weaker than the first.
+--
+-- What falls due now comes from project_calendar, computed from eight
+-- registers, and the equivalent assertions are stronger because they test
+-- the policies rather than an array: see "the calendar draws from every
+-- register at once", "an advocate sees the court dates on their own file"
+-- and "an advocate on no case sees nothing at all" further down.
 
-select pg_temp.act_as('33333333-3333-3333-3333-333333333333');  -- trustee
-select pg_temp.check('trustee sees both deadlines',
-  (select count(*) from deadline_notifications), 2::bigint);
-
-select pg_temp.act_as('44444444-4444-4444-4444-444444444444');  -- field team
-select pg_temp.check('a trustee-only deadline is not shown to the field team',
-  (select count(*) from deadline_notifications), 1::bigint);
+select pg_temp.check('the hand-typed deadline register is gone',
+  (select count(*) from pg_tables
+    where schemaname = 'public' and tablename = 'deadline_notifications'), 0::bigint);
 
 -- ===========================================================================
 -- Threads
@@ -2866,6 +2877,15 @@ select pg_temp.check('somebody sees their own questions',
   (select count(*) from ai_queries where asked_by = '33333333-3333-3333-3333-333333333333'),
   1::bigint);
 
+-- Note on the handler below, and on every append-only test in this file.
+--
+-- It catches insufficient_privilege ONLY. An earlier version also caught
+-- raise_exception, which is the SQLSTATE of this file's own
+-- `raise exception 'FAIL ...'` — so when the refusal stopped working, the
+-- FAIL was swallowed by its own handler and the test reported ok. Six tests
+-- were vacuous that way. app.refuse_audit_mutation raises
+-- insufficient_privilege and a withdrawn privilege raises it too, so the
+-- narrow code is both correct and strict.
 do $$
 begin
   begin
@@ -2873,7 +2893,7 @@ begin
      where asked_by = '33333333-3333-3333-3333-333333333333';
     raise exception 'FAIL the AI usage log was rewritten';
   exception
-    when insufficient_privilege or raise_exception then
+    when insufficient_privilege then
       raise notice 'ok   and cannot rewrite them afterwards';
   end;
 end;
@@ -2885,7 +2905,7 @@ begin
     delete from ai_queries where asked_by = '33333333-3333-3333-3333-333333333333';
     raise exception 'FAIL the AI usage log was deleted';
   exception
-    when insufficient_privilege or raise_exception then
+    when insufficient_privilege then
       raise notice 'ok   nor delete them';
   end;
 end;
@@ -3456,7 +3476,7 @@ begin
      where id = '0f300000-0000-0000-0000-000000000001';
     raise exception 'FAIL a recorded achievement was revised';
   exception
-    when insufficient_privilege or raise_exception then
+    when insufficient_privilege then
       raise notice 'ok   a recorded achievement is corrected by a new entry, not an edit';
   end;
 end;
@@ -3901,7 +3921,7 @@ begin
      where id = 'a5000000-0000-0000-0000-000000000001';
     raise exception 'FAIL a performance review was revised after the fact';
   exception
-    when insufficient_privilege or raise_exception then
+    when insufficient_privilege then
       raise notice 'ok   a performance review is corrected by a new one, not an edit';
   end;
 end;
@@ -4026,6 +4046,475 @@ select pg_temp.check('and its terms',
     where contract_id = 'a3000000-0000-0000-0000-000000000001'), 2::bigint);
 select pg_temp.check('but not the comparison that chose them',
   (select count(*) from procurement_candidates), 0::bigint);
+
+
+
+-- ===========================================================================
+-- The project backbone: phases, milestones, baselines, chronology (M15)
+-- ===========================================================================
+--
+-- "Şu anda portalda 'proje planı' diye bir şey yok — sadece modüller var."
+-- So what is asserted here is mostly about the time axis holding two numbers
+-- apart that a single status field would collapse: how far a date has been
+-- moved, and how late the thing actually was.
+
+set role authenticated;
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- director
+
+-- --- milestones (M15-01) --------------------------------------------------
+
+insert into milestones
+  (id, code, phase_id, title_en, title_tr, target_on, state, critical,
+   owner_profile_id, confidentiality)
+values
+  ('b1000000-0000-0000-0000-000000000001', 'MS-01', '1c000000-0000-0000-0000-000000000001',
+   'Court lifts the prohibition on Block A1', 'Mahkeme A1 blokundaki yasağı kaldırır',
+   current_date + 40, 'planned', true,
+   '22222222-2222-2222-2222-222222222222', 'internal'),
+  ('b1000000-0000-0000-0000-000000000002', 'MS-02', '1c000000-0000-0000-0000-000000000001',
+   'Block A1 roof watertight', 'A1 blok çatısı su almaz',
+   current_date - 30, 'planned', true,
+   '44444444-4444-4444-4444-444444444444', 'internal'),
+  ('b1000000-0000-0000-0000-000000000003', 'MS-03', null,
+   'First intake enrolled', 'İlk öğrenci alımı tamamlandı',
+   current_date + 400, 'planned', false,
+   '22222222-2222-2222-2222-222222222222', 'internal');
+
+select pg_temp.check('the plan has milestones with a target and an owner',
+  (select count(*) from milestones), 3::bigint);
+
+-- Achieved means achieved. The same rule as a fulfilled obligation, a met
+-- accreditation standard and reported site progress: there has to be
+-- something in the vault.
+do $$
+begin
+  begin
+    update milestones set state = 'achieved', achieved_on = current_date
+     where id = 'b1000000-0000-0000-0000-000000000002';
+    raise exception 'FAIL a milestone was marked achieved with no evidence';
+  exception
+    when check_violation then
+      raise notice 'ok   a milestone cannot be achieved without the document';
+  end;
+end;
+$$;
+
+-- Nor can a date be missed that was never set.
+do $$
+begin
+  begin
+    insert into milestones (title_en, state, confidentiality)
+    values ('Something that was always vague', 'missed', 'internal');
+    raise exception 'FAIL a milestone was missed with no target date';
+  exception
+    when check_violation then
+      raise notice 'ok   nor missed if there was never a date to miss';
+  end;
+end;
+$$;
+
+-- Abandoning one needs a reason, so a quietly dropped milestone is not a
+-- state anybody can reach.
+do $$
+begin
+  begin
+    update milestones set state = 'abandoned'
+     where id = 'b1000000-0000-0000-0000-000000000003';
+    raise exception 'FAIL a milestone was abandoned with no reason';
+  exception
+    when check_violation then
+      raise notice 'ok   and abandoning one has to say why';
+  end;
+end;
+$$;
+
+-- The slip is the subtraction, stored, because it is the number anybody
+-- actually wants and two screens computing it is how they come to disagree.
+update milestones
+  set state = 'achieved',
+      achieved_on = current_date - 5,
+      evidence_document_id = '1b000000-0000-0000-0000-000000000001'
+ where id = 'b1000000-0000-0000-0000-000000000002';
+
+select pg_temp.check('the slip is the subtraction of the two dates',
+  (select slip_days from milestones where id = 'b1000000-0000-0000-0000-000000000002'), 25);
+
+-- Early is a negative number, not a zero. A project that reports nought for
+-- everything delivered early has thrown away half its own history.
+insert into milestones
+  (id, title_en, target_on, achieved_on, state, evidence_document_id, confidentiality)
+values ('b1000000-0000-0000-0000-000000000004', 'Bond lodged',
+        current_date, current_date - 10, 'achieved',
+        '1b000000-0000-0000-0000-000000000001', 'internal');
+select pg_temp.check('and something delivered early reads as negative, not nought',
+  (select slip_days from milestones where id = 'b1000000-0000-0000-0000-000000000004'), -10);
+
+-- A milestone with only one of the two dates has an unknown slip, which is
+-- not the same as no slip.
+select pg_temp.check('a milestone not yet delivered has no slip, not a slip of nought',
+  (select slip_days from milestones where id = 'b1000000-0000-0000-0000-000000000001'),
+  null::int);
+
+-- --- one dependency mechanism (M15-01, M15-05) ---------------------------
+
+-- The chain the requirement asks for: a ruling, then the works, then the
+-- intake. It goes in 0016's table rather than a parallel one, which is what
+-- makes it a single walk.
+select pg_temp.act_as('33333333-3333-3333-3333-333333333333');  -- trustee
+insert into dependencies
+  (blocker_legal_case_id, dependent_milestone_id, note_en, confidentiality)
+values ('aaaa0000-0000-0000-0000-000000000002', 'b1000000-0000-0000-0000-000000000001',
+        'The prohibition is lifted by the ELC, or it is not lifted at all.', 'internal');
+insert into dependencies
+  (blocker_milestone_id, dependent_milestone_id, note_en, confidentiality)
+values ('b1000000-0000-0000-0000-000000000001', 'b1000000-0000-0000-0000-000000000003',
+        'No intake into a building nobody is allowed to finish.', 'internal');
+
+select pg_temp.check('a milestone can wait on a case and on another milestone',
+  (select count(*) from dependency_status
+    where dependent_milestone_id is not null), 2::bigint);
+
+-- Still three-valued where the blocker is a court case: 0016 was right to
+-- refuse to guess, and adding milestones did not change that.
+select pg_temp.check('a milestone waiting on a court case still says it cannot tell',
+  (select blocker_settled from dependency_status
+    where blocker_legal_case_id = 'aaaa0000-0000-0000-0000-000000000002'
+      and dependent_milestone_id = 'b1000000-0000-0000-0000-000000000001'),
+  null::boolean);
+select pg_temp.check('while one waiting on an unachieved milestone reads as unsettled',
+  (select blocker_settled from dependency_status
+    where blocker_milestone_id = 'b1000000-0000-0000-0000-000000000001'), false);
+
+do $$
+begin
+  begin
+    insert into dependencies (blocker_milestone_id, dependent_milestone_id, confidentiality)
+    values ('b1000000-0000-0000-0000-000000000001',
+            'b1000000-0000-0000-0000-000000000001', 'internal');
+    raise exception 'FAIL a milestone was made to wait on itself';
+  exception
+    when check_violation then
+      raise notice 'ok   a milestone cannot wait on itself';
+  end;
+end;
+$$;
+
+do $$
+begin
+  begin
+    insert into dependencies
+      (blocker_milestone_id, blocker_legal_case_id, dependent_milestone_id, confidentiality)
+    values ('b1000000-0000-0000-0000-000000000002',
+            'aaaa0000-0000-0000-0000-000000000002',
+            'b1000000-0000-0000-0000-000000000003', 'internal');
+    raise exception 'FAIL a dependency named two blockers';
+  exception
+    when check_violation then
+      raise notice 'ok   and exactly one thing sits on each side';
+  end;
+end;
+$$;
+
+-- --- baselines (M15-06) ---------------------------------------------------
+
+select public.take_baseline('Board plan, this sitting', 'Frozen for the trustee pack.');
+
+select pg_temp.check('a baseline freezes every milestone that is still live',
+  (select count(*) from baseline_milestones bm
+    join plan_baselines b on b.id = bm.baseline_id
+    where b.name = 'Board plan, this sitting'), 4::bigint);
+
+-- Now the plan moves, which is the thing a baseline exists to catch.
+update milestones set target_on = current_date + 120
+ where id = 'b1000000-0000-0000-0000-000000000001';
+
+select pg_temp.check('and the variance says how far the date was moved',
+  (select target_moved_days from baseline_variance
+    where milestone_id = 'b1000000-0000-0000-0000-000000000001'), 80);
+
+-- Two different numbers, held apart. A project that moves its target four
+-- times and reports on time is exploiting exactly this conflation.
+select pg_temp.check('which is a different number from how late delivery was',
+  (select delivery_slip_days from baseline_variance
+    where milestone_id = 'b1000000-0000-0000-0000-000000000002'), 25);
+select pg_temp.check('and a date nobody moved shows no movement',
+  (select target_moved_days from baseline_variance
+    where milestone_id = 'b1000000-0000-0000-0000-000000000003'), 0);
+
+-- A baseline that can be edited is the current plan wearing an old date.
+do $$
+begin
+  begin
+    update plan_baselines set taken_on = current_date - 180
+     where name = 'Board plan, this sitting';
+    raise exception 'FAIL a baseline was back-dated';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   a baseline cannot be back-dated afterwards';
+  end;
+end;
+$$;
+
+do $$
+begin
+  begin
+    update baseline_milestones set target_on = current_date + 500
+     where milestone_id = 'b1000000-0000-0000-0000-000000000001';
+    raise exception 'FAIL a frozen target was rewritten';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   nor can a frozen target be rewritten';
+  end;
+end;
+$$;
+
+do $$
+begin
+  begin
+    perform public.take_baseline('   ');
+    raise exception 'FAIL an unnamed baseline was taken';
+  exception
+    when check_violation then
+      raise notice 'ok   and a baseline needs a name to be referred to by';
+  end;
+end;
+$$;
+
+select pg_temp.act_as('77777777-7777-7777-7777-777777777777');  -- contractor
+do $$
+begin
+  begin
+    perform public.take_baseline('Contractor plan');
+    raise exception 'FAIL an outside party baselined the project plan';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   an outside party does not baseline the project plan';
+  end;
+end;
+$$;
+
+-- --- the chronology (M15-07) ---------------------------------------------
+
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- director
+
+-- "her olay kaynağa bağlı". The requirement gives the reason: institutional
+-- memory AND legal evidence. An entry nobody can trace is neither.
+do $$
+begin
+  begin
+    insert into chronology_entries (occurred_on, category, title_en, confidentiality)
+    values ('1993-06-01', 'founding', 'Something everybody remembers differently', 'internal');
+    raise exception 'FAIL a chronology entry was recorded with no source';
+  exception
+    when check_violation then
+      raise notice 'ok   every chronology entry names where it comes from';
+  end;
+end;
+$$;
+
+-- A 1993 event known only to the year. Recording it as the first of January
+-- and printing that would invent a fact somebody later reads as one.
+insert into chronology_entries
+  (id, occurred_on, precision, category, title_en, title_tr, source_note, confidentiality)
+values ('b2000000-0000-0000-0000-000000000001', '1993-01-01', 'year', 'founding',
+        'The trust is constituted', 'Vakıf kuruluyor',
+        'Recited in the 2025 amended trust deed, recital 2.', 'internal');
+
+select pg_temp.check('a date known only to the year says so',
+  (select precision::text from chronology_entries
+    where id = 'b2000000-0000-0000-0000-000000000001'), 'year');
+
+-- And a document is the better source where one exists.
+insert into chronology_entries
+  (occurred_on, category, title_en, document_id, confidentiality)
+values ('2013-04-02', 'legal', 'ELC/134/2013 filed',
+        '1b000000-0000-0000-0000-000000000001', 'internal');
+
+select pg_temp.check('the chronology joins the hand-recorded years to the registers',
+  (select count(distinct source) from project_chronology) >= 2, true);
+select pg_temp.check('and reaches back before the registers existed',
+  (select min(occurred_on) from project_chronology), '1993-01-01'::date);
+
+-- Only things that happened. A target date is a plan, and a chronology of
+-- intentions is how a project talks itself into believing its schedule.
+select pg_temp.check('an achieved milestone is in the chronology',
+  (select count(*) from project_chronology
+    where source = 'milestone' and id = 'b1000000-0000-0000-0000-000000000002'), 1::bigint);
+select pg_temp.check('but one that is merely planned is not',
+  (select count(*) from project_chronology
+    where source = 'milestone' and id = 'b1000000-0000-0000-0000-000000000001'), 0::bigint);
+
+-- Nothing in the future, and nothing before the trust could have existed.
+do $$
+begin
+  begin
+    insert into chronology_entries (occurred_on, category, title_en, source_note, confidentiality)
+    values (current_date + 30, 'other', 'Something that has not happened', 'A guess.', 'internal');
+    raise exception 'FAIL the chronology accepted a future event';
+  exception
+    when check_violation then
+      raise notice 'ok   a chronology records what happened, not what is planned';
+  end;
+end;
+$$;
+
+-- --- phases, with what is actually in them (M15-02) ----------------------
+
+update project_phases
+set scope_en = 'Substructure and frame for blocks A1 and B2.',
+    objective_en = 'Weatherproof shells before the long rains.'
+where id = '1c000000-0000-0000-0000-000000000001';
+
+select pg_temp.check('a phase says what it covers',
+  (select scope_en is not null from phase_position
+    where phase_id = '1c000000-0000-0000-0000-000000000001'), true);
+select pg_temp.check('and what is counted in it comes from the registers',
+  (select milestones from phase_position
+    where phase_id = '1c000000-0000-0000-0000-000000000001'), 2);
+select pg_temp.check('with the blocks counted the same way',
+  (select blocks from phase_position
+    where phase_id = '1c000000-0000-0000-0000-000000000001') >= 1, true);
+
+-- --- the countdown strip (M15-04) ----------------------------------------
+
+select pg_temp.act_as('33333333-3333-3333-3333-333333333333');  -- trustee
+
+-- A court date is critical whatever anybody marks: nobody sets it and nobody
+-- can move it.
+select pg_temp.check('court dates are on the critical strip by their nature',
+  (select count(*) from critical_dates where kind = 'hearing') >= 1, true);
+
+-- A milestone whose target passed while it was still open is flagged by the
+-- calendar, so it reaches the strip without anybody marking it.
+insert into milestones
+  (id, title_en, target_on, state, critical, confidentiality)
+values ('b1000000-0000-0000-0000-000000000005', 'Bond renewed',
+        current_date - 3, 'planned', true, 'internal');
+select pg_temp.check('a target that passed with the milestone still open reaches it too',
+  (select count(*) from critical_dates
+    where kind = 'milestone' and id = 'b1000000-0000-0000-0000-000000000005'), 1::bigint);
+select pg_temp.check('and the strip says how far away each date is, signed',
+  (select days_away from critical_dates
+    where kind = 'milestone' and id = 'b1000000-0000-0000-0000-000000000005'), -3);
+
+-- Acknowledging takes it off YOUR strip. The banner this replaces had a
+-- dismiss button that deleted the court date for every user of the portal.
+insert into calendar_acknowledgements (kind, entry_id)
+values ('milestone', 'b1000000-0000-0000-0000-000000000005');
+select pg_temp.check('acknowledging a date takes it off your own strip',
+  (select count(*) from critical_dates
+    where kind = 'milestone' and id = 'b1000000-0000-0000-0000-000000000005'), 0::bigint);
+
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- director
+select pg_temp.check('and leaves it on everybody else''s',
+  (select count(*) from critical_dates
+    where kind = 'milestone' and id = 'b1000000-0000-0000-0000-000000000005'), 1::bigint);
+select pg_temp.check('nor can anybody read whose acknowledgement it was',
+  (select count(*) from calendar_acknowledgements), 0::bigint);
+
+-- --- who may move the plan ------------------------------------------------
+
+select pg_temp.act_as('44444444-4444-4444-4444-444444444444');  -- field team
+-- The site team own site milestones and move them, which is the point of
+-- recording an owner.
+update milestones set target_on = current_date + 10
+ where id = 'b1000000-0000-0000-0000-000000000005';
+select pg_temp.check('the site team may move the plan they keep',
+  (select target_on from milestones where id = 'b1000000-0000-0000-0000-000000000005'),
+  (current_date + 10)::date);
+
+select pg_temp.act_as('77777777-7777-7777-7777-777777777777');  -- contractor
+select pg_temp.check('an outside party sees no milestones',
+  (select count(*) from milestones), 0::bigint);
+do $$
+begin
+  begin
+    insert into milestones (title_en, target_on, confidentiality)
+    values ('A date the contractor would prefer', current_date + 500, 'internal');
+    raise exception 'FAIL an outside party wrote to the project plan';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   nor writes to the project plan';
+  end;
+end;
+$$;
+
+
+-- ---------------------------------------------------------------------------
+-- The anon key is given nothing (0026)
+-- ---------------------------------------------------------------------------
+--
+-- Every other assertion in this file tests a rule: who may read what. These
+-- test the absence of a privilege, one layer below the rules, and they exist
+-- because the rules were doing all the work on their own.
+--
+-- Before 0026, anon held select, insert, update and delete on all 123 tables
+-- and views in public and execute on every function there, inherited from
+-- Supabase's default privileges. Nothing leaked, because app.authority()
+-- reads the caller's profile by auth.uid() and anon has none, so every policy
+-- and every definer function refused. But that made the boundary a property
+-- of 311 policies rather than of the grant, and the first policy written
+-- `using (true)` — a deliberately public register, say — would have been the
+-- breach.
+--
+-- bootstrap.sql reproduces Supabase's default privileges precisely so these
+-- assertions can fail. Without that line the local Postgres grants anon
+-- nothing to begin with and all four would pass against a database that was
+-- never in the state 0026 fixes.
+
+reset role;
+
+select pg_temp.check('anon holds no privilege on any table or view in public',
+  (select count(*) from pg_class c
+     join pg_namespace n on n.oid = c.relnamespace
+     cross join lateral aclexplode(c.relacl) a
+    where n.nspname = 'public' and c.relkind in ('r', 'v', 'm', 'p')
+      and a.grantee = 'anon'::regrole), 0::bigint);
+
+-- Asked the other way round, because a privilege can also arrive by
+-- membership in a granted role rather than by a direct grant.
+select pg_temp.check('and cannot select from one even by inheritance',
+  (select count(*) from pg_class c
+     join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public' and c.relkind in ('r', 'v')
+      and has_table_privilege('anon', c.oid, 'select, insert, update, delete')), 0::bigint);
+
+-- The definer functions matter more than the tables: each one runs as the
+-- owner, so a missing authority check inside one is a bypass of RLS itself
+-- rather than a refusal.
+select pg_temp.check('nor execute anything in public, definer functions included',
+  (select count(*) from pg_proc p
+     join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public'
+      and has_function_privilege('anon', p.oid, 'execute')), 0::bigint);
+
+-- The helpers, which are where authority is decided. anon was never granted
+-- usage on the app schema — on the live project or here — so an assertion
+-- about that grant could not fail and is not made; this one is about the
+-- execute privileges behind it, which it did hold.
+select pg_temp.check('nor execute a policy helper, where authority is decided',
+  (select count(*) from pg_proc p
+     join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'app'
+      and has_function_privilege('anon', p.oid, 'execute')), 0::bigint);
+
+-- The guard the revoke is a second line behind: every definer function in
+-- public refuses a caller with no identity. Asserted by calling one as
+-- nobody, rather than by reading its source.
+set role authenticated;
+select set_config('request.jwt.claim.sub', '', true);
+do $$
+begin
+  begin
+    perform public.take_baseline('A baseline from nobody', null);
+    raise exception 'FAIL a definer function ran for a caller with no identity';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   a definer function refuses a caller with no identity';
+  end;
+end;
+$$;
+reset role;
 
 
 reset role;

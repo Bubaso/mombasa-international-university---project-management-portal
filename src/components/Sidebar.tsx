@@ -19,6 +19,7 @@ import {
   TriangleAlert,
   Bot,
   ShoppingBag,
+  GanttChartSquare,
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
@@ -62,6 +63,8 @@ export const Sidebar: React.FC = () => {
     { tab: 'risks', path: '/risks', label: t.nav.risks, icon: TriangleAlert },
     // Everything with a date, from every register at once.
     { tab: 'calendar', path: '/calendar', label: t.nav.calendar, icon: CalendarClock },
+    // The backbone: the dates, the phases, the chain and the chronology.
+    { tab: 'plan', path: '/plan', label: t.nav.plan, icon: GanttChartSquare },
     { tab: 'procurement', path: '/procurement', label: t.nav.procurement, icon: ShoppingBag },
     {
       tab: 'finance',
