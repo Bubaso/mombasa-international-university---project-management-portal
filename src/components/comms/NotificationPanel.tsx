@@ -240,10 +240,19 @@ export const NotificationPanel: React.FC = () => {
                       className="px-2 py-1.5 text-[10px] font-semibold tracking-wider text-slate-500 uppercase"
                     >
                       {tr ? m.tr : m.en}
-                      {media.data != null && !media.data.withAProvider.includes(m.key) && (
-                        <span className="block text-[9px] font-normal text-amber-700 normal-case">
-                          {tr ? 'sağlayıcı yok' : 'no provider'}
+                      {/* Three states, not two. An unread list must not
+                          render as "everything delivers": that is the same
+                          silent reassurance this column exists to remove. */}
+                      {media.data == null ? (
+                        <span className="block text-[9px] font-normal text-slate-500 normal-case">
+                          {tr ? 'sağlayıcı bilinmiyor' : 'provider unknown'}
                         </span>
+                      ) : (
+                        !media.data.withAProvider.includes(m.key) && (
+                          <span className="block text-[9px] font-normal text-amber-700 normal-case">
+                            {tr ? 'sağlayıcı yok' : 'no provider'}
+                          </span>
+                        )
                       )}
                     </th>
                   ))}

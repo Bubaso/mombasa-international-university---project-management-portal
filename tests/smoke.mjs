@@ -5023,6 +5023,25 @@ try {
     `counted ${await noProvider.count()}`,
   );
 
+  // And when the view cannot be read at all, the grid says the providers are
+  // unknown rather than leaving four unlabelled columns, which would read as
+  // "everything delivers" — the reassurance this column exists to remove.
+  await page.route('**/rest/v1/delivery_media**', (route) =>
+    route.fulfill({ status: 404, contentType: 'application/json', body: '{"message":"no"}' }),
+  );
+  await page.goto(BASE + '/communication', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(400);
+  const unknown = grid.locator('span', { hasText: /sağlayıcı bilinmiyor|provider unknown/ });
+  check(
+    (await unknown.count()) === 4,
+    'a media list that cannot be read is shown as unknown on every column, not as configured',
+    `counted ${await unknown.count()}`,
+  );
+  check(
+    (await noProvider.count()) === 0,
+    'and no column is claimed either way while it is unknown',
+  );
+
   // --- this device, and the four ways it can fail to ring (M11-05) ---------
   const device = page.locator('[aria-label="Bu cihazda bildirim"]');
   const noKey = (await device.textContent()) ?? '';
