@@ -18,6 +18,7 @@ import React from 'react';
 import { Bell, BellOff, CircleCheck, Inbox, RefreshCw, TriangleAlert } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import {
+  useDeliveryMedia,
   useInbox,
   useMarkNotificationRead,
   useNotificationHealth,
@@ -25,9 +26,10 @@ import {
   useRunSweep,
   useSetPreference,
 } from '../../api/commsHooks';
+import { DevicePushPanel } from './DevicePushPanel';
 import { QueryStatus } from '../QueryStatus';
 import { ActionButton, Pill, WriteError } from '../ui/Controls';
-import { CONFIGURED_MEDIA, MEDIA, TOPICS, mediumName, topicName } from '../../lib/comms';
+import { MEDIA, TOPICS, mediumName, topicName } from '../../lib/comms';
 import { formatDate } from '../../lib/site';
 import type { NotificationMedium, NotificationTopic } from '../../types';
 
@@ -40,6 +42,11 @@ export const NotificationPanel: React.FC = () => {
   const sweep = useRunSweep();
   const markRead = useMarkNotificationRead();
   const setPreference = useSetPreference();
+  // Read, not hardcoded. This file carried CONFIGURED_MEDIA = ['in_app'] from
+  // lib/comms.ts; it was right until a VAPID key was recorded and would then
+  // have labelled a working medium "no provider" for as long as nobody
+  // noticed. app.configured_media() is the one place that changes.
+  const media = useDeliveryMedia();
 
   const rows = inbox.data ?? [];
   const unread = rows.filter((r) => r.readAt == null).length;
@@ -78,7 +85,13 @@ export const NotificationPanel: React.FC = () => {
         )}
       </header>
 
-      <QueryStatus queries={[inbox, preferences, health]} />
+      <QueryStatus queries={[inbox, preferences, health, media]} />
+
+      {/* Whether this browser will ever ring, before anything about what it
+          would say. The panel below is the only place that can answer it:
+          permission and subscription are per device, and the database can
+          only see the devices that have already reported in. */}
+      <DevicePushPanel />
 
       {/* Why the inbox looks the way it does.
           A notification is not typed by hand — a sweep looks at the registers
@@ -212,7 +225,10 @@ export const NotificationPanel: React.FC = () => {
             {tr ? 'Nasıl ulaşılsın' : 'How you are reached'}
           </h3>
           <div className="overflow-x-auto rounded-lg border border-slate-200">
-            <table className="w-full text-left">
+            <table
+              className="w-full text-left"
+              aria-label={tr ? 'Konu ve mecra tercihleri' : 'Topic and medium preferences'}
+            >
               <thead className="bg-slate-50">
                 <tr>
                   <th className="px-2 py-1.5 text-[10px] font-semibold tracking-wider text-slate-500 uppercase">
@@ -224,7 +240,7 @@ export const NotificationPanel: React.FC = () => {
                       className="px-2 py-1.5 text-[10px] font-semibold tracking-wider text-slate-500 uppercase"
                     >
                       {tr ? m.tr : m.en}
-                      {!CONFIGURED_MEDIA.includes(m.key) && (
+                      {media.data != null && !media.data.withAProvider.includes(m.key) && (
                         <span className="block text-[9px] font-normal text-amber-700 normal-case">
                           {tr ? 'sağlayıcı yok' : 'no provider'}
                         </span>

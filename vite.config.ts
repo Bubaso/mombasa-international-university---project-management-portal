@@ -44,6 +44,12 @@ export default defineConfig(() => {
             },
           ],
         },
+        // The push and notificationclick handlers (M11-05). Imported into the
+        // generated Workbox worker rather than replacing it, so the offline
+        // meeting capture built for M3-11 keeps its precache untouched.
+        workbox: {
+          importScripts: ['push-sw.js'],
+        },
         devOptions: {
           enabled: true,
           type: 'module',

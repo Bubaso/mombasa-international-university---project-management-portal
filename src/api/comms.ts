@@ -27,6 +27,7 @@ import type {
   NotificationMedium,
   NotificationPreference,
   NotificationTopic,
+  PushHealth,
   ThreadKind,
   ThreadMessage,
 } from '../types';
@@ -564,4 +565,78 @@ export async function fetchDigest(
     entityId: row.entity_id as string | null,
     confidentiality: row.confidentiality as DigestRow['confidentiality'],
   }));
+}
+
+// --- browser push, and whether it can leave at all (M11-05) ----------------
+
+/** Whether a VAPID key is on record, and what is waiting for this reader. */
+export async function fetchPushHealth(): Promise<PushHealth> {
+  const { data, error } = await supabase.from('push_health').select('*').maybeSingle();
+  fail(error);
+  const row = (data ?? {}) as Record<string, unknown>;
+  return {
+    keyOnRecord: Boolean(row.key_on_record),
+    myDevices: Number(row.my_devices ?? 0),
+    myQueued: Number(row.my_queued ?? 0),
+    mySent: Number(row.my_sent ?? 0),
+    myFailed: Number(row.my_failed ?? 0),
+    queuedWithNowhereToGo: Boolean(row.queued_with_nowhere_to_go),
+  };
+}
+
+/**
+ * Which media can deliver, straight from app.configured_media().
+ *
+ * src/lib/comms.ts used to carry this as a constant. It was right until a
+ * VAPID key existed and would have been quietly wrong afterwards, which is
+ * why the rule is read rather than repeated.
+ */
+export async function fetchDeliveryMedia(): Promise<{
+  withAProvider: NotificationMedium[];
+  withoutAProvider: NotificationMedium[];
+}> {
+  const { data, error } = await supabase.from('delivery_media').select('*').maybeSingle();
+  fail(error);
+  const row = (data ?? {}) as Record<string, unknown>;
+  return {
+    withAProvider: (row.with_a_provider as NotificationMedium[] | null) ?? [],
+    withoutAProvider: (row.without_a_provider as NotificationMedium[] | null) ?? [],
+  };
+}
+
+/** The public half, for a browser about to subscribe. Null when none is set. */
+export async function fetchPushKey(): Promise<string | null> {
+  const { data, error } = await supabase.rpc('push_public_key');
+  fail(error);
+  const first = rows<Record<string, unknown>>(data)[0];
+  return first ? ((first.public_key as string) ?? null) : null;
+}
+
+export async function recordPushSubscription(keys: {
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+}): Promise<void> {
+  const { error } = await supabase.rpc('record_push_subscription', {
+    p_endpoint: keys.endpoint,
+    p_p256dh: keys.p256dh,
+    p_auth: keys.auth,
+    // Which browser this is, so somebody with four devices can tell them
+    // apart when they come to drop one.
+    p_user_agent: typeof navigator === 'undefined' ? null : navigator.userAgent.slice(0, 300),
+  });
+  fail(error);
+}
+
+/**
+ * Drops this device's row.
+ *
+ * Deliberately not forget_push_subscription, which belongs to the sender:
+ * that one takes any endpoint, and a person turning off their own phone
+ * should not be the same call that lets anybody delete anybody's. The row is
+ * theirs under RLS, so a plain delete is both sufficient and narrower.
+ */
+export async function forgetThisDevice(endpoint: string): Promise<void> {
+  const { error } = await supabase.from('push_subscriptions').delete().eq('endpoint', endpoint);
+  fail(error);
 }

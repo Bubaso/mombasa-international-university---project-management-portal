@@ -2469,6 +2469,55 @@ const TEST_HEALTH = {
   media_without_a_provider: ['email', 'whatsapp', 'push'],
 };
 
+/**
+ * Which media deliver, as app.configured_media() reports them (0045).
+ *
+ * The screen used to read a constant in src/lib/comms.ts. With a VAPID key on
+ * record push genuinely delivers, so the list is now three-and-one rather
+ * than one-and-three, and the "no provider" labels have to follow the
+ * database instead of a hardcoded array.
+ */
+const TEST_MEDIA = {
+  with_a_provider: ['in_app', 'push'],
+  without_a_provider: ['email', 'whatsapp'],
+};
+
+/** No key recorded: no browser anywhere can subscribe. */
+const TEST_MEDIA_NO_PUSH = {
+  with_a_provider: ['in_app'],
+  without_a_provider: ['email', 'whatsapp', 'push'],
+};
+
+/** A key is on record and this reader has one device, with nothing waiting. */
+const TEST_PUSH_HEALTH = {
+  key_on_record: true,
+  my_devices: 1,
+  my_queued: 0,
+  my_sent: 3,
+  my_failed: 0,
+  queued_with_nowhere_to_go: false,
+};
+
+/** The state a screen must not render as a delivery: queued, and no device. */
+const TEST_PUSH_NOWHERE = {
+  key_on_record: true,
+  my_devices: 0,
+  my_queued: 2,
+  my_sent: 0,
+  my_failed: 0,
+  queued_with_nowhere_to_go: true,
+};
+
+/** Nothing recorded at all, which is not the same as a device being off. */
+const TEST_PUSH_NO_KEY = {
+  key_on_record: false,
+  my_devices: 0,
+  my_queued: 0,
+  my_sent: 0,
+  my_failed: 0,
+  queued_with_nowhere_to_go: false,
+};
+
 /** The same, three weeks stale: a schedule that quietly stopped. */
 const TEST_HEALTH_STOPPED = {
   ...TEST_HEALTH,
@@ -3142,6 +3191,15 @@ try {
   });
   await serve('**/rest/v1/risk_score_changes**', TEST_CURVE_SCORES);
   await serve('**/rest/v1/notification_health**', TEST_HEALTH);
+  await serve('**/rest/v1/delivery_media**', TEST_MEDIA);
+  await serve('**/rest/v1/push_health**', TEST_PUSH_HEALTH);
+  await serve('**/rest/v1/rpc/push_public_key**', [
+    {
+      public_key:
+        'BMq47JXQklEMTwhpk-4cu2ufkDaKNSPvj6faEHjwZZIQRmteM_RT9v7DbRWIYXKTKcYIO0tWR0v7QB1iVetjun8',
+      contact: 'mailto:portal@example.test',
+    },
+  ]);
   // Answers per table, the way the function does: the client asks once per
   // register on a screen that mixes them.
   await page.route('**/rest/v1/rpc/machine_marked', (route) => {
@@ -4929,10 +4987,108 @@ try {
   check(pageErrors.length === 0, 'the health strip renders without a page error');
 
   await serve('**/rest/v1/notification_health**', TEST_HEALTH);
+
+  // 0045: the grid's "no provider" labels come from app.configured_media()
+  // now, not from a constant in src/lib/comms.ts. Counted rather than
+  // matched, because the page-wide text is the same either way: with a VAPID
+  // key recorded it is e-mail and WhatsApp (two), and the hardcoded array it
+  // replaced would say three forever.
+  pageErrors = [];
+  await page.goto(BASE + '/communication', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(400);
+  const grid = page.locator('table[aria-label="Konu ve mecra tercihleri"] thead');
+  const noProvider = grid.locator('span', { hasText: /sağlayıcı yok|no provider/ });
   check(
-    /sağlayıcı yok|no provider/.test(comms),
-    'and the preference grid marks the three media with nothing behind them',
+    (await noProvider.count()) === 2,
+    'the grid marks exactly the media the database says have nothing behind them (0045)',
+    `counted ${await noProvider.count()}`,
   );
+  check(
+    !(await grid
+      .locator('th', { hasText: /Tarayıcı bildirimi|Browser push/ })
+      .locator('span', { hasText: /sağlayıcı yok|no provider/ })
+      .count()),
+    'and does not mark browser push as unconfigured once a key is on record',
+  );
+
+  // The same screen with no key: push goes back to having nothing behind it,
+  // which is the state this project was in until 0045.
+  await serve('**/rest/v1/delivery_media**', TEST_MEDIA_NO_PUSH);
+  await serve('**/rest/v1/push_health**', TEST_PUSH_NO_KEY);
+  await page.goto(BASE + '/communication', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(400);
+  check(
+    (await noProvider.count()) === 3,
+    'with no key recorded it marks push as well, and the screen follows the database',
+    `counted ${await noProvider.count()}`,
+  );
+
+  // --- this device, and the four ways it can fail to ring (M11-05) ---------
+  const device = page.locator('[aria-label="Bu cihazda bildirim"]');
+  const noKey = (await device.textContent()) ?? '';
+  check(
+    /Projede kayıtlı bir anahtar yok/.test(noKey),
+    'with no key on record the panel says no device can subscribe, rather than offering a switch',
+  );
+  check(
+    !/kayıtlı$/m.test(noKey) && /kayıtlı değil/.test(noKey),
+    'and this device reads as not registered',
+  );
+
+  await serve('**/rest/v1/delivery_media**', TEST_MEDIA);
+  await serve('**/rest/v1/push_health**', TEST_PUSH_HEALTH);
+  await page.goto(BASE + '/communication', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(400);
+  const asked = (await device.textContent()) ?? '';
+  check(
+    /Bu cihaz henüz bildirim almıyor/.test(asked),
+    'with a key on record and permission never asked, it says this device is not receiving yet',
+  );
+  check(
+    /Bu cihazda aç/.test(asked),
+    'and offers to turn it on here, on this device rather than for the account',
+  );
+  check(
+    /hesabınızda 1 cihaz kayıtlı/.test(asked),
+    'while naming the devices already registered elsewhere, so a silent phone is explicable',
+  );
+  check(
+    /3 bildirim bir anlık bildirim servisine iletildi/.test(asked) &&
+      /Cihazın gösterip göstermediği buradan görülemez/.test(asked),
+    'a sent push is described as accepted by a push service, not as delivered (M11-05)',
+  );
+
+  // Queued with nowhere to go. The database names this state; the screen must
+  // not round it up to a delivery.
+  await serve('**/rest/v1/push_health**', TEST_PUSH_NOWHERE);
+  await page.goto(BASE + '/communication', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(400);
+  const nowhere = (await device.textContent()) ?? '';
+  check(
+    /2 bildirim sırada bekliyor ve gidecek kayıtlı cihaz yok/.test(nowhere),
+    'queued with no registered device is said in those words (M11-05)',
+  );
+  check(/Gönderilmiş sayılmıyorlar/.test(nowhere), 'and is explicitly not counted as sent');
+
+  // A browser that cannot do push at all. Simulated by removing PushManager,
+  // because the honest answer differs from "off": there is nothing to turn on.
+  await page.addInitScript(() => {
+    Reflect.deleteProperty(window, 'PushManager');
+  });
+  await serve('**/rest/v1/push_health**', TEST_PUSH_HEALTH);
+  pageErrors = [];
+  await page.goto(BASE + '/communication', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(400);
+  const unsupported = (await device.textContent()) ?? '';
+  check(
+    /Bu tarayıcı anlık bildirim desteklemiyor/.test(unsupported),
+    'a browser without push says so instead of showing a switch that would do nothing',
+  );
+  check(
+    !/Bu cihazda aç/.test(unsupported),
+    'and offers nothing to press, because there is nothing to turn on',
+  );
+  check(pageErrors.length === 0, 'the device panel renders without a page error in every state');
 
   // M11-07: the two that cannot be switched off.
   check(

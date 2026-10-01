@@ -645,6 +645,22 @@ export interface NotificationHealth {
   mediaWithoutAProvider: NotificationMedium[];
 }
 
+/**
+ * Whether push can leave at all, and what is waiting for this reader
+ * (M11-05).
+ *
+ * `queuedWithNowhereToGo` is the state a screen must not render as a
+ * delivery: the notification exists and no device of theirs does.
+ */
+export interface PushHealth {
+  keyOnRecord: boolean;
+  myDevices: number;
+  myQueued: number;
+  mySent: number;
+  myFailed: number;
+  queuedWithNowhereToGo: boolean;
+}
+
 export type NotificationTopic =
   | 'hearing'
   | 'deadline'

@@ -8162,6 +8162,482 @@ select pg_temp.check('a reader outside the channel sees no reaction on it',
 select pg_temp.check('nor any attachment',
   (select count(*) from message_attachments
     where thread_message_id = '1f000000-0000-0000-0000-000000000011'), 0::bigint);
+-- ===========================================================================
+-- Push is configured when there is a key (0045): M11-05, M11-06
+-- ===========================================================================
+--
+-- 0027 wrote configured_media() as a constant, which was honest with no
+-- provider. These assertions are about the one thing that replaces it: a test
+-- nobody can fake, because a browser cannot subscribe without a public key.
+
+set role authenticated;
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- director
+
+-- With no key on record, push is not a configured medium, and a push delivery
+-- is written down as unconfigured rather than queued.
+select pg_temp.check('with no key on record, push is not configured',
+  (select 'push' = any (app.configured_media())), false);
+select pg_temp.check('and in-app still is, because in-app is this database',
+  (select 'in_app' = any (app.configured_media())), true);
+select pg_temp.check('the register says there is no key',
+  (select key_on_record from push_health), false);
+
+-- Recording a key is an administrator's: a key that does not match the
+-- sender's secret breaks push silently for everybody.
+do $$
+begin
+  begin
+    insert into push_keys (public_key, contact)
+    values ('BMq47JXQklEMTwhpk-4cu2ufkDaKNSPvj6faEHjwZZIQRmteM_RT9v7DbRWIYXKTKcYIO0tWR0v7QB1iVetjun8',
+            'mailto:portal@example.test');
+    raise exception 'FAIL the director recorded a VAPID key';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   recording a VAPID key is an administrator''s';
+  end;
+end;
+$$;
+
+select pg_temp.act_as('11111111-1111-1111-1111-111111111111');  -- admin
+
+-- A truncated key is the silent failure this check exists for: the push
+-- service accepts the request and the browser drops it.
+do $$
+begin
+  begin
+    insert into push_keys (public_key, contact)
+    values ('BMq47JXQklEMTwhpk', 'mailto:portal@example.test');
+    raise exception 'FAIL a truncated VAPID key was accepted';
+  exception
+    when check_violation then
+      raise notice 'ok   a key that is not a full P-256 point is refused';
+  end;
+end;
+$$;
+
+-- And a contact a push service cannot complain to is no contact.
+do $$
+begin
+  begin
+    insert into push_keys (public_key, contact)
+    values ('BMq47JXQklEMTwhpk-4cu2ufkDaKNSPvj6faEHjwZZIQRmteM_RT9v7DbRWIYXKTKcYIO0tWR0v7QB1iVetjun8',
+            'portal@example.test');
+    raise exception 'FAIL a contact with no scheme was accepted';
+  exception
+    when check_violation then
+      raise notice 'ok   the contact has to be something a push service can reach';
+  end;
+end;
+$$;
+
+insert into push_keys (public_key, contact, note)
+values ('BMq47JXQklEMTwhpk-4cu2ufkDaKNSPvj6faEHjwZZIQRmteM_RT9v7DbRWIYXKTKcYIO0tWR0v7QB1iVetjun8',
+        'mailto:portal@example.test', 'Generated for the live project');
+
+-- One key, because two would mean subscriptions made against a key the sender
+-- no longer signs with — which fails silently.
+do $$
+begin
+  begin
+    insert into push_keys (public_key, contact)
+    values ('BPq47JXQklEMTwhpk-4cu2ufkDaKNSPvj6faEHjwZZIQRmteM_RT9v7DbRWIYXKTKcYIO0tWR0v7QB1iVetjun9',
+            'mailto:second@example.test');
+    raise exception 'FAIL a second VAPID key was recorded';
+  exception
+    when unique_violation then
+      raise notice 'ok   there is one key, not a collection of them';
+  end;
+end;
+$$;
+
+select pg_temp.check('with a key on record, push becomes a configured medium',
+  (select 'push' = any (app.configured_media())), true);
+select pg_temp.check('while email does not, because nothing was configured for it',
+  (select 'email' = any (app.configured_media())), false);
+select pg_temp.check('nor whatsapp',
+  (select 'whatsapp' = any (app.configured_media())), false);
+
+-- The client gets the public half and nothing else about the row.
+select pg_temp.check('a browser is handed the public key',
+  (select length(public_key) from public.push_public_key()), 87);
+select pg_temp.check('and the contact, so the subject of the token is not invented',
+  (select contact from public.push_public_key()), 'mailto:portal@example.test');
+select pg_temp.check('the function returns two columns, not the row',
+  (select count(*) from information_schema.routines r
+    join information_schema.parameters p
+      on p.specific_name = r.specific_name
+   where r.routine_schema = 'public' and r.routine_name = 'push_public_key'
+     and p.parameter_mode = 'OUT'), 2::bigint);
+
+-- A device records itself, under its own name.
+select pg_temp.act_as('33333333-3333-3333-3333-333333333333');  -- trustee
+do $$
+begin
+  perform public.record_push_subscription(
+    'https://fcm.googleapis.com/fcm/send/trustee-phone',
+    'BMq47JXQklEMTwhpk-4cu2ufkDaKNSPvj6faEHjwZZIQRmteM_RT9v7DbRWIYXKTKcYIO0tWR0v7QB1iVetjun8',
+    'c2l4dGVlbmJ5dGVzZWVl', 'Chrome on Android');
+  raise notice 'ok   a browser records itself as a push destination';
+end;
+$$;
+
+select pg_temp.check('the subscription belongs to the person who recorded it',
+  (select user_id from push_subscriptions
+    where endpoint = 'https://fcm.googleapis.com/fcm/send/trustee-phone'),
+  '33333333-3333-3333-3333-333333333333'::uuid);
+select pg_temp.check('and the register counts it as their device',
+  (select my_devices from push_health), 1::bigint);
+
+-- The same device re-subscribing replaces its own row rather than piling up.
+do $$
+begin
+  perform public.record_push_subscription(
+    'https://fcm.googleapis.com/fcm/send/trustee-phone',
+    'BMq47JXQklEMTwhpk-4cu2ufkDaKNSPvj6faEHjwZZIQRmteM_RT9v7DbRWIYXKTKcYIO0tWR0v7QB1iVetjun8',
+    'bmV3YXV0aHNlY3JldGE', 'Chrome on Android');
+end;
+$$;
+select pg_temp.check('a device that re-subscribes replaces its own row',
+  (select count(*) from push_subscriptions
+    where endpoint = 'https://fcm.googleapis.com/fcm/send/trustee-phone'), 1::bigint);
+select pg_temp.check('and the new keys are the ones kept',
+  (select auth_key from push_subscriptions
+    where endpoint = 'https://fcm.googleapis.com/fcm/send/trustee-phone'),
+  'bmV3YXV0aHNlY3JldGE');
+
+-- Another person's device is not theirs to see.
+select pg_temp.act_as('44444444-4444-4444-4444-444444444444');  -- field team
+select pg_temp.check('somebody else does not see that device',
+  (select count(*) from push_subscriptions
+    where endpoint = 'https://fcm.googleapis.com/fcm/send/trustee-phone'), 0::bigint);
+select pg_temp.check('and has none of their own',
+  (select my_devices from push_health), 0::bigint);
+
+-- The sender's three functions are the service role's alone. They hand out
+-- every recipient's subscription keys and settle other people's deliveries.
+do $$
+begin
+  begin
+    perform public.claim_push_deliveries(10);
+    raise exception 'FAIL an ordinary user claimed the push queue';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   claiming the push queue is the sender''s alone';
+  end;
+end;
+$$;
+
+do $$
+begin
+  begin
+    perform public.settle_push_delivery(
+      '00000000-0000-0000-0000-000000000000'::uuid, 'sent'::delivery_state, null, null);
+    raise exception 'FAIL an ordinary user settled a delivery';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   so is settling one';
+  end;
+end;
+$$;
+
+do $$
+begin
+  begin
+    perform public.forget_push_subscription('https://fcm.googleapis.com/fcm/send/trustee-phone');
+    raise exception 'FAIL an ordinary user dropped somebody else''s subscription';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   and dropping a dead subscription';
+  end;
+end;
+$$;
+
+-- And that closure survives app.reset_function_grants, which is the whole
+-- reason the revokes live inside it: 0033's sweep was reopened by 0034's
+-- blanket grant, and this is the same shape.
+reset role;
+select app.reset_function_grants();
+set role authenticated;
+select pg_temp.act_as('44444444-4444-4444-4444-444444444444');  -- field team
+do $$
+begin
+  begin
+    perform public.claim_push_deliveries(10);
+    raise exception 'FAIL reset_function_grants reopened the push queue';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   and resetting the grants does not reopen any of the three';
+  end;
+end;
+$$;
+
+-- A push now queues instead of being written down as unconfigured, which is
+-- the behaviour change this migration exists for.
+reset role;
+insert into notifications (id, topic, title_en, body, confidentiality)
+values ('b5000000-0000-0000-0000-000000000001', 'hearing',
+        'Hearing tomorrow', 'ELC appeal, 09:00', 'internal');
+select app.fan_out('b5000000-0000-0000-0000-000000000001',
+  array['33333333-3333-3333-3333-333333333333']::uuid[], 'hearing'::notification_topic);
+set role authenticated;
+select pg_temp.act_as('33333333-3333-3333-3333-333333333333');  -- trustee
+
+select pg_temp.check('a push delivery is queued rather than called unconfigured',
+  (select state::text from notification_deliveries
+    where notification_id = 'b5000000-0000-0000-0000-000000000001' and medium = 'push'),
+  'queued');
+select pg_temp.check('while an email delivery still says there is no sender',
+  (select state::text from notification_deliveries
+    where notification_id = 'b5000000-0000-0000-0000-000000000001' and medium = 'email'),
+  'unconfigured');
+select pg_temp.check('and the reader sees one waiting',
+  (select my_queued from push_health), 1::bigint);
+select pg_temp.check('with somewhere to go, because they have a device',
+  (select queued_with_nowhere_to_go from push_health), false);
+
+-- ---------------------------------------------------------------------------
+-- What the sender actually gets when it claims (M11-05)
+--
+-- These run as superuser because the three functions are revoked from
+-- `authenticated` on purpose — the section above proves that. The logic
+-- underneath the grant still has to be exercised, and it is the part that
+-- failed silently in the first draft: a stamped row that is never returned is
+-- never sent, never failed and never claimable again.
+-- ---------------------------------------------------------------------------
+reset role;
+
+-- A second device for the same person, so the delivery is one row with two
+-- endpoints rather than two rows against one delivery.
+insert into push_subscriptions (user_id, endpoint, p256dh, auth_key, user_agent)
+values ('33333333-3333-3333-3333-333333333333',
+        'https://updates.push.services.mozilla.com/wpush/v2/trustee-laptop',
+        'BMq47JXQklEMTwhpk-4cu2ufkDaKNSPvj6faEHjwZZIQRmteM_RT9v7DbRWIYXKTKcYIO0tWR0v7QB1iVetjun8',
+        'bGFwdG9wYXV0aHNlYw', 'Firefox on Linux');
+
+-- And a notification for somebody with no device at all, queued the same way.
+insert into notifications (id, topic, title_en, body, confidentiality)
+values ('b5000000-0000-0000-0000-000000000002', 'hearing',
+        'Site inspection', 'Block C, 11:00', 'internal');
+select app.fan_out('b5000000-0000-0000-0000-000000000002',
+  array['44444444-4444-4444-4444-444444444444']::uuid[], 'hearing'::notification_topic);
+
+create temporary table claim_one as
+select * from public.claim_push_deliveries(50);
+
+select pg_temp.check('the sender is handed one row per delivery, not one per device',
+  (select count(*) from claim_one), 1::bigint);
+select pg_temp.check('and it is the delivery whose recipient has devices',
+  (select delivery_id = (select id from notification_deliveries
+                          where notification_id = 'b5000000-0000-0000-0000-000000000001'
+                            and medium = 'push')
+     from claim_one), true);
+select pg_temp.check('with both of that person''s devices in one array',
+  (select jsonb_array_length(devices) from claim_one), 2);
+select pg_temp.check('carrying the endpoint a push service is posted to',
+  (select count(*) from claim_one c, jsonb_array_elements(c.devices) d
+    where d ->> 'endpoint' = 'https://fcm.googleapis.com/fcm/send/trustee-phone'), 1::bigint);
+select pg_temp.check('and the auth secret as last re-subscribed, not the first one',
+  (select d ->> 'auth' from claim_one c, jsonb_array_elements(c.devices) d
+    where d ->> 'endpoint' = 'https://fcm.googleapis.com/fcm/send/trustee-phone'),
+  'bmV3YXV0aHNlY3JldGE');
+select pg_temp.check('the body travels under one name, because notifications have one',
+  (select body from claim_one), 'ELC appeal, 09:00');
+
+-- The delivery with nowhere to go is the one this must not touch. Stamping it
+-- would strand it: `queued`, `attempted_at` set, never claimable again — not
+-- even after the person registers a phone.
+select pg_temp.check('a delivery with no device of its own is not claimed',
+  (select attempted_at is null from notification_deliveries
+    where notification_id = 'b5000000-0000-0000-0000-000000000002' and medium = 'push'),
+  true);
+select pg_temp.check('and is still queued, waiting for a device rather than failed',
+  (select state::text from notification_deliveries
+    where notification_id = 'b5000000-0000-0000-0000-000000000002' and medium = 'push'),
+  'queued');
+
+-- Claiming stamps, and a stamped row is not handed out twice: this is what
+-- stops two overlapping runs sending the same notification to the same phone.
+select pg_temp.check('claiming stamped it as attempted',
+  (select attempted_at is not null from notification_deliveries
+    where notification_id = 'b5000000-0000-0000-0000-000000000001' and medium = 'push'),
+  true);
+select pg_temp.check('a second run is handed nothing, so nobody is pushed to twice',
+  (select count(*) from public.claim_push_deliveries(50)), 0::bigint);
+
+-- Once that person has a device, the stranded delivery becomes claimable —
+-- which is the whole point of not having stamped it.
+insert into push_subscriptions (user_id, endpoint, p256dh, auth_key)
+values ('44444444-4444-4444-4444-444444444444',
+        'https://fcm.googleapis.com/fcm/send/field-phone',
+        'BMq47JXQklEMTwhpk-4cu2ufkDaKNSPvj6faEHjwZZIQRmteM_RT9v7DbRWIYXKTKcYIO0tWR0v7QB1iVetjun8',
+        'ZmllbGRhdXRoc2VjcmU');
+select pg_temp.check('a device registered later picks up the waiting delivery',
+  (select count(*) from public.claim_push_deliveries(50)), 1::bigint);
+
+-- Settling. `delivered` is refused: a push service's 201 says it took the
+-- bytes, and nothing here can see a device display anything.
+do $$
+declare
+  v_delivery uuid;
+begin
+  select id into v_delivery from notification_deliveries
+   where notification_id = 'b5000000-0000-0000-0000-000000000001' and medium = 'push';
+  begin
+    perform public.settle_push_delivery(v_delivery, 'delivered'::delivery_state, 'fcm', null);
+    raise exception 'FAIL a push was recorded as delivered';
+  exception
+    when check_violation then
+      raise notice 'ok   a push cannot settle as delivered, only as sent';
+  end;
+end;
+$$;
+
+-- A failure says why, or it is not a failure anybody can act on (0027).
+do $$
+declare
+  v_delivery uuid;
+begin
+  select id into v_delivery from notification_deliveries
+   where notification_id = 'b5000000-0000-0000-0000-000000000001' and medium = 'push';
+  begin
+    perform public.settle_push_delivery(v_delivery, 'failed'::delivery_state, 'fcm', null);
+    raise exception 'FAIL a failure was recorded with no reason';
+  exception
+    when check_violation then
+      raise notice 'ok   a failed push has to say what went wrong';
+  end;
+end;
+$$;
+
+do $$
+declare
+  v_delivery uuid;
+begin
+  select id into v_delivery from notification_deliveries
+   where notification_id = 'b5000000-0000-0000-0000-000000000001' and medium = 'push';
+  perform public.settle_push_delivery(
+    v_delivery, 'sent'::delivery_state, '2/2 fcm.googleapis.com, updates.push.services.mozilla.com', null);
+end;
+$$;
+
+select pg_temp.check('a settled push says sent, and when',
+  (select state::text || ' ' || (settled_at is not null)::text
+     from notification_deliveries
+    where notification_id = 'b5000000-0000-0000-0000-000000000001' and medium = 'push'),
+  'sent true');
+select pg_temp.check('and how many devices took it, so a partial send is not a plain success',
+  (select provider_reference from notification_deliveries
+    where notification_id = 'b5000000-0000-0000-0000-000000000001' and medium = 'push'),
+  '2/2 fcm.googleapis.com, updates.push.services.mozilla.com');
+
+-- A delivery settles once. A second answer arriving — a retried run, a
+-- provider webhook — must not overwrite the first, or the record becomes
+-- whichever message landed last.
+do $$
+declare
+  v_delivery uuid;
+begin
+  select id into v_delivery from notification_deliveries
+   where notification_id = 'b5000000-0000-0000-0000-000000000001' and medium = 'push';
+  begin
+    perform public.settle_push_delivery(
+      v_delivery, 'failed'::delivery_state, null, 'a later run disagreed');
+    raise exception 'FAIL a settled delivery was settled again';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   a settled delivery is not settled a second time';
+  end;
+end;
+$$;
+
+-- And a delivery is never re-pointed: which notification reached whom by what
+-- route is the record, not a field.
+do $$
+declare
+  v_delivery uuid;
+begin
+  select id into v_delivery from notification_deliveries
+   where notification_id = 'b5000000-0000-0000-0000-000000000001' and medium = 'push';
+  begin
+    update notification_deliveries
+       set recipient_id = '44444444-4444-4444-4444-444444444444'
+     where id = v_delivery;
+    raise exception 'FAIL a delivery was re-pointed at another person';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   a delivery cannot be re-pointed at somebody else';
+  end;
+end;
+$$;
+
+-- The recipient's side of the same rule, and the reason the trigger above can
+-- be a rule rather than a wall: `state` is not a column they hold at all.
+set role authenticated;
+select pg_temp.act_as('33333333-3333-3333-3333-333333333333');  -- trustee
+do $$
+declare
+  v_delivery uuid;
+begin
+  select id into v_delivery from notification_deliveries
+   where notification_id = 'b5000000-0000-0000-0000-000000000001' and medium = 'push';
+  begin
+    update notification_deliveries set state = 'sent' where id = v_delivery;
+    raise exception 'FAIL a recipient wrote the delivery state';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   a recipient is not granted the state column at all';
+  end;
+end;
+$$;
+
+-- While the one thing that is theirs still works, because over-tightening the
+-- grant would break the inbox quietly.
+do $$
+declare
+  v_delivery uuid;
+begin
+  select id into v_delivery from notification_deliveries
+   where notification_id = 'b5000000-0000-0000-0000-000000000001' and medium = 'push';
+  update notification_deliveries set read_at = now() where id = v_delivery;
+  raise notice 'ok   and can still mark their own notification read';
+end;
+$$;
+reset role;
+
+-- A subscription the push service reported gone is dropped, not retried.
+select public.forget_push_subscription(
+  'https://updates.push.services.mozilla.com/wpush/v2/trustee-laptop');
+select pg_temp.check('a dead subscription is forgotten rather than retried forever',
+  (select count(*) from push_subscriptions
+    where endpoint = 'https://updates.push.services.mozilla.com/wpush/v2/trustee-laptop'),
+  0::bigint);
+
+drop table claim_one;
+delete from push_subscriptions
+ where endpoint = 'https://fcm.googleapis.com/fcm/send/field-phone';
+
+set role authenticated;
+select pg_temp.act_as('33333333-3333-3333-3333-333333333333');  -- trustee
+select pg_temp.check('the reader is now shown one sent, and nothing waiting',
+  (select my_sent::text || '/' || my_queued::text from push_health), '1/0');
+
+-- The state a screen must not render as a delivery: queued, and no device.
+-- Raised after the device is gone, because the delivery above has settled —
+-- `sent` with no device left is a different and perfectly honest state.
+reset role;
+delete from push_subscriptions
+ where endpoint = 'https://fcm.googleapis.com/fcm/send/trustee-phone';
+insert into notifications (id, topic, title_en, body, confidentiality)
+values ('b5000000-0000-0000-0000-000000000003', 'hearing',
+        'Mention on Friday', 'ELC, 09:30', 'internal');
+select app.fan_out('b5000000-0000-0000-0000-000000000003',
+  array['33333333-3333-3333-3333-333333333333']::uuid[], 'hearing'::notification_topic);
+set role authenticated;
+select pg_temp.act_as('33333333-3333-3333-3333-333333333333');  -- trustee
+select pg_temp.check('queued with no device of their own is named as such',
+  (select queued_with_nowhere_to_go from push_health), true);
+select pg_temp.check('and it is not counted as sent, because nothing was',
+  (select my_queued::text || '/' || my_sent::text from push_health), '1/1');
 reset role;
 
 \echo ''

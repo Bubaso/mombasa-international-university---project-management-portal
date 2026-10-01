@@ -25,6 +25,19 @@ desen iki kez eşleşiyor.
 Öncelik dağılımı: P0 16 satır (1'i yok), P1 109 satır (3'ü yok), P2 58 satır
 (22'si yok), P3 14 satır (**hepsi yapıldı**).
 
+## 0045 sonrası bir düzeltme
+
+M11-05 ve M11-06 bu denetimde "yapıldı" sayılıyordu ve öyleydi: teslim kaydı
+vardı, push `unconfigured` olarak yazılıyordu ve ekran bunu söylüyordu. 0045
+ile push **gerçekten** teslim ediyor — VAPID anahtarı kayıtlıysa. Satır sayısı
+değişmedi; değişen şey, o iki satırın artık "kaydı var" değil "gönderiyor"
+anlamına gelmesi. Kurulumu ve doğrulanamayan kısmı `docs/BILDIRIM-KURULUMU.md`
+anlatıyor.
+
+E-posta ve WhatsApp hâlâ `unconfigured`: biri bir sağlayıcı API anahtarı,
+diğeri bir Meta işletme hesabı istiyor. İkisi de bu depoda çözülecek şeyler
+değil.
+
 ## Yapılmış ama ID'si anılmamış satırlar
 
 Bunlar "yapıldı" sayılır; eksik olan tek şey migration yorumundaki atıf.

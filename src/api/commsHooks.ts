@@ -185,3 +185,37 @@ export function useAttachToMessage() {
   const invalidate = useMessageInvalidator();
   return useMutation({ mutationFn: api.attachToMessage, onSuccess: invalidate });
 }
+
+// --- browser push (M11-05) -------------------------------------------------
+
+export const usePushHealth = () =>
+  useQuery({ queryKey: ['pushHealth'], queryFn: api.fetchPushHealth });
+
+/**
+ * Which media deliver. Read rather than hardcoded: src/lib/comms.ts carried
+ * the list as a constant, which a recorded VAPID key would have made wrong.
+ */
+export const useDeliveryMedia = () =>
+  useQuery({ queryKey: ['deliveryMedia'], queryFn: api.fetchDeliveryMedia });
+
+export const usePushKey = () => useQuery({ queryKey: ['pushKey'], queryFn: api.fetchPushKey });
+
+export function useRecordDevice() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: api.recordPushSubscription,
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: ['pushHealth'] });
+    },
+  });
+}
+
+export function useForgetDevice() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: api.forgetThisDevice,
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: ['pushHealth'] });
+    },
+  });
+}

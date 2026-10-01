@@ -40,13 +40,6 @@ export const MEDIA: { key: NotificationMedium; tr: string; en: string }[] = [
   { key: 'push', tr: 'Tarayıcı bildirimi', en: 'Browser push' },
 ];
 
-/**
- * Which media this project can actually deliver to. Mirrors
- * app.configured_media(), which is the one place that changes when a provider
- * is connected.
- */
-export const CONFIGURED_MEDIA: NotificationMedium[] = ['in_app'];
-
 export const ROUTES: { key: CorrespondenceRoute; tr: string; en: string }[] = [
   { key: 'letter', tr: 'Resmî yazı', en: 'Letter' },
   { key: 'email', tr: 'E-posta', en: 'E-mail' },
