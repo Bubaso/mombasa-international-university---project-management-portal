@@ -66,12 +66,12 @@ const {
 // --- the registry ----------------------------------------------------------
 
 check(
-  TRANSLATED_TABLES.length === 43,
-  'the registry covers every bilingual table',
+  TRANSLATED_TABLES.length === 41,
+  'the registry covers every bilingual table it may write to',
   `${TRANSLATED_TABLES.length}`,
 );
 check(
-  TRANSLATED_TABLES.reduce((n, t) => n + fieldsOf(t).length, 0) === 70,
+  TRANSLATED_TABLES.reduce((n, t) => n + fieldsOf(t).length, 0) === 68,
   'and every bilingual field pair in them',
   `${TRANSLATED_TABLES.reduce((n, t) => n + fieldsOf(t).length, 0)}`,
 );
@@ -94,6 +94,12 @@ check(
 // raised with both languages already written, so translating one would be
 // rewriting a message that has already been delivered.
 check(!translates('notifications'), 'a notification is not translated after it has been sent');
+// A candidate's text is a quotation from a minute and 0032 refuses to let
+// anybody rewrite it. A backfill that tried had its UPDATE refused and wrote
+// the marker anyway — a claim of machine text in an empty field, which is the
+// state this feature exists to prevent.
+check(!translates('action_candidates'), 'a quotation from a minute is not translated in place');
+check(!translates('supplier_reviews'), 'nor is an append-only register rewritten');
 check(
   translates('obligations') && !translates('profiles'),
   'a table is in the registry or it is not',

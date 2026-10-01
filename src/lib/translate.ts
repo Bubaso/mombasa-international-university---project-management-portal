@@ -8,10 +8,29 @@
  * trustee opening the obligations register read English or nothing.
  *
  * The registry is a table-to-bases map rather than seventy hand-written
- * entries, and `notifications` is the one pair deliberately left out: a
- * notification is raised by the sweep in 0033 with both languages already
- * written, so there is never a half to fill and translating one would be
- * rewriting a message that has already been delivered.
+ * entries. Three pairs are deliberately left out, and each is a rule
+ * elsewhere in the schema rather than a preference:
+ *
+ *   notifications.title      — raised by the sweep in 0033 with both languages
+ *                              already written, so there is never a half to
+ *                              fill, and translating one would be rewriting a
+ *                              message that has already been delivered.
+ *
+ *   action_candidates.text    — the sentence somebody wrote in a minute, which
+ *                              0032 refuses to let anybody rewrite. It is a
+ *                              quotation, and translating a quotation in place
+ *                              alters it. A backfill learned this the hard
+ *                              way: the UPDATE was refused by the trigger and
+ *                              the marker was written anyway, leaving a claim
+ *                              of machine text in an empty field — which is
+ *                              exactly the state this feature exists to
+ *                              prevent.
+ *
+ *   supplier_reviews.note     — append-only, under refuse_audit_mutation.
+ *
+ * Where a refusal is CONDITIONAL — a signed decision, a signed inspection —
+ * the table stays, because translateRecord checks the write before it writes
+ * the marker and a refusal leaves the field and the record both untouched.
  *
  * Two things the schema cannot supply:
  *
@@ -65,7 +84,6 @@ const LABELS: Record<string, { en: string; tr: string }> = {
 const BASES: Record<string, string[]> = {
   academic_programmes: ['name'],
   accreditation_requirements: ['detail', 'position', 'title'],
-  action_candidates: ['text'],
   action_items: ['text'],
   assumptions: ['statement'],
   boq_items: ['description'],
@@ -103,7 +121,6 @@ const BASES: Record<string, string[]> = {
   risks: ['detail', 'early_warning', 'response_plan', 'title', 'trigger'],
   site_inspections: ['summary'],
   site_tasks: ['legal_basis', 'title'],
-  supplier_reviews: ['note'],
   trustees: ['seat'],
   work_packages: ['title'],
 };

@@ -1582,10 +1582,6 @@ const TEST_STAKEHOLDERS = [
  * precisely so the screen can be checked for NOT badging it.
  */
 const TEST_MACHINE_MARKS = {
-  action_candidates: [
-    { entity_id: '00000000-0000-0000-0000-00000000a401', column_name: 'text_tr' },
-    { entity_id: '00000000-0000-0000-0000-00000000a402', column_name: 'text_tr' },
-  ],
   meetings: [{ entity_id: '00000000-0000-0000-0000-0000000000bb', column_name: 'title_tr' }],
   // A register rather than a detail screen, and reached through <Bilingual>,
   // which asks about the whole table because it is handed one row at a time.
@@ -2442,30 +2438,12 @@ try {
   );
   check(/ikisi de yok/.test(triage), 'a line naming neither says so rather than guessing');
 
-  // 0035: the badge, where the sentence is actually read.
-  //
-  // The review queue on the assistant screen is where this work is managed.
-  // The badge is where the warning has to be, because a reader of the sentence
-  // is the only person it is any use to — and a machine translation a reader
-  // cannot tell from the record IS the record to them.
-  //
-  // These run before anything on this screen is clicked. Written after the
-  // settled-filter toggle they passed for the wrong reason: the rows they name
-  // had left the screen and the one badge they found was the meeting title's.
-  const badged = async (text) =>
-    page.locator('li', { hasText: text }).locator('text=makine çevirisi').count();
-
-  check(
-    (await badged('Mr. Tariq mühendislik raporunu')) === 1,
-    'a machine-written sentence is marked where it is read, not only in a queue (0035)',
-  );
-  // The rule that is easy to get wrong and silent when wrong. This candidate is
-  // marked on text_tr and has no Turkish, so its English is what a Turkish
-  // reader is shown — and no machine wrote that.
-  check(
-    (await badged('Explore discreet channels to communicate diplomatic pressure')) === 0,
-    'and the badge follows the column the words came from, not the reader’s language',
-  );
+  // 0035: the badge, where the sentence is actually read. A candidate's own
+  // text is not badged and cannot be — it is a quotation from a minute that
+  // 0032 refuses to let anybody rewrite — so the two rules this screen can
+  // still show are on the meeting title. The positive case and the
+  // follows-the-source-column case are asserted on the resolution register,
+  // which does hold machine text.
   check(
     (await page
       .locator('li', { hasText: 'Duman toplantısı' })
@@ -2474,8 +2452,8 @@ try {
     'the meeting record carries it too, on the title the machine translated',
   );
   check(
-    (await page.locator('text=makine çevirisi — onaylanmadı').count()) === 2,
-    'and nothing else on the screen is badged',
+    (await page.locator('text=makine çevirisi — onaylanmadı').count()) === 1,
+    'and nothing else on this screen is badged, the queue included',
   );
 
   // Adopting the line that names neither. The warning is the point of the

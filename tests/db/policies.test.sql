@@ -5772,6 +5772,23 @@ select pg_temp.check('and is told the field is machine-written anyway (0035)',
 
 select pg_temp.act_as('22222222-2222-2222-2222-222222222222');
 
+-- A marker must never outlive the text it describes. A backfill wrote three
+-- that did: the UPDATE was refused by a trigger — action_candidates.text is a
+-- quotation 0032 will not let anybody rewrite — and the marker went in anyway,
+-- leaving a claim of machine text in an empty field. The client checks the
+-- write before it writes the marker; this asserts the outcome rather than the
+-- care, so a second route in cannot reintroduce it.
+-- Narrower than it first looked. A marker whose field was EDITED BY HAND is
+-- legitimate — the queue shows it as such and somebody will settle it — so the
+-- rule is not "the field still says what the machine said". It is that the
+-- field says SOMETHING: translation_review() skips a row whose field is null,
+-- so a visible marker with no row there is one claiming text that is not
+-- there.
+select pg_temp.check('no marker claims machine text in a field that is empty',
+  (select count(*) from machine_translations m
+    where not exists (
+      select 1 from public.translation_review() r where r.id = m.id)), 0::bigint);
+
 -- 0036: the whole register at once, which is what a list of a hundred rows
 -- needs — the component that draws a badge is handed one row and cannot know
 -- the others.
