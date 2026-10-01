@@ -153,16 +153,19 @@ insert into stakeholder_relationships
   ('0b000000-0000-0000-0000-000000000005', '0b000000-0000-0000-0000-000000000001',
    'influences', 4);
 
-insert into meetings (id, title, held_at, kind, status, minutes_status, confidentiality) values
-  ('0e000000-0000-0000-0000-000000000001', 'Legal strategy', now() - interval '2 days',
+insert into meetings (id, title, title_tr, held_at, kind, status, minutes_status, confidentiality) values
+  -- Bilingual, because the Notion migration merges the English and Turkish
+  -- minute of one meeting into one record rather than importing two (0028).
+  ('0e000000-0000-0000-0000-000000000001', 'Legal strategy', 'Hukuk stratejisi',
+   now() - interval '2 days',
    'legal', 'completed', 'draft', 'internal'),
-  ('0e000000-0000-0000-0000-000000000002', 'Trustee session', now() - interval '1 day',
+  ('0e000000-0000-0000-0000-000000000002', 'Trustee session', null, now() - interval '1 day',
    'trustee', 'completed', 'final', 'restricted'),
-  ('0e000000-0000-0000-0000-000000000003', 'Community briefing', now() - interval '5 days',
+  ('0e000000-0000-0000-0000-000000000003', 'Community briefing', null, now() - interval '5 days',
    'community', 'completed', 'draft', 'public'),
   -- Attended by the same advocate, but classified above their clearance: scope
   -- narrows, it never lifts.
-  ('0e000000-0000-0000-0000-000000000004', 'Confidential counsel review', now(),
+  ('0e000000-0000-0000-0000-000000000004', 'Confidential counsel review', null, now(),
    'legal', 'planned', 'draft', 'confidential');
 
 insert into meeting_attendees (meeting_id, profile_id, stakeholder_id, role_at_meeting) values

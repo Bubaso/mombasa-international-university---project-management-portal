@@ -1003,6 +1003,8 @@ export interface Party {
 export interface Meeting {
   id: string;
   title: string;
+  /** The Turkish title, where the record carries one (0028). */
+  titleTr: string | null;
   heldAt: string;
   location: string | null;
   kind: MeetingKind;

@@ -4447,6 +4447,28 @@ end;
 $$;
 
 
+-- --- a meeting minuted in two languages is one meeting (G-02, 0028) ---------
+--
+-- The Notion Meeting Hub keeps the same 22 meetings in an English database
+-- and a Turkish one. Imported as two sources they would have become 44
+-- meetings, and this column is what let them be merged into 22 without
+-- throwing away the title the Turkish-speaking half of the team reads.
+
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- director
+select pg_temp.check('a meeting carries both of its titles',
+  (select title_tr from meetings where id = '0e000000-0000-0000-0000-000000000001'),
+  'Hukuk stratejisi');
+select pg_temp.check('and one minuted in a single language says so with a null',
+  (select title_tr is null from meetings where id = '0e000000-0000-0000-0000-000000000002'),
+  true);
+-- The English title is the one that is never absent, which is why the client
+-- falls back to it rather than to the empty string.
+select pg_temp.check('the English title is not nullable',
+  (select is_nullable from information_schema.columns
+    where table_schema = 'public' and table_name = 'meetings' and column_name = 'title'),
+  'NO');
+
+
 -- ===========================================================================
 -- Communication and notification (M11)
 -- ===========================================================================

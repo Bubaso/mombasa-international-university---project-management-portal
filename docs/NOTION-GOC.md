@@ -6,7 +6,7 @@ ilk denemede doğru aktaran yoktur. Bu yüzden her satır nereden geldiğini
 taşır (`source_system`, `source_id`, `source_url`) ve betik yeniden
 çalıştığında kopya üretmez, düzeltir.
 
-Çalıştırma:
+Çalıştırma — Notion'un kendi API'siyle:
 
 ```bash
 NOTION_TOKEN=secret_… \
@@ -14,6 +14,20 @@ SUPABASE_URL=https://….supabase.co \
 SUPABASE_SERVICE_ROLE_KEY=… \
 npm run import:notion -- --dry-run
 ```
+
+Çalıştırma — başka bir yolla alınmış anlık görüntüden (connector, dışa aktarım):
+
+```bash
+SUPABASE_ACCESS_TOKEN=sbp_… \
+npm run import:notion -- --source snapshot.json --project <ref> --dry-run
+```
+
+İkinci biçim, Notion erişiminin her zaman bir entegrasyon token'ı olarak
+gelmemesinden doğdu. Anlık görüntü sayfaları **ve** sayfalardan çıkarılamayan
+hükümleri taşır: hangi Türkçe sayfa hangi İngilizce sayfadır, her toplantının
+gizliliği nedir, hangi yazımlar aynı kişidir. Bunları bu dosyada değil anlık
+görüntüde tutmak, isimleri ve değerlendirmeleri git geçmişinin dışında da
+tutar.
 
 `--dry-run` her şeyi okur, eşleştirir, ne yazacağını ve **neyi
 yazamayacağını** basar, hiçbir şeye dokunmaz. Önce onu çalıştırın. Asıl
@@ -23,6 +37,78 @@ daha önemli.
 Depoda hiçbir veri tutulmaz. Betik Notion'u canlı okur, Supabase'e canlı
 yazar — bir bakan hakkındaki değerlendirme, hukukî strateji ve özel bir
 iletişim kütüğü git geçmişine girmez.
+
+---
+
+## 0. Göç yapıldı — ve kaynak beklendiği gibi değildi
+
+**1 Ekim 2026'da çalıştırıldı.** Portala giren: **22 toplantı, 130 not bölümü,
+89 katılımcı bağı, 26 paydaş.** Aşağıdaki haritanın büyük kısmı hâlâ geçerli,
+ama dry-run üç şeyi değiştirdi ve betik ona göre güncellendi.
+
+### 0.1 Beş veritabanından üçü boş
+
+| Notion              | Satır | Sonuç                            |
+| ------------------- | ----- | -------------------------------- |
+| 📋 Meetings (EN)    | 24    | 22'si dolu, 2 boş taslak atlandı |
+| 📋 Toplantılar (TR) | 22    | **aynı 22 toplantının Türkçesi** |
+| 👥 Contacts         | 0     | aktarılacak kişi yok             |
+| 💡 Team Suggestions | 0     | —                                |
+| 📁 Materials        | 0     | —                                |
+
+Aşağıdaki "1. Contacts → paydaş kütüğü" bölümü bu yüzden hiç çalışmadı.
+
+### 0.2 İki toplantı veritabanı aynı toplantıları tutuyor
+
+Betik ikisini iki ayrı kaynak sayıyordu; `source_id` olarak Notion sayfa
+kimliği kullanıldığı için portalda **22 yerine 44 toplantı** olurdu ve sonradan
+hangisinin hangisi olduğu ayırt edilemezdi.
+
+Otomatik eşleştirme de mümkün değil: üç çiftin tarihi veya saati tutmuyor
+(_Meeting with Chairman of AUTK_ EN 23 Nisan / TR 24 Nisan; _Mr. Simon_ 11:30 /
+05:30) ve 24 Nisan 16:00'da iki ayrı toplantı var. Eşleştirme bir hükümdür;
+anlık görüntü (snapshot) onu taşır, betik eşleşmeyeni tek başına aktarır.
+
+Birleştirme **alan bazlı**, dil bazlı değil — çünkü iki taraf kopya değil:
+_Abbas Esmail_ toplantısının Türkçe notunda teklif tutarı var (on-iki sayfalık
+temyiz dilekçesi için 100.000 USD), İngilizcesinde hiç not yok. "Birincil dil"
+seçmek o rakamı kaybettirirdi.
+
+`meetings.title_tr` bu yüzden eklendi (0028): tek `title` kolonu, birleştirmede
+Türkçe ekibin okuduğu başlığı atmak anlamına geliyordu.
+
+### 0.3 Kişiler katılımcı listelerinden türetildi
+
+Contacts boş olduğu için eşleştirilecek kayıt yoktu; 22 toplantı aktarılıp her
+birinde "portal kimin katıldığını bilmiyor" yazılacaktı. Betik artık kütüğü
+katılımcı metninden kuruyor: **26 kişi**, hepsi `stance = unknown`,
+`relationship_owner` boş.
+
+İki yazımın aynı kişi olduğuna betik karar vermiyor. Beş çift saha ekibine
+soruldu ve teyit edildi — kanonik adlar: **Mr. Khamisi** (= Hamisi, Hamis),
+**Mme. Frida** (= Freda), **Mr. Mwaeli** (= Mawiale), **Dr. Bakadir**,
+**Mr. Twalip Hatayan** (= Chairman Tahir). Teyit edilmemiş olsalardı her yazım
+kendi kaydı olurdu: iki kişiyi yanlışlıkla birleştirmek, bir kişiyi iki kez
+listelemekten kötüdür — ikincisi görünür, birincisi değil.
+
+### 0.4 Gizlilik varsayılanı değişti
+
+Betik her şeyi `internal` yazıyordu. Bu notlarda görevdeki bir hâkimin itibarı
+hakkında avukat değerlendirmeleri, bir aileye karşı diplomatik kaldıraç
+stratejisi, ve vakfın çekilmek için kabul edeceği şey var. Varsayılan artık
+`confidential`; **yedi tutanak `restricted`**: Mütevelli Heyeti Toplantısı,
+Mr. Lucas, Omollo, (Denetim) Mr. Jimmy, iki Başkan toplantısı ve Büyükelçi
+görüşmesi.
+
+### 0.5 Göç sonrası elde kalan iş
+
+- **103 aksiyon satırı**, 21 toplantıda, metin olarak duruyor (§3.1).
+- **26 paydaşın** hiçbirinin ilişki sorumlusu yok.
+- Toplantı içeriğinden **başka kütüklere** düşecek kayıtlar: imzalanan MoU
+  (kilometre taşı + kronoloji), yedi avukat adayı ve gerekçeleri (M14 tedarik),
+  ELC 134/2013 ve Mayıs 2026 duruşması (hukuk), %43'e karşı %26–30 ilerleme
+  uyuşmazlığı (inşaat), dört risk, üç resmî yazı (M11-12), mütevelli kararları
+  (M3). Bunların her biri insan onayıyla açılır.
 
 ---
 

@@ -83,6 +83,7 @@ function partyColumns(table: string, prefix = ''): string {
 interface MeetingRow {
   id: string;
   title: string;
+  title_tr: string | null;
   held_at: string;
   location: string | null;
   kind: MeetingKind;
@@ -111,7 +112,7 @@ interface MeetingRow {
  * the least reliable corner of PostgREST's embedding.
  */
 const MEETING_COLUMNS =
-  'id, title, held_at, location, kind, priority, status, minutes_status, ' +
+  'id, title, title_tr, held_at, location, kind, priority, status, minutes_status, ' +
   'continues_meeting_id, confidentiality, ' +
   'preparer:profiles!meetings_prepared_by_fkey(full_name), ' +
   'meeting_attendees(count)';
@@ -120,6 +121,10 @@ function toMeeting(row: MeetingRow, titles?: Map<string, string>): Meeting {
   return {
     id: row.id,
     title: row.title,
+    // 0028. The Notion migration merged the English and Turkish minute of
+    // each meeting into one record, and this is the title the other half
+    // carried — null for a meeting minuted in one language only.
+    titleTr: row.title_tr,
     heldAt: row.held_at,
     location: row.location,
     kind: row.kind,

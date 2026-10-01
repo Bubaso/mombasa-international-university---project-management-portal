@@ -90,6 +90,10 @@ const TEST_CASE = {
 const TEST_MEETING = {
   id: '00000000-0000-0000-0000-0000000000bb',
   title: 'Smoke meeting',
+  // 0028: the Notion migration merges an English and a Turkish minute of the
+  // same meeting into one record, and the reader's language decides which
+  // title they see.
+  title_tr: 'Duman toplantısı',
   held_at: '2026-09-01T10:00:00Z',
   location: 'Mombasa',
   kind: 'trustee',
@@ -1928,6 +1932,10 @@ try {
   await page.goto(BASE + `/meetings/${TEST_MEETING.id}`, { waitUntil: 'networkidle' });
   await page.waitForTimeout(400);
   const detail = (await page.textContent('body')) ?? '';
+  check(
+    /Duman toplantısı/.test(detail) && !/Smoke meeting/.test(detail),
+    'a bilingual meeting shows the title in the reader’s language (G-02)',
+  );
   check(
     pageErrors.length === 0 &&
       /Katılımcılar|Who was there/.test(detail) &&

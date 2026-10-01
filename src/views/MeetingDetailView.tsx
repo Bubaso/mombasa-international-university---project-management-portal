@@ -81,7 +81,9 @@ export const MeetingDetailView: React.FC = () => {
       <header className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-xs">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <h1 className="text-base font-bold text-slate-900">{meeting.title}</h1>
+            <h1 className="text-base font-bold text-slate-900">
+              {(tr ? meeting.titleTr : meeting.title) ?? meeting.title}
+            </h1>
             <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
               <span className="font-mono">{meeting.heldAt.slice(0, 16).replace('T', ' ')}</span>
               {meeting.location && (

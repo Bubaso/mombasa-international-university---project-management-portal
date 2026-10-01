@@ -76,7 +76,12 @@ export const MeetingsView: React.FC = () => {
 
       {creating && (
         <NewMeetingForm
-          existing={rows.map((m) => ({ id: m.id, title: m.title, heldAt: m.heldAt }))}
+          existing={rows.map((m) => ({
+            id: m.id,
+            title: m.title,
+            titleTr: m.titleTr,
+            heldAt: m.heldAt,
+          }))}
           onDone={(id) => {
             setCreating(false);
             if (id) navigate(`/meetings/${id}`);
@@ -113,7 +118,11 @@ export const MeetingsView: React.FC = () => {
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-1.5">
                         <span className="text-xs font-semibold text-slate-900">
-                          {meeting.title}
+                          {/* The record is bilingual where the migration
+                              found both minutes; the reader's own language
+                              wins, and the English title is the fallback
+                              because it is the one that is never null. */}
+                          {(tr ? meeting.titleTr : meeting.title) ?? meeting.title}
                         </span>
                         <Pill>{meetingKindLabel(meeting.kind, language)}</Pill>
                         <Pill className={MINUTES_STATUS_STYLES[meeting.minutesStatus]}>
@@ -169,7 +178,7 @@ function nowLocal(): string {
 }
 
 const NewMeetingForm: React.FC<{
-  existing: { id: string; title: string; heldAt: string }[];
+  existing: { id: string; title: string; titleTr: string | null; heldAt: string }[];
   onDone: (id: string | null) => void;
 }> = ({ existing, onDone }) => {
   const { language } = useApp();
@@ -243,7 +252,7 @@ const NewMeetingForm: React.FC<{
             <option value="">{tr ? 'Bağımsız toplantı' : 'Stands on its own'}</option>
             {existing.map((m) => (
               <option key={m.id} value={m.id}>
-                {m.heldAt.slice(0, 10)} · {m.title}
+                {m.heldAt.slice(0, 10)} · {(tr ? m.titleTr : m.title) ?? m.title}
               </option>
             ))}
           </Select>
