@@ -63,9 +63,13 @@ values
   ('cccc0000-0000-0000-0000-000000000001', 'PV-001', current_date, 'civil_construction',
    1000000, 'KES', 'internal');
 
+-- Both on the general channel, which every role belongs to, so the two
+-- assertions below turn on clearance alone. 0027 added channel membership as
+-- a second gate; it has its own fixtures in the M11 block rather than
+-- quietly becoming the reason these two pass.
 insert into communication_threads (id, title, channel, confidentiality) values
-  ('dddd0000-0000-0000-0000-000000000001', 'Internal thread',   'legal',    'internal'),
-  ('dddd0000-0000-0000-0000-000000000002', 'Restricted thread', 'trustees', 'restricted');
+  ('dddd0000-0000-0000-0000-000000000001', 'Internal thread',   'general', 'internal'),
+  ('dddd0000-0000-0000-0000-000000000002', 'Restricted thread', 'general', 'restricted');
 
 -- deadline_notifications is gone (0024). It held hand-typed dates with a
 -- target_roles array, which was a second answer to "what falls due" and a
@@ -479,3 +483,52 @@ values ('1e000000-0000-0000-0000-000000000021',
         'Accreditation inspection',
         'The inspectors will not come to a site without a completed raft.',
         'internal');
+
+-- ---------------------------------------------------------------------------
+-- Communication (M11)
+-- ---------------------------------------------------------------------------
+
+-- A thread on a channel the field team does NOT belong to by role, so the
+-- channel rule can be tested apart from clearance: this one is internal, and
+-- the field team's clearance is confidential. If they cannot see it, the
+-- channel is the only reason.
+insert into communication_threads (id, title, channel, kind, confidentiality) values
+  ('1f000000-0000-0000-0000-000000000001', 'Appointment of new counsel', 'trustee',
+   'discussion', 'internal');
+
+-- A thread hanging on the restricted case. Its channel is general, which the
+-- contractor belongs to, and its own classification is internal — so the only
+-- thing that can keep the contractor out of it is the case behind it.
+insert into communication_threads
+  (id, title, channel, kind, confidentiality, legal_case_id)
+values
+  ('1f000000-0000-0000-0000-000000000002', 'Costs on the restricted file', 'general',
+   'discussion', 'internal', 'aaaa0000-0000-0000-0000-000000000004');
+
+-- One-way, urgent, and on a channel everybody is in.
+insert into communication_threads
+  (id, title, channel, kind, urgent, confidentiality, created_by)
+values
+  ('1f000000-0000-0000-0000-000000000003', 'The appeal is listed for 12 February', 'general',
+   'announcement', true, 'internal', '22222222-2222-2222-2222-222222222222');
+
+insert into thread_messages (id, thread_id, sender_id, body) values
+  ('1f000000-0000-0000-0000-000000000011', '1f000000-0000-0000-0000-000000000001',
+   '33333333-3333-3333-3333-333333333333', 'Four firms have been approached.');
+
+-- The surveyor is added to the trustee channel by name. Membership widens the
+-- default; it is the mechanism for "this one outside person needs to be in
+-- this conversation" without making them a trustee.
+insert into channel_members (channel, profile_id, added_by, note) values
+  ('trustee', 'cccc1111-1111-1111-1111-111111111111',
+   '11111111-1111-1111-1111-111111111111', 'Measuring the counsel fee proposals');
+
+-- An official letter that was sent and never acknowledged, which is the
+-- distinction M11-12 exists to keep.
+insert into correspondence
+  (id, reference_no, direction, route, subject_en, sent_on, counterparty_name,
+   document_id, confidentiality)
+values
+  ('1f000000-0000-0000-0000-000000000030', 'OUT-2026-004', 'outgoing', 'letter',
+   'Request for extension of the temporary occupation licence', current_date - 20,
+   'County Government of Mombasa', '1b000000-0000-0000-0000-000000000001', 'internal');

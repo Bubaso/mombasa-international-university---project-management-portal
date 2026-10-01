@@ -1285,6 +1285,197 @@ const TEST_CRITICAL_DATES = [
   },
 ];
 
+// --- M11 communication fixtures ---------------------------------------------
+
+const TEST_THREADS = [
+  {
+    id: '00000000-0000-0000-0000-000000002a01',
+    title: 'Appointment of new counsel',
+    channel: 'trustee',
+    kind: 'discussion',
+    urgent: false,
+    pinned: false,
+    closed_at: null,
+    confidentiality: 'internal',
+    created_at: '2026-09-20T09:00:00Z',
+    created_by: '00000000-0000-0000-0000-0000000000aa',
+    started_by: 'Smoke Test',
+    legal_case_id: null,
+    construction_block_id: null,
+    obligation_id: null,
+    transaction_id: null,
+    messages: 2,
+    last_message_at: '2026-09-21T11:00:00Z',
+    last_speaker: 'Smoke Trustee',
+    seen_by_me: false,
+  },
+  {
+    id: '00000000-0000-0000-0000-000000002a02',
+    title: 'The appeal is listed for 12 February',
+    channel: 'general',
+    kind: 'announcement',
+    urgent: true,
+    pinned: true,
+    closed_at: null,
+    confidentiality: 'internal',
+    created_at: '2026-09-25T09:00:00Z',
+    created_by: '00000000-0000-0000-0000-0000000000aa',
+    started_by: 'Smoke Test',
+    legal_case_id: null,
+    construction_block_id: null,
+    obligation_id: null,
+    transaction_id: null,
+    messages: 1,
+    last_message_at: '2026-09-25T09:00:00Z',
+    last_speaker: 'Smoke Test',
+    // Not yet acknowledged, so the panel must offer the acknowledgement
+    // rather than a reply box.
+    seen_by_me: false,
+  },
+];
+
+const TEST_THREAD_MESSAGES = [
+  {
+    id: '00000000-0000-0000-0000-000000002b01',
+    thread_id: '00000000-0000-0000-0000-000000002a01',
+    sender_id: '00000000-0000-0000-0000-0000000000aa',
+    body: 'Four firms have been approached.',
+    created_at: '2026-09-20T09:05:00Z',
+    // The name comes from the joined profile, never from a string the client
+    // wrote — which is what 'Current User' was.
+    sender: { full_name: 'Smoke Test' },
+  },
+];
+
+const TEST_REACH = [
+  {
+    thread_id: '00000000-0000-0000-0000-000000002a02',
+    title: 'The appeal is listed for 12 February',
+    channel: 'general',
+    urgent: true,
+    created_at: '2026-09-25T09:00:00Z',
+    seen: 3,
+    // The denominator is the people who could see it, not everybody.
+    could_see: 9,
+    seen_by: ['Smoke Trustee', 'Smoke Director', 'Smoke Field'],
+  },
+];
+
+const TEST_CHANNEL_MEMBERS = [
+  {
+    channel: 'trustee',
+    profile_id: '00000000-0000-0000-0000-0000000000bb',
+    added_at: '2026-09-18T09:00:00Z',
+    note: 'Measuring the counsel fee proposals',
+    member: { full_name: 'Smoke Surveyor' },
+  },
+];
+
+const TEST_INBOX = [
+  {
+    id: '00000000-0000-0000-0000-000000002c01',
+    topic: 'hearing',
+    urgent: true,
+    title_en: 'The appeal is listed for 12 February',
+    title_tr: 'Temyiz 12 Şubat’a verildi',
+    body: null,
+    entity_kind: 'hearing',
+    entity_id: '00000000-0000-0000-0000-0000000000cc',
+    thread_id: null,
+    raised_at: '2026-09-25T09:00:00Z',
+    delivery_id: '00000000-0000-0000-0000-000000002d01',
+    read_at: null,
+    // The honest column: these were never going to arrive.
+    awaiting_a_provider: ['email', 'whatsapp'],
+    raised_by: 'Smoke Director',
+  },
+];
+
+const TEST_PREFERENCES = [{ topic: 'digest', medium: 'email', enabled: false }];
+
+const TEST_CORRESPONDENCE = [
+  {
+    id: '00000000-0000-0000-0000-000000002e01',
+    reference_no: 'OUT-2026-004',
+    direction: 'outgoing',
+    route: 'letter',
+    subject_en: 'Request for extension of the temporary occupation licence',
+    subject_tr: 'Geçici kullanım izninin uzatılması talebi',
+    summary: null,
+    sent_on: '2026-09-10',
+    counterparty_name: 'County Government of Mombasa',
+    document_id: '00000000-0000-0000-0000-0000000000d1',
+    legal_case_id: null,
+    // Sent, never acknowledged — the distinction the register is for.
+    delivery_confirmed_on: null,
+    delivery_evidence_document_id: null,
+    delivery_note: null,
+    confidentiality: 'internal',
+    signatory: { full_name: 'Smoke Director' },
+    stakeholder: null,
+    organization: null,
+  },
+  {
+    id: '00000000-0000-0000-0000-000000002e02',
+    reference_no: 'OUT-2026-003',
+    direction: 'outgoing',
+    route: 'hand_delivery',
+    subject_en: 'Filing of the audited accounts',
+    subject_tr: 'Denetlenmiş hesapların sunulması',
+    summary: null,
+    sent_on: '2026-08-02',
+    counterparty_name: 'Commission for University Education',
+    document_id: '00000000-0000-0000-0000-0000000000d1',
+    legal_case_id: null,
+    delivery_confirmed_on: '2026-08-04',
+    delivery_evidence_document_id: '00000000-0000-0000-0000-0000000000d1',
+    delivery_note: null,
+    confidentiality: 'internal',
+    signatory: { full_name: 'Smoke Director' },
+    stakeholder: null,
+    organization: null,
+  },
+];
+
+/** Three audiences, three different answers — see the assertions. */
+const TEST_DIGEST = {
+  trustee: [
+    {
+      section: 'waiting on you',
+      occurred_on: '2026-09-22',
+      title_en: 'The lease is not renewed',
+      title_tr: null,
+      detail: 'Score 16, over the threshold of 15',
+      entity_kind: 'risk_escalation',
+      entity_id: '1',
+      confidentiality: 'internal',
+    },
+    {
+      section: 'happened',
+      occurred_on: '2026-09-21',
+      title_en: 'Preservation order granted over the suit land',
+      title_tr: null,
+      detail: null,
+      entity_kind: 'legal_order',
+      entity_id: '00000000-0000-0000-0000-000000001d02',
+      confidentiality: 'internal',
+    },
+  ],
+  donor: [
+    {
+      section: 'happened',
+      occurred_on: '2026-09-18',
+      title_en: 'Foundation stone laid for Block A',
+      title_tr: null,
+      detail: null,
+      entity_kind: 'milestone',
+      entity_id: '00000000-0000-0000-0000-000000001a01',
+      confidentiality: 'public',
+    },
+  ],
+  field: [],
+};
+
 const ROUTES = [
   '/',
   '/project_info',
@@ -1594,6 +1785,31 @@ try {
         body: JSON.stringify(body),
       }),
     );
+
+  await serve('**/rest/v1/thread_board**', TEST_THREADS);
+  await serve('**/rest/v1/thread_messages**', TEST_THREAD_MESSAGES);
+  await serve('**/rest/v1/announcement_reach**', TEST_REACH);
+  await serve('**/rest/v1/channel_members**', TEST_CHANNEL_MEMBERS);
+  await serve('**/rest/v1/my_notifications**', TEST_INBOX);
+  await serve('**/rest/v1/notification_preferences**', TEST_PREFERENCES);
+  await serve('**/rest/v1/correspondence**', TEST_CORRESPONDENCE);
+
+  // The digest answers differently per audience, which is the whole point of
+  // M11-10, so the stub reads the audience out of the request rather than
+  // returning one list for all three.
+  await page.route('**/rest/v1/rpc/weekly_digest', (route) => {
+    let audience = 'trustee';
+    try {
+      audience = JSON.parse(route.request().postData() ?? '{}').p_audience ?? 'trustee';
+    } catch {
+      // keep the default
+    }
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(TEST_DIGEST[audience] ?? []),
+    });
+  });
 
   await serve('**/rest/v1/governance_organs**', TEST_ORGANS);
   await serve('**/rest/v1/governance_sitting_quorum**', TEST_SITTINGS);
@@ -2365,6 +2581,131 @@ try {
     'and the screen says it cannot be edited afterwards',
   );
   check(pageErrors.length === 0, 'the procurement screen renders without a runtime error');
+
+  // --- communication and notification (M11) ---------------------------------
+  //
+  // Two of these assertions are about a screen that could not save a reply at
+  // all: it wrote into a JSONB column removed in 0002 and signed every
+  // message with the literal string 'Current User'.
+  pageErrors = [];
+  await page.goto(BASE + '/communication', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(600);
+  const comms = (await page.textContent('body')) ?? '';
+
+  // M11-02: the sender comes from the row's profile, never from a string.
+  check(
+    /Four firms have been approached/.test(comms) && /Smoke Test/.test(comms),
+    'a message carries the sender the database recorded (M11-02)',
+  );
+  check(!/Current User/.test(comms), "and nothing on the screen says 'Current User' any more");
+
+  // M11-04: channels. The filter row shows only channels this reader has
+  // threads in — the portal does not advertise rooms you cannot enter — so
+  // the six are asserted where they are all offered, which is the form for
+  // starting a thread.
+  check(
+    /Mütevelli|Trustees/.test(comms) && /Genel|General/.test(comms),
+    'the channels this person is in are on the screen (M11-04)',
+  );
+  await page
+    .locator('button')
+    .filter({ hasText: /Konu aç|Start a thread/ })
+    .first()
+    .click();
+  await page.waitForTimeout(300);
+  const channelOptions = await page.locator('select').first().locator('option').allTextContents();
+  check(
+    channelOptions.length === 6 &&
+      channelOptions.some((o) => /Resmî ilişkiler|Official relations/.test(o)),
+    'and all six are offered when a thread is started',
+  );
+  check(
+    /Smoke Surveyor/.test(comms) && /Measuring the counsel fee proposals/.test(comms),
+    'and somebody added to one by name says why they are in it',
+  );
+
+  // M11-11 / M11-08: one-way, acknowledged rather than replied to.
+  await page
+    .locator('button')
+    .filter({ hasText: /The appeal is listed for 12 February/ })
+    .first()
+    .click();
+  await page.waitForTimeout(500);
+  const announcement = (await page.textContent('body')) ?? '';
+  check(
+    /cevap yazılamaz|cannot be replied to/.test(announcement),
+    'an announcement says plainly that it is one-way (M11-11)',
+  );
+  check(
+    /Gördüm|I have seen this/.test(announcement),
+    'and offers an acknowledgement instead of a reply box (M11-08)',
+  );
+  check(
+    /3\/9/.test(announcement),
+    'the reach is counted against who could see it, not against everybody',
+  );
+
+  // M11-06: the column that keeps the outbox honest.
+  check(
+    /sağlayıcı bağlı değil|no provider is connected/.test(comms),
+    'a notification says which media never went out, rather than showing four ticks (M11-06)',
+  );
+  check(
+    /sağlayıcı yok|no provider/.test(comms),
+    'and the preference grid marks the three media with nothing behind them',
+  );
+
+  // M11-07: the two that cannot be switched off.
+  check(
+    /kapatılamaz|cannot be off/.test(comms),
+    'a hearing and a deadline are marked as impossible to switch off (M11-07)',
+  );
+  const lockedToggle = page
+    .locator('button[aria-label*="Duruşma"], button[aria-label*="Hearing"]')
+    .first();
+  check(
+    (await lockedToggle.count()) > 0 && (await lockedToggle.isDisabled()),
+    'and the control for the one that cannot be is actually disabled',
+  );
+
+  // M11-12: sent is not the same fact as delivered.
+  check(
+    /OUT-2026-004/.test(comms) && /teyit edilmedi|not confirmed/.test(comms),
+    'a letter that was posted and never acknowledged says so (M11-12)',
+  );
+  // Not a date regex: /2026/ matches almost any page on this project, which
+  // would make this assertion pass whatever the register said.
+  check(
+    /teyitli|confirmed/.test(comms),
+    'while one that was acknowledged is marked confirmed, with its date',
+  );
+  check(
+    /eksiz|no attachment/.test(comms) === false,
+    'and every letter on the register has the letter itself attached',
+  );
+
+  // M11-10: the audience decides the content, in SQL.
+  check(
+    /Sizi bekleyenler|Waiting on you/.test(comms),
+    'the trustee digest carries what is waiting on them (M11-10)',
+  );
+  await page.selectOption(
+    'select[aria-label="Hedef kitle"], select[aria-label="Audience"]',
+    'donor',
+  );
+  await page.waitForTimeout(600);
+  const donorDigest = (await page.textContent('body')) ?? '';
+  check(
+    /Foundation stone laid/.test(donorDigest) &&
+      !/Sizi bekleyenler|Waiting on you/.test(donorDigest),
+    'and the donor digest is a different query, not the same one with sections hidden',
+  );
+  check(
+    /yalnızca yayımlanmış|only what has been published/i.test(donorDigest),
+    'with the screen saying what a donor is shown and what they are not',
+  );
+
+  check(pageErrors.length === 0, 'the communication screen renders without a runtime error');
 
   // --- the plan, the backbone (M15) -----------------------------------------
   //

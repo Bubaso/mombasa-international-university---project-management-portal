@@ -1,0 +1,224 @@
+/**
+ * The inbox and the preferences behind it (M11-06, M11-07).
+ *
+ * The honest part of this screen is the column saying what did NOT go out.
+ * Three of the four media the requirement names — e-mail, WhatsApp, browser
+ * push — have no provider connected to this project, so a delivery for one of
+ * them is recorded `unconfigured` rather than `sent`. The panel says that in
+ * those words rather than showing four ticks, because a team that believes
+ * notifications are going out when they are not is worse off than one that
+ * knows they are not.
+ *
+ * The preference grid refuses nothing by itself. A hearing or a deadline
+ * cannot be switched off in the portal, and that refusal comes from the
+ * database with its own message — enforcing it here as well would be a second
+ * copy of the rule, and the copy is what drifts.
+ */
+import React from 'react';
+import { Bell, BellOff, CircleCheck, Inbox, TriangleAlert } from 'lucide-react';
+import { useApp } from '../../context/AppContext';
+import {
+  useInbox,
+  useMarkNotificationRead,
+  usePreferences,
+  useSetPreference,
+} from '../../api/commsHooks';
+import { QueryStatus } from '../QueryStatus';
+import { Pill, WriteError } from '../ui/Controls';
+import { CONFIGURED_MEDIA, MEDIA, TOPICS, mediumName, topicName } from '../../lib/comms';
+import { formatDate } from '../../lib/site';
+import type { NotificationMedium, NotificationTopic } from '../../types';
+
+export const NotificationPanel: React.FC = () => {
+  const { language } = useApp();
+  const tr = language === 'tr';
+  const inbox = useInbox();
+  const preferences = usePreferences();
+  const markRead = useMarkNotificationRead();
+  const setPreference = useSetPreference();
+
+  const rows = inbox.data ?? [];
+  const unread = rows.filter((r) => r.readAt == null).length;
+
+  // What somebody has actually said, against the default the database applies
+  // to everybody who has said nothing.
+  const stated = new Map(
+    (preferences.data ?? []).map((p) => [`${p.topic}:${p.medium}`, p.enabled]),
+  );
+  const isOn = (topic: NotificationTopic, medium: NotificationMedium, critical: boolean) => {
+    const said = stated.get(`${topic}:${medium}`);
+    if (said != null) return said;
+    return medium === 'in_app' || critical;
+  };
+
+  return (
+    <section className="rounded-xl border border-slate-200 bg-white p-4">
+      <header className="mb-3 flex flex-wrap items-start justify-between gap-2">
+        <div className="flex items-start gap-2.5">
+          <Bell className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" aria-hidden="true" />
+          <div>
+            <h2 className="text-sm font-bold text-slate-900">
+              {tr ? 'Bildirimler' : 'Notifications'}
+            </h2>
+            <p className="max-w-2xl text-[11px] text-slate-500">
+              {tr
+                ? 'Ekip Türkiye, Mombasa ve Nairobi arasında dağılmış; bir duruşma tarihinin kimsenin gözünden kaçmaması bu modülün var olma sebebi. Bu yüzden duruşma ve son tarih bildirimi portal içinde kapatılamaz.'
+                : 'The team is spread across Türkiye, Mombasa and Nairobi, and the stated reason this module exists is that a hearing date must not slip past anybody. So a hearing and a deadline cannot be switched off in the portal itself.'}
+            </p>
+          </div>
+        </div>
+        {unread > 0 && (
+          <Pill className="border-indigo-300 bg-indigo-50 text-indigo-900">
+            {tr ? `${unread} okunmamış` : `${unread} unread`}
+          </Pill>
+        )}
+      </header>
+
+      <QueryStatus queries={[inbox, preferences]} />
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div>
+          <h3 className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold tracking-wider text-slate-500 uppercase">
+            <Inbox className="h-3.5 w-3.5" aria-hidden="true" />
+            {tr ? 'Gelen kutusu' : 'Inbox'}
+          </h3>
+          {rows.length === 0 ? (
+            <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] text-slate-600">
+              {tr
+                ? 'Bildirim yok. Bildirimler elle yazılmaz; bir duruşma, son tarih veya duyuru kayda geçtiğinde doğar.'
+                : 'No notifications. They are not typed by hand: one is raised when a hearing, a deadline or an announcement is recorded.'}
+            </p>
+          ) : (
+            <ul className="max-h-80 space-y-1.5 overflow-y-auto pr-1">
+              {rows.map((n) => (
+                <li
+                  key={n.deliveryId}
+                  className={`rounded-lg border p-2 ${
+                    n.readAt == null
+                      ? 'border-indigo-200 bg-indigo-50/50'
+                      : 'border-slate-200 bg-white'
+                  }`}
+                >
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <Pill className="border-slate-300 bg-slate-100 text-slate-700">
+                      {topicName(n.topic, tr)}
+                    </Pill>
+                    {n.urgent && (
+                      <Pill className="border-rose-300 bg-rose-50 text-rose-900">
+                        {tr ? 'acil' : 'urgent'}
+                      </Pill>
+                    )}
+                    <span className="min-w-0 flex-1 text-xs text-slate-900">
+                      {(tr ? n.titleTr : n.titleEn) ?? n.titleEn}
+                    </span>
+                    {n.readAt == null && (
+                      <button
+                        type="button"
+                        onClick={() => markRead.mutate(n.deliveryId)}
+                        className="shrink-0 cursor-pointer text-[11px] text-indigo-700 underline"
+                      >
+                        {tr ? 'okundu' : 'mark read'}
+                      </button>
+                    )}
+                  </div>
+                  {n.body && <p className="mt-0.5 text-[11px] text-slate-600">{n.body}</p>}
+                  <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[10px] text-slate-400">
+                    <span className="font-mono">{formatDate(n.raisedAt, language)}</span>
+                    {n.raisedBy && <span>{n.raisedBy}</span>}
+                  </div>
+                  {/* The column that keeps this honest. */}
+                  {n.awaitingAProvider.length > 0 && (
+                    <p className="mt-1 flex items-start gap-1 text-[10px] text-amber-800">
+                      <TriangleAlert className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
+                      {tr
+                        ? `${n.awaitingAProvider.map((m) => mediumName(m, tr)).join(', ')} ile gönderilmedi — bu proje için sağlayıcı bağlı değil.`
+                        : `Not sent by ${n.awaitingAProvider.map((m) => mediumName(m, tr)).join(', ')} — no provider is connected for this project.`}
+                    </p>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+          <WriteError error={markRead.error} />
+        </div>
+
+        <div>
+          <h3 className="mb-1.5 text-[11px] font-semibold tracking-wider text-slate-500 uppercase">
+            {tr ? 'Nasıl ulaşılsın' : 'How you are reached'}
+          </h3>
+          <div className="overflow-x-auto rounded-lg border border-slate-200">
+            <table className="w-full text-left">
+              <thead className="bg-slate-50">
+                <tr>
+                  <th className="px-2 py-1.5 text-[10px] font-semibold tracking-wider text-slate-500 uppercase">
+                    {tr ? 'Konu' : 'Topic'}
+                  </th>
+                  {MEDIA.map((m) => (
+                    <th
+                      key={m.key}
+                      className="px-2 py-1.5 text-[10px] font-semibold tracking-wider text-slate-500 uppercase"
+                    >
+                      {tr ? m.tr : m.en}
+                      {!CONFIGURED_MEDIA.includes(m.key) && (
+                        <span className="block text-[9px] font-normal text-amber-700 normal-case">
+                          {tr ? 'sağlayıcı yok' : 'no provider'}
+                        </span>
+                      )}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {TOPICS.map((t) => (
+                  <tr key={t.key}>
+                    <td className="px-2 py-1.5 text-[11px] text-slate-800">
+                      {tr ? t.tr : t.en}
+                      {t.critical && (
+                        <span className="ml-1 text-[10px] text-rose-700">
+                          {tr ? '(kapatılamaz)' : '(cannot be off)'}
+                        </span>
+                      )}
+                    </td>
+                    {MEDIA.map((m) => {
+                      const on = isOn(t.key, m.key, t.critical);
+                      const locked = t.critical && m.key === 'in_app';
+                      return (
+                        <td key={m.key} className="px-2 py-1.5">
+                          <button
+                            type="button"
+                            disabled={locked || setPreference.isPending}
+                            onClick={() =>
+                              setPreference.mutate({ topic: t.key, medium: m.key, enabled: !on })
+                            }
+                            aria-label={`${topicName(t.key, tr)} — ${mediumName(m.key, tr)}`}
+                            className={`cursor-pointer rounded border px-1.5 py-0.5 text-[10px] disabled:cursor-not-allowed ${
+                              on
+                                ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
+                                : 'border-slate-200 bg-white text-slate-400'
+                            }`}
+                          >
+                            {on ? (
+                              <CircleCheck className="h-3 w-3" aria-hidden="true" />
+                            ) : (
+                              <BellOff className="h-3 w-3" aria-hidden="true" />
+                            )}
+                          </button>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <WriteError error={setPreference.error} />
+          <p className="mt-1 text-[10px] text-slate-500">
+            {tr
+              ? 'Bu tercihler yalnızca sizindir — yönetici dahil kimse okuyamaz. Kritik olanların açık kalmasını denetim değil, veritabanı garanti ediyor.'
+              : 'These preferences are yours alone; nobody, an administrator included, can read them. What keeps the critical ones on is the database, not supervision.'}
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+};

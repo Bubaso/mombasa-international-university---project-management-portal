@@ -529,27 +529,145 @@ export interface DonationTranche {
   note: string | null;
 }
 
+/* Communication and notification (M11).
+ *
+ * The old CommunicationThread carried its messages as a nested array, which
+ * was the shape of the JSONB column 0002 replaced with rows. Keeping the type
+ * would have kept the client writing to a column that no longer exists — it
+ * was still doing exactly that, attributing every message to the literal
+ * string 'Current User' (M11-02, M11-03). Messages are their own type now and
+ * are fetched separately, one thread at a time. */
+
+export type CommChannel =
+  'trustee' | 'legal' | 'construction' | 'finance' | 'official_relations' | 'general';
+
+export type ThreadKind = 'discussion' | 'announcement';
+
 export interface CommunicationThread {
   id: string;
   title: string;
-  channel: 'all' | 'legal' | 'construction' | 'trustees' | 'finance';
-  author: string;
-  authorRole: UserRole;
-  authorOrg: string;
-  timestamp: string;
-  unread: boolean;
-  pinned: boolean;
+  channel: CommChannel;
+  kind: ThreadKind;
   urgent: boolean;
-  messages: {
-    id: string;
-    /** The profile id of the sender; identity is never matched on a name. */
-    senderId: string;
-    sender: string;
-    role: UserRole;
-    timestamp: string;
-    text: string;
-    attachment?: string;
-  }[];
+  pinned: boolean;
+  closedAt: string | null;
+  confidentiality: Confidentiality;
+  createdAt: string;
+  createdBy: string | null;
+  startedBy: string | null;
+  /** The register this conversation hangs on, if any (M11-05). */
+  legalCaseId: string | null;
+  constructionBlockId: string | null;
+  obligationId: string | null;
+  transactionId: string | null;
+  messages: number;
+  lastMessageAt: string | null;
+  lastSpeaker: string | null;
+  /** Whether this reader has acknowledged it. Announcements only (M11-08). */
+  seenByMe: boolean;
+}
+
+export interface ThreadMessage {
+  id: string;
+  threadId: string;
+  senderId: string;
+  senderName: string | null;
+  body: string;
+  createdAt: string;
+}
+
+export interface ChannelMember {
+  channel: CommChannel;
+  profileId: string;
+  fullName: string | null;
+  addedAt: string;
+  note: string | null;
+}
+
+/** Who an urgent announcement reached, against who could see it (M11-08). */
+export interface AnnouncementReach {
+  threadId: string;
+  title: string;
+  channel: CommChannel;
+  urgent: boolean;
+  createdAt: string;
+  seen: number;
+  couldSee: number;
+  seenBy: string[];
+}
+
+export type NotificationMedium = 'in_app' | 'email' | 'whatsapp' | 'push';
+
+export type NotificationTopic =
+  | 'hearing'
+  | 'deadline'
+  | 'decision_needed'
+  | 'announcement'
+  | 'thread_reply'
+  | 'digest'
+  | 'site'
+  | 'money';
+
+export interface NotificationItem {
+  id: string;
+  topic: NotificationTopic;
+  urgent: boolean;
+  titleEn: string;
+  titleTr: string | null;
+  body: string | null;
+  entityKind: string | null;
+  entityId: string | null;
+  threadId: string | null;
+  raisedAt: string;
+  deliveryId: string;
+  readAt: string | null;
+  /** The media that were never going to arrive, named rather than hidden. */
+  awaitingAProvider: string[];
+  raisedBy: string | null;
+}
+
+export interface NotificationPreference {
+  topic: NotificationTopic;
+  medium: NotificationMedium;
+  enabled: boolean;
+}
+
+export type CorrespondenceDirection = 'outgoing' | 'incoming';
+
+export type CorrespondenceRoute =
+  'letter' | 'email' | 'hand_delivery' | 'courier' | 'whatsapp' | 'portal';
+
+/** The official letter register (M11-12). */
+export interface CorrespondenceEntry {
+  id: string;
+  referenceNo: string | null;
+  direction: CorrespondenceDirection;
+  route: CorrespondenceRoute;
+  subjectEn: string;
+  subjectTr: string | null;
+  summary: string | null;
+  sentOn: string;
+  counterparty: string | null;
+  signedByName: string | null;
+  documentId: string | null;
+  legalCaseId: string | null;
+  deliveryConfirmedOn: string | null;
+  deliveryEvidenceDocumentId: string | null;
+  deliveryNote: string | null;
+  confidentiality: Confidentiality;
+}
+
+export type DigestAudience = 'trustee' | 'field' | 'donor';
+
+export interface DigestRow {
+  section: string;
+  occurredOn: string | null;
+  titleEn: string | null;
+  titleTr: string | null;
+  detail: string | null;
+  entityKind: string | null;
+  entityId: string | null;
+  confidentiality: Confidentiality;
 }
 
 /* DeadlineNotification is gone with the table it described (0024).

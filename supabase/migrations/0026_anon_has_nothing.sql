@@ -77,10 +77,26 @@ revoke usage on schema app from anon;
 alter default privileges in schema public revoke all on tables from anon;
 alter default privileges in schema public revoke all on sequences from anon;
 alter default privileges in schema public revoke all on functions from anon;
-alter default privileges in schema public revoke execute on functions from public;
 alter default privileges in schema public grant execute on functions to authenticated, service_role;
 alter default privileges in schema app revoke all on functions from anon;
-alter default privileges in schema app revoke execute on functions from public;
+
+-- PUBLIC is deliberately absent from the four lines above, because it cannot
+-- be done there. A default ACL is MERGED with Postgres's built-in defaults
+-- rather than replacing them, and the built-in default for a function is
+-- EXECUTE to PUBLIC. Revoking it here removes the entry from pg_default_acl
+-- and changes nothing: the next function created still comes out with
+-- `=X/postgres` in its ACL. Measured, not assumed —
+--
+--   alter default privileges in schema public revoke execute on functions from public;
+--   create function f2() ...;
+--   select proacl from pg_proc where proname = 'f2';
+--     {=X/postgres,postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}
+--
+-- So each migration that creates a function in public or app ends with the
+-- three lines below, repeated for what it added. That is a convention, and a
+-- convention nobody checks is a comment — which is why the policy tests
+-- assert that anon can execute nothing, and a migration that forgets the
+-- tail fails them rather than shipping.
 
 -- A table whose grants were written by hand rather than inherited. Listed
 -- explicitly because a future reader checking this migration's coverage

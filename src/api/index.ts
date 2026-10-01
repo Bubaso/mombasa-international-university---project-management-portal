@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import { type LegalCase, type CommunicationThread } from '../types';
+import { type LegalCase } from '../types';
 
 // Utility for converting case
 const toCamel = (s: string) =>
@@ -77,15 +77,6 @@ export const fetchLegalCases = async (): Promise<LegalCase[]> => {
   return keysToCamel(data);
 };
 
-export const fetchCommunicationThreads = async (): Promise<CommunicationThread[]> => {
-  const { data, error } = await supabase
-    .from('communication_threads')
-    .select('*')
-    .order('created_at', { ascending: false });
-  if (error) throw error;
-  return keysToCamel(data);
-};
-
 // Mutations
 export const addLegalCase = async (data: Partial<LegalCase>) => {
   const payload = keysToSnake(data);
@@ -96,44 +87,4 @@ export const addLegalCase = async (data: Partial<LegalCase>) => {
     .single();
   if (error) throw error;
   return keysToCamel(inserted);
-};
-
-export const createThread = async (thread: Partial<CommunicationThread>) => {
-  const payload = keysToSnake(thread);
-  const { data: inserted, error } = await supabase
-    .from('communication_threads')
-    .insert(payload)
-    .select()
-    .single();
-  if (error) throw error;
-  return keysToCamel(inserted);
-};
-
-export const addThreadMessage = async ({ threadId, text }: { threadId: string; text: string }) => {
-  // We need to fetch the existing thread, append the message, and update it.
-  const { data: thread, error: fetchError } = await supabase
-    .from('communication_threads')
-    .select('messages')
-    .eq('id', threadId)
-    .single();
-  if (fetchError) throw fetchError;
-
-  const existingMessages = thread.messages || [];
-  const newMessage = {
-    id: Date.now().toString(),
-    text,
-    sender: 'Current User', // TODO: use actual user
-    role: 'executive',
-    timestamp: new Date().toISOString(),
-  };
-
-  const { data: updated, error } = await supabase
-    .from('communication_threads')
-    .update({ messages: [...existingMessages, newMessage] })
-    .eq('id', threadId)
-    .select()
-    .single();
-
-  if (error) throw error;
-  return keysToCamel(updated);
 };

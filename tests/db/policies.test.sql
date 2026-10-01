@@ -243,13 +243,20 @@ select pg_temp.check('the hand-typed deadline register is gone',
 -- Threads
 -- ===========================================================================
 
+-- Named rather than counted: 0027 adds channel fixtures of its own further
+-- down, and a bare count(*) here would start measuring those instead of the
+-- clearance rule these two assertions are about.
 select pg_temp.act_as('44444444-4444-4444-4444-444444444444');  -- field team
 select pg_temp.check('field team does not see the restricted thread',
-  (select count(*) from communication_threads), 1::bigint);
+  (select count(*) from communication_threads
+    where id in ('dddd0000-0000-0000-0000-000000000001',
+                 'dddd0000-0000-0000-0000-000000000002')), 1::bigint);
 
 select pg_temp.act_as('33333333-3333-3333-3333-333333333333');  -- trustee
 select pg_temp.check('trustee sees both threads',
-  (select count(*) from communication_threads), 2::bigint);
+  (select count(*) from communication_threads
+    where id in ('dddd0000-0000-0000-0000-000000000001',
+                 'dddd0000-0000-0000-0000-000000000002')), 2::bigint);
 
 -- A message must be posted as the sender, not as someone else.
 select pg_temp.act_as('44444444-4444-4444-4444-444444444444');
@@ -4440,6 +4447,277 @@ end;
 $$;
 
 
+-- ===========================================================================
+-- Communication and notification (M11)
+-- ===========================================================================
+
+set role authenticated;
+
+-- --- channels (M11-04) ----------------------------------------------------
+--
+-- Membership WIDENS the role default, which is the design decision this block
+-- is really about: a membership table that decided visibility on its own
+-- would start empty and hide every existing thread from everybody.
+
+select pg_temp.act_as('44444444-4444-4444-4444-444444444444');  -- field team
+select pg_temp.check('the field team is not in the trustee channel',
+  (select count(*) from communication_threads
+    where id = '1f000000-0000-0000-0000-000000000001'), 0::bigint);
+-- And it is the channel keeping them out, not their clearance: the thread is
+-- internal and their clearance is confidential, which is higher.
+select pg_temp.check('though their clearance would have let them read it',
+  app.can_read('internal'::confidentiality), true);
+
+select pg_temp.act_as('33333333-3333-3333-3333-333333333333');  -- trustee
+select pg_temp.check('a trustee is in it by role, with nobody adding them',
+  (select count(*) from communication_threads
+    where id = '1f000000-0000-0000-0000-000000000001'), 1::bigint);
+
+select pg_temp.act_as('cccc1111-1111-1111-1111-111111111111');  -- quantity surveyor
+select pg_temp.check('and an outside person added by name is in it too',
+  (select count(*) from communication_threads
+    where id = '1f000000-0000-0000-0000-000000000001'), 1::bigint);
+select pg_temp.check('which is the only way they are in it',
+  app.in_channel('finance'::comm_channel), false);
+
+select pg_temp.act_as('77777777-7777-7777-7777-777777777777');  -- contractor
+select pg_temp.check('the general channel holds everybody, inside and out',
+  app.in_channel('general'::comm_channel), true);
+
+-- --- a thread takes the visibility of what it is about (M11-05) ------------
+
+-- The contractor is in the general channel and the thread is internal, so the
+-- restricted case behind it is the only thing that can keep them out.
+select pg_temp.check('a thread on a case you cannot see is not visible either',
+  (select count(*) from communication_threads
+    where id = '1f000000-0000-0000-0000-000000000002'), 0::bigint);
+
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- director
+select pg_temp.check('while somebody who may see the case reads it',
+  (select count(*) from communication_threads
+    where id = '1f000000-0000-0000-0000-000000000002'), 1::bigint);
+
+-- --- announcements are one-way (M11-11) -----------------------------------
+
+select pg_temp.act_as('44444444-4444-4444-4444-444444444444');  -- field team
+do $$
+begin
+  begin
+    insert into thread_messages (thread_id, sender_id, body)
+    values ('1f000000-0000-0000-0000-000000000003',
+            '44444444-4444-4444-4444-444444444444', 'Noted, thanks');
+    raise exception 'FAIL an announcement was replied to';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   an announcement cannot be replied to (M11-11)';
+  end;
+end;
+$$;
+
+-- But it can be acknowledged, which is the mechanism that replaces replying.
+insert into announcement_receipts (thread_id, user_id)
+values ('1f000000-0000-0000-0000-000000000003', '44444444-4444-4444-4444-444444444444');
+select pg_temp.check('it is acknowledged instead, and that is recorded (M11-08)',
+  (select count(*) from announcement_receipts
+    where thread_id = '1f000000-0000-0000-0000-000000000003'), 1::bigint);
+
+-- Who saw it is for whoever announced it, not for colleagues to browse.
+select pg_temp.check('and one person cannot read whose acknowledgement it was',
+  (select count(*) from announcement_receipts
+    where user_id <> '44444444-4444-4444-4444-444444444444'), 0::bigint);
+
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- director
+select pg_temp.check('the announcer sees the reach, against who could see it',
+  (select seen from announcement_reach
+    where thread_id = '1f000000-0000-0000-0000-000000000003'), 1::bigint);
+select pg_temp.check('with a denominator that is the audience, not everybody',
+  (select could_see > 0 from announcement_reach
+    where thread_id = '1f000000-0000-0000-0000-000000000003'), true);
+
+-- --- a message is a record, not a draft (M11-02, M11-03) -------------------
+
+select pg_temp.act_as('33333333-3333-3333-3333-333333333333');  -- trustee
+do $$
+begin
+  begin
+    update thread_messages set body = 'What I meant to say'
+     where id = '1f000000-0000-0000-0000-000000000011';
+    raise exception 'FAIL a message was edited after the fact';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   a message cannot be edited after it is sent';
+  end;
+end;
+$$;
+
+-- --- critical notifications cannot be switched off (M11-07) ---------------
+
+insert into notification_preferences (user_id, topic, medium, enabled)
+values ('33333333-3333-3333-3333-333333333333', 'digest', 'email', false);
+select pg_temp.check('an ordinary topic can be turned off',
+  (select enabled from notification_preferences
+    where user_id = '33333333-3333-3333-3333-333333333333'
+      and topic = 'digest' and medium = 'email'), false);
+
+do $$
+begin
+  begin
+    insert into notification_preferences (user_id, topic, medium, enabled)
+    values ('33333333-3333-3333-3333-333333333333', 'hearing', 'in_app', false);
+    raise exception 'FAIL a hearing notification was switched off';
+  exception
+    when check_violation then
+      raise notice 'ok   a hearing cannot be switched off in the portal (M11-07)';
+  end;
+end;
+$$;
+
+-- The rule is about the floor, not about every medium: somebody may decline
+-- to be messaged on WhatsApp about a hearing and still be told.
+insert into notification_preferences (user_id, topic, medium, enabled)
+values ('33333333-3333-3333-3333-333333333333', 'hearing', 'whatsapp', false);
+select pg_temp.check('but the medium above the floor is theirs to choose',
+  app.medium_is_on('33333333-3333-3333-3333-333333333333', 'hearing', 'whatsapp'), false);
+select pg_temp.check('and the floor stays on whatever they have said',
+  app.medium_is_on('33333333-3333-3333-3333-333333333333', 'hearing', 'in_app'), true);
+
+-- Preferences are nobody else's business, an administrator's included.
+select pg_temp.act_as('11111111-1111-1111-1111-111111111111');  -- admin
+select pg_temp.check('an administrator cannot read how somebody is reached',
+  (select count(*) from notification_preferences
+    where user_id = '33333333-3333-3333-3333-333333333333'), 0::bigint);
+
+-- --- the outbox tells the truth about what was sent (M11-06) --------------
+
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- director
+select public.raise_notification(
+  'hearing', 'The appeal is listed for 12 February',
+  array['33333333-3333-3333-3333-333333333333']::uuid[],
+  'Temyiz 12 Şubat''a verildi', null, true);
+
+select pg_temp.check('an in-app delivery is queued, because that one works',
+  (select state::text from notification_deliveries d
+    join notifications n on n.id = d.notification_id
+   where d.recipient_id = '33333333-3333-3333-3333-333333333333'
+     and d.medium = 'in_app' and n.topic = 'hearing'), 'queued');
+
+select pg_temp.check('and one with no provider is recorded unconfigured, not sent',
+  (select state::text from notification_deliveries d
+    join notifications n on n.id = d.notification_id
+   where d.recipient_id = '33333333-3333-3333-3333-333333333333'
+     and d.medium = 'email' and n.topic = 'hearing'), 'unconfigured');
+
+-- The medium the trustee switched off two assertions ago.
+select pg_temp.check('a medium somebody declined produces no delivery at all',
+  (select count(*) from notification_deliveries d
+    join notifications n on n.id = d.notification_id
+   where d.recipient_id = '33333333-3333-3333-3333-333333333333'
+     and d.medium = 'whatsapp' and n.topic = 'hearing'), 0::bigint);
+
+select pg_temp.act_as('33333333-3333-3333-3333-333333333333');  -- trustee
+select pg_temp.check('the recipient finds it in their inbox',
+  (select count(*) from my_notifications where topic = 'hearing'), 1::bigint);
+select pg_temp.check('and the inbox says which media were never going to arrive',
+  (select 'email' = any (awaiting_a_provider) from my_notifications
+    where topic = 'hearing'), true);
+
+-- A recipient may say they have read it. They may not rewrite what the
+-- provider did, which is the only other thing on the row.
+update notification_deliveries set read_at = now()
+ where recipient_id = '33333333-3333-3333-3333-333333333333' and medium = 'in_app';
+select pg_temp.check('marking your own delivery read is yours to do',
+  (select count(*) from notification_deliveries
+    where recipient_id = '33333333-3333-3333-3333-333333333333'
+      and medium = 'in_app' and read_at is not null), 1::bigint);
+
+do $$
+begin
+  begin
+    update notification_deliveries set state = 'delivered'
+     where recipient_id = '33333333-3333-3333-3333-333333333333' and medium = 'email';
+    raise exception 'FAIL a recipient rewrote a delivery state';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   but the delivery state is the provider''s answer, not theirs';
+  end;
+end;
+$$;
+
+select pg_temp.act_as('77777777-7777-7777-7777-777777777777');  -- contractor
+do $$
+begin
+  begin
+    perform public.raise_notification(
+      'announcement', 'Everyone please approve my claim',
+      array['33333333-3333-3333-3333-333333333333']::uuid[]);
+    raise exception 'FAIL an outside party wrote into somebody''s inbox';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   an outside party cannot raise one under the portal''s name';
+  end;
+end;
+$$;
+
+select pg_temp.check('nor read a notification addressed to somebody else',
+  (select count(*) from notifications), 0::bigint);
+
+-- --- official correspondence (M11-12) -------------------------------------
+
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- director
+select pg_temp.check('an unacknowledged letter is on the register as exactly that',
+  (select delivery_confirmed_on is null from correspondence
+    where id = '1f000000-0000-0000-0000-000000000030'), true);
+
+do $$
+begin
+  begin
+    insert into correspondence
+      (direction, route, subject_en, sent_on, counterparty_name, confidentiality)
+    values ('outgoing', 'letter', 'A letter with no letter', current_date,
+            'County Government of Mombasa', 'internal');
+    raise exception 'FAIL an outgoing letter was filed without the letter';
+  exception
+    when check_violation then
+      raise notice 'ok   an outgoing letter is not filed without the letter itself';
+  end;
+end;
+$$;
+
+do $$
+begin
+  begin
+    update correspondence set delivery_confirmed_on = current_date
+     where id = '1f000000-0000-0000-0000-000000000030';
+    raise exception 'FAIL delivery was confirmed with nothing behind it';
+  exception
+    when check_violation then
+      raise notice 'ok   nor is delivery confirmed without evidence or a note';
+  end;
+end;
+$$;
+
+select pg_temp.act_as('77777777-7777-7777-7777-777777777777');  -- contractor
+select pg_temp.check('and the correspondence register is internal',
+  (select count(*) from correspondence), 0::bigint);
+
+-- --- the weekly digest differs by audience (M11-10) -----------------------
+--
+-- The point is not that the donor's is shorter. It is that the donor's is
+-- computed from a different rule, so a bug in the client cannot widen it.
+
+select pg_temp.act_as('33333333-3333-3333-3333-333333333333');  -- trustee
+select pg_temp.check('the trustee digest carries what is waiting on them',
+  (select count(*) > 0 from public.weekly_digest('trustee', current_date - 400, current_date)
+    where section = 'waiting on you'), true);
+select pg_temp.check('the field digest does not — it is not theirs to decide',
+  (select count(*) from public.weekly_digest('field', current_date - 400, current_date)
+    where section = 'waiting on you'), 0::bigint);
+select pg_temp.check('and a trustee previewing the donor digest sees only what is published',
+  (select count(*) from public.weekly_digest('donor', current_date - 4000, current_date)
+    where confidentiality <> 'public'), 0::bigint);
+
+reset role;
+
 -- ---------------------------------------------------------------------------
 -- The anon key is given nothing (0026)
 -- ---------------------------------------------------------------------------
@@ -4502,7 +4780,12 @@ select pg_temp.check('nor execute a policy helper, where authority is decided',
 -- public refuses a caller with no identity. Asserted by calling one as
 -- nobody, rather than by reading its source.
 set role authenticated;
-select set_config('request.jwt.claim.sub', '', true);
+-- pg_temp.act_as(null), not set_config(..., true): the `true` makes the
+-- setting transaction-local, and under psql's autocommit it is discarded
+-- before the next statement runs. This assertion then inherited whichever
+-- user acted last and passed because THEY could not take a baseline — which
+-- it did, until an M11 block ending as a trustee landed above it.
+select pg_temp.act_as(null);
 do $$
 begin
   begin

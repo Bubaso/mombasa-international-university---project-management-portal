@@ -25,8 +25,13 @@ export const useDocumentVault = () =>
 /** The same read the finance screens use; 0015 changed the ledger's shape. */
 export const useTransactions = () =>
   useQuery({ queryKey: ['transactions'], queryFn: moneyApi.fetchTransactions });
-export const useCommunicationThreads = () =>
-  useQuery({ queryKey: ['communications'], queryFn: api.fetchCommunicationThreads });
+/* useCommunicationThreads, useCreateThread and useAddThreadMessage are gone.
+ * They called three functions that could not work: the first selected a
+ * `messages` JSONB column 0002 replaced with rows, and the other two read
+ * that array, appended in the browser and wrote the whole thing back —
+ * losing a message whenever two people replied at once (M11-03) and
+ * attributing every one of them to the literal string 'Current User'
+ * (M11-02). api/commsHooks.ts replaces all three. */
 /** The orders on a case, which used to be a JSON array on the case row. */
 export const useCaseOrders = (caseId: string | undefined) =>
   useQuery({
@@ -39,21 +44,5 @@ export const useAddLegalCase = () => {
   return useMutation({
     mutationFn: api.addLegalCase,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['legalCases'] }),
-  });
-};
-
-export const useCreateThread = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: api.createThread,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['communications'] }),
-  });
-};
-
-export const useAddThreadMessage = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: api.addThreadMessage,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['communications'] }),
   });
 };
