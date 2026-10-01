@@ -48,6 +48,27 @@ export const MINUTE_KEEPERS: UserRole[] = [
  */
 export const ASSESSORS: UserRole[] = ['admin', 'project_director', 'trustee', 'board_director'];
 
+/**
+ * Who keeps the board's record of itself — the organs' membership, the
+ * trustee register, the formal resolutions, the charter road map. Mirrors
+ * app.can_keep_governance(), and is deliberately narrower than
+ * MINUTE_KEEPERS: the project director runs the project, and the board
+ * constitutes itself.
+ */
+export const GOVERNANCE_KEEPERS: UserRole[] = ['admin', 'trustee', 'board_director'];
+
+/**
+ * Who keeps the compliance calendar, the accreditation checklist and the
+ * academic registers. Mirrors app.can_keep_readiness(): the same people plus
+ * the director, because these are run day to day rather than deliberated.
+ */
+export const READINESS_KEEPERS: UserRole[] = [
+  'admin',
+  'project_director',
+  'trustee',
+  'board_director',
+];
+
 export const CONFIDENTIALITY_TIERS: Confidentiality[] = [
   'public',
   'internal',

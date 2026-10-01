@@ -52,6 +52,7 @@ export const Sidebar: React.FC = () => {
       badgeColor: 'text-rose-800 bg-rose-100 border border-rose-300',
     },
     { tab: 'governance', path: '/governance', label: t.nav.governance, icon: Users2 },
+    { tab: 'readiness', path: '/readiness', label: t.nav.readiness, icon: GraduationCap },
     { tab: 'stakeholders', path: '/stakeholders', label: t.nav.stakeholders, icon: Handshake },
     { tab: 'meetings', path: '/meetings', label: t.nav.meetings, icon: CalendarDays },
     // The connective tissue: what the lease, the courts, the deed and the

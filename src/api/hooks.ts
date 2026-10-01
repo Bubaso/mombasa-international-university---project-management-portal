@@ -27,7 +27,6 @@ export const useTransactions = () =>
   useQuery({ queryKey: ['transactions'], queryFn: moneyApi.fetchTransactions });
 export const useCommunicationThreads = () =>
   useQuery({ queryKey: ['communications'], queryFn: api.fetchCommunicationThreads });
-export const useTrustees = () => useQuery({ queryKey: ['trustees'], queryFn: api.fetchTrustees });
 /** The orders on a case, which used to be a JSON array on the case row. */
 export const useCaseOrders = (caseId: string | undefined) =>
   useQuery({

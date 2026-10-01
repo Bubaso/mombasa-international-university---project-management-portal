@@ -578,12 +578,315 @@ const TEST_AI_REFUSAL = {
   ],
 };
 
+// --- M10 governance and readiness fixtures ---------------------------------
+
+const TEST_ORGANS = [
+  {
+    id: '00000000-0000-0000-0000-0000000000g1'.replace(/g/g, '9'),
+    kind: 'board_of_trustees',
+    name_en: 'Board of Trustees',
+    name_tr: 'Mütevelli Heyeti',
+    remit_en: null,
+    remit_tr: null,
+    cadence: 'quarterly',
+    quorum_members: 2,
+    quorum_fraction: null,
+    charter_clause: '7(2)',
+    charter_document_id: null,
+    confidentiality: 'internal',
+    organ_memberships: [{ count: 3 }],
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000992',
+    kind: 'audit_committee',
+    name_en: 'Audit Committee',
+    name_tr: 'Denetim Komitesi',
+    remit_en: null,
+    remit_tr: null,
+    // Nothing recorded: the screen has to say so rather than imply "as required".
+    cadence: null,
+    quorum_members: null,
+    quorum_fraction: null,
+    charter_clause: null,
+    charter_document_id: null,
+    confidentiality: 'internal',
+    organ_memberships: [{ count: 1 }],
+  },
+];
+
+const TEST_SITTINGS = [
+  {
+    meeting_id: '00000000-0000-0000-0000-0000000009a1',
+    title: 'Board sitting, March',
+    held_at: '2026-03-11T09:00:00Z',
+    minutes_status: 'final',
+    organ_id: '00000000-0000-0000-0000-000000000991',
+    organ_kind: 'board_of_trustees',
+    organ_name_en: 'Board of Trustees',
+    organ_name_tr: 'Mütevelli Heyeti',
+    seats_held: 3,
+    voting_present: 1,
+    quorum_required: 2,
+    quorum_met: false,
+    confidentiality: 'internal',
+  },
+  {
+    meeting_id: '00000000-0000-0000-0000-0000000009a2',
+    title: 'Audit committee, no rule recorded',
+    held_at: '2026-04-02T09:00:00Z',
+    minutes_status: 'draft',
+    organ_id: '00000000-0000-0000-0000-000000000992',
+    organ_kind: 'audit_committee',
+    organ_name_en: 'Audit Committee',
+    organ_name_tr: 'Denetim Komitesi',
+    seats_held: 1,
+    voting_present: 1,
+    quorum_required: 0,
+    // The three-valued column. Not false.
+    quorum_met: null,
+    confidentiality: 'internal',
+  },
+];
+
+const TEST_TRUSTEES = [
+  {
+    id: '00000000-0000-0000-0000-0000000009b1',
+    stakeholder_id: null,
+    full_name: 'Smoke Trustee',
+    appointing_body: 'Universal Education Foundation',
+    appointed_on: '2025-05-27',
+    term_ends_on: '2030-05-27',
+    seat_en: 'Chair',
+    seat_tr: 'Başkan',
+    email: 'chair@example.test',
+    phone: null,
+    identity_document_id: null,
+    active: true,
+    stood_down_on: null,
+    note: null,
+    confidentiality: 'internal',
+  },
+];
+
+const TEST_RESOLUTIONS = [
+  {
+    decision_id: '00000000-0000-0000-0000-0000000009c1',
+    reference_no: 'BOT/2026/01',
+    text_en: 'Renew the ground lease before the next intake',
+    text_tr: 'Kira sözleşmesini sonraki alımdan önce yenile',
+    decided_on: '2026-03-11',
+    status: 'in_force',
+    signed_at: '2026-03-12T10:00:00Z',
+    organ_kind: 'board_of_trustees',
+    organ_name_en: 'Board of Trustees',
+    organ_name_tr: 'Mütevelli Heyeti',
+    // The state that matters: signed, and nobody has said what doing it means.
+    actions: 0,
+    done: 0,
+    cancelled: 0,
+    overdue: 0,
+    next_due: null,
+    implementation: 'no_actions_recorded',
+    days_since: 40,
+    confidentiality: 'internal',
+  },
+];
+
+const TEST_COMPLIANCE = [
+  {
+    requirement_id: '00000000-0000-0000-0000-0000000009d1',
+    regime: 'cap_164',
+    reference: 'Cap 164 s.5',
+    title_en: 'Annual return of trustees',
+    title_tr: 'Mütevelli yıllık beyanı',
+    recurrence: 'annual',
+    next_due_on: '2027-03-31',
+    obligation_id: null,
+    period_label: null,
+    obligation_state: null,
+    verified: null,
+    responsible_name: 'Smoke Test',
+    not_yet_raised: true,
+    confidentiality: 'internal',
+  },
+];
+
+const TEST_ACCREDITATION = [
+  {
+    id: '00000000-0000-0000-0000-0000000009e1',
+    body: 'CUE',
+    code: 'CUE/STD/3.2',
+    title_en: 'Library holdings per programme',
+    title_tr: 'Program başına kütüphane kaynakları',
+    detail_en: null,
+    detail_tr: null,
+    state: 'in_progress',
+    position_en: 'Two of the four reading lists are costed',
+    position_tr: null,
+    evidence_document_id: null,
+    target_on: '2026-01-31',
+    met_on: null,
+    note: null,
+    confidentiality: 'internal',
+    responsible: { full_name: 'Smoke Test' },
+  },
+];
+
+const TEST_ROADMAP = [
+  {
+    id: '00000000-0000-0000-0000-0000000009f1',
+    sequence: 1,
+    title_en: 'Trust deed registered under Cap 164',
+    title_tr: 'Vakıf senedinin Fasıl 164 kapsamında tescili',
+    detail_en: null,
+    detail_tr: null,
+    state: 'in_progress',
+    target_on: '2026-06-30',
+    completed_on: null,
+    depends_on_stage_id: null,
+    depends_on_title_en: null,
+    depends_on_title_tr: null,
+    depends_on_state: null,
+    blocked_by_predecessor: false,
+    overdue: false,
+    evidence_document_id: null,
+    responsible_name: null,
+    confidentiality: 'internal',
+  },
+  {
+    id: '00000000-0000-0000-0000-0000000009f2',
+    sequence: 2,
+    title_en: 'Letter of interim authority from CUE',
+    title_tr: 'CUE geçici yetki yazısı',
+    detail_en: null,
+    detail_tr: null,
+    state: 'not_started',
+    target_on: '2026-12-31',
+    completed_on: null,
+    depends_on_stage_id: '00000000-0000-0000-0000-0000000009f1',
+    depends_on_title_en: 'Trust deed registered under Cap 164',
+    depends_on_title_tr: 'Vakıf senedinin Fasıl 164 kapsamında tescili',
+    depends_on_state: 'in_progress',
+    blocked_by_predecessor: true,
+    overdue: false,
+    evidence_document_id: null,
+    responsible_name: null,
+    confidentiality: 'internal',
+  },
+];
+
+const TEST_PROGRAMMES = [
+  {
+    id: '00000000-0000-0000-0000-000000000a01',
+    name_en: 'Business Administration',
+    name_tr: 'İşletme Yönetimi',
+    degree: 'BBA',
+    faculty: null,
+    state: 'curriculum_drafted',
+    curriculum_document_id: null,
+    required_academic_staff: 8,
+    appointed_academic_staff: 2,
+    staff_gap: 6,
+    accreditation_requirement_id: null,
+    target_intake_year: 2027,
+    note: null,
+    confidentiality: 'internal',
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000a02',
+    name_en: 'Nursing',
+    name_tr: null,
+    degree: 'BSc',
+    faculty: null,
+    state: 'proposed',
+    curriculum_document_id: null,
+    // Nobody has established the requirement, so the gap is unknown, not nil.
+    required_academic_staff: null,
+    appointed_academic_staff: 0,
+    staff_gap: null,
+    accreditation_requirement_id: null,
+    target_intake_year: 2027,
+    note: null,
+    confidentiality: 'internal',
+  },
+];
+
+const TEST_TARGETS = [
+  {
+    target_id: '00000000-0000-0000-0000-000000000b01',
+    obligation_id: '00000000-0000-0000-0000-000000000b11',
+    obligation_title_en: 'Full scholarships for a fifth of each intake',
+    obligation_title_tr: 'Her alımın beşte birine tam burs',
+    source: 'lease',
+    obligation_state: 'open',
+    basis_en: 'Twenty per cent of the 2027 intake, full scholarship',
+    basis_tr: null,
+    target_value: 60,
+    unit: 'students',
+    period_label: '2027 intake',
+    due_on: '2027-09-30',
+    achieved: 15,
+    records: 1,
+    percent_of_target: 25.0,
+    shortfall: 45,
+    confidentiality: 'internal',
+  },
+  {
+    target_id: '00000000-0000-0000-0000-000000000b02',
+    obligation_id: '00000000-0000-0000-0000-000000000b12',
+    obligation_title_en: 'Build the campus mosque',
+    obligation_title_tr: 'Kampüs camisini inşa et',
+    source: 'lease',
+    obligation_state: 'open',
+    basis_en: 'One mosque on the campus',
+    basis_tr: null,
+    // No target set: the screen must not print nought per cent for this.
+    target_value: null,
+    unit: 'building',
+    period_label: null,
+    due_on: '2028-06-30',
+    achieved: null,
+    records: 0,
+    percent_of_target: null,
+    shortfall: null,
+    confidentiality: 'internal',
+  },
+];
+
+const TEST_READINESS = [
+  { strand: 'infrastructure', total: 2, ready: 0, impeded: 1 },
+  { strand: 'accreditation', total: 1, ready: 0, impeded: 1 },
+  { strand: 'curriculum', total: 2, ready: 0, impeded: 0 },
+  { strand: 'academic_staff', total: 8, ready: 2, impeded: 1 },
+];
+
+const TEST_CONFLICTS = [
+  {
+    id: '00000000-0000-0000-0000-000000000c01',
+    trustee_id: null,
+    profile_id: '00000000-0000-0000-0000-0000000000aa',
+    organ_id: null,
+    interest_en: 'A relative is a director of one of the tendering firms',
+    interest_tr: null,
+    declared_on: '2026-04-01',
+    covers_from: null,
+    covers_to: null,
+    document_id: null,
+    recused_from_decision_id: null,
+    note: null,
+    confidentiality: 'confidential',
+    trustee: null,
+    profile: { full_name: 'Smoke Test' },
+  },
+];
+
 const ROUTES = [
   '/',
   '/project_info',
   '/legal',
   '/construction',
   '/governance',
+  '/readiness',
   '/stakeholders',
   '/meetings',
   '/obligations',
@@ -826,6 +1129,28 @@ try {
         body: JSON.stringify(payload),
       }),
     );
+
+  const serve = (pattern, body) =>
+    page.route(pattern, (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(body),
+      }),
+    );
+
+  await serve('**/rest/v1/governance_organs**', TEST_ORGANS);
+  await serve('**/rest/v1/governance_sitting_quorum**', TEST_SITTINGS);
+  await serve('**/rest/v1/organ_memberships**', []);
+  await serve('**/rest/v1/trustees**', TEST_TRUSTEES);
+  await serve('**/rest/v1/decision_implementation**', TEST_RESOLUTIONS);
+  await serve('**/rest/v1/compliance_calendar**', TEST_COMPLIANCE);
+  await serve('**/rest/v1/accreditation_requirements**', TEST_ACCREDITATION);
+  await serve('**/rest/v1/charter_roadmap**', TEST_ROADMAP);
+  await serve('**/rest/v1/academic_programmes**', TEST_PROGRAMMES);
+  await serve('**/rest/v1/obligation_progress**', TEST_TARGETS);
+  await serve('**/rest/v1/intake_readiness**', TEST_READINESS);
+  await serve('**/rest/v1/conflict_declarations**', TEST_CONFLICTS);
 
   await proxyReturns(TEST_AI_ANSWER);
 
@@ -1354,6 +1679,122 @@ try {
     'a refusal is not dressed up as a draft answer',
   );
   check(pageErrors.length === 0, 'and the refusal renders without a runtime error');
+
+  // --- governance (M10-01 … M10-04, M10-11) ---------------------------------
+  //
+  // The screen this replaces held three resolutions in a React useState, one
+  // allocating "34.3M KShs", with a status nothing computed. Every assertion
+  // below is about a figure that now comes from a query.
+  pageErrors = [];
+  await page.goto(BASE + '/governance', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(500);
+  const governance = (await page.textContent('body')) ?? '';
+
+  check(
+    !/34\.3M/.test(governance) && !/Enacted/.test(governance),
+    'the typed-in resolutions and their computed-by-nobody status are gone',
+  );
+  // M10-02: the quorum is read off the attendance against the organ's rule.
+  check(
+    /1\/3/.test(governance) && /nisap yok|short/.test(governance),
+    'a sitting one short of the rule is called short, from the attendance',
+  );
+  // The three-valued column. An organ with no recorded rule must not be
+  // reported as a short sitting — that sends somebody after the wrong problem.
+  check(
+    /söylenemiyor|cannot tell/.test(governance),
+    'and an organ with no recorded quorum says it cannot tell',
+  );
+  check(
+    /nisap kuralı kayıtlı değil|no quorum rule recorded/.test(governance),
+    'naming the missing rule rather than implying a lax one',
+  );
+  // M10-01: who appointed them and when the term runs out.
+  check(
+    /Universal Education Foundation/.test(governance) && /Smoke Trustee/.test(governance),
+    'the trustee register says who appointed each trustee',
+  );
+  check(
+    /kimlik belgesi yok|no ID document/.test(governance),
+    'and flags a trustee whose identity document is not in the vault',
+  );
+  // M10-03 / M10-04: the state that matters.
+  check(
+    /BOT\/2026\/01/.test(governance) &&
+      /aksiyona bağlanmamış|not turned into an action/.test(governance),
+    'a signed resolution nobody actioned is called exactly that (M10-04)',
+  );
+  check(
+    /imzalı|signed/.test(governance),
+    'and the register shows whether each resolution was signed',
+  );
+  // M10-11: declarations, and that they are marked confidential.
+  check(
+    /tendering firms/.test(governance),
+    'declared interests are on the governance screen (M10-11)',
+  );
+  check(pageErrors.length === 0, 'the governance screen renders without a runtime error');
+
+  // --- readiness (M10-05 … M10-10, M10-12) ----------------------------------
+  pageErrors = [];
+  await page.goto(BASE + '/readiness', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(500);
+  const readiness = (await page.textContent('body')) ?? '';
+
+  // M10-12. Four strands, and outreach deliberately absent.
+  check(
+    /Altyapı|Infrastructure/.test(readiness) &&
+      /Akreditasyon|Accreditation/.test(readiness) &&
+      /Müfredat|Curriculum/.test(readiness) &&
+      /Akademik kadro|Academic staff/.test(readiness),
+    'the intake board counts four strands from real registers (M10-12)',
+  );
+  check(
+    /Tanıtım şeridi yok|Outreach is missing/.test(readiness),
+    'and says why outreach is absent instead of drawing it at zero',
+  );
+  check(
+    /2027 alımına|to the 2027 intake/.test(readiness),
+    'the countdown reads its year from the programmes, not from the component',
+  );
+  // M10-05. The column the screen is for.
+  check(
+    /Cap 164|Fasıl 164/.test(readiness) && /henüz açılmamış|not yet raised/.test(readiness),
+    'a statutory duty with no obligation behind it says so (M10-05)',
+  );
+  check(
+    /Yükümlülük olarak aç|Raise as an obligation/.test(readiness),
+    'and can be raised into the obligations register from here',
+  );
+  // M10-06.
+  check(
+    /CUE\/STD\/3\.2/.test(readiness) && /kanıt yok|no evidence/.test(readiness),
+    'the CUE checklist shows which requirements have no evidence (M10-06)',
+  );
+  // M10-07. Blocked is computed from the predecessor.
+  check(
+    /önceki bitmedi|waiting on the one before/.test(readiness),
+    'a road map stage waiting on an unfinished one is shown as blocked (M10-07)',
+  );
+  // M10-08, and the null that matters.
+  check(
+    /İşletme Yönetimi|Business Administration/.test(readiness) && /BBA/.test(readiness),
+    'the academic programmes are on the register at last (M10-08)',
+  );
+  check(
+    /belirlenmemiş|not established/.test(readiness),
+    'and a programme with no staffing requirement says unknown, not zero',
+  );
+  // M10-09 / M10-10, and the other null.
+  check(
+    /beşte birine tam burs|fifth of each intake/.test(readiness) && /45/.test(readiness),
+    'the scholarship undertaking shows what is evidenced and what is short',
+  );
+  check(
+    /hedef kayıtlı değil|no target recorded/.test(readiness),
+    'and an obligation with no target set is not reported at nought per cent',
+  );
+  check(pageErrors.length === 0, 'the readiness screen renders without a runtime error');
 } finally {
   await browser?.close();
   server.kill();

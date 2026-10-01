@@ -1,10 +1,5 @@
 import { supabase } from '../lib/supabase';
-import {
-  type LegalCase,
-  type CommunicationThread,
-  type TrusteeMember,
-  type DeadlineNotification,
-} from '../types';
+import { type LegalCase, type CommunicationThread, type DeadlineNotification } from '../types';
 
 // Utility for converting case
 const toCamel = (s: string) =>
@@ -85,15 +80,6 @@ export const fetchLegalCases = async (): Promise<LegalCase[]> => {
 export const fetchCommunicationThreads = async (): Promise<CommunicationThread[]> => {
   const { data, error } = await supabase
     .from('communication_threads')
-    .select('*')
-    .order('created_at', { ascending: false });
-  if (error) throw error;
-  return keysToCamel(data);
-};
-
-export const fetchTrustees = async (): Promise<TrusteeMember[]> => {
-  const { data, error } = await supabase
-    .from('trustee_members')
     .select('*')
     .order('created_at', { ascending: false });
   if (error) throw error;

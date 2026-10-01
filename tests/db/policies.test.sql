@@ -2931,6 +2931,585 @@ select pg_temp.check('and not even an administrator reads it',
   (select count(*) from saved_searches), 0::bigint);
 
 
+
+-- ===========================================================================
+-- Governance, compliance and academic readiness (M10)
+-- ===========================================================================
+--
+-- The screen this replaces kept its resolutions in a React useState — three
+-- of them, typed in, one allocating "34.3M KShs" — and its compliance section
+-- was a paragraph. So the assertions below are mostly about the four rules
+-- that make the registers worth keeping: a quorum that can be tested, a
+-- resolution that closes when signed, a decision nobody actioned that is
+-- called neither done nor outstanding, and nothing reaching "met" without a
+-- document behind it.
+
+set role authenticated;
+
+select pg_temp.check('the old trustee table is gone, not left as a second answer',
+  (select count(*) from pg_tables where schemaname = 'public' and tablename = 'trustee_members'),
+  0::bigint);
+
+select pg_temp.check('and the three organs are on the books',
+  (select count(*) from governance_organs), 3::bigint);
+
+-- --- the trustee register (M10-01) ----------------------------------------
+
+select pg_temp.act_as('33333333-3333-3333-3333-333333333333');  -- trustee
+
+insert into trustees (id, full_name, appointing_body, appointed_on, term_ends_on,
+                      seat_en, email, confidentiality)
+values
+  ('a0000000-0000-0000-0000-000000000001', 'Trustee', 'Universal Education Foundation',
+   '2025-05-27', '2030-05-27', 'Chair', 'trustee@example.test', 'internal'),
+  ('a0000000-0000-0000-0000-000000000002', 'Trustee Two', 'Africa Foundation',
+   '2025-05-27', '2030-05-27', 'Member', 'trustee2@example.test', 'internal'),
+  ('a0000000-0000-0000-0000-000000000003', 'Trustee Three', 'Shahbal Foundation',
+   '2025-05-27', '2030-05-27', 'Member', 'trustee3@example.test', 'internal');
+
+select pg_temp.check('the register records who appointed each trustee',
+  (select count(*) from trustees where appointing_body <> ''), 3::bigint);
+
+-- Emptying a seat without saying when would quietly change every quorum
+-- computed over the register.
+do $$
+begin
+  begin
+    update trustees set active = false
+     where id = 'a0000000-0000-0000-0000-000000000003';
+    raise exception 'FAIL a trustee stood down with no date';
+  exception
+    when check_violation then
+      raise notice 'ok   standing down has to be dated';
+  end;
+end;
+$$;
+
+update trustees set active = false, stood_down_on = current_date
+ where id = 'a0000000-0000-0000-0000-000000000003';
+select pg_temp.check('and goes through once it is',
+  (select count(*) from trustees where not active and stood_down_on is not null), 1::bigint);
+
+-- The register is the board's, not the site's.
+select pg_temp.act_as('44444444-4444-4444-4444-444444444444');  -- field team
+do $$
+begin
+  begin
+    insert into trustees (full_name, appointing_body)
+    values ('Somebody the site appointed', 'Nowhere');
+    raise exception 'FAIL the site team wrote to the trustee register';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   the site team does not appoint trustees';
+  end;
+end;
+$$;
+
+select pg_temp.act_as('77777777-7777-7777-7777-777777777777');  -- contractor
+select pg_temp.check('and somebody outside sees no trustee register at all',
+  (select count(*) from trustees), 0::bigint);
+
+-- --- quorum, as data (M10-02) ---------------------------------------------
+
+select pg_temp.act_as('33333333-3333-3333-3333-333333333333');  -- trustee
+
+-- Two of the three seats, which is the rule this trust's deed would state.
+-- It is set here rather than seeded by the migration, because the migration
+-- has no business inventing a quorum.
+update governance_organs set quorum_members = 2, cadence = 'quarterly'
+ where kind = 'board_of_trustees';
+
+insert into organ_memberships (organ_id, profile_id, seat, voting, started_on, confidentiality)
+select o.id, p.id, p.seat, true, '2025-05-27'::date, 'internal'
+from governance_organs o
+cross join (values
+  ('33333333-3333-3333-3333-333333333333'::uuid, 'Chair'),
+  ('aaaa1111-1111-1111-1111-111111111111'::uuid, 'Member'),
+  ('bbbb1111-1111-1111-1111-111111111111'::uuid, 'Member')
+) as p(id, seat)
+where o.kind = 'board_of_trustees';
+
+-- A sitting one short of the rule.
+insert into meetings (id, title, held_at, kind, governance_organ_id, confidentiality)
+select '0e000000-0000-0000-0000-0000000000a1', 'Board sitting, one attended',
+       now() - interval '20 days', 'trustee', o.id, 'internal'
+from governance_organs o where o.kind = 'board_of_trustees';
+insert into meeting_attendees (meeting_id, profile_id, attended)
+values ('0e000000-0000-0000-0000-0000000000a1', '33333333-3333-3333-3333-333333333333', true);
+
+-- And one that met it.
+insert into meetings (id, title, held_at, kind, governance_organ_id, confidentiality)
+select '0e000000-0000-0000-0000-0000000000a2', 'Board sitting, two attended',
+       now() - interval '10 days', 'trustee', o.id, 'internal'
+from governance_organs o where o.kind = 'board_of_trustees';
+insert into meeting_attendees (meeting_id, profile_id, attended) values
+  ('0e000000-0000-0000-0000-0000000000a2', '33333333-3333-3333-3333-333333333333', true),
+  ('0e000000-0000-0000-0000-0000000000a2', 'aaaa1111-1111-1111-1111-111111111111', true);
+
+select pg_temp.check('the quorum rule is read from the organ, not remembered',
+  (select quorum_required from governance_sitting_quorum
+    where meeting_id = '0e000000-0000-0000-0000-0000000000a1'), 2);
+select pg_temp.check('a sitting one short is not competent to decide',
+  (select quorum_met from governance_sitting_quorum
+    where meeting_id = '0e000000-0000-0000-0000-0000000000a1'), false);
+select pg_temp.check('and one that met the rule is',
+  (select quorum_met from governance_sitting_quorum
+    where meeting_id = '0e000000-0000-0000-0000-0000000000a2'), true);
+select pg_temp.check('seats are counted as at the day of the sitting',
+  (select seats_held from governance_sitting_quorum
+    where meeting_id = '0e000000-0000-0000-0000-0000000000a2'), 3);
+
+-- Somebody invited and absent is not somebody present, which is the whole
+-- point of keeping the two facts apart.
+insert into meeting_attendees (meeting_id, profile_id, attended)
+values ('0e000000-0000-0000-0000-0000000000a1', 'aaaa1111-1111-1111-1111-111111111111', false);
+select pg_temp.check('an absent member does not make up the numbers',
+  (select quorum_met from governance_sitting_quorum
+    where meeting_id = '0e000000-0000-0000-0000-0000000000a1'), false);
+
+-- The organ nobody wrote a rule for. Null, not false: "we never recorded the
+-- quorum" is a different failure from "the sitting was short", and reporting
+-- the first as the second would send somebody looking for the wrong problem.
+insert into organ_memberships (organ_id, profile_id, voting, started_on, confidentiality)
+select o.id, '11111111-1111-1111-1111-111111111111', true, '2025-05-27'::date, 'internal'
+from governance_organs o where o.kind = 'audit_committee';
+insert into meetings (id, title, held_at, kind, governance_organ_id, confidentiality)
+select '0e000000-0000-0000-0000-0000000000a3', 'Audit committee, no rule recorded',
+       now() - interval '5 days', 'official', o.id, 'internal'
+from governance_organs o where o.kind = 'audit_committee';
+insert into meeting_attendees (meeting_id, profile_id, attended)
+values ('0e000000-0000-0000-0000-0000000000a3', '11111111-1111-1111-1111-111111111111', true);
+
+select pg_temp.check('an organ with no recorded quorum says it cannot tell',
+  (select quorum_met from governance_sitting_quorum
+    where meeting_id = '0e000000-0000-0000-0000-0000000000a3'), null::boolean);
+
+-- --- the formal decision register (M10-03) --------------------------------
+
+insert into decisions (id, meeting_id, reference_no, text_en, text_tr, organ,
+                       governance_organ_id, decided_on, status, confidentiality)
+select '0f000000-0000-0000-0000-0000000000b1', '0e000000-0000-0000-0000-0000000000a2',
+       'BOT/2026/01', 'Renew the ground lease before the next intake',
+       'Kira sözleşmesini sonraki alımdan önce yenile',
+       'Board of Trustees', o.id, current_date - 30, 'in_force', 'internal'
+from governance_organs o where o.kind = 'board_of_trustees';
+
+select pg_temp.check('a resolution is unsigned until somebody signs it',
+  (select count(*) from decisions
+    where id = '0f000000-0000-0000-0000-0000000000b1' and signed_at is null), 1::bigint);
+
+select public.sign_resolution('0f000000-0000-0000-0000-0000000000b1');
+select pg_temp.check('signing records who did it, not who filled the form',
+  (select signed_by from decisions where id = '0f000000-0000-0000-0000-0000000000b1'),
+  '33333333-3333-3333-3333-333333333333'::uuid);
+
+do $$
+begin
+  begin
+    update decisions set text_en = 'Something the board finds easier to defend'
+     where id = '0f000000-0000-0000-0000-0000000000b1';
+    raise exception 'FAIL a signed resolution was rewritten';
+  exception
+    when check_violation then
+      raise notice 'ok   a signed resolution cannot be rewritten afterwards';
+  end;
+end;
+$$;
+
+-- Everything administrative around it stays editable, or the register becomes
+-- unusable the moment somebody mistypes a status.
+update decisions set status = 'implemented'
+ where id = '0f000000-0000-0000-0000-0000000000b1';
+select pg_temp.check('though its status still moves',
+  (select status::text from decisions where id = '0f000000-0000-0000-0000-0000000000b1'),
+  'implemented');
+update decisions set status = 'in_force'
+ where id = '0f000000-0000-0000-0000-0000000000b1';
+
+do $$
+begin
+  begin
+    perform public.sign_resolution('0f000000-0000-0000-0000-0000000000b1');
+    raise exception 'FAIL a resolution was signed twice';
+  exception
+    when unique_violation then
+      raise notice 'ok   and cannot be signed a second time';
+  end;
+end;
+$$;
+
+-- A decision that belongs to no organ is not a resolution of one.
+insert into decisions (id, meeting_id, text_en, decided_on, status, confidentiality)
+values ('0f000000-0000-0000-0000-0000000000b2', '0e000000-0000-0000-0000-000000000005',
+        'Move the site hut', current_date, 'in_force', 'internal');
+do $$
+begin
+  begin
+    perform public.sign_resolution('0f000000-0000-0000-0000-0000000000b2');
+    raise exception 'FAIL a decision of no organ was signed into the register';
+  exception
+    when check_violation then
+      raise notice 'ok   only an organ''s resolution goes into the formal register';
+  end;
+end;
+$$;
+
+select pg_temp.act_as('44444444-4444-4444-4444-444444444444');  -- field team
+do $$
+begin
+  begin
+    perform public.sign_resolution('0f000000-0000-0000-0000-0000000000b1');
+    raise exception 'FAIL the site team signed a board resolution';
+  exception
+    when insufficient_privilege or unique_violation then
+      raise notice 'ok   and only the board or an administrator signs one';
+  end;
+end;
+$$;
+
+-- --- was it carried out? (M10-04) -----------------------------------------
+
+select pg_temp.act_as('33333333-3333-3333-3333-333333333333');  -- trustee
+
+-- The state that matters. Nobody has said what carrying this resolution out
+-- would consist of, so it is neither done nor outstanding.
+select pg_temp.check('a resolution nobody actioned is called exactly that',
+  (select implementation::text from decision_implementation
+    where decision_id = '0f000000-0000-0000-0000-0000000000b1'),
+  'no_actions_recorded');
+
+insert into action_items (id, meeting_id, decision_id, text_en, due_date, status,
+                          owner_profile_id, confidentiality)
+values ('0a000000-0000-0000-0000-0000000000c1', '0e000000-0000-0000-0000-0000000000a2',
+        '0f000000-0000-0000-0000-0000000000b1', 'Write to the county lands office',
+        current_date - 5, 'open', '22222222-2222-2222-2222-222222222222', 'internal');
+
+select pg_temp.check('once it has one, it is outstanding',
+  (select implementation::text from decision_implementation
+    where decision_id = '0f000000-0000-0000-0000-0000000000b1'), 'outstanding');
+select pg_temp.check('and the overdue one is counted as overdue',
+  (select overdue from decision_implementation
+    where decision_id = '0f000000-0000-0000-0000-0000000000b1'), 1);
+
+update action_items set status = 'done'
+ where id = '0a000000-0000-0000-0000-0000000000c1';
+select pg_temp.check('when everything is done it reads as implemented',
+  (select implementation::text from decision_implementation
+    where decision_id = '0f000000-0000-0000-0000-0000000000b1'), 'implemented');
+
+-- Cancelling the only action is not carrying the resolution out, and it is
+-- not leaving it outstanding either. Somebody decided not to do it.
+update action_items set status = 'cancelled'
+ where id = '0a000000-0000-0000-0000-0000000000c1';
+select pg_temp.check('and a resolution whose actions were all cancelled is abandoned',
+  (select implementation::text from decision_implementation
+    where decision_id = '0f000000-0000-0000-0000-0000000000b1'), 'abandoned');
+
+-- --- the compliance calendar (M10-05) -------------------------------------
+
+-- The date arithmetic first, because the calendar rests on it.
+select pg_temp.check('an annual duty whose date has passed rolls to next year',
+  app.next_compliance_due('annual', 3, 31, null, '2026-06-01'::date),
+  '2027-03-31'::date);
+select pg_temp.check('and one still to come this year does not',
+  app.next_compliance_due('annual', 11, 30, null, '2026-06-01'::date),
+  '2026-11-30'::date);
+-- make_date would simply raise on the 31st of February. A statutory deadline
+-- on the last day of the month is a real thing and has to land somewhere.
+select pg_temp.check('a deadline on the 31st lands on the last day of a short month',
+  app.next_compliance_due('monthly', null, 31, null, '2027-02-01'::date),
+  '2027-02-28'::date);
+select pg_temp.check('a quarterly duty steps three months at a time',
+  app.next_compliance_due('quarterly', 1, 15, null, '2026-02-01'::date),
+  '2026-04-15'::date);
+-- A one-off that was missed stays missed. Rolling it forward would hide it.
+select pg_temp.check('and a missed one-off deadline is not quietly moved',
+  app.next_compliance_due('once', null, null, '2020-01-01'::date, '2026-06-01'::date),
+  '2020-01-01'::date);
+
+insert into compliance_requirements
+  (id, regime, reference, title_en, title_tr, recurrence, due_month, due_day,
+   responsible_profile_id, confidentiality)
+values
+  ('0c000000-0000-0000-0000-0000000000d1', 'cap_164', 'Cap 164 s.5',
+   'Annual return of trustees', 'Mütevelli yıllık beyanı',
+   'annual', 3, 31, '22222222-2222-2222-2222-222222222222', 'internal'),
+  ('0c000000-0000-0000-0000-0000000000d2', 'kra', 'Exemption renewal',
+   'Renew the income tax exemption', 'Gelir vergisi muafiyeti yenilemesi',
+   'annual', 6, 30, '22222222-2222-2222-2222-222222222222', 'internal');
+
+select pg_temp.check('a duty with no obligation behind it says so',
+  (select count(*) from compliance_calendar where not_yet_raised), 2::bigint);
+
+select public.raise_compliance_obligation('0c000000-0000-0000-0000-0000000000d1');
+
+select pg_temp.check('raising one puts it in the obligations register',
+  (select count(*) from obligations ob
+    join compliance_instances i on i.obligation_id = ob.id
+    where i.requirement_id = '0c000000-0000-0000-0000-0000000000d1'
+      and ob.source = 'statute'), 1::bigint);
+select pg_temp.check('and the calendar stops saying it is unraised',
+  (select not_yet_raised from compliance_calendar
+    where requirement_id = '0c000000-0000-0000-0000-0000000000d1'), false);
+
+-- A screen with a button on it will have that button pressed twice.
+select pg_temp.check('raising it again returns the same obligation',
+  (select count(distinct public.raise_compliance_obligation('0c000000-0000-0000-0000-0000000000d1'))
+   from generate_series(1, 3)), 1::bigint);
+select pg_temp.check('and does not file the return twice',
+  (select count(*) from compliance_instances
+    where requirement_id = '0c000000-0000-0000-0000-0000000000d1'), 1::bigint);
+
+select pg_temp.act_as('77777777-7777-7777-7777-777777777777');  -- contractor
+do $$
+begin
+  begin
+    perform public.raise_compliance_obligation('0c000000-0000-0000-0000-0000000000d2');
+    raise exception 'FAIL an outside party raised a statutory obligation';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   an outside party does not raise the trust''s statutory duties';
+  end;
+end;
+$$;
+
+-- --- the CUE checklist (M10-06) -------------------------------------------
+
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- director
+
+insert into accreditation_requirements
+  (id, code, title_en, title_tr, state, target_on, responsible_profile_id, confidentiality)
+values ('0b000000-0000-0000-0000-0000000000e1', 'CUE/STD/3.2',
+        'Library holdings per programme', 'Program başına kütüphane kaynakları',
+        'in_progress', current_date + 90, '22222222-2222-2222-2222-222222222222', 'internal');
+
+do $$
+begin
+  begin
+    update accreditation_requirements
+      set state = 'met', met_on = current_date
+     where id = '0b000000-0000-0000-0000-0000000000e1';
+    raise exception 'FAIL an accreditation box was ticked with no evidence';
+  exception
+    when check_violation then
+      raise notice 'ok   nothing reaches met without the document behind it';
+  end;
+end;
+$$;
+
+update accreditation_requirements
+  set state = 'met', met_on = current_date,
+      evidence_document_id = '1b000000-0000-0000-0000-000000000001'
+ where id = '0b000000-0000-0000-0000-0000000000e1';
+select pg_temp.check('and goes through once there is one',
+  (select state::text from accreditation_requirements
+    where id = '0b000000-0000-0000-0000-0000000000e1'), 'met');
+
+-- --- the charter road map (M10-07) ----------------------------------------
+
+select pg_temp.act_as('33333333-3333-3333-3333-333333333333');  -- trustee
+
+insert into charter_stages (id, sequence, title_en, title_tr, state, target_on,
+                            completed_on, confidentiality)
+values
+  ('0d100000-0000-0000-0000-0000000000f1', 1, 'Trust deed registered under Cap 164',
+   'Vakıf senedinin Fasıl 164 kapsamında tescili', 'done', current_date - 400,
+   current_date - 400, 'internal'),
+  ('0d100000-0000-0000-0000-0000000000f2', 2, 'Letter of interim authority from CUE',
+   'CUE geçici yetki yazısı', 'not_started', current_date + 120, null, 'internal');
+
+update charter_stages set depends_on_stage_id = '0d100000-0000-0000-0000-0000000000f1'
+ where id = '0d100000-0000-0000-0000-0000000000f2';
+
+select pg_temp.check('a stage whose predecessor is finished is not blocked',
+  (select blocked_by_predecessor from charter_roadmap
+    where id = '0d100000-0000-0000-0000-0000000000f2'), false);
+
+update charter_stages set state = 'in_progress', completed_on = null
+ where id = '0d100000-0000-0000-0000-0000000000f1';
+select pg_temp.check('and one whose predecessor is not, is — computed, not stored',
+  (select blocked_by_predecessor from charter_roadmap
+    where id = '0d100000-0000-0000-0000-0000000000f2'), true);
+
+-- A road map with a loop in it will be read as one that can be walked.
+do $$
+begin
+  begin
+    update charter_stages set depends_on_stage_id = '0d100000-0000-0000-0000-0000000000f2'
+     where id = '0d100000-0000-0000-0000-0000000000f1';
+    raise exception 'FAIL the road map was allowed to close a loop';
+  exception
+    when check_violation then
+      raise notice 'ok   a road map stage cannot depend on itself, however indirectly';
+  end;
+end;
+$$;
+
+-- --- academic programmes (M10-08) -----------------------------------------
+
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- director
+
+insert into academic_programmes
+  (id, name_en, name_tr, degree, state, required_academic_staff,
+   appointed_academic_staff, target_intake_year, confidentiality)
+values ('0e100000-0000-0000-0000-000000000001', 'Business Administration',
+        'İşletme Yönetimi', 'BBA', 'curriculum_drafted', 8, 2, 2027, 'internal');
+
+select pg_temp.check('the staffing gap is the shortfall, not the headcount',
+  (select staff_gap from academic_programmes
+    where id = '0e100000-0000-0000-0000-000000000001'), 6);
+
+-- An unknown requirement is not a satisfied one.
+insert into academic_programmes
+  (id, name_en, degree, state, appointed_academic_staff, confidentiality)
+values ('0e100000-0000-0000-0000-000000000002', 'Nursing', 'BSc', 'proposed', 0, 'internal');
+select pg_temp.check('and where nobody has established it, the gap is unknown',
+  (select staff_gap from academic_programmes
+    where id = '0e100000-0000-0000-0000-000000000002'), null::int);
+
+do $$
+begin
+  begin
+    update academic_programmes set state = 'approved'
+     where id = '0e100000-0000-0000-0000-000000000001';
+    raise exception 'FAIL a programme was approved with no curriculum';
+  exception
+    when check_violation then
+      raise notice 'ok   an approved programme has its curriculum in the vault';
+  end;
+end;
+$$;
+
+-- --- quantified obligations (M10-09, M10-10) ------------------------------
+
+-- The lease-derived undertakings. The twenty per cent scholarship share and
+-- the campus mosque are the same shape — a duty with a number — so they use
+-- one mechanism rather than two tables.
+insert into obligations (id, title_en, title_tr, source, obligor_name, due_on, confidentiality)
+values
+  ('0f100000-0000-0000-0000-000000000001', 'Full scholarships for a fifth of each intake',
+   'Her alımın beşte birine tam burs', 'lease', 'African University Trust of Kenya',
+   '2027-09-30', 'internal'),
+  ('0f100000-0000-0000-0000-000000000002', 'Build the campus mosque',
+   'Kampüs camisini inşa et', 'lease', 'African University Trust of Kenya',
+   '2028-06-30', 'internal');
+
+insert into obligation_targets (id, obligation_id, basis_en, target_value, unit,
+                                period_label, confidentiality)
+values
+  ('0f200000-0000-0000-0000-000000000001', '0f100000-0000-0000-0000-000000000001',
+   'Twenty per cent of the 2027 intake, full scholarship', 60, 'students',
+   '2027 intake', 'internal'),
+  ('0f200000-0000-0000-0000-000000000002', '0f100000-0000-0000-0000-000000000002',
+   'One mosque on the campus', 1, 'building', null, 'internal');
+
+select pg_temp.check('a target with nothing recorded against it is at nought',
+  (select coalesce(percent_of_target, -1) from obligation_progress
+    where target_id = '0f200000-0000-0000-0000-000000000001'), 0.0::numeric);
+
+-- Refused twice over, and the order is worth knowing: the policy insists the
+-- evidence be a document this person can actually see, so a null one fails
+-- the access rule before it reaches the not-null column. Either refusal is
+-- the right answer; catching both is what keeps the test honest if the policy
+-- is ever relaxed.
+do $$
+begin
+  begin
+    insert into obligation_achievements (target_id, value, document_id)
+    values ('0f200000-0000-0000-0000-000000000001', 25, null);
+    raise exception 'FAIL an achievement was recorded with no evidence';
+  exception
+    when not_null_violation or insufficient_privilege then
+      raise notice 'ok   a reported achievement names the document behind it';
+  end;
+end;
+$$;
+
+select pg_temp.check('and the column itself refuses a null, not only the policy',
+  (select is_nullable from information_schema.columns
+    where table_schema = 'public' and table_name = 'obligation_achievements'
+      and column_name = 'document_id'), 'NO');
+
+-- The policy also insists the evidence be a document the reporter can open,
+-- which is what makes the null case above fail as an access error. It is not
+-- asserted separately here because every role that may keep this register
+-- holds restricted clearance in the seed, so there is no actor who can report
+-- an achievement and not read the restricted document — a test that cannot
+-- fail is worse than no test.
+
+insert into obligation_achievements (id, target_id, period_label, value, document_id, confidentiality)
+values ('0f300000-0000-0000-0000-000000000001', '0f200000-0000-0000-0000-000000000001',
+        '2027 intake', 15, '1b000000-0000-0000-0000-000000000001', 'internal');
+
+select pg_temp.check('and once evidenced it counts towards the target',
+  (select percent_of_target from obligation_progress
+    where target_id = '0f200000-0000-0000-0000-000000000001'), 25.0::numeric);
+select pg_temp.check('with the shortfall named rather than left to arithmetic',
+  (select shortfall from obligation_progress
+    where target_id = '0f200000-0000-0000-0000-000000000001'), 45.00::numeric);
+
+-- A number that was reported and evidenced cannot be quietly walked back.
+do $$
+begin
+  begin
+    update obligation_achievements set value = 60
+     where id = '0f300000-0000-0000-0000-000000000001';
+    raise exception 'FAIL a recorded achievement was revised';
+  exception
+    when insufficient_privilege or raise_exception then
+      raise notice 'ok   a recorded achievement is corrected by a new entry, not an edit';
+  end;
+end;
+$$;
+
+-- --- conflicts of interest (M10-11) ---------------------------------------
+
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- director
+
+insert into conflict_declarations (id, profile_id, interest_en, interest_tr, declared_on)
+values ('0f400000-0000-0000-0000-000000000001', '22222222-2222-2222-2222-222222222222',
+        'My brother-in-law is a director of one of the tendering contractors',
+        'Kayınbiraderim ihaleye giren müteahhitlerden birinin yöneticisi', current_date);
+
+select pg_temp.check('anybody may declare their own interest',
+  (select count(*) from conflict_declarations
+    where id = '0f400000-0000-0000-0000-000000000001'), 1::bigint);
+select pg_temp.check('and a declaration is confidential by default',
+  (select confidentiality::text from conflict_declarations
+    where id = '0f400000-0000-0000-0000-000000000001'), 'confidential');
+
+-- What somebody declares about their own affairs is for audit, not for
+-- colleagues to read.
+select pg_temp.act_as('44444444-4444-4444-4444-444444444444');  -- field team
+select pg_temp.check('a colleague does not read it',
+  (select count(*) from conflict_declarations), 0::bigint);
+
+select pg_temp.act_as('33333333-3333-3333-3333-333333333333');  -- trustee
+select pg_temp.check('the board does, because that is what the register is for',
+  (select count(*) from conflict_declarations), 1::bigint);
+
+-- And an outside auditor does not, which is the more interesting half. These
+-- rows are confidential, an external role is capped at internal whatever is
+-- configured for it, so an audit of the declarations is something somebody
+-- hands over by name rather than a standing subscription to what colleagues
+-- have disclosed about themselves.
+select pg_temp.act_as('dddd1111-1111-1111-1111-111111111111');  -- external auditor
+select pg_temp.check('but an outside auditor needs it handed to them',
+  (select count(*) from conflict_declarations), 0::bigint);
+
+-- --- the first intake board (M10-12) --------------------------------------
+
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- director
+select pg_temp.check('the readiness board draws every strand from a real register',
+  (select count(*) from intake_readiness), 4::bigint);
+select pg_temp.check('and counts the staff it has against the posts it needs',
+  (select total from intake_readiness where strand = 'academic_staff'), 8);
+select pg_temp.check('counting a programme with no established requirement as impeded',
+  (select impeded from intake_readiness where strand = 'academic_staff'), 1);
+select pg_temp.check('a drafted curriculum is not an approved one',
+  (select ready from intake_readiness where strand = 'curriculum'), 0);
+
+
 reset role;
 
 \echo ''

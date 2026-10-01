@@ -54,6 +54,7 @@ export type ActiveTab =
   | 'legal'
   | 'construction'
   | 'governance'
+  | 'readiness'
   | 'stakeholders'
   | 'meetings'
   | 'obligations'
@@ -565,18 +566,14 @@ export interface DeadlineNotification {
   targetRole: UserRole[];
 }
 
-export interface TrusteeMember {
-  id: string;
-  name: string;
-  nationalId: string;
-  appointedBy:
-    | 'Suleiman Shahbal Foundation'
-    | 'Universal Education Foundation'
-    | 'Africa Foundation (Afrika Vakfı)';
-  origin: 'Mombasa/Kenya' | 'Ankara/Türkiye' | 'İstanbul/Türkiye';
-  roleInTrust: string;
-  activeStatus: boolean;
-}
+/* TrusteeMember is gone with the table it described.
+ *
+ * It held a national identity number as a plain string and pinned the
+ * appointing bodies and the trustees' home cities into a union type, so
+ * adding a trustee from anywhere else was a code change. The register that
+ * replaces it is `Trustee` below (M10-01): the appointing body is text
+ * because it is data, and the identity document is a reference into the
+ * vault rather than a number anybody can read off a payload. */
 
 export interface HearingBriefItem {
   part: string;
@@ -1461,4 +1458,263 @@ export interface AiAnswer {
   messageTr: string | null;
   sources: AiSource[];
   task: AiTask | null;
+}
+
+// ---------------------------------------------------------------------------
+// Governance, compliance and academic readiness (M10)
+// ---------------------------------------------------------------------------
+
+export type GovernanceOrganKind = 'board_of_trustees' | 'management_board' | 'audit_committee';
+
+export type MeetingCadence = 'monthly' | 'quarterly' | 'biannual' | 'annual' | 'as_required';
+
+/**
+ * One of the three organs (M10-02).
+ *
+ * `cadence`, `quorumMembers` and `quorumFraction` are all nullable, and the
+ * nulls are load-bearing: an unrecorded quorum rule is a different problem
+ * from a lax one, and the screen has to be able to say which.
+ */
+export interface GovernanceOrgan {
+  id: string;
+  kind: GovernanceOrganKind;
+  nameEn: string;
+  nameTr: string;
+  remitEn: string | null;
+  remitTr: string | null;
+  cadence: MeetingCadence | null;
+  quorumMembers: number | null;
+  quorumFraction: number | null;
+  charterClause: string | null;
+  charterDocumentId: string | null;
+  memberCount: number;
+  confidentiality: Confidentiality;
+}
+
+/** A trustee (M10-01). The identity document is a reference, never a number. */
+export interface Trustee {
+  id: string;
+  stakeholderId: string | null;
+  fullName: string;
+  appointingBody: string;
+  appointedOn: string | null;
+  termEndsOn: string | null;
+  seatEn: string | null;
+  seatTr: string | null;
+  email: string | null;
+  phone: string | null;
+  identityDocumentId: string | null;
+  active: boolean;
+  stoodDownOn: string | null;
+  note: string | null;
+  confidentiality: Confidentiality;
+}
+
+export interface OrganMembership {
+  id: string;
+  organId: string;
+  trusteeId: string | null;
+  profileId: string | null;
+  stakeholderId: string | null;
+  name: string | null;
+  seat: string | null;
+  voting: boolean;
+  startedOn: string;
+  endedOn: string | null;
+}
+
+/**
+ * Whether a sitting was competent to decide (M10-02).
+ *
+ * `quorumMet` is three-valued. Null means the organ has no recorded rule —
+ * reporting that as `false` would send somebody looking for absentees when
+ * the real gap is in the trust deed's transcription.
+ */
+export interface SittingQuorum {
+  meetingId: string;
+  title: string;
+  heldAt: string;
+  minutesStatus: string;
+  organId: string;
+  organKind: GovernanceOrganKind;
+  organNameEn: string;
+  organNameTr: string;
+  seatsHeld: number;
+  votingPresent: number;
+  quorumRequired: number;
+  quorumMet: boolean | null;
+  confidentiality: Confidentiality;
+}
+
+/** Mirrors implementation_state in supabase/migrations/0021. */
+export type ImplementationState =
+  'no_actions_recorded' | 'abandoned' | 'outstanding' | 'implemented' | 'rescinded';
+
+/** A resolution against the state of its actions (M10-04). */
+export interface DecisionImplementation {
+  decisionId: string;
+  referenceNo: string | null;
+  textEn: string | null;
+  textTr: string | null;
+  decidedOn: string | null;
+  status: string;
+  signedAt: string | null;
+  organKind: GovernanceOrganKind | null;
+  organNameEn: string | null;
+  organNameTr: string | null;
+  actions: number;
+  done: number;
+  cancelled: number;
+  overdue: number;
+  nextDue: string | null;
+  implementation: ImplementationState;
+  daysSince: number | null;
+  confidentiality: Confidentiality;
+}
+
+export type ComplianceRegime = 'cap_164' | 'kra' | 'cue' | 'county' | 'other';
+export type Recurrence = 'once' | 'annual' | 'biannual' | 'quarterly' | 'monthly';
+
+/**
+ * A statutory duty and the obligation standing behind it (M10-05).
+ *
+ * `notYetRaised` is the column the screen is for: a duty with no obligation
+ * behind it is a duty nobody has taken on.
+ */
+export interface ComplianceEntry {
+  requirementId: string;
+  regime: ComplianceRegime;
+  reference: string | null;
+  titleEn: string;
+  titleTr: string | null;
+  recurrence: Recurrence;
+  nextDueOn: string | null;
+  obligationId: string | null;
+  periodLabel: string | null;
+  obligationState: string | null;
+  verified: boolean | null;
+  responsibleName: string | null;
+  notYetRaised: boolean;
+  confidentiality: Confidentiality;
+}
+
+export type AccreditationState =
+  'not_started' | 'in_progress' | 'evidence_submitted' | 'met' | 'not_applicable';
+
+/** One line of the CUE checklist (M10-06). `met` requires evidence. */
+export interface AccreditationRequirement {
+  id: string;
+  body: string;
+  code: string | null;
+  titleEn: string;
+  titleTr: string | null;
+  detailEn: string | null;
+  detailTr: string | null;
+  state: AccreditationState;
+  positionEn: string | null;
+  positionTr: string | null;
+  evidenceDocumentId: string | null;
+  responsibleName: string | null;
+  targetOn: string | null;
+  metOn: string | null;
+  note: string | null;
+  confidentiality: Confidentiality;
+}
+
+export type StageState = 'not_started' | 'in_progress' | 'blocked' | 'done' | 'abandoned';
+
+/** A stage of the charter road map (M10-07). Blocked is computed, not stored. */
+export interface CharterStage {
+  id: string;
+  sequence: number;
+  titleEn: string;
+  titleTr: string | null;
+  detailEn: string | null;
+  detailTr: string | null;
+  state: StageState;
+  targetOn: string | null;
+  completedOn: string | null;
+  dependsOnStageId: string | null;
+  dependsOnTitleEn: string | null;
+  dependsOnTitleTr: string | null;
+  dependsOnState: StageState | null;
+  blockedByPredecessor: boolean;
+  overdue: boolean;
+  evidenceDocumentId: string | null;
+  responsibleName: string | null;
+  confidentiality: Confidentiality;
+}
+
+export type ProgrammeState =
+  'proposed' | 'curriculum_drafted' | 'submitted_to_cue' | 'approved' | 'deferred' | 'withdrawn';
+
+/** What the university intends to teach (M10-08). */
+export interface AcademicProgramme {
+  id: string;
+  nameEn: string;
+  nameTr: string | null;
+  degree: string;
+  faculty: string | null;
+  state: ProgrammeState;
+  curriculumDocumentId: string | null;
+  requiredAcademicStaff: number | null;
+  appointedAcademicStaff: number;
+  /** Null where nobody has established the requirement — not zero. */
+  staffGap: number | null;
+  accreditationRequirementId: string | null;
+  targetIntakeYear: number | null;
+  note: string | null;
+  confidentiality: Confidentiality;
+}
+
+/**
+ * A quantified obligation against what has been evidenced (M10-09, M10-10).
+ *
+ * `percentOfTarget` is null where no target was set, because nought per cent
+ * is a different claim from "not established".
+ */
+export interface ObligationProgress {
+  targetId: string;
+  obligationId: string;
+  obligationTitleEn: string | null;
+  obligationTitleTr: string | null;
+  source: string;
+  obligationState: string;
+  basisEn: string;
+  basisTr: string | null;
+  targetValue: number | null;
+  unit: string;
+  periodLabel: string | null;
+  dueOn: string | null;
+  achieved: number | null;
+  records: number;
+  percentOfTarget: number | null;
+  shortfall: number | null;
+  confidentiality: Confidentiality;
+}
+
+/** A declared interest, and the vote it led somebody to stand out of (M10-11). */
+export interface ConflictDeclaration {
+  id: string;
+  trusteeId: string | null;
+  profileId: string | null;
+  organId: string | null;
+  personName: string | null;
+  interestEn: string;
+  interestTr: string | null;
+  declaredOn: string;
+  coversFrom: string | null;
+  coversTo: string | null;
+  documentId: string | null;
+  recusedFromDecisionId: string | null;
+  note: string | null;
+  confidentiality: Confidentiality;
+}
+
+/** One strand of the first-intake board (M10-12). */
+export interface ReadinessStrand {
+  strand: 'infrastructure' | 'accreditation' | 'curriculum' | 'academic_staff';
+  total: number;
+  ready: number;
+  impeded: number;
 }
