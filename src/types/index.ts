@@ -599,6 +599,24 @@ export interface AnnouncementReach {
 
 export type NotificationMedium = 'in_app' | 'email' | 'whatsapp' | 'push';
 
+/**
+ * Whether the thing that raises notifications is running (0033).
+ *
+ * An empty inbox has two explanations that look identical from the screen:
+ * there was nothing to raise, or the schedule stopped. This is what tells
+ * them apart, so it is shown even when — especially when — there is nothing
+ * in the inbox.
+ */
+export interface NotificationHealth {
+  lastRanAt: string;
+  lastTriggerSource: 'schedule' | 'manual';
+  lastRaised: number;
+  hoursSince: number;
+  looksStopped: boolean;
+  mediaWithAProvider: NotificationMedium[];
+  mediaWithoutAProvider: NotificationMedium[];
+}
+
 export type NotificationTopic =
   | 'hearing'
   | 'deadline'

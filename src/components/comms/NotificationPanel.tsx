@@ -15,16 +15,18 @@
  * copy of the rule, and the copy is what drifts.
  */
 import React from 'react';
-import { Bell, BellOff, CircleCheck, Inbox, TriangleAlert } from 'lucide-react';
+import { Bell, BellOff, CircleCheck, Inbox, RefreshCw, TriangleAlert } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import {
   useInbox,
   useMarkNotificationRead,
+  useNotificationHealth,
   usePreferences,
+  useRunSweep,
   useSetPreference,
 } from '../../api/commsHooks';
 import { QueryStatus } from '../QueryStatus';
-import { Pill, WriteError } from '../ui/Controls';
+import { ActionButton, Pill, WriteError } from '../ui/Controls';
 import { CONFIGURED_MEDIA, MEDIA, TOPICS, mediumName, topicName } from '../../lib/comms';
 import { formatDate } from '../../lib/site';
 import type { NotificationMedium, NotificationTopic } from '../../types';
@@ -33,7 +35,9 @@ export const NotificationPanel: React.FC = () => {
   const { language } = useApp();
   const tr = language === 'tr';
   const inbox = useInbox();
+  const health = useNotificationHealth();
   const preferences = usePreferences();
+  const sweep = useRunSweep();
   const markRead = useMarkNotificationRead();
   const setPreference = useSetPreference();
 
@@ -74,7 +78,68 @@ export const NotificationPanel: React.FC = () => {
         )}
       </header>
 
-      <QueryStatus queries={[inbox, preferences]} />
+      <QueryStatus queries={[inbox, preferences, health]} />
+
+      {/* Why the inbox looks the way it does.
+          A notification is not typed by hand — a sweep looks at the registers
+          and raises what their dates now say. So an empty inbox has two
+          explanations that are indistinguishable from the inbox itself:
+          nothing was due, or the sweep stopped running weeks ago. The second
+          is the dangerous one and it is silent, so this strip is shown
+          whether or not there is anything in the list. */}
+      <div className="mb-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+        {health.data == null ? (
+          <p className="flex items-start gap-1.5 text-[11px] text-amber-900">
+            <TriangleAlert className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
+            {tr
+              ? 'Bildirim taraması hiç çalışmamış. Gelen kutusu bu yüzden boş olabilir — bir şeyin olmaması değil, kimsenin bakmamış olması.'
+              : 'The sweep has never run. That, rather than an absence of deadlines, may be why the inbox is empty.'}
+          </p>
+        ) : (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px]">
+            <span className={health.data.looksStopped ? 'text-rose-800' : 'text-slate-600'}>
+              {health.data.looksStopped ? (
+                <TriangleAlert className="mr-1 inline h-3 w-3" aria-hidden="true" />
+              ) : null}
+              {tr ? 'Son tarama: ' : 'Last swept '}
+              <span className="font-mono">{formatDate(health.data.lastRanAt, language)}</span>
+              {' · '}
+              {tr
+                ? `${Math.round(health.data.hoursSince)} saat önce`
+                : `${Math.round(health.data.hoursSince)}h ago`}
+              {' · '}
+              {tr
+                ? `${health.data.lastRaised} bildirim üretti`
+                : `raised ${health.data.lastRaised}`}
+            </span>
+            {health.data.looksStopped && (
+              <span className="font-semibold text-rose-800">
+                {tr
+                  ? 'Takvim durmuş görünüyor — sessizlik, olay olmadığı anlamına gelmiyor.'
+                  : 'The schedule looks stopped, so silence here does not mean nothing is due.'}
+              </span>
+            )}
+            {health.data.mediaWithoutAProvider.length > 0 && (
+              <span className="text-slate-600">
+                {tr ? 'Sağlayıcısı olmayan mecra: ' : 'No provider for '}
+                {health.data.mediaWithoutAProvider.map((m) => mediumName(m, tr)).join(', ')}
+              </span>
+            )}
+            <ActionButton
+              className="ml-auto"
+              onClick={() => sweep.mutate()}
+              disabled={sweep.isPending}
+            >
+              <RefreshCw
+                className={`h-3.5 w-3.5 ${sweep.isPending ? 'animate-spin' : ''}`}
+                aria-hidden="true"
+              />
+              {tr ? 'Şimdi tara' : 'Sweep now'}
+            </ActionButton>
+          </div>
+        )}
+        <WriteError error={sweep.error} />
+      </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div>
@@ -85,7 +150,7 @@ export const NotificationPanel: React.FC = () => {
           {rows.length === 0 ? (
             <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] text-slate-600">
               {tr
-                ? 'Bildirim yok. Bildirimler elle yazılmaz; bir duruşma, son tarih veya duyuru kayda geçtiğinde doğar.'
+                ? 'Bildirim yok. Bildirimler elle yazılmaz; tarama kütüklere bakar ve tarihlerin söylediğini bildirime çevirir. Yukarıdaki satır taramanın ne zaman çalıştığını söylüyor — boşluğun sebebi o.'
                 : 'No notifications. They are not typed by hand: one is raised when a hearing, a deadline or an announcement is recorded.'}
             </p>
           ) : (

@@ -1548,6 +1548,32 @@ const TEST_STAKEHOLDERS = [
 ];
 
 /**
+ * Whether anything is raising notifications (0033).
+ *
+ * The strip this feeds is shown whether or not the inbox has anything in it,
+ * because an empty inbox means two different things — nothing was due, or the
+ * sweep stopped — and only this tells them apart.
+ */
+const TEST_HEALTH = {
+  last_ran_at: '2026-09-30T06:00:00Z',
+  last_trigger_source: 'schedule',
+  last_raised: 4,
+  last_by_topic: { deadline: 3, hearing: 1 },
+  hours_since: 5,
+  looks_stopped: false,
+  media_with_a_provider: ['in_app'],
+  media_without_a_provider: ['email', 'whatsapp', 'push'],
+};
+
+/** The same, three weeks stale: a schedule that quietly stopped. */
+const TEST_HEALTH_STOPPED = {
+  ...TEST_HEALTH,
+  last_ran_at: '2026-09-08T06:00:00Z',
+  hours_since: 540,
+  looks_stopped: true,
+};
+
+/**
  * The action triage queue (M3-05, M3-07, G-04).
  *
  * Three rows standing in for the three shapes the Notion archive produced: a
@@ -2105,6 +2131,7 @@ try {
       }),
     );
 
+  await serve('**/rest/v1/notification_health**', TEST_HEALTH);
   await serve('**/rest/v1/action_triage**', TEST_TRIAGE);
   await serve('**/rest/v1/stakeholders**', TEST_STAKEHOLDERS);
   await serve('**/rest/v1/report_runs**', TEST_REPORT_RUNS);
@@ -3256,6 +3283,49 @@ try {
     /sağlayıcı bağlı değil|no provider is connected/.test(comms),
     'a notification says which media never went out, rather than showing four ticks (M11-06)',
   );
+
+  // 0033: whether anything is raising them at all. The strip is the only
+  // thing that tells an empty inbox apart from a sweep that stopped three
+  // weeks ago, which is the failure that is otherwise completely silent.
+  check(
+    /Son tarama/.test(comms) && /4 bildirim üretti/.test(comms),
+    'the screen says when the sweep last ran and what it raised (0033)',
+  );
+  check(
+    !/Takvim durmuş görünüyor/.test(comms),
+    'and does not cry stopped while the schedule is running',
+  );
+
+  await serve('**/rest/v1/notification_health**', TEST_HEALTH_STOPPED);
+  pageErrors = [];
+  await page.goto(BASE + '/communication', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(400);
+  const stopped = (await page.textContent('body')) ?? '';
+  check(
+    /Takvim durmuş görünüyor/.test(stopped),
+    'a schedule that stopped is named, not left to be inferred from silence',
+  );
+  check(
+    /sessizlik, olay olmadığı anlamına gelmiyor/.test(stopped),
+    'and the screen says what that silence does not mean',
+  );
+
+  // Nothing has ever swept: a different statement again, and the one under
+  // which the inbox cannot fill at all.
+  await page.route('**/rest/v1/notification_health**', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: 'null' }),
+  );
+  pageErrors = [];
+  await page.goto(BASE + '/communication', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(400);
+  const never = (await page.textContent('body')) ?? '';
+  check(
+    /Bildirim taraması hiç çalışmamış/.test(never),
+    'a portal that has never swept says so rather than showing an empty inbox',
+  );
+  check(pageErrors.length === 0, 'the health strip renders without a page error');
+
+  await serve('**/rest/v1/notification_health**', TEST_HEALTH);
   check(
     /sağlayıcı yok|no provider/.test(comms),
     'and the preference grid marks the three media with nothing behind them',

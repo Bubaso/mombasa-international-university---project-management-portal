@@ -20,6 +20,7 @@ import type {
   CorrespondenceEntry,
   DigestAudience,
   DigestRow,
+  NotificationHealth,
   NotificationItem,
   NotificationMedium,
   NotificationPreference,
@@ -247,6 +248,36 @@ export async function fetchInbox(limit = 40): Promise<NotificationItem[]> {
     awaitingAProvider: (row.awaiting_a_provider as string[] | null) ?? [],
     raisedBy: row.raised_by as string | null,
   }));
+}
+
+/**
+ * Whether anything is raising notifications at all (0033).
+ *
+ * Returns null when no sweep has ever run, which is a different statement
+ * from "nothing to report" and is shown as such: a portal that has never
+ * swept has an inbox that cannot fill, and nobody would know from the inbox.
+ */
+export async function fetchNotificationHealth(): Promise<NotificationHealth | null> {
+  const { data, error } = await supabase.from('notification_health').select('*').maybeSingle();
+  fail(error);
+  if (!data) return null;
+  const row = data as unknown as Record<string, unknown>;
+  return {
+    lastRanAt: row.last_ran_at as string,
+    lastTriggerSource: row.last_trigger_source as 'schedule' | 'manual',
+    lastRaised: Number(row.last_raised),
+    hoursSince: Number(row.hours_since),
+    looksStopped: Boolean(row.looks_stopped),
+    mediaWithAProvider: (row.media_with_a_provider as NotificationMedium[] | null) ?? [],
+    mediaWithoutAProvider: (row.media_without_a_provider as NotificationMedium[] | null) ?? [],
+  };
+}
+
+/** Runs the sweep now. Safe to press twice: every raise is keyed. */
+export async function runNotificationSweep(): Promise<number> {
+  const { data, error } = await supabase.rpc('run_notification_sweep');
+  fail(error);
+  return Number(data ?? 0);
 }
 
 export async function markNotificationRead(deliveryId: string): Promise<void> {

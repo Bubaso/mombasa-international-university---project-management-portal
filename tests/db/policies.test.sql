@@ -5240,6 +5240,298 @@ $$;
 
 reset role;
 
+-- ===========================================================================
+-- Notifications that arrive (0033)
+-- ===========================================================================
+--
+-- 0027 built the model and nothing raised one. These test the half that was
+-- missing, and the assertions are written against this section's own dedupe
+-- keys rather than against totals, because totals shift every time somebody
+-- adds a fixture — which has already broken assertions in this file twice.
+
+set role authenticated;
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- director
+
+-- --- the clearance guard, first, because it is the one that could leak -----
+--
+-- The sweep runs as the owner and therefore reads restricted matters, and it
+-- puts titles into notification bodies. app.cleared is the whole defence.
+
+select pg_temp.check('somebody cleared for a tier may be told about it',
+  (select '22222222-2222-2222-2222-222222222222' = any (
+     app.cleared(array['22222222-2222-2222-2222-222222222222'::uuid], 'restricted'))), true);
+select pg_temp.check('and somebody who is not, is dropped before the notification exists',
+  (select cardinality(
+     app.cleared(array['55555555-5555-5555-5555-555555555555'::uuid], 'restricted'))), 0);
+select pg_temp.check('an expired account is dropped too, clearance notwithstanding',
+  (select cardinality(
+     app.cleared(array['99999999-9999-9999-9999-999999999999'::uuid], 'internal'))), 0);
+
+-- Addressed to nobody: not raised, rather than raised into the void.
+select pg_temp.check('a notification nobody may hear is not raised at all',
+  (select app.raise_once('test:void', 'deadline', 'Nobody may hear this', null,
+     null, false, 'obligation', null, '{}'::uuid[])), false);
+select pg_temp.check('and leaves nothing behind',
+  (select count(*) from notifications where dedupe_key = 'test:void'), 0::bigint);
+
+-- --- the sweep is not reachable from a session ----------------------------
+--
+-- It is unguarded, because the schedule has no identity to check, so the
+-- privilege is what keeps it out of reach. The role dance below each
+-- 'schedule' sweep is this rule being obeyed, not a test artefact.
+
+do $$
+begin
+  begin
+    perform app.sweep_notifications('schedule');
+    raise exception 'FAIL a session reached the unguarded sweep';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   the unguarded sweep is the schedule''s alone';
+  end;
+end;
+$$;
+
+-- --- M2-09: the five thresholds -------------------------------------------
+
+insert into obligations
+  (id, title_en, title_tr, source, obligor_name, obligor_profile_id, due_on, state,
+   confidentiality)
+values
+  ('b1000000-0000-0000-0000-00000000f001', 'File the compliance return',
+   'Uyum beyanını ver', 'statute', 'AUTK',
+   '22222222-2222-2222-2222-222222222222', current_date + 25, 'open', 'internal'),
+  -- Restricted, and the obligor is cleared only to internal. The notification
+  -- must exist for the director and must NOT reach the obligor.
+  ('b1000000-0000-0000-0000-00000000f002', 'Settle the restricted undertaking',
+   'Kısıtlı taahhüdü kapat', 'statute', 'Counsel',
+   '55555555-5555-5555-5555-555555555555', current_date + 25, 'open', 'restricted');
+
+select public.run_notification_sweep();
+
+select pg_temp.check('an obligation 25 days out raises at the 30-day threshold (M2-09)',
+  (select count(*) from notifications
+    where dedupe_key = 'obligation:b1000000-0000-0000-0000-00000000f001:30'
+      and topic = 'deadline'), 1::bigint);
+select pg_temp.check('and not at the thresholds it has not reached',
+  (select count(*) from notifications
+    where dedupe_key in (
+      'obligation:b1000000-0000-0000-0000-00000000f001:60',
+      'obligation:b1000000-0000-0000-0000-00000000f001:14',
+      'obligation:b1000000-0000-0000-0000-00000000f001:7',
+      'obligation:b1000000-0000-0000-0000-00000000f001:1')), 0::bigint);
+
+-- The leak test. The restricted obligation raised, and the person without the
+-- clearance has no delivery for it.
+select pg_temp.check('a restricted obligation still warns whoever may see it',
+  (select count(*) from notifications
+    where dedupe_key = 'obligation:b1000000-0000-0000-0000-00000000f002:30'), 1::bigint);
+select pg_temp.check('but it does not name itself to somebody without the clearance',
+  (select count(*) from notification_deliveries d
+     join notifications n on n.id = d.notification_id
+    where n.dedupe_key = 'obligation:b1000000-0000-0000-0000-00000000f002:30'
+      and d.recipient_id = '55555555-5555-5555-5555-555555555555'), 0::bigint);
+select pg_temp.check('while the one at the ordinary tier does reach them',
+  (select count(*) > 0 from notification_deliveries d
+     join notifications n on n.id = d.notification_id
+    where n.dedupe_key = 'obligation:b1000000-0000-0000-0000-00000000f001:30'
+      and d.recipient_id = '22222222-2222-2222-2222-222222222222'), true);
+
+-- --- running it again raises nothing --------------------------------------
+
+reset role;
+select app.sweep_notifications('schedule');
+set role authenticated;
+reset role;
+select app.sweep_notifications('schedule');
+set role authenticated;
+
+select pg_temp.check('sweeping three times raises one notification, not three',
+  (select count(*) from notifications
+    where dedupe_key = 'obligation:b1000000-0000-0000-0000-00000000f001:30'), 1::bigint);
+
+-- --- crossing the next threshold raises again -----------------------------
+
+update obligations set due_on = current_date + 1
+ where id = 'b1000000-0000-0000-0000-00000000f001';
+reset role;
+select app.sweep_notifications('schedule');
+set role authenticated;
+
+select pg_temp.check('crossing the next threshold raises again, with its own key',
+  (select count(*) from notifications
+    where dedupe_key = 'obligation:b1000000-0000-0000-0000-00000000f001:1'), 1::bigint);
+select pg_temp.check('and that one is marked urgent, because tomorrow is',
+  (select urgent from notifications
+    where dedupe_key = 'obligation:b1000000-0000-0000-0000-00000000f001:1'), true);
+
+-- A threshold that passed while nobody was sweeping stays unraised. This one
+-- is recorded four days before it is due and has therefore sailed past 60, 30
+-- and 14 unobserved; saying "60 days left" now would be a lie about the
+-- calendar, so only the tightest band crossed is raised.
+insert into obligations
+  (id, title_en, title_tr, source, obligor_name, obligor_profile_id, due_on, state,
+   confidentiality)
+values
+  ('b1000000-0000-0000-0000-00000000f003', 'Recorded four days before it falls due',
+   'Vadesine dört gün kalmışken kaydedildi', 'statute', 'AUTK',
+   '22222222-2222-2222-2222-222222222222', current_date + 4, 'open', 'internal');
+reset role;
+select app.sweep_notifications('schedule');
+set role authenticated;
+
+select pg_temp.check('the tightest band crossed is the one raised',
+  (select count(*) from notifications
+    where dedupe_key = 'obligation:b1000000-0000-0000-0000-00000000f003:7'), 1::bigint);
+select pg_temp.check('and the thresholds it sailed past unobserved stay unraised',
+  (select count(*) from notifications
+    where dedupe_key in (
+      'obligation:b1000000-0000-0000-0000-00000000f003:60',
+      'obligation:b1000000-0000-0000-0000-00000000f003:30',
+      'obligation:b1000000-0000-0000-0000-00000000f003:14')), 0::bigint);
+
+-- --- a record that names nobody ------------------------------------------
+--
+-- Measured on the live database: of the eight open obligations carried in
+-- from the Notion archive, none has an owner profile and none has a
+-- created_by, because they were loaded server-side where auth.uid() is null.
+-- A strict reading says there is nobody to tell and the right output is
+-- silence — which is backwards, because a deadline nobody owns is the more
+-- urgent kind. It goes to the directors, through the same clearance filter,
+-- and says that is why they are the ones hearing it.
+
+insert into obligations
+  (id, title_en, title_tr, source, obligor_name, due_on, state, confidentiality)
+values
+  ('b1000000-0000-0000-0000-00000000f004', 'An obligation nobody owns',
+   'Sahibi olmayan bir yükümlülük', 'statute', 'Somebody outside',
+   current_date + 25, 'open', 'internal');
+update obligations set created_by = null
+ where id = 'b1000000-0000-0000-0000-00000000f004';
+
+reset role;
+select app.sweep_notifications('schedule');
+set role authenticated;
+
+select pg_temp.check('an obligation naming nobody is still raised',
+  (select count(*) from notifications
+    where dedupe_key = 'obligation:b1000000-0000-0000-0000-00000000f004:30'), 1::bigint);
+select pg_temp.check('to whoever runs the project',
+  (select count(*) from notification_deliveries d
+     join notifications n on n.id = d.notification_id
+    where n.dedupe_key = 'obligation:b1000000-0000-0000-0000-00000000f004:30'
+      and d.recipient_id = '22222222-2222-2222-2222-222222222222'
+      and d.medium = 'in_app'), 1::bigint);
+select pg_temp.check('and it says that is why they are the ones hearing it',
+  (select body like '%Nobody in the portal is named on this record%' from notifications
+    where dedupe_key = 'obligation:b1000000-0000-0000-0000-00000000f004:30'), true);
+
+-- The fallback goes through the clearance filter too, so it is not a way
+-- around the guard: a restricted record that names nobody reaches only those
+-- directors cleared for it, and never anybody else.
+select pg_temp.check('the fallback is still filtered by clearance',
+  (select count(*) from notification_deliveries d
+     join notifications n on n.id = d.notification_id
+    where n.dedupe_key = 'obligation:b1000000-0000-0000-0000-00000000f002:30'
+      and d.recipient_id = '55555555-5555-5555-5555-555555555555'), 0::bigint);
+
+-- --- M11-06: what is actually sent ----------------------------------------
+--
+-- A deadline is critical, so every medium is on by default. Three of the four
+-- have no provider, and that is recorded rather than skipped.
+
+select pg_temp.check('the inbox is the one medium that delivers',
+  (select state::text from notification_deliveries d
+     join notifications n on n.id = d.notification_id
+    where n.dedupe_key = 'obligation:b1000000-0000-0000-0000-00000000f001:30'
+      and d.recipient_id = '22222222-2222-2222-2222-222222222222'
+      and d.medium = 'in_app'), 'queued');
+select pg_temp.check('and the other three are recorded as having no sender',
+  (select count(*) from notification_deliveries d
+     join notifications n on n.id = d.notification_id
+    where n.dedupe_key = 'obligation:b1000000-0000-0000-0000-00000000f001:30'
+      and d.medium <> 'in_app'
+      and d.state = 'unconfigured'), 3::bigint);
+select pg_temp.check('nothing anywhere claims to have been sent',
+  (select count(*) from notification_deliveries where state = 'sent'), 0::bigint);
+
+-- --- M6-08 and M6-10: the score and the escalation ------------------------
+
+insert into risks
+  (id, title_en, title_tr, category, likelihood, impact, state, owner_profile_id,
+   confidentiality)
+values
+  ('b6000000-0000-0000-0000-00000000f001', 'Attention-level risk', 'Dikkat seviyesi risk',
+   'legal', 4, 4, 'open', '22222222-2222-2222-2222-222222222222', 'internal'),
+  ('b6000000-0000-0000-0000-00000000f002', 'Escalation-level risk', 'Tırmandırma seviyesi risk',
+   'legal', 5, 5, 'open', '22222222-2222-2222-2222-222222222222', 'internal');
+
+reset role;
+select app.sweep_notifications('schedule');
+set role authenticated;
+
+select pg_temp.check('a risk over the attention threshold raises (M6-08)',
+  (select count(*) from notifications
+    where dedupe_key = 'risk:b6000000-0000-0000-0000-00000000f001:band:15'), 1::bigint);
+select pg_temp.check('and one over the escalation threshold reaches the board (M6-10)',
+  (select count(*) from notification_deliveries d
+     join notifications n on n.id = d.notification_id
+    where n.dedupe_key = 'risk:b6000000-0000-0000-0000-00000000f002:band:20'
+      and d.recipient_id = '33333333-3333-3333-3333-333333333333'
+      and d.medium = 'in_app'), 1::bigint);
+select pg_temp.check('while the one below it does not',
+  (select count(*) from notification_deliveries d
+     join notifications n on n.id = d.notification_id
+    where n.dedupe_key = 'risk:b6000000-0000-0000-0000-00000000f001:band:15'
+      and d.recipient_id = '33333333-3333-3333-3333-333333333333'), 0::bigint);
+
+-- A score moving within its band does not raise again; crossing does.
+update risks set likelihood = 5 where id = 'b6000000-0000-0000-0000-00000000f001';
+reset role;
+select app.sweep_notifications('schedule');
+set role authenticated;
+select pg_temp.check('crossing into the escalation band raises once more',
+  (select count(*) from notifications
+    where dedupe_key = 'risk:b6000000-0000-0000-0000-00000000f001:band:20'), 1::bigint);
+
+-- --- the run log, which is what makes an empty inbox explainable ----------
+
+select pg_temp.check('every sweep is written down',
+  (select count(*) > 5 from notification_sweeps), true);
+select pg_temp.check('and a hand-run sweep is attributed to the person who ran it',
+  (select ran_by = '22222222-2222-2222-2222-222222222222' from notification_sweeps
+    where trigger_source = 'manual' order by ran_at limit 1), true);
+select pg_temp.check('while a scheduled one names nobody, because nobody ran it',
+  (select bool_and(ran_by is null) from notification_sweeps
+    where trigger_source = 'schedule'), true);
+select pg_temp.check('the health view says the schedule is not stopped',
+  (select looks_stopped from notification_health), false);
+select pg_temp.check('and names the three media still without a provider',
+  (select cardinality(media_without_a_provider) from notification_health), 3);
+
+-- --- who may run it -------------------------------------------------------
+
+select pg_temp.act_as('77777777-7777-7777-7777-777777777777');  -- contractor
+do $$
+begin
+  begin
+    perform public.run_notification_sweep();
+    raise exception 'FAIL somebody outside the minute-takers ran the sweep';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   running the sweep is not everybody''s to do';
+  end;
+end;
+$$;
+
+-- And the inbox stays each person's own: the contractor sees none of what the
+-- sweep raised for the director.
+select pg_temp.check('a swept notification lands in its recipient''s inbox only',
+  (select count(*) from my_notifications
+    where title_en like 'Obligation%'), 0::bigint);
+
+reset role;
+
 -- ---------------------------------------------------------------------------
 -- The anon key is given nothing (0026)
 -- ---------------------------------------------------------------------------

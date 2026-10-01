@@ -125,3 +125,18 @@ export function useConfirmDelivery() {
     onSuccess: () => client.invalidateQueries({ queryKey: ['correspondence'] }),
   });
 }
+
+export const useNotificationHealth = () =>
+  useQuery({ queryKey: ['notificationHealth'], queryFn: api.fetchNotificationHealth });
+
+export function useRunSweep() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: api.runNotificationSweep,
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: ['notificationHealth'] });
+      // A sweep is what fills the inbox, so the inbox is now out of date.
+      client.invalidateQueries({ queryKey: ['inbox'] });
+    },
+  });
+}
