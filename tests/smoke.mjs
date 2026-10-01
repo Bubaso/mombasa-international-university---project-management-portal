@@ -1516,6 +1516,106 @@ const TEST_DIGEST = {
 // published donor report. The rows carry a source_note each, because the
 // requirement's measure is that no material figure travels without one.
 
+/**
+ * One person in the register, so the owner picker has both kinds of owner in
+ * it. An action belongs to exactly one of them — a portal user or somebody
+ * outside who never signs in — and a picker offering only the first would
+ * quietly push every obligation onto the staff.
+ */
+const TEST_STAKEHOLDERS = [
+  {
+    id: '00000000-0000-0000-0000-0000000000b4',
+    full_name: 'Mr. Tariq',
+    title: 'Site engineer',
+    organization_id: null,
+    category: 'contractor',
+    email: null,
+    phone: null,
+    whatsapp: null,
+    location: 'Mombasa',
+    preferred_language: 'en',
+    interest_topic: null,
+    stance: 'supporter',
+    influence: 3,
+    interest: 4,
+    relationship_owner: null,
+    profile_id: null,
+    notes: null,
+    confidentiality: 'internal',
+    organization: null,
+    owner: null,
+  },
+];
+
+/**
+ * The action triage queue (M3-05, M3-07, G-04).
+ *
+ * Three rows standing in for the three shapes the Notion archive produced: a
+ * sentence that names both a person and a date, one that names neither, and
+ * one somebody has already dropped with a reason. The middle one is the
+ * common case — eighty-five of the hundred and three — and it is the one
+ * whose screen has to say that a date is being decided rather than typed.
+ */
+const TEST_TRIAGE = [
+  {
+    id: '00000000-0000-0000-0000-00000000a401',
+    meeting_id: '00000000-0000-0000-0000-0000000000bb',
+    meeting_title: 'Smoke meeting',
+    meeting_title_tr: 'Duman toplantısı',
+    held_at: '2026-09-01T10:00:00Z',
+    sequence: 1,
+    text_en: 'Mr. Tariq to deliver the engineering report by Saturday 25 April',
+    text_tr: 'Mr. Tariq mühendislik raporunu 25 Nisan Cumartesi\u2019ye kadar teslim etsin',
+    suggested_owner_stakeholder_id: null,
+    suggested_owner_name: 'Mr. Tariq',
+    suggested_due_on: '2026-04-25',
+    state: 'pending',
+    action_item_id: null,
+    dismissed_reason: null,
+    names_an_owner: true,
+    names_a_date: true,
+    confidentiality: 'internal',
+  },
+  {
+    id: '00000000-0000-0000-0000-00000000a402',
+    meeting_id: '00000000-0000-0000-0000-0000000000bb',
+    meeting_title: 'Smoke meeting',
+    meeting_title_tr: 'Duman toplantısı',
+    held_at: '2026-09-01T10:00:00Z',
+    sequence: 2,
+    text_en: 'Explore discreet channels to communicate diplomatic pressure',
+    text_tr: null,
+    suggested_owner_stakeholder_id: null,
+    suggested_owner_name: null,
+    suggested_due_on: null,
+    state: 'pending',
+    action_item_id: null,
+    dismissed_reason: null,
+    names_an_owner: false,
+    names_a_date: false,
+    confidentiality: 'internal',
+  },
+  {
+    id: '00000000-0000-0000-0000-00000000a403',
+    meeting_id: '00000000-0000-0000-0000-0000000000bb',
+    meeting_title: 'Smoke meeting',
+    meeting_title_tr: 'Duman toplantısı',
+    held_at: '2026-09-01T10:00:00Z',
+    sequence: 3,
+    text_en: 'Raise the land question with the county assembly',
+    text_tr: null,
+    suggested_owner_stakeholder_id: null,
+    suggested_owner_name: null,
+    suggested_due_on: null,
+    state: 'dismissed',
+    action_item_id: null,
+    dismissed_reason: 'Superseded by the diplomatic track agreed with the Ambassador on 16 April.',
+    names_an_owner: false,
+    names_a_date: false,
+    confidentiality: 'internal',
+  },
+];
+
 const TEST_REPORT_RUNS = [
   {
     id: '00000000-0000-0000-0000-000000003a01',
@@ -1789,13 +1889,20 @@ try {
   // --- signed in -------------------------------------------------------------
   // Playwright tries the most recently registered handler first, so the
   // specific profiles route has to be added after the catch-all to win.
-  await page.route('**/rest/v1/profiles**', (route) =>
-    route.fulfill({
+  //
+  // Answered as an object or an array depending on the call, the way
+  // PostgREST answers .single() and a plain select differently. The admin
+  // console and the triage owner picker both read the list form, and a stub
+  // that always returned the object would leave them permanently empty —
+  // which would look like a passing test of an empty screen.
+  await page.route('**/rest/v1/profiles**', (route) => {
+    const single = route.request().url().includes('id=eq.');
+    return route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(TEST_PROFILE),
-    }),
-  );
+      body: JSON.stringify(single ? TEST_PROFILE : [TEST_PROFILE]),
+    });
+  });
 
   /** Swaps who the intercepted backend says the caller is allowed to be. */
   const actAs = (authority) =>
@@ -1998,6 +2105,8 @@ try {
       }),
     );
 
+  await serve('**/rest/v1/action_triage**', TEST_TRIAGE);
+  await serve('**/rest/v1/stakeholders**', TEST_STAKEHOLDERS);
   await serve('**/rest/v1/report_runs**', TEST_REPORT_RUNS);
   await serve('**/rest/v1/thread_board**', TEST_THREADS);
   await serve('**/rest/v1/thread_messages**', TEST_THREAD_MESSAGES);
@@ -2133,6 +2242,79 @@ try {
     'somebody outside who is not counsel gets it read-only',
   );
   await actAs(TEST_AUTHORITY);
+
+  // --- the action triage queue (M3-05, M3-07, G-04) --------------------------
+  // The queue exists because the archive produced 103 sentences and the
+  // schema requires an owner and a date. What is being checked here is that
+  // the screen keeps the three facts apart: how many are waiting, which of
+  // them arrived with anything to go on, and that a dropped line kept its
+  // reason instead of disappearing.
+  pageErrors = [];
+  await page.goto(BASE + '/meetings', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(400);
+  const triage = (await page.textContent('body')) ?? '';
+
+  check(
+    /2 karar bekliyor/.test(triage),
+    'the queue counts the sentences still awaiting a decision (M3-05)',
+  );
+  check(/1 tanesi hazır/.test(triage), 'and says how many arrived naming both a person and a date');
+  // The dismissed one is settled, so it is not in the pending count and not
+  // on this list: a queue that still showed it would never go down.
+  check(
+    !/Raise the land question with the county assembly/.test(triage),
+    'a settled line has left the queue',
+  );
+  check(
+    /Explore discreet channels to communicate diplomatic pressure/.test(triage),
+    'the sentence somebody actually wrote is what is shown',
+  );
+  check(/ikisi de yok/.test(triage), 'a line naming neither says so rather than guessing');
+
+  // Adopting the line that names neither. The warning is the point of the
+  // form: the date is not a field being filled, it is a decision being made.
+  await page
+    .locator('button')
+    .filter({ hasText: /^aksiyona çevir$/ })
+    .nth(1)
+    .click();
+  await page.waitForTimeout(250);
+  const adopting = (await page.textContent('body')) ?? '';
+  check(
+    /bu bir alan doldurmak değil, bir karar vermek/.test(adopting),
+    'setting a date the minute never gave is named as a decision (G-04)',
+  );
+  // An optgroup's label is an attribute, so it is read off the DOM rather
+  // than out of the page text.
+  const ownerGroups = await page.$$eval('form optgroup', (groups) =>
+    groups.map((g) => g.getAttribute('label')),
+  );
+  check(
+    ownerGroups.includes('Portal kullanıcıları') && ownerGroups.includes('Paydaş kütüğü'),
+    'the owner can be a portal user or somebody in the register, and only one',
+  );
+  check(
+    /Smoke Test/.test(adopting) && /Mr\. Tariq/.test(adopting),
+    'and both lists are populated — an empty register would push every action onto the staff',
+  );
+
+  // Dropping one keeps the reason on the record, which is what M3-07 asks
+  // for: nothing from a minute vanishes unexplained.
+  await page
+    .locator('button')
+    .filter({ hasText: /^karara bağlananlar \(1\)$/ })
+    .first()
+    .click();
+  await page.waitForTimeout(250);
+  const settledText = (await page.textContent('body')) ?? '';
+  check(
+    /Raise the land question with the county assembly/.test(settledText) &&
+      /Superseded by the diplomatic track agreed with the Ambassador on 16 April\./.test(
+        settledText,
+      ),
+    'a dropped line keeps its reason instead of vanishing (M3-07)',
+  );
+  check(pageErrors.length === 0, 'the triage queue renders without a page error');
 
   // --- the meeting record ---------------------------------------------------
   // Every M3 record type renders at once here, so a shape mistake in any of

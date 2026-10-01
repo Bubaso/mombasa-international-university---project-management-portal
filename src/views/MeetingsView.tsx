@@ -7,6 +7,7 @@ import { useAuthority } from '../api/adminHooks';
 import { QueryStatus } from '../components/QueryStatus';
 import { EmptyState } from '../components/EmptyState';
 import { AgendaPanel } from '../components/meetings/AgendaPanel';
+import { TriagePanel } from '../components/meetings/TriagePanel';
 import { MINUTE_KEEPERS, actsAs, clearanceLabel, clearanceStyle } from '../lib/authority';
 import {
   MEETING_KIND_VALUES,
@@ -73,6 +74,11 @@ export const MeetingsView: React.FC = () => {
       <QueryStatus queries={[list]} />
 
       <AgendaPanel />
+
+      {/* The queue sits above the list because it is the thing that is
+          actually owed. The list is what happened; the queue is what was
+          said in those meetings and has not yet been decided. */}
+      <TriagePanel />
 
       {creating && (
         <NewMeetingForm

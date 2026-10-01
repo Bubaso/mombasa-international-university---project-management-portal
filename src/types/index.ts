@@ -2208,3 +2208,31 @@ export interface ReportRun {
   rows: ReportRow[];
   confidentiality: Confidentiality;
 }
+
+/* Action candidates (M3-05, M3-07, G-04).
+ *
+ * A line of action text from a minute, waiting for the owner and the date
+ * that would make it an action. Not an action and not counted as one. */
+
+export type CandidateState = 'pending' | 'adopted' | 'dismissed';
+
+export interface ActionCandidate {
+  id: string;
+  meetingId: string;
+  meetingTitle: string;
+  meetingTitleTr: string | null;
+  heldAt: string;
+  sequence: number;
+  textEn: string | null;
+  textTr: string | null;
+  suggestedOwnerStakeholderId: string | null;
+  suggestedOwnerName: string | null;
+  suggestedDueOn: string | null;
+  state: CandidateState;
+  actionItemId: string | null;
+  dismissedReason: string | null;
+  /** What the sentence itself states, which decides how much work it is. */
+  namesAnOwner: boolean;
+  namesADate: boolean;
+  confidentiality: Confidentiality;
+}

@@ -4786,6 +4786,176 @@ select pg_temp.check('and a trustee previewing the donor digest sees only what i
 reset role;
 
 -- ===========================================================================
+-- Action candidates (M3-05, M3-07, G-04)
+-- ===========================================================================
+--
+-- The Notion archive brought 103 lines of action text. Three name both a
+-- person and a date; eighty-five name neither. An action here requires both,
+-- so these are the honest third thing: a queue that only goes down when a
+-- person decides.
+
+set role authenticated;
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- director
+
+insert into action_candidates
+  (id, meeting_id, sequence, text_en, text_tr, suggested_owner_stakeholder_id,
+   suggested_due_on, confidentiality)
+values
+  ('a4000000-0000-0000-0000-000000000001', '0e000000-0000-0000-0000-000000000001', 1,
+   'Mr. Tariq to deliver the engineering report by Saturday 25 April',
+   'Mr. Tariq mühendislik raporunu 25 Nisan Cumartesi''ye kadar teslim etsin',
+   '0b000000-0000-0000-0000-000000000004', '2026-04-25', 'internal'),
+  ('a4000000-0000-0000-0000-000000000002', '0e000000-0000-0000-0000-000000000001', 2,
+   'Explore discreet channels to communicate diplomatic pressure', null,
+   null, null, 'internal');
+
+select pg_temp.check('a candidate is not an action and is not counted as one',
+  (select count(*) from action_items where meeting_id = '0e000000-0000-0000-0000-000000000001'
+     and text_en like 'Mr. Tariq to deliver%'), 0::bigint);
+select pg_temp.check('the queue says how many are waiting',
+  (select count(*) from action_triage where state = 'pending'), 2::bigint);
+select pg_temp.check('and which of them arrived with anything to go on',
+  (select count(*) from action_triage where names_an_owner and names_a_date), 1::bigint);
+
+-- --- the sentence is the record ------------------------------------------
+
+do $$
+begin
+  begin
+    update action_candidates set text_en = 'Something I would rather it said'
+     where id = 'a4000000-0000-0000-0000-000000000002';
+    raise exception 'FAIL a line from a minute was rewritten';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   a candidate is a sentence from a minute and cannot be rewritten';
+  end;
+end;
+$$;
+
+-- --- adopting needs the two fields that make it an action -----------------
+--
+-- Both rules are enforced twice on purpose: adopt_action_candidate refuses
+-- them with a sentence somebody can act on, and action_items refuses them
+-- again with NOT NULL and its exactly-one-party check. The handlers below
+-- accept either, because what is being tested is the rule and not which
+-- layer caught it; removing one layer leaves these passing, and removing
+-- both makes them fail.
+
+do $$
+begin
+  begin
+    perform public.adopt_action_candidate(
+      'a4000000-0000-0000-0000-000000000002', null,
+      '22222222-2222-2222-2222-222222222222', null);
+    raise exception 'FAIL an action was created without a date';
+  exception
+    when check_violation or not_null_violation then
+      raise notice 'ok   an action cannot be adopted without a date (M3-05)';
+  end;
+end;
+$$;
+
+do $$
+begin
+  begin
+    perform public.adopt_action_candidate(
+      'a4000000-0000-0000-0000-000000000002', current_date + 14, null, null);
+    raise exception 'FAIL an action was created with nobody owning it';
+  exception
+    when check_violation or not_null_violation then
+      raise notice 'ok   nor without exactly one owner';
+  end;
+end;
+$$;
+
+do $$
+begin
+  begin
+    perform public.adopt_action_candidate(
+      'a4000000-0000-0000-0000-000000000002', current_date + 14,
+      '22222222-2222-2222-2222-222222222222', '0b000000-0000-0000-0000-000000000004');
+    raise exception 'FAIL an action was created with two owners';
+  exception
+    when check_violation then
+      raise notice 'ok   and not with two, because "exactly one" is the rule';
+  end;
+end;
+$$;
+
+-- With both, it becomes an action and the candidate stops being pending.
+select public.adopt_action_candidate(
+  'a4000000-0000-0000-0000-000000000001', '2026-04-25',
+  null, '0b000000-0000-0000-0000-000000000004', 'high');
+
+select pg_temp.check('with an owner and a date it becomes a real action',
+  (select count(*) from action_items
+    where text_en like 'Mr. Tariq to deliver%'
+      and due_date = '2026-04-25'
+      and owner_stakeholder_id = '0b000000-0000-0000-0000-000000000004'), 1::bigint);
+select pg_temp.check('and the candidate points at what it became',
+  (select action_item_id is not null and state = 'adopted' from action_candidates
+    where id = 'a4000000-0000-0000-0000-000000000001'), true);
+select pg_temp.check('so the queue is one shorter',
+  (select count(*) from action_triage where state = 'pending'), 1::bigint);
+
+do $$
+begin
+  begin
+    perform public.adopt_action_candidate(
+      'a4000000-0000-0000-0000-000000000001', current_date + 1,
+      '22222222-2222-2222-2222-222222222222', null);
+    raise exception 'FAIL the same candidate became two actions';
+  exception
+    when check_violation then
+      raise notice 'ok   and cannot be adopted a second time';
+  end;
+end;
+$$;
+
+-- --- dropping one is a decision somebody signs ---------------------------
+
+-- Enforced twice as well: the function refuses a blank reason, and the
+-- table's own check refuses a dismissal without one.
+do $$
+begin
+  begin
+    perform public.dismiss_action_candidate('a4000000-0000-0000-0000-000000000002', '   ');
+    raise exception 'FAIL a candidate was dropped without a reason';
+  exception
+    when check_violation then
+      raise notice 'ok   a candidate cannot be dropped without a reason (M3-07)';
+  end;
+end;
+$$;
+
+select public.dismiss_action_candidate(
+  'a4000000-0000-0000-0000-000000000002',
+  'Superseded by the diplomatic track agreed with the Ambassador on 16 April.');
+select pg_temp.check('with one, it is dropped and the reason stays on the record',
+  (select dismissed_reason is not null and state = 'dismissed' and settled_by is not null
+     from action_candidates where id = 'a4000000-0000-0000-0000-000000000002'), true);
+select pg_temp.check('and the queue is empty without anything having vanished',
+  (select count(*) from action_triage where state = 'pending'), 0::bigint);
+
+-- --- somebody who does not minute does not triage -------------------------
+
+select pg_temp.act_as('77777777-7777-7777-7777-777777777777');  -- contractor
+do $$
+begin
+  begin
+    perform public.dismiss_action_candidate(
+      'a4000000-0000-0000-0000-000000000001', 'Not my concern');
+    raise exception 'FAIL an outside party settled a candidate';
+  exception
+    when no_data_found or insufficient_privilege or check_violation then
+      raise notice 'ok   somebody outside the minute-takers cannot settle one';
+  end;
+end;
+$$;
+
+reset role;
+
+-- ===========================================================================
 -- Compiled reports (M12-06 … M12-09)
 -- ===========================================================================
 
