@@ -1,5 +1,6 @@
 /** Query hooks for compiled reports (M12-06 … M12-09). */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import * as curvesApi from './curves';
 import * as api from './reports';
 
 export const useReportRuns = () =>
@@ -31,3 +32,5 @@ export function useWithdrawReport() {
     onSuccess: () => invalidate(client),
   });
 }
+
+export const useCurves = () => useQuery({ queryKey: ['curves'], queryFn: curvesApi.fetchCurves });

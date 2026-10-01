@@ -1794,6 +1794,34 @@ const TEST_TRIAGE = [
   },
 ];
 
+/**
+ * The three curves (M12-11), one of which can be drawn.
+ *
+ * The ledger has entries on two different days, so the spend curve is a curve.
+ * There are no milestones at all, and the risk scores share one date — which is
+ * the distinction the panel exists to make: rows on a single day are a
+ * snapshot, and a line through them would show a trend no time produced.
+ */
+const TEST_CURVE_LEDGER = [
+  { date: '2026-02-10', amount_kes: 4_000_000 },
+  { date: '2026-05-20', amount_kes: 7_500_000 },
+];
+
+const TEST_CURVE_BUDGET = [{ amount_kes: 48_000_000 }];
+
+const TEST_CURVE_SCORES = [
+  {
+    changed_at: '2026-10-01T09:00:00Z',
+    to_score: 20,
+    risk_id: '00000000-0000-0000-0000-00000000e001',
+  },
+  {
+    changed_at: '2026-10-01T09:00:00Z',
+    to_score: 20,
+    risk_id: '00000000-0000-0000-0000-00000000e002',
+  },
+];
+
 const TEST_REPORT_RUNS = [
   {
     id: '00000000-0000-0000-0000-000000003a01',
@@ -2283,6 +2311,28 @@ try {
       }),
     );
 
+  // The curve sources. Two of these tables are already served for the finance
+  // screen, which asks for far more columns, so the curve's request is told
+  // apart by the column list it asks for rather than by the table.
+  await page.route('**/rest/v1/financial_transactions**', (route) => {
+    const url = route.request().url();
+    if (!/select=date/.test(url)) return route.fallback();
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(TEST_CURVE_LEDGER),
+    });
+  });
+  await page.route('**/rest/v1/budget_lines**', (route) => {
+    const url = route.request().url();
+    if (!/select=amount_kes/.test(url)) return route.fallback();
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(TEST_CURVE_BUDGET),
+    });
+  });
+  await serve('**/rest/v1/risk_score_changes**', TEST_CURVE_SCORES);
   await serve('**/rest/v1/notification_health**', TEST_HEALTH);
   // Answers per table, the way the function does: the client asks once per
   // register on a screen that mixes them.
@@ -3545,6 +3595,49 @@ try {
     /yayımlandı|published/.test(donorReport),
     'with its state on the page, because a published report has left the trust',
   );
+  // M12-11: the curves, and the line a chart must not cross.
+  //
+  // Two of these can be drawn and one cannot, which is the whole point. A
+  // chart over rows that share one date has axes and a legend and all the
+  // furniture of a measurement while measuring nothing — and a flat line reads
+  // as "nothing is happening" when it means "nothing has been recorded".
+  check(
+    /Eğriler/.test(reports) && /Kilometre taşı ilerlemesi/.test(reports),
+    'the reports screen carries the curves (M12-11)',
+  );
+  check(
+    (await page.locator('svg[role="img"]').count()) >= 2,
+    'the two series with dates on two different days are drawn',
+    `${await page.locator('svg[role="img"]').count()} drawn`,
+  );
+  check(
+    /anlık görüntüdür/.test(reports) && /arşiv yüklenirken bir seferde yazıldı/.test(reports),
+    'and rows sharing one date are called a snapshot rather than drawn as a trend',
+  );
+  check(
+    /2 puan değişimi kayıtlı, hepsi 1 ayrı günde/.test(reports),
+    'the empty state gives the count rather than saying "no data"',
+  );
+  // The claim, read off the path rather than off the sentence beside it. Two
+  // recorded points become three commands — across, then up — because a
+  // straight line between them would put values on days nobody measured. A
+  // mutation that removed the step passed while this only checked the prose.
+  const steps = await page.$$eval('svg[role="img"] path', (nodes) =>
+    nodes.map((node) => (node.getAttribute('d') ?? '').split('L').length - 1),
+  );
+  check(
+    /basamak şeklinde/.test(reports),
+    'the screen says the line between two measurements is a step',
+  );
+  // A series of k points steps in 2(k-1) commands, so the count is always
+  // even — and zero is right for a single point, which has no segment to draw.
+  // A smoothed path would be k-1, which is odd for two points.
+  check(
+    steps.length > 0 && steps.every((n) => n % 2 === 0) && steps.some((n) => n >= 2),
+    'and the path actually steps: two commands per point after the first',
+    steps.join(', ') || '(no path)',
+  );
+
   check(pageErrors.length === 0, 'the reports screen renders without a runtime error');
 
   // --- communication and notification (M11) ---------------------------------

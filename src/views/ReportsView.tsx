@@ -31,6 +31,7 @@ import { useMeetings } from '../api/meetingHooks';
 import { useStakeholders } from '../api/stakeholderHooks';
 import { useAuthority } from '../api/adminHooks';
 import { QueryStatus } from '../components/QueryStatus';
+import { CurvePanel } from '../components/reports/CurvePanel';
 import { DataFreshness } from '../components/DataFreshness';
 import {
   ActionButton,
@@ -228,6 +229,11 @@ export const ReportsView: React.FC = () => {
       </section>
 
       <QueryStatus queries={[runs]} />
+
+      {/* M12-11. Print-visible: a curve is one of the few things worth
+          putting on paper, and the empty states are a list of what the
+          project has not yet written down. */}
+      <CurvePanel />
 
       {list.length === 0 ? (
         <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] text-slate-600 print:hidden">
