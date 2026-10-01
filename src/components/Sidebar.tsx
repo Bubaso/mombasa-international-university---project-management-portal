@@ -20,6 +20,7 @@ import {
   Bot,
   ShoppingBag,
   GanttChartSquare,
+  ClipboardList,
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
@@ -66,6 +67,8 @@ export const Sidebar: React.FC = () => {
     // The backbone: the dates, the phases, the chain and the chronology.
     { tab: 'plan', path: '/plan', label: t.nav.plan, icon: GanttChartSquare },
     { tab: 'procurement', path: '/procurement', label: t.nav.procurement, icon: ShoppingBag },
+    // Compiled from the registers, not written: a board pack in minutes.
+    { tab: 'reports', path: '/reports', label: t.nav.reports, icon: ClipboardList },
     {
       tab: 'finance',
       path: '/finance',

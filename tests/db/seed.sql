@@ -138,7 +138,12 @@ insert into stakeholders
   -- Nobody keeps this one and nobody has spoken to them: the two findings the
   -- attention view exists to surface.
   ('0b000000-0000-0000-0000-000000000005', 'Unattended Senator', 'Senator',
-   null, 'government', 'unknown', 5, 3, null, null, 'internal');
+   null, 'government', 'unknown', 5, 3, null, null, 'internal'),
+  -- A donor with an account of their own, so "the donor reads their own
+  -- report" (M8-12) is something the tests can check rather than assert.
+  ('0b000000-0000-0000-0000-000000000007', 'Foundation Donor', 'Programme lead',
+   null, 'donor', 'supporter', 3, 5, '22222222-2222-2222-2222-222222222222',
+   '88888888-8888-8888-8888-888888888888', 'internal');
 
 insert into stakeholder_interactions (id, stakeholder_id, occurred_at, channel, summary) values
   ('0c000000-0000-0000-0000-000000000001', '0b000000-0000-0000-0000-000000000001',
@@ -443,6 +448,23 @@ values ('1d000000-0000-0000-0000-000000000020', 'A Turkish foundation',
 
 update donations set pledged_fx_rate_to_kes = 4
 where id = '1d000000-0000-0000-0000-000000000020';
+
+-- The same donor's pledge, attributed to them, with one tranche received and
+-- one received without a document — the distinction M8-08 and the vault both
+-- turn on.
+insert into donations
+  (id, donor_stakeholder_id, donor_name, pledged_on, pledged_amount, pledged_currency,
+   confidentiality)
+values ('1d000000-0000-0000-0000-000000000021', '0b000000-0000-0000-0000-000000000007',
+        'Foundation Donor', current_date - 200, 4000000, 'KES', 'internal');
+
+insert into donation_tranches
+  (id, donation_id, received_on, received_amount, received_currency, document_id, confidentiality)
+values
+  ('1d000000-0000-0000-0000-000000000031', '1d000000-0000-0000-0000-000000000021',
+   current_date - 150, 1500000, 'KES', '1b000000-0000-0000-0000-000000000001', 'internal'),
+  ('1d000000-0000-0000-0000-000000000032', '1d000000-0000-0000-0000-000000000021',
+   current_date - 40, 500000, 'KES', null, 'internal');
 
 -- A third of it has actually arrived, and it has a receipt against it.
 insert into donation_tranches

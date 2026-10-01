@@ -61,6 +61,7 @@ export type ActiveTab =
   | 'risks'
   | 'calendar'
   | 'plan'
+  | 'reports'
   | 'procurement'
   | 'finance'
   | 'documents'
@@ -2158,5 +2159,52 @@ export interface CriticalDate {
   needsAttention: boolean;
   /** Signed: negative means the date has already passed. */
   daysAway: number;
+  confidentiality: Confidentiality;
+}
+
+/* Compiled reports (M12-06 … M12-09).
+ *
+ * A report here is a compilation and not a document: each row names the
+ * register its figure came from, which is how "no material figure without a
+ * source" is met. The rows are frozen into the run at approval, so what is
+ * published is what somebody signed. */
+
+export type ReportKind = 'board_pack' | 'donor_report' | 'status_report';
+
+export type ReportState = 'draft' | 'approved' | 'published' | 'withdrawn';
+
+export interface ReportRow {
+  section: string;
+  ord: number;
+  labelEn: string | null;
+  labelTr: string | null;
+  valueText: string | null;
+  valueNumber: number | null;
+  unit: string | null;
+  entityKind: string | null;
+  entityId: string | null;
+  /** The register this came out of. Never empty for a row carrying a figure. */
+  sourceNote: string | null;
+  confidentiality: Confidentiality;
+}
+
+export interface ReportRun {
+  id: string;
+  kind: ReportKind;
+  title: string;
+  periodFrom: string | null;
+  periodTo: string | null;
+  meetingId: string | null;
+  meetingTitle: string | null;
+  stakeholderId: string | null;
+  stakeholderName: string | null;
+  preparedByName: string | null;
+  preparedAt: string;
+  state: ReportState;
+  approvedByName: string | null;
+  approvedAt: string | null;
+  publishedAt: string | null;
+  withdrawnReason: string | null;
+  rows: ReportRow[];
   confidentiality: Confidentiality;
 }

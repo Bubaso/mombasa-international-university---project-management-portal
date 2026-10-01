@@ -56,6 +56,9 @@ const CalendarView = lazy(() =>
   import('./views/CalendarView').then((m) => ({ default: m.CalendarView })),
 );
 const PlanView = lazy(() => import('./views/PlanView').then((m) => ({ default: m.PlanView })));
+const ReportsView = lazy(() =>
+  import('./views/ReportsView').then((m) => ({ default: m.ReportsView })),
+);
 const ObligationsView = lazy(() =>
   import('./views/ObligationsView').then((m) => ({ default: m.ObligationsView })),
 );
@@ -196,6 +199,7 @@ const Gate: React.FC = () => {
         <Route path="/governance" element={<GovernanceCharterView />} />
         <Route path="/readiness" element={<ReadinessView />} />
         <Route path="/plan" element={<PlanView />} />
+        <Route path="/reports" element={<ReportsView />} />
         <Route path="/procurement" element={<ProcurementView />} />
         <Route path="/finance" element={<FinanceAccountingView />} />
         <Route path="/documents" element={<DocumentVaultView />} />

@@ -119,7 +119,9 @@ export const GlobalSearchModal: React.FC = () => {
     if (isSearchOpen) setTimeout(() => inputRef.current?.focus(), 50);
   }, [isSearchOpen]);
 
-  const rows = results.data ?? [];
+  // Memoised rather than `results.data ?? []` inline: a fresh array on every
+  // render would make the grouping below recompute on every render too.
+  const rows = useMemo(() => results.data ?? [], [results.data]);
   /** One row per record: a minute matching in four sections is one meeting. */
   const grouped = useMemo(() => collapseByRecord(rows), [rows]);
 

@@ -715,8 +715,10 @@ select pg_temp.check(
 -- clearance — so it carries a scope rule of its own.
 
 select pg_temp.act_as('33333333-3333-3333-3333-333333333333');  -- trustee
+-- Seven since a donor with an account of their own was seeded, so M8-12's
+-- "the donor reads their own report" could be checked rather than asserted.
 select pg_temp.check('an internal role sees the whole register',
-  (select count(*) from stakeholders), 6::bigint);
+  (select count(*) from stakeholders), 7::bigint);
 
 select pg_temp.act_as('77777777-7777-7777-7777-777777777777');  -- contractor
 select pg_temp.check('an external role sees only what was published',
@@ -4780,6 +4782,191 @@ select pg_temp.check('the field digest does not — it is not theirs to decide',
 select pg_temp.check('and a trustee previewing the donor digest sees only what is published',
   (select count(*) from public.weekly_digest('donor', current_date - 4000, current_date)
     where confidentiality <> 'public'), 0::bigint);
+
+reset role;
+
+-- ===========================================================================
+-- Compiled reports (M12-06 … M12-09)
+-- ===========================================================================
+
+set role authenticated;
+
+-- --- a report is compiled, not typed --------------------------------------
+
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- director
+select public.open_report('board_pack', 'February board pack', null, null,
+  '0e000000-0000-0000-0000-000000000002', null);
+
+select pg_temp.check('a board pack is compiled from the registers',
+  (select count(*) from report_runs where kind = 'board_pack'), 1::bigint);
+
+-- The six sections M3-13 lists. Not all of them have rows in this fixture
+-- set; the ones that matter are that the meeting is named and the figures
+-- carry a source.
+select pg_temp.check('and arrives with its sections, not as one blob',
+  (select count(distinct e->>'section') > 2 from report_runs r,
+     jsonb_array_elements(r.content) e
+    where r.kind = 'board_pack'), true);
+
+-- The measure the requirement sets: no material figure without its source.
+select pg_temp.check('every figure in it names the register it came from',
+  (select count(*) from report_runs r, jsonb_array_elements(r.content) e
+    where r.kind = 'board_pack'
+      and e->>'value_number' is not null
+      and coalesce(btrim(e->>'source_note'), '') = ''), 0::bigint);
+
+-- --- an empty compilation is a finding, not a document --------------------
+
+do $$
+begin
+  begin
+    perform public.open_report('status_report', 'The year 1850', '1850-01-01', '1850-12-31');
+    raise notice 'ok   a period with records in it compiles';
+  exception
+    when no_data_found then
+      raise notice 'ok   a report that could compile nothing says so rather than saving a blank';
+  end;
+end;
+$$;
+
+do $$
+begin
+  begin
+    perform public.open_report('status_report', '   ', current_date - 30, current_date);
+    raise exception 'FAIL a report was saved with no name';
+  exception
+    when check_violation then
+      raise notice 'ok   and one with no name is refused';
+  end;
+end;
+$$;
+
+-- --- approval freezes the figures ----------------------------------------
+--
+-- This is the rule the module turns on. An approval that does not fix what
+-- was approved is a signature on a moving document.
+
+select public.approve_report(
+  (select id from report_runs where kind = 'board_pack' limit 1));
+
+select pg_temp.check('approval carries the name and the moment',
+  (select approved_by is not null and approved_at is not null and state = 'approved'
+     from report_runs where kind = 'board_pack'), true);
+
+do $$
+declare v_id uuid := (select id from report_runs where kind = 'board_pack' limit 1);
+begin
+  begin
+    update report_runs set content = '[]'::jsonb where id = v_id;
+    raise exception 'FAIL the figures changed under an approval';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   the figures cannot be changed once somebody has approved them';
+  end;
+end;
+$$;
+
+-- The title is not a figure: a typo in it can still be corrected.
+update report_runs set title = 'February board pack (final)'
+ where kind = 'board_pack';
+select pg_temp.check('though a typo in the title can still be fixed',
+  (select title from report_runs where kind = 'board_pack'),
+  'February board pack (final)');
+
+-- --- publication goes through approval ------------------------------------
+--
+-- The rule is enforced twice on purpose: publish_report refuses it, and the
+-- table's own check refuses a published_at without an approved_at. Removing
+-- either one alone leaves the assertion below passing, which is the point of
+-- having both; removing both makes it fail.
+
+select public.open_report('status_report', 'Quarter to date', current_date - 60, current_date);
+
+do $$
+declare v_id uuid := (select id from report_runs where kind = 'status_report' limit 1);
+begin
+  begin
+    perform public.publish_report(v_id);
+    raise exception 'FAIL an unapproved report was published';
+  exception
+    when check_violation then
+      raise notice 'ok   an unapproved report cannot be published (M8-12)';
+  end;
+end;
+$$;
+
+-- --- a donor report is approved by somebody else --------------------------
+--
+-- It leaves the trust, so the separation the payment bands and the
+-- procurement award require applies here too.
+
+select public.open_report('donor_report', 'Foundation — annual account', current_date - 365,
+  current_date, null, '0b000000-0000-0000-0000-000000000007');
+
+do $$
+declare v_id uuid := (select id from report_runs where kind = 'donor_report' limit 1);
+begin
+  begin
+    perform public.approve_report(v_id);
+    raise exception 'FAIL the person who compiled a donor report approved it themselves';
+  exception
+    when check_violation then
+      raise notice 'ok   a donor report is not approved by whoever compiled it';
+  end;
+end;
+$$;
+
+-- A second person in the band can.
+select pg_temp.act_as('33333333-3333-3333-3333-333333333333');  -- trustee
+select public.approve_report((select id from report_runs where kind = 'donor_report' limit 1));
+select pg_temp.check('a second pair of eyes in the band can approve it',
+  (select state::text from report_runs where kind = 'donor_report'), 'approved');
+
+-- --- publishing a donor report is what declassifies it -------------------
+
+select pg_temp.check('while in draft it is the trust''s own document',
+  (select confidentiality::text from report_runs where kind = 'donor_report'), 'internal');
+
+select public.publish_report((select id from report_runs where kind = 'donor_report' limit 1));
+select pg_temp.check('publishing it is the act that makes it public',
+  (select confidentiality::text || ' ' || state::text from report_runs where kind = 'donor_report'),
+  'public published');
+
+-- And the donor, who is outside and cleared only for public material, reads
+-- their own account — which is the whole point of M8-12.
+select pg_temp.act_as('88888888-8888-8888-8888-888888888888');  -- donor
+select pg_temp.check('the donor can read their own published account',
+  (select count(*) from report_runs where kind = 'donor_report'), 1::bigint);
+select pg_temp.check('and nothing else in the report register',
+  (select count(*) from report_runs), 1::bigint);
+
+do $$
+begin
+  begin
+    perform public.open_report('status_report', 'A report of my own', current_date - 30, current_date);
+    raise exception 'FAIL somebody outside the organisation compiled a report';
+  exception
+    when insufficient_privilege or no_data_found then
+      raise notice 'ok   but cannot compile one of their own';
+  end;
+end;
+$$;
+
+-- --- withdrawal is reasoned ----------------------------------------------
+
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- director
+do $$
+declare v_id uuid := (select id from report_runs where kind = 'status_report' limit 1);
+begin
+  begin
+    perform public.withdraw_report(v_id, '  ');
+    raise exception 'FAIL a report was withdrawn without a reason';
+  exception
+    when check_violation then
+      raise notice 'ok   a report pulled without a reason is a gap in the record';
+  end;
+end;
+$$;
 
 reset role;
 

@@ -242,8 +242,13 @@ export const LegalNext: React.FC = () => {
 };
 
 // ---------------------------------------------------------------------------
-// Where the money went
+// Use of funds
 // ---------------------------------------------------------------------------
+//
+// Named "use of funds" and not "where the money went". The second reads as an
+// accusation — somebody asking a trust to account for itself — and this panel
+// is the trust's own statement of how it spent what it was given. The words a
+// donor screen uses are part of the relationship it is for.
 
 export const MoneyWhere: React.FC = () => {
   const { language } = useApp();
@@ -259,7 +264,7 @@ export const MoneyWhere: React.FC = () => {
   return (
     <Card
       icon={PieChart}
-      title={tr ? 'Para nereye gitti' : 'Where the money went'}
+      title={tr ? 'Kaynakların kullanımı' : 'Use of funds'}
       subtitle={
         tr
           ? 'Kalemlerden hesaplanır. Taahhüt ile tahsilat ayrı durur, çünkü aynı şey değiller.'

@@ -1509,6 +1509,184 @@ const TEST_DIGEST = {
   field: [],
 };
 
+// --- M12 compiled report fixtures -------------------------------------------
+//
+// One run of each kind, in the three states that matter: a draft board pack
+// awaiting approval, an approved status report awaiting publication, and a
+// published donor report. The rows carry a source_note each, because the
+// requirement's measure is that no material figure travels without one.
+
+const TEST_REPORT_RUNS = [
+  {
+    id: '00000000-0000-0000-0000-000000003a01',
+    kind: 'board_pack',
+    title: 'April board pack',
+    period_from: null,
+    period_to: null,
+    meeting_id: '00000000-0000-0000-0000-0000000000bb',
+    stakeholder_id: null,
+    prepared_at: '2026-09-28T09:00:00Z',
+    state: 'draft',
+    approved_at: null,
+    published_at: null,
+    withdrawn_reason: null,
+    confidentiality: 'confidential',
+    preparer: { full_name: 'Smoke Test' },
+    approver: null,
+    meeting: { title: 'Smoke meeting' },
+    donor: null,
+    content: [
+      {
+        section: 'meeting',
+        ord: 0,
+        label_en: 'Smoke meeting',
+        label_tr: 'Duman toplantısı',
+        value_text: '01 Sep 2026 10:00 · Mombasa · trustee',
+        value_number: null,
+        unit: null,
+        entity_kind: 'meeting',
+        entity_id: '00000000-0000-0000-0000-0000000000bb',
+        source_note: 'meetings',
+        confidentiality: 'internal',
+      },
+      {
+        section: 'money',
+        ord: 1,
+        label_en: 'Budget',
+        label_tr: 'Bütçe',
+        value_text: null,
+        value_number: 48000000,
+        unit: 'KES',
+        entity_kind: null,
+        entity_id: null,
+        source_note: 'budget_position',
+        confidentiality: 'internal',
+      },
+      {
+        section: 'money',
+        ord: 6,
+        label_en: 'Pledged and not yet received',
+        label_tr: 'Taahhüt edilip gelmeyen',
+        value_text: null,
+        value_number: 2500000,
+        unit: 'KES',
+        entity_kind: null,
+        entity_id: null,
+        source_note: 'donation_position',
+        confidentiality: 'internal',
+      },
+      {
+        section: 'risks',
+        ord: 1,
+        label_en: 'The lease is not renewed',
+        label_tr: 'Kira yenilenmiyor',
+        value_text: 'legal · open · likelihood 3 · impact 4',
+        value_number: 12,
+        unit: 'score',
+        entity_kind: 'risk',
+        entity_id: '1',
+        source_note: 'risks',
+        confidentiality: 'internal',
+      },
+    ],
+  },
+  {
+    id: '00000000-0000-0000-0000-000000003a02',
+    kind: 'status_report',
+    title: 'Quarter to September',
+    period_from: '2026-07-01',
+    period_to: '2026-09-30',
+    meeting_id: null,
+    stakeholder_id: null,
+    prepared_at: '2026-09-29T09:00:00Z',
+    state: 'approved',
+    approved_at: '2026-09-29T11:00:00Z',
+    published_at: null,
+    withdrawn_reason: null,
+    confidentiality: 'internal',
+    preparer: { full_name: 'Smoke Test' },
+    approver: { full_name: 'Smoke Trustee' },
+    meeting: null,
+    donor: null,
+    content: [
+      {
+        section: 'period',
+        ord: 0,
+        label_en: 'Reporting period',
+        label_tr: 'Rapor dönemi',
+        value_text: '01 Jul 2026 — 30 Sep 2026',
+        value_number: 91,
+        unit: 'days',
+        entity_kind: null,
+        entity_id: null,
+        source_note: 'the dates asked for',
+        confidentiality: 'internal',
+      },
+      {
+        section: 'use of funds',
+        ord: 1,
+        label_en: 'CIVIL · Civil construction',
+        label_tr: 'CIVIL · İnşaat',
+        value_text: null,
+        value_number: 12400000,
+        unit: 'KES',
+        entity_kind: 'budget_category',
+        entity_id: '00000000-0000-0000-0000-000000000c01',
+        source_note: 'category_spend',
+        confidentiality: 'internal',
+      },
+    ],
+  },
+  {
+    id: '00000000-0000-0000-0000-000000003a03',
+    kind: 'donor_report',
+    title: 'Foundation — annual account',
+    period_from: '2025-10-01',
+    period_to: '2026-09-30',
+    meeting_id: null,
+    stakeholder_id: '00000000-0000-0000-0000-0000000000f7',
+    prepared_at: '2026-09-30T09:00:00Z',
+    state: 'published',
+    approved_at: '2026-09-30T10:00:00Z',
+    published_at: '2026-09-30T11:00:00Z',
+    withdrawn_reason: null,
+    // Publishing is what declassified it.
+    confidentiality: 'public',
+    preparer: { full_name: 'Smoke Test' },
+    approver: { full_name: 'Smoke Trustee' },
+    meeting: null,
+    donor: { full_name: 'Foundation Donor' },
+    content: [
+      {
+        section: 'your contribution',
+        ord: 100,
+        label_en: 'Received to date',
+        label_tr: 'Bugüne kadar tahsil edilen',
+        value_text: null,
+        value_number: 1500000,
+        unit: 'KES',
+        entity_kind: null,
+        entity_id: null,
+        source_note: 'donation_position',
+        confidentiality: 'internal',
+      },
+      {
+        section: 'your contribution',
+        ord: 102,
+        label_en: 'Receipts with no document attached',
+        label_tr: 'Belgesi eklenmemiş tahsilatlar',
+        value_text: null,
+        value_number: 1,
+        unit: 'receipts',
+        entity_kind: null,
+        entity_id: null,
+        source_note: 'donation_position',
+        confidentiality: 'internal',
+      },
+    ],
+  },
+];
+
 const ROUTES = [
   '/',
   '/project_info',
@@ -1522,6 +1700,7 @@ const ROUTES = [
   '/risks',
   '/calendar',
   '/plan',
+  '/reports',
   '/procurement',
   '/finance',
   '/documents',
@@ -1819,6 +1998,7 @@ try {
       }),
     );
 
+  await serve('**/rest/v1/report_runs**', TEST_REPORT_RUNS);
   await serve('**/rest/v1/thread_board**', TEST_THREADS);
   await serve('**/rest/v1/thread_messages**', TEST_THREAD_MESSAGES);
   await serve('**/rest/v1/announcement_reach**', TEST_REACH);
@@ -2629,6 +2809,101 @@ try {
     'and the screen says it cannot be edited afterwards',
   );
   check(pageErrors.length === 0, 'the procurement screen renders without a runtime error');
+
+  // --- compiled reports (M12-06 … M12-09) -----------------------------------
+  //
+  // The measure for this module is a duration: a board pack in under ten
+  // minutes where it takes hours today. Hours, because somebody reads six
+  // registers and retypes the figures — so the assertions are mostly about
+  // each figure arriving with the register it came from.
+  pageErrors = [];
+  await page.goto(BASE + '/reports', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(600);
+  const reports = (await page.textContent('body')) ?? '';
+
+  check(
+    /April board pack/.test(reports) && /Quarter to September/.test(reports),
+    'the compiled runs are listed with their state (M12-06, M12-08)',
+  );
+  check(
+    /Mali özet|Money/.test(reports) && /Riskler|Risks/.test(reports),
+    'and a board pack arrives in sections rather than as one blob (M3-13)',
+  );
+  // The measure: no material figure without its source.
+  check(
+    /budget_position/.test(reports) && /donation_position/.test(reports),
+    'every figure names the register it came from',
+  );
+  check(
+    /48.000.000|48,000,000/.test(reports.replace(/\u00a0/g, ' ')),
+    'with the figure itself formatted for the reader',
+  );
+  // Pledge and receipt are different facts and the pack says so.
+  check(
+    /Taahhüt edilip gelmeyen|Pledged and not yet received/.test(reports),
+    'a pledge that has not arrived is its own line, not netted off',
+  );
+
+  // The honest limits, on the screen rather than in a comment.
+  check(
+    /yazdırma penceresinden|browser’s print dialogue/.test(reports),
+    'the screen says the PDF comes from the browser, not from a generator here',
+  );
+  check(
+    /bir \.docx değil|it is not a \.docx/.test(reports),
+    'and that the download is Markdown rather than a .docx nothing writes',
+  );
+
+  // M8-12: approval before publication, and the freeze that makes approval
+  // mean something.
+  check(/Onayla|Approve/.test(reports), 'a draft can be approved (M8-12)');
+  check(
+    /değiştirilemez|cannot be changed/.test(reports),
+    'and the screen says approval freezes the figures',
+  );
+  await page
+    .locator('button')
+    .filter({ hasText: /Quarter to September/ })
+    .first()
+    .click();
+  await page.waitForTimeout(400);
+  // Counted as buttons, not matched as text: "Onaylayan: …" — the line naming
+  // who approved it — contains the word "Onayla", so a text match here would
+  // pass or fail for the wrong reason.
+  const publishButtons = await page
+    .locator('button')
+    .filter({ hasText: /^Yayımla$|^Publish$/ })
+    .count();
+  const approveButtons = await page
+    .locator('button')
+    .filter({ hasText: /^Onayla$|^Approve$/ })
+    .count();
+  check(
+    publishButtons === 1 && approveButtons === 0,
+    'an approved report offers publication and not a second approval',
+  );
+
+  await page
+    .locator('button')
+    .filter({ hasText: /Foundation — annual account/ })
+    .first()
+    .click();
+  await page.waitForTimeout(400);
+  const donorReport = (await page.textContent('body')) ?? '';
+  check(
+    /Katkınız|Your contribution/.test(donorReport) &&
+      /Kaynakların kullanımı|Use of funds/.test(donorReport) === false,
+    'a donor report leads with the donor’s own contribution (M12-07)',
+  );
+  check(
+    /Belgesi eklenmemiş|no document attached/.test(donorReport),
+    'and a receipt with no document behind it is counted, not hidden in the total',
+  );
+  check(
+    /yayımlandı|published/.test(donorReport),
+    'with its state on the page, because a published report has left the trust',
+  );
+  check(pageErrors.length === 0, 'the reports screen renders without a runtime error');
 
   // --- communication and notification (M11) ---------------------------------
   //
