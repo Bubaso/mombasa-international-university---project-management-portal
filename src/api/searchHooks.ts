@@ -6,6 +6,7 @@ import {
   fetchSavedSearches,
   saveSearch,
   searchRecords,
+  fetchSimilarRecords,
 } from './search';
 import type { SearchKind } from '../types';
 
@@ -43,3 +44,14 @@ export function useDeleteSavedSearch() {
     onSuccess: () => client.invalidateQueries({ queryKey: ['savedSearches'] }),
   });
 }
+
+/**
+ * What to look at next, and why (M13-12). One query per record on screen,
+ * because the suggestion depends on the record and nothing else.
+ */
+export const useSimilarRecords = (kind: SearchKind | null, id: string | null) =>
+  useQuery({
+    queryKey: ['similarRecords', kind, id],
+    queryFn: () => fetchSimilarRecords(kind as SearchKind, id as string),
+    enabled: kind != null && id != null,
+  });

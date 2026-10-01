@@ -1717,6 +1717,42 @@ const TEST_UNCITED_GOVERNANCE = [
   },
 ];
 
+// ---------------------------------------------------------------------------
+// Similar-record suggestion (M13-12, 0042)
+// ---------------------------------------------------------------------------
+//
+// One recorded link and one guess. The screen must render them as two
+// different kinds of claim, and the guess must arrive with its words.
+
+const TEST_SIMILAR = [
+  {
+    kind: 'decision',
+    id: '00000000-0000-0000-0000-00000000fa01',
+    title_en: 'Instruct the surveyor to re-measure the boundary',
+    title_tr: null,
+    subtitle: null,
+    occurred_on: '2026-08-20',
+    confidentiality: 'internal',
+    basis: 'recorded_link',
+    relation: 'it hangs off this record',
+    shared_terms: [],
+    terms_in_common: 0,
+  },
+  {
+    kind: 'meeting',
+    id: '00000000-0000-0000-0000-00000000fa02',
+    title_en: "Leasehold reversion and the surveyor's report",
+    title_tr: null,
+    subtitle: null,
+    occurred_on: '2026-09-10',
+    confidentiality: 'internal',
+    basis: 'shared_terms',
+    relation: 'they share terms that are not in everything',
+    shared_terms: ['leasehold', 'reversion'],
+    terms_in_common: 2,
+  },
+];
+
 const TEST_REVIEWS = [
   {
     id: '00000000-0000-0000-0000-000000000f41',
@@ -2872,6 +2908,14 @@ try {
     }),
   );
 
+  await page.route('**/rest/v1/rpc/similar_records', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(TEST_SIMILAR),
+    }),
+  );
+
   await page.route('**/rest/v1/rpc/search_records', (route) =>
     route.fulfill({
       status: 200,
@@ -3379,6 +3423,31 @@ try {
       /Açık sorular|Open questions/.test(detail),
     '/meetings/:id  ',
     `errors=${pageErrors.length}${pageErrors[0] ? ` — ${pageErrors[0].slice(0, 120)}` : ''}`,
+  );
+
+  // M13-12: a suggestion that can be dismissed.
+  const linkedList = (await page.textContent('ul[aria-label="Kayıtlı bağ"]')) ?? '';
+  const guessList =
+    (await page.textContent('ul[aria-label="Paylaşılan terime dayanan tahmin"]')) ?? '';
+  check(
+    /bu kayda bağlı|hangs off this record/.test(linkedList) &&
+      !/ortak terim|shared terms/.test(linkedList),
+    'a recorded link says what the link is and rests on no words (M13-12)',
+  );
+  check(
+    /2 ortak terim: leasehold, reversion|2 shared terms: leasehold, reversion/.test(guessList),
+    'and a guess arrives with the words it matched on, so it can be dismissed',
+  );
+  check(
+    /Tahmin — paylaşılan terime dayanıyor|A guess — based on shared terms/.test(detail) &&
+      /Bunlar bir bulgu değil|These are not a finding/.test(detail),
+    'the guesses are headed as a guess rather than as related records',
+  );
+  check(
+    /onda birinden fazlasında geçen terimler hiç sayılmaz|more than a tenth of the archive is not counted/.test(
+      detail,
+    ),
+    'and the screen says the floor that keeps a word in everything out of it',
   );
 
   // --- the vault says which files it has actually read ----------------------

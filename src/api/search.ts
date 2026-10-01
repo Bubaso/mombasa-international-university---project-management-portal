@@ -14,7 +14,14 @@
  * to get wrong.
  */
 import { supabase } from '../lib/supabase';
-import type { Confidentiality, SavedSearch, SearchKind, SearchResult } from '../types';
+import type {
+  Confidentiality,
+  SavedSearch,
+  SearchKind,
+  SearchResult,
+  SimilarRecord,
+  SuggestionBasis,
+} from '../types';
 
 interface ResultRow {
   kind: SearchKind;
@@ -117,4 +124,53 @@ export async function saveSearch(input: {
 export async function deleteSavedSearch(id: string): Promise<void> {
   const { error } = await supabase.from('saved_searches').delete().eq('id', id);
   fail(error);
+}
+
+/**
+ * Records to look at next, and why (M13-12).
+ *
+ * Two kinds of answer come back and the caller must keep them apart: a
+ * recorded link is something somebody entered, and shared terms are a guess
+ * that arrives with the words it matched on. The terms are the whole point —
+ * a suggestion a reader cannot dismiss in a second is one they will learn to
+ * ignore entirely.
+ */
+export async function fetchSimilarRecords(
+  kind: SearchKind,
+  id: string,
+  limit = 8,
+): Promise<SimilarRecord[]> {
+  const { data, error } = await supabase.rpc('similar_records', {
+    p_kind: kind,
+    p_id: id,
+    p_limit: limit,
+  });
+  if (error) throw new Error(error.message);
+  return (
+    (data ?? []) as {
+      kind: SearchKind;
+      id: string;
+      title_en: string | null;
+      title_tr: string | null;
+      subtitle: string | null;
+      occurred_on: string | null;
+      confidentiality: SimilarRecord['confidentiality'];
+      basis: SuggestionBasis;
+      relation: string;
+      shared_terms: string[] | null;
+      terms_in_common: number | null;
+    }[]
+  ).map((row) => ({
+    kind: row.kind,
+    id: row.id,
+    titleEn: row.title_en,
+    titleTr: row.title_tr,
+    subtitle: row.subtitle,
+    occurredOn: row.occurred_on,
+    confidentiality: row.confidentiality,
+    basis: row.basis,
+    relation: row.relation,
+    sharedTerms: row.shared_terms ?? [],
+    termsInCommon: Number(row.terms_in_common ?? 0),
+  }));
 }

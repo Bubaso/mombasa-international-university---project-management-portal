@@ -7513,6 +7513,187 @@ begin
   end;
 end;
 $$;
+-- ===========================================================================
+-- A suggestion that says why (0042): M13-12
+-- ===========================================================================
+--
+-- The defect in every "related items" box is that it cannot be dismissed. So
+-- these assertions are about two things: that a recorded link is told apart
+-- from a guess, and that the guess comes back with the words it rests on.
+
+set role authenticated;
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- director
+
+-- Two minutes sharing two distinctive terms, and a third sharing only a word
+-- that is on the stop list.
+insert into meetings
+  (id, title, held_at, kind, confidentiality)
+values
+  ('b2000000-0000-0000-0000-000000000001',
+   -- The subject carries "Mombasa" and "project" too, which is what makes the
+   -- stop list testable: without it this minute and the catering one below
+   -- would share two terms and the catering one would be suggested.
+   'Mombasa project: Nyali title deed and the leasehold reversion',
+   now() - interval '40 days', 'trustee', 'internal'),
+  ('b2000000-0000-0000-0000-000000000002',
+   'Leasehold reversion and the surveyor''s report', now() - interval '20 days',
+   'trustee', 'internal'),
+  -- Shares only "Mombasa", which is on the stop list, and "project", also on
+  -- it. Nothing distinctive at all.
+  ('b2000000-0000-0000-0000-000000000003',
+   'Mombasa project catering arrangements', now() - interval '10 days',
+   'trustee', 'internal');
+
+-- A decision taken at the first meeting: a recorded link, not a guess.
+insert into decisions
+  (id, meeting_id, text_en, decided_on, confidentiality)
+values
+  ('b2100000-0000-0000-0000-000000000001', 'b2000000-0000-0000-0000-000000000001',
+   'Instruct the surveyor to re-measure the leasehold boundary',
+   (now() - interval '40 days')::date, 'internal');
+
+-- A recorded link is reported as one, with no words behind it, because it
+-- does not rest on words.
+-- Each scalar lookup names the basis it asks about. A record can be returned
+-- on more than one basis, and a subquery that did not say which would turn an
+-- assertion into a crash instead of a failure.
+select pg_temp.check('a decision taken at the meeting is suggested as a recorded link',
+  (select count(*) from public.similar_records('meeting',
+    'b2000000-0000-0000-0000-000000000001')
+   where id = 'b2100000-0000-0000-0000-000000000001'
+     and basis = 'recorded_link'), 1::bigint);
+select pg_temp.check('and carries no shared terms, because a link does not rest on words',
+  (select shared_terms from public.similar_records('meeting',
+    'b2000000-0000-0000-0000-000000000001')
+   where id = 'b2100000-0000-0000-0000-000000000001'
+     and basis = 'recorded_link'), '{}'::text[]);
+select pg_temp.check('with the relation said in words',
+  (select relation from public.similar_records('meeting',
+    'b2000000-0000-0000-0000-000000000001')
+   where id = 'b2100000-0000-0000-0000-000000000001'
+     and basis = 'recorded_link'), 'it hangs off this record');
+
+-- A guess comes back with the terms it matched on, so it can be dismissed.
+select pg_temp.check('the second minute is suggested on shared terms',
+  (select count(*) from public.similar_records('meeting',
+    'b2000000-0000-0000-0000-000000000001')
+   where id = 'b2000000-0000-0000-0000-000000000002'
+     and basis = 'shared_terms'), 1::bigint);
+select pg_temp.check('and names the terms it matched on',
+  (select shared_terms @> array['leasehold', 'reversion']
+     from public.similar_records('meeting', 'b2000000-0000-0000-0000-000000000001')
+    where id = 'b2000000-0000-0000-0000-000000000002'
+      and basis = 'shared_terms'), true);
+select pg_temp.check('with the count, so three can be weighed against two',
+  (select terms_in_common >= 2
+     from public.similar_records('meeting', 'b2000000-0000-0000-0000-000000000001')
+    where id = 'b2000000-0000-0000-0000-000000000002'
+      and basis = 'shared_terms'), true);
+
+-- The stop list earns its place: a record sharing only words that are in
+-- everything is not suggested at all.
+select pg_temp.check(
+  'a record sharing only words that are in everything is not suggested',
+  (select count(*) from public.similar_records('meeting',
+    'b2000000-0000-0000-0000-000000000001')
+   where id = 'b2000000-0000-0000-0000-000000000003'), 0::bigint);
+
+-- And the stop list is the reason, which is checkable: without "mombasa" on
+-- it the third minute would come back.
+do $$
+begin
+  if not exists (select 1 from search_stop_terms where term = 'mombasa') then
+    raise exception 'FAIL the stop list does not hold the word this test rests on';
+  end if;
+  raise notice 'ok   and the stop list says in writing why that word is ignored';
+end;
+$$;
+
+-- One shared term is not a relation.
+select pg_temp.check('nothing is suggested on a single shared term',
+  (select count(*) from public.similar_records('meeting',
+    'b2000000-0000-0000-0000-000000000001')
+   where basis = 'shared_terms' and terms_in_common < 2), 0::bigint);
+
+-- The subject never suggests itself.
+select pg_temp.check('a record is not suggested as similar to itself',
+  (select count(*) from public.similar_records('meeting',
+    'b2000000-0000-0000-0000-000000000001')
+   where kind = 'meeting' and id = 'b2000000-0000-0000-0000-000000000001'), 0::bigint);
+
+-- Siblings: two decisions at one meeting are connected by the meeting.
+insert into decisions
+  (id, meeting_id, text_en, decided_on, confidentiality)
+values
+  ('b2100000-0000-0000-0000-000000000002', 'b2000000-0000-0000-0000-000000000001',
+   'Hold the catering tender until the boundary is settled',
+   (now() - interval '40 days')::date, 'internal');
+
+select pg_temp.check('two decisions from one meeting are linked through it',
+  (select count(*) from public.similar_records('decision',
+    'b2100000-0000-0000-0000-000000000001')
+   where id = 'b2100000-0000-0000-0000-000000000002'
+     and basis = 'recorded_link'), 1::bigint);
+select pg_temp.check('and the meeting itself is suggested as what they hang off',
+  (select relation from public.similar_records('decision',
+    'b2100000-0000-0000-0000-000000000001')
+   where id = 'b2000000-0000-0000-0000-000000000001'
+     and basis = 'recorded_link'), 'this record hangs off it');
+
+-- A record nobody may read is not suggested, and its existence is not
+-- disclosed by the suggestion either.
+update meetings set confidentiality = 'restricted'
+ where id = 'b2000000-0000-0000-0000-000000000002';
+
+select pg_temp.act_as('44444444-4444-4444-4444-444444444444');  -- field team
+select pg_temp.check('a record above the reader''s tier is not suggested to them',
+  (select count(*) from public.similar_records('meeting',
+    'b2000000-0000-0000-0000-000000000001')
+   where id = 'b2000000-0000-0000-0000-000000000002'), 0::bigint);
+select pg_temp.check('while the one they may read still is',
+  (select count(*) from public.similar_records('meeting',
+    'b2000000-0000-0000-0000-000000000001')
+   where id = 'b2100000-0000-0000-0000-000000000001'
+     and basis = 'recorded_link'), 1::bigint);
+
+-- And asking about a record they cannot read returns nothing rather than an
+-- error that would confirm it exists.
+select pg_temp.check('asking about a record they cannot read returns nothing at all',
+  (select count(*) from public.similar_records('meeting',
+    'b2000000-0000-0000-0000-000000000002')), 0::bigint);
+
+-- The stop list is readable by everybody and writable by two roles, because
+-- a reader who cannot see it cannot understand why a suggestion is missing.
+select pg_temp.check('anybody signed in can read why a word is ignored',
+  (select count(*) from search_stop_terms where term = 'mombasa'), 1::bigint);
+do $$
+begin
+  begin
+    insert into search_stop_terms (term, reason)
+    values ('slab', 'The field team would rather not see these');
+    raise exception 'FAIL the field team edited the stop list';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   but cannot add to it';
+  end;
+end;
+$$;
+
+-- A stop term has to be in the folded form the matcher uses, or it would
+-- silently never match anything.
+select pg_temp.act_as('11111111-1111-1111-1111-111111111111');  -- admin
+do $$
+begin
+  begin
+    insert into search_stop_terms (term, reason)
+    values ('İstanbul', 'Typed the way a person types it');
+    raise exception 'FAIL a stop term was stored in a form the matcher never sees';
+  exception
+    when check_violation then
+      raise notice 'ok   a stop term has to be in the form the matcher uses';
+  end;
+end;
+$$;
 reset role;
 
 \echo ''

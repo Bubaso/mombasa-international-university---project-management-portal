@@ -10,6 +10,7 @@ import { AttendeeList } from '../components/meetings/AttendeeList';
 import { NoteEditor } from '../components/meetings/NoteEditor';
 import { DecisionList } from '../components/meetings/DecisionList';
 import { ActionList } from '../components/meetings/ActionList';
+import { SimilarRecords } from '../components/ui/SimilarRecords';
 import { QuestionList } from '../components/meetings/QuestionList';
 import {
   ASSESSORS,
@@ -232,6 +233,11 @@ export const MeetingDetailView: React.FC = () => {
         canKeep={canKeep}
         confidentiality={meeting.confidentiality}
       />
+
+      {/* Last on the page, because it is the thing to read after the minute
+          rather than instead of it — and it says which of its suggestions is
+          a recorded link and which is a guess (M13-12). */}
+      <SimilarRecords kind="meeting" id={meeting.id} />
     </div>
   );
 };

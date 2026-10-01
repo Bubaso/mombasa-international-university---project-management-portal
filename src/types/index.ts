@@ -2611,3 +2611,34 @@ export interface UncitedGovernance {
   typedClauseIsNotInTheRegister: boolean;
   confidentiality: Confidentiality;
 }
+
+// ---------------------------------------------------------------------------
+// Similar-record suggestion (M13-12, 0042)
+// ---------------------------------------------------------------------------
+
+/**
+ * Why a record was suggested. The two are not the same strength of claim and
+ * the screen never renders them the same way: a recorded link is a fact
+ * somebody entered, shared terms are a guess.
+ */
+export type SuggestionBasis = 'recorded_link' | 'shared_terms';
+
+export interface SimilarRecord {
+  kind: SearchKind;
+  id: string;
+  titleEn: string | null;
+  titleTr: string | null;
+  subtitle: string | null;
+  occurredOn: string | null;
+  confidentiality: Confidentiality;
+  basis: SuggestionBasis;
+  /** What the link is, in words. */
+  relation: string;
+  /**
+   * The terms the guess matched on. Empty for a recorded link, which does not
+   * rest on words. A suggestion that cannot be dismissed cannot be trusted,
+   * so these are always shown.
+   */
+  sharedTerms: string[];
+  termsInCommon: number;
+}
