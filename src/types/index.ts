@@ -575,6 +575,34 @@ export interface ThreadMessage {
   senderName: string | null;
   body: string;
   createdAt: string;
+  /** M11-13: the message this one quotes, by reference rather than by copy. */
+  quotedMessageId: string | null;
+  /**
+   * The quoted words, read from the original row under the reader's own
+   * clearance. Null where they may not see it — and then
+   * `quotedMessageNotReadable` says so, because "nothing quoted" and "quoted
+   * something you may not read" are different sentences.
+   */
+  quotedBody: string | null;
+  quotedSenderName: string | null;
+  quotedMessageNotReadable: boolean;
+  attachments: number;
+  reactions: number;
+}
+
+/** M11-13. Who reacted, not how many: a count nobody can open is not evidence. */
+export interface MessageReaction {
+  threadMessageId: string;
+  reaction: 'agree' | 'disagree' | 'seen' | 'question';
+  people: number;
+  who: string[];
+}
+
+export interface MessageAttachment {
+  threadMessageId: string;
+  documentId: string;
+  documentTitle: string | null;
+  note: string | null;
 }
 
 export interface ChannelMember {

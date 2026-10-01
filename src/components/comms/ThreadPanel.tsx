@@ -22,6 +22,7 @@ import {
   Lock,
   Megaphone,
   MessageSquare,
+  Paperclip,
   Plus,
   Scale,
   Send,
@@ -31,8 +32,11 @@ import { useApp } from '../../context/AppContext';
 import {
   useAcknowledgeAnnouncement,
   useCloseThread,
+  useMessageAttachments,
+  useMessageReactions,
   useMessages,
   usePostMessage,
+  useReact,
   useStartThread,
   useThreads,
 } from '../../api/commsHooks';
@@ -40,7 +44,19 @@ import { QueryStatus } from '../QueryStatus';
 import { ActionButton, Field, Pill, Select, TextInput, WriteError } from '../ui/Controls';
 import { CHANNELS, channelName } from '../../lib/comms';
 import { formatDate } from '../../lib/site';
-import type { CommChannel, ThreadKind } from '../../types';
+import { useAuth } from '../../context/AuthContext';
+import type { CommChannel, MessageReaction, ThreadKind } from '../../types';
+
+/**
+ * The four tokens a reaction may be. Not free text: a reaction that can
+ * hold a sentence is a reply with no author line (M11-13).
+ */
+const REACTION_WORDS: Record<MessageReaction['reaction'], { tr: string; en: string }> = {
+  agree: { tr: 'katılıyorum', en: 'agree' },
+  disagree: { tr: 'katılmıyorum', en: 'disagree' },
+  seen: { tr: 'gördüm', en: 'seen' },
+  question: { tr: 'sorum var', en: 'a question' },
+};
 
 export const ThreadPanel: React.FC = () => {
   const { language } = useApp();
@@ -72,7 +88,15 @@ export const ThreadPanel: React.FC = () => {
   const all = threads.data ?? [];
   const shown = channel === 'all' ? all : all.filter((t) => t.channel === channel);
   const open = all.find((t) => t.id === openId) ?? shown[0] ?? null;
+  const { user } = useAuth();
   const messages = useMessages(open?.id ?? null);
+  const reactions = useMessageReactions(open?.id ?? null);
+  const attachments = useMessageAttachments(open?.id ?? null);
+  const react = useReact();
+  const reactionsFor = (id: string) =>
+    (reactions.data ?? []).filter((r) => r.threadMessageId === id);
+  const attachmentsFor = (id: string) =>
+    (attachments.data ?? []).filter((a) => a.threadMessageId === id);
 
   // The channels this person is actually in. A channel with no threads they
   // can see is indistinguishable from a channel they are not in, which is
@@ -354,7 +378,84 @@ export const ThreadPanel: React.FC = () => {
                         {formatDate(m.createdAt, language)}
                       </span>
                     </div>
+                    {/* M11-13. The quotation is read from the original row,
+                        under this reader's own clearance, so it cannot
+                        misquote and cannot carry words out of the tier they
+                        were written at. */}
+                    {m.quotedMessageId != null && (
+                      <p className="mt-0.5 border-l-2 border-slate-300 pl-2 text-[11px] text-slate-600">
+                        {m.quotedMessageNotReadable ? (
+                          <span className="italic">
+                            {tr
+                              ? 'Alıntılanan mesajı okuma yetkiniz yok — metni gösterilmiyor.'
+                              : 'You may not read the quoted message — its words are not shown.'}
+                          </span>
+                        ) : (
+                          <>
+                            <span className="font-medium">{m.quotedSenderName ?? '—'}: </span>
+                            {m.quotedBody}
+                          </>
+                        )}
+                      </p>
+                    )}
                     <p className="mt-0.5 text-xs whitespace-pre-wrap text-slate-800">{m.body}</p>
+
+                    {/* The files on it are vault documents, so what a reader
+                        is shown here is what the vault lets them read. */}
+                    {attachmentsFor(m.id).length > 0 && (
+                      <ul className="mt-0.5 space-y-0.5">
+                        {attachmentsFor(m.id).map((a) => (
+                          <li
+                            key={a.documentId}
+                            className="flex items-center gap-1.5 text-[11px] text-slate-600"
+                          >
+                            <Paperclip className="h-3 w-3 shrink-0" aria-hidden="true" />
+                            {a.documentTitle ?? (tr ? '(kasadaki belge)' : '(a vault document)')}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+
+                    {/* A reaction count comes with the names: an anonymous
+                        count on a thread where decisions get taken is a vote
+                        nobody can audit. */}
+                    {reactionsFor(m.id).length > 0 && (
+                      <p className="mt-0.5 flex flex-wrap gap-x-2 text-[11px] text-slate-600">
+                        {reactionsFor(m.id).map((r) => (
+                          <span key={r.reaction}>
+                            {REACTION_WORDS[r.reaction][tr ? 'tr' : 'en']} {r.people} ·{' '}
+                            <span className="text-slate-500">{r.who.join(', ')}</span>
+                          </span>
+                        ))}
+                      </p>
+                    )}
+                    {user != null && open.kind === 'discussion' && (
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {(Object.keys(REACTION_WORDS) as MessageReaction['reaction'][]).map(
+                          (option) => (
+                            <button
+                              key={option}
+                              type="button"
+                              onClick={() =>
+                                react.mutate({
+                                  threadMessageId: m.id,
+                                  profileId: user.id,
+                                  reaction: option,
+                                })
+                              }
+                              className="cursor-pointer rounded border border-slate-200 px-1.5 py-0.5 text-[10px] text-slate-600 hover:bg-slate-50"
+                            >
+                              {REACTION_WORDS[option][tr ? 'tr' : 'en']}
+                            </button>
+                          ),
+                        )}
+                        <span className="text-[10px] text-slate-400">
+                          {tr
+                            ? '— tepki bir tutum kaydı değil; tutum paydaş kütüğünde durur'
+                            : '— a reaction is not a recorded position; stance lives in the stakeholder register'}
+                        </span>
+                      </div>
+                    )}
                   </li>
                 ))}
                 {(messages.data ?? []).length === 0 && (

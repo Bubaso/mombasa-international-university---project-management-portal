@@ -145,3 +145,43 @@ export function useRunSweep() {
     },
   });
 }
+
+// --- attachments, quoting and reactions (M11-13) ----------------------------
+
+export const useMessageReactions = (threadId: string | null) =>
+  useQuery({
+    queryKey: ['messageReactions', threadId],
+    queryFn: () => api.fetchReactions(threadId as string),
+    enabled: threadId != null,
+  });
+
+export const useMessageAttachments = (threadId: string | null) =>
+  useQuery({
+    queryKey: ['messageAttachments', threadId],
+    queryFn: () => api.fetchMessageAttachments(threadId as string),
+    enabled: threadId != null,
+  });
+
+function useMessageInvalidator(): () => void {
+  const client = useQueryClient();
+  return () => {
+    for (const key of ['messages', 'messageReactions', 'messageAttachments']) {
+      void client.invalidateQueries({ queryKey: [key] });
+    }
+  };
+}
+
+export function useReact() {
+  const invalidate = useMessageInvalidator();
+  return useMutation({ mutationFn: api.react, onSuccess: invalidate });
+}
+
+export function useUnreact() {
+  const invalidate = useMessageInvalidator();
+  return useMutation({ mutationFn: api.unreact, onSuccess: invalidate });
+}
+
+export function useAttachToMessage() {
+  const invalidate = useMessageInvalidator();
+  return useMutation({ mutationFn: api.attachToMessage, onSuccess: invalidate });
+}

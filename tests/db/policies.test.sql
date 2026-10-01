@@ -7937,6 +7937,231 @@ begin
   end;
 end;
 $$;
+-- ===========================================================================
+-- An attachment is a vault document (0044): M11-13
+-- ===========================================================================
+--
+-- Three small features whose cheap shapes are all wrong: a URL in a text
+-- column, a copied quotation, and an anonymous count.
+
+set role authenticated;
+select pg_temp.act_as('33333333-3333-3333-3333-333333333333');  -- trustee
+
+-- The free-text URL is gone, and with it the one way a message could hand
+-- somebody a file the vault would have refused them.
+select pg_temp.check('a message no longer carries a free-text attachment URL',
+  (select count(*) from information_schema.columns
+    where table_schema = 'public' and table_name = 'thread_messages'
+      and column_name = 'attachment_url'), 0::bigint);
+
+-- An attachment is a vault document, so it carries that document's tier.
+insert into message_attachments (thread_message_id, document_id, attached_by)
+values ('1f000000-0000-0000-0000-000000000011',
+        '1b000000-0000-0000-0000-000000000001',
+        '33333333-3333-3333-3333-333333333333');
+
+select pg_temp.check('a file on a message is a vault document',
+  (select attachments from message_detail
+    where thread_message_id = '1f000000-0000-0000-0000-000000000011'), 1::bigint);
+
+-- And a message cannot be a way around the vault: attaching a document the
+-- attacher cannot read is refused.
+select pg_temp.act_as('cccc1111-1111-1111-1111-111111111111');  -- surveyor, internal
+select pg_temp.check('the surveyor cannot read the restricted pack',
+  (select count(*) from document_vault
+    where id = '1b000000-0000-0000-0000-000000000002'), 0::bigint);
+do $$
+begin
+  begin
+    insert into message_attachments (thread_message_id, document_id, attached_by)
+    values ('1f000000-0000-0000-0000-000000000011',
+            '1b000000-0000-0000-0000-000000000002',
+            'cccc1111-1111-1111-1111-111111111111');
+    raise exception 'FAIL a message was used to attach a document the sender cannot read';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   a message is not a way around the vault';
+  end;
+end;
+$$;
+
+select pg_temp.act_as('33333333-3333-3333-3333-333333333333');  -- trustee
+
+-- The read side needs its own assertion, and the insert one above does not
+-- cover it: a reader who may see the message but not the file must not be
+-- shown that the file is there. The trustee, who may read both, attaches the
+-- restricted pack.
+insert into message_attachments (thread_message_id, document_id, attached_by)
+values ('1f000000-0000-0000-0000-000000000011',
+        '1b000000-0000-0000-0000-000000000002',
+        '33333333-3333-3333-3333-333333333333');
+
+select pg_temp.check('the trustee sees both files on the message',
+  (select attachments from message_detail
+    where thread_message_id = '1f000000-0000-0000-0000-000000000011'), 2::bigint);
+
+select pg_temp.act_as('cccc1111-1111-1111-1111-111111111111');  -- surveyor, internal
+select pg_temp.check('while the surveyor sees only the one the vault lets them read',
+  (select attachments from message_detail
+    where thread_message_id = '1f000000-0000-0000-0000-000000000011'), 1::bigint);
+select pg_temp.check('and the restricted one is not even listed to them',
+  (select count(*) from message_attachments
+    where thread_message_id = '1f000000-0000-0000-0000-000000000011'
+      and document_id = '1b000000-0000-0000-0000-000000000002'), 0::bigint);
+
+select pg_temp.act_as('33333333-3333-3333-3333-333333333333');  -- trustee
+
+-- A quote is a reference, so the quoted words come from the original row
+-- every time it is read and cannot drift from what was said.
+insert into thread_messages (id, thread_id, sender_id, body, quoted_message_id)
+values ('b4000000-0000-0000-0000-000000000001',
+        '1f000000-0000-0000-0000-000000000001',
+        '33333333-3333-3333-3333-333333333333',
+        'Which four?', '1f000000-0000-0000-0000-000000000011');
+
+select pg_temp.check('a quote shows what the original row says',
+  (select quoted_body from message_detail
+    where thread_message_id = 'b4000000-0000-0000-0000-000000000001'),
+  'Four firms have been approached.');
+
+-- Messages are append-only (0027), so the usual argument for a reference —
+-- that a copy drifts when the original is edited — does not apply here. The
+-- one that does is access: quoted words read from the original row stay under
+-- that row's clearance, where copied words would carry the quoting message's
+-- instead. So a restricted message quoted into the same thread is readable by
+-- the trustee and not by the field team, and the field team is told that
+-- rather than shown the text.
+insert into thread_messages (id, thread_id, sender_id, body, confidentiality)
+values ('b4000000-0000-0000-0000-000000000009',
+        '1f000000-0000-0000-0000-000000000001',
+        '33333333-3333-3333-3333-333333333333',
+        'The minister asked for the figure in private.', 'restricted');
+insert into thread_messages (id, thread_id, sender_id, body, quoted_message_id, confidentiality)
+values ('b4000000-0000-0000-0000-00000000000a',
+        '1f000000-0000-0000-0000-000000000001',
+        '33333333-3333-3333-3333-333333333333',
+        'Noted — I will take it up.', 'b4000000-0000-0000-0000-000000000009',
+        'internal');
+
+select pg_temp.check('the trustee, who may read the quoted message, sees its words',
+  (select quoted_body from message_detail
+    where thread_message_id = 'b4000000-0000-0000-0000-00000000000a'),
+  'The minister asked for the figure in private.');
+
+-- The surveyor is the one reader this can be tested with: 0027's seed puts
+-- them in the trustee channel by name, so they read the internal message that
+-- quotes, and their clearance stops at internal, so they cannot read the
+-- restricted message it quotes. The field team would prove nothing — they
+-- cannot see either message, and the flag would come back null because there
+-- is no row rather than because the quotation is withheld.
+select pg_temp.act_as('cccc1111-1111-1111-1111-111111111111');  -- surveyor, internal
+-- And the message's own tier is enforced at last. Until 0044 the read policy
+-- looked only at the thread, so this next assertion came back with the
+-- restricted words in it.
+select pg_temp.check('a restricted message is not readable below its tier',
+  (select count(*) from thread_messages
+    where id = 'b4000000-0000-0000-0000-000000000009'), 0::bigint);
+select pg_temp.check('the surveyor reads the message that quotes',
+  (select count(*) from message_detail
+    where thread_message_id = 'b4000000-0000-0000-0000-00000000000a'), 1::bigint);
+select pg_temp.check('but is shown none of the quoted words',
+  (select quoted_body from message_detail
+    where thread_message_id = 'b4000000-0000-0000-0000-00000000000a'), null::text);
+select pg_temp.check('and is told that is why, rather than left with a blank',
+  (select quoted_message_not_readable from message_detail
+    where thread_message_id = 'b4000000-0000-0000-0000-00000000000a'), true);
+select pg_temp.check('while a quotation they may read is not flagged',
+  (select quoted_message_not_readable from message_detail
+    where thread_message_id = 'b4000000-0000-0000-0000-000000000001'), false);
+
+select pg_temp.act_as('33333333-3333-3333-3333-333333333333');  -- trustee
+
+-- A message cannot quote itself.
+do $$
+declare
+  v_id uuid := 'b4000000-0000-0000-0000-000000000002';
+begin
+  begin
+    insert into thread_messages (id, thread_id, sender_id, body, quoted_message_id)
+    values (v_id, '1f000000-0000-0000-0000-000000000001',
+            '33333333-3333-3333-3333-333333333333', 'As I was saying', v_id);
+    raise exception 'FAIL a message quoted itself';
+  exception
+    when check_violation then
+      raise notice 'ok   a message cannot quote itself';
+  end;
+end;
+$$;
+
+-- And a quote cannot cross threads, which would move what was said past the
+-- membership rule of the channel it was said in.
+do $$
+begin
+  begin
+    insert into thread_messages (thread_id, sender_id, body, quoted_message_id)
+    values ('1f000000-0000-0000-0000-000000000002',
+            '33333333-3333-3333-3333-333333333333',
+            'Quoting from the other channel',
+            '1f000000-0000-0000-0000-000000000011');
+    raise exception 'FAIL a quote crossed from one thread into another';
+  exception
+    when check_violation then
+      raise notice 'ok   nor quote across threads, past the channel''s membership rule';
+  end;
+end;
+$$;
+
+-- A reaction is a person, and the count can be opened.
+insert into message_reactions (thread_message_id, profile_id, reaction)
+values ('1f000000-0000-0000-0000-000000000011',
+        '33333333-3333-3333-3333-333333333333', 'question');
+
+select pg_temp.check('a reaction count comes with the names behind it',
+  (select who from message_reaction_detail
+    where thread_message_id = '1f000000-0000-0000-0000-000000000011'
+      and reaction = 'question'), '{Trustee}'::text[]);
+
+-- A reaction in somebody else's name is a forged position.
+do $$
+begin
+  begin
+    insert into message_reactions (thread_message_id, profile_id, reaction)
+    values ('1f000000-0000-0000-0000-000000000011',
+            '22222222-2222-2222-2222-222222222222', 'agree');
+    raise exception 'FAIL a reaction was recorded in somebody else''s name';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   a reaction cannot be recorded in somebody else''s name';
+  end;
+end;
+$$;
+
+-- And a reaction is a token, not a sentence: one that can hold a paragraph is
+-- a reply with no author line.
+do $$
+begin
+  begin
+    insert into message_reactions (thread_message_id, profile_id, reaction)
+    values ('1f000000-0000-0000-0000-000000000011',
+            '33333333-3333-3333-3333-333333333333',
+            'I think we should wait until the surveyor reports');
+    raise exception 'FAIL a reaction held a sentence';
+  exception
+    when check_violation then
+      raise notice 'ok   a reaction is one of four tokens, not free text';
+  end;
+end;
+$$;
+
+-- Somebody who cannot read the message sees neither its reactions nor its
+-- attachments.
+select pg_temp.act_as('77777777-7777-7777-7777-777777777777');  -- contractor
+select pg_temp.check('a reader outside the channel sees no reaction on it',
+  (select count(*) from message_reaction_detail
+    where thread_message_id = '1f000000-0000-0000-0000-000000000011'), 0::bigint);
+select pg_temp.check('nor any attachment',
+  (select count(*) from message_attachments
+    where thread_message_id = '1f000000-0000-0000-0000-000000000011'), 0::bigint);
 reset role;
 
 \echo ''

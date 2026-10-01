@@ -20,6 +20,8 @@ import type {
   CorrespondenceEntry,
   DigestAudience,
   DigestRow,
+  MessageAttachment,
+  MessageReaction,
   NotificationHealth,
   NotificationItem,
   NotificationMedium,
@@ -75,22 +77,134 @@ export async function fetchThreads(): Promise<CommunicationThread[]> {
   }));
 }
 
+/**
+ * From `message_detail` rather than from the table, because the quotation has
+ * to be resolved from the original row under the reader's own clearance
+ * (M11-13). A client that copied the quoted text into the reply would be
+ * carrying those words out of the tier they were written at.
+ */
 export async function fetchMessages(threadId: string): Promise<ThreadMessage[]> {
   const { data, error } = await supabase
-    .from('thread_messages')
-    .select('id, thread_id, sender_id, body, created_at, sender:profiles(full_name)')
+    .from('message_detail')
+    .select(
+      'thread_message_id, thread_id, sender_id, body, created_at, quoted_message_id, ' +
+        'quoted_body, quoted_sender_name, quoted_message_not_readable, attachments, ' +
+        'reactions, sender:profiles(full_name)',
+    )
     .eq('thread_id', threadId)
     .order('created_at');
   fail(error);
 
   return rows<Record<string, unknown>>(data).map((row) => ({
-    id: row.id as string,
+    id: row.thread_message_id as string,
     threadId: row.thread_id as string,
     senderId: row.sender_id as string,
     senderName: label(row.sender as NamedRef),
     body: row.body as string,
     createdAt: row.created_at as string,
+    quotedMessageId: (row.quoted_message_id as string | null) ?? null,
+    quotedBody: (row.quoted_body as string | null) ?? null,
+    quotedSenderName: (row.quoted_sender_name as string | null) ?? null,
+    quotedMessageNotReadable: Boolean(row.quoted_message_not_readable),
+    attachments: Number(row.attachments ?? 0),
+    reactions: Number(row.reactions ?? 0),
   }));
+}
+
+/** Who reacted to each message in a thread, and how (M11-13). */
+export async function fetchReactions(threadId: string): Promise<MessageReaction[]> {
+  const { data: ids, error: idError } = await supabase
+    .from('message_detail')
+    .select('thread_message_id')
+    .eq('thread_id', threadId);
+  fail(idError);
+  const messageIds = rows<{ thread_message_id: string }>(ids).map((r) => r.thread_message_id);
+  if (messageIds.length === 0) return [];
+
+  const { data, error } = await supabase
+    .from('message_reaction_detail')
+    .select('thread_message_id, reaction, people, who')
+    .in('thread_message_id', messageIds);
+  fail(error);
+  return rows<Record<string, unknown>>(data).map((row) => ({
+    threadMessageId: row.thread_message_id as string,
+    reaction: row.reaction as MessageReaction['reaction'],
+    people: Number(row.people ?? 0),
+    who: (row.who as string[] | null) ?? [],
+  }));
+}
+
+/** Only your own: a reaction in somebody else's name is a forged position. */
+export async function react(input: {
+  threadMessageId: string;
+  profileId: string;
+  reaction: MessageReaction['reaction'];
+}): Promise<void> {
+  const { error } = await supabase.from('message_reactions').insert({
+    thread_message_id: input.threadMessageId,
+    profile_id: input.profileId,
+    reaction: input.reaction,
+  });
+  fail(error);
+}
+
+export async function unreact(input: {
+  threadMessageId: string;
+  profileId: string;
+  reaction: MessageReaction['reaction'];
+}): Promise<void> {
+  const { error } = await supabase
+    .from('message_reactions')
+    .delete()
+    .eq('thread_message_id', input.threadMessageId)
+    .eq('profile_id', input.profileId)
+    .eq('reaction', input.reaction);
+  fail(error);
+}
+
+/**
+ * A file on a message is a vault document, by id. There is no URL to paste:
+ * a message must not be a way around the vault's tiers or its download log.
+ */
+export async function attachToMessage(input: {
+  threadMessageId: string;
+  documentId: string;
+  note: string | null;
+  profileId: string;
+}): Promise<void> {
+  const { error } = await supabase.from('message_attachments').insert({
+    thread_message_id: input.threadMessageId,
+    document_id: input.documentId,
+    note: input.note,
+    attached_by: input.profileId,
+  });
+  fail(error);
+}
+
+export async function fetchMessageAttachments(threadId: string): Promise<MessageAttachment[]> {
+  const { data: ids, error: idError } = await supabase
+    .from('message_detail')
+    .select('thread_message_id')
+    .eq('thread_id', threadId);
+  fail(idError);
+  const messageIds = rows<{ thread_message_id: string }>(ids).map((r) => r.thread_message_id);
+  if (messageIds.length === 0) return [];
+
+  const { data, error } = await supabase
+    .from('message_attachments')
+    .select('thread_message_id, document_id, note, document:document_vault(title)')
+    .in('thread_message_id', messageIds);
+  fail(error);
+  return rows<Record<string, unknown>>(data).map((row) => {
+    const doc = row.document as { title: string } | { title: string }[] | null;
+    const one = Array.isArray(doc) ? doc[0] : doc;
+    return {
+      threadMessageId: row.thread_message_id as string,
+      documentId: row.document_id as string,
+      documentTitle: one?.title ?? null,
+      note: (row.note as string | null) ?? null,
+    };
+  });
 }
 
 export async function startThread(input: {

@@ -2132,16 +2132,73 @@ const TEST_THREADS = [
   },
 ];
 
+// From `message_detail` now, because the quotation is resolved there under the
+// reader's own clearance (M11-13). Three messages: one plain, one quoting it,
+// and one quoting something this reader may not see.
 const TEST_THREAD_MESSAGES = [
   {
-    id: '00000000-0000-0000-0000-000000002b01',
+    thread_message_id: '00000000-0000-0000-0000-000000002b01',
     thread_id: '00000000-0000-0000-0000-000000002a01',
     sender_id: '00000000-0000-0000-0000-0000000000aa',
     body: 'Four firms have been approached.',
     created_at: '2026-09-20T09:05:00Z',
+    quoted_message_id: null,
+    quoted_body: null,
+    quoted_sender_name: null,
+    quoted_message_not_readable: false,
+    attachments: 1,
+    reactions: 2,
     // The name comes from the joined profile, never from a string the client
     // wrote — which is what 'Current User' was.
     sender: { full_name: 'Smoke Test' },
+  },
+  {
+    thread_message_id: '00000000-0000-0000-0000-000000002b02',
+    thread_id: '00000000-0000-0000-0000-000000002a01',
+    sender_id: '00000000-0000-0000-0000-0000000000aa',
+    body: 'Which four?',
+    created_at: '2026-09-20T09:06:00Z',
+    quoted_message_id: '00000000-0000-0000-0000-000000002b01',
+    quoted_body: 'Four firms have been approached.',
+    quoted_sender_name: 'Smoke Test',
+    quoted_message_not_readable: false,
+    attachments: 0,
+    reactions: 0,
+    sender: { full_name: 'Smoke Test' },
+  },
+  {
+    // Quotes a message above this reader's tier: the words are withheld and
+    // the screen says why rather than leaving a blank.
+    thread_message_id: '00000000-0000-0000-0000-000000002b03',
+    thread_id: '00000000-0000-0000-0000-000000002a01',
+    sender_id: '00000000-0000-0000-0000-0000000000aa',
+    body: 'Noted — I will take it up.',
+    created_at: '2026-09-20T09:07:00Z',
+    quoted_message_id: '00000000-0000-0000-0000-000000002b09',
+    quoted_body: null,
+    quoted_sender_name: null,
+    quoted_message_not_readable: true,
+    attachments: 0,
+    reactions: 0,
+    sender: { full_name: 'Smoke Test' },
+  },
+];
+
+const TEST_MESSAGE_REACTIONS = [
+  {
+    thread_message_id: '00000000-0000-0000-0000-000000002b01',
+    reaction: 'agree',
+    people: 2,
+    who: ['Smoke Test', 'Trustee Two'],
+  },
+];
+
+const TEST_MESSAGE_ATTACHMENTS = [
+  {
+    thread_message_id: '00000000-0000-0000-0000-000000002b01',
+    document_id: '00000000-0000-0000-0000-0000000000d1',
+    note: null,
+    document: { title: 'Smoke deed' },
   },
 ];
 
@@ -3106,6 +3163,9 @@ try {
   await serve('**/rest/v1/stakeholders**', TEST_STAKEHOLDERS);
   await serve('**/rest/v1/report_runs**', TEST_REPORT_RUNS);
   await serve('**/rest/v1/thread_board**', TEST_THREADS);
+  await serve('**/rest/v1/message_detail**', TEST_THREAD_MESSAGES);
+  await serve('**/rest/v1/message_reaction_detail**', TEST_MESSAGE_REACTIONS);
+  await serve('**/rest/v1/message_attachments**', TEST_MESSAGE_ATTACHMENTS);
   await serve('**/rest/v1/thread_messages**', TEST_THREAD_MESSAGES);
   await serve('**/rest/v1/announcement_reach**', TEST_REACH);
   await serve('**/rest/v1/channel_members**', TEST_CHANNEL_MEMBERS);
@@ -4751,6 +4811,29 @@ try {
     'a message carries the sender the database recorded (M11-02)',
   );
   check(!/Current User/.test(comms), "and nothing on the screen says 'Current User' any more");
+
+  // M11-13: the file is a vault document, the quote is a reference, and the
+  // reaction count carries its names.
+  check(
+    /Smoke deed/.test(comms) && !/attachment_url|https?:\/\/.*\.pdf/.test(comms),
+    'a file on a message is shown as a vault document, not as a pasted URL (M11-13)',
+  );
+  check(
+    /katılıyorum 2|agree 2/.test(comms) && /Trustee Two/.test(comms),
+    'and a reaction count comes with the names behind it',
+  );
+  check(
+    /tepki bir tutum kaydı değil|not a recorded position/.test(comms),
+    'with the screen saying a reaction is not a recorded position',
+  );
+  check(
+    /Smoke Test: Four firms have been approached/.test(comms),
+    'a quote shows the original sender and the original words',
+  );
+  check(
+    /Alıntılanan mesajı okuma yetkiniz yok|may not read the quoted message/.test(comms),
+    'while a quote of something above the reader’s tier withholds the words and says why',
+  );
 
   // M11-04: channels. The filter row shows only channels this reader has
   // threads in — the portal does not advertise rooms you cannot enter — so
