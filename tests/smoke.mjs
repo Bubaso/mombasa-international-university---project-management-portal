@@ -253,6 +253,146 @@ const TEST_CONFLICT = {
   acknowledged: false,
 };
 
+// ---------------------------------------------------------------------------
+// The watch book (M7-18, M7-12, M6-11)
+// ---------------------------------------------------------------------------
+//
+// Chosen so the screen's three refusals are all on display at once: a gate
+// entry whose watch has closed (which must not read as a person on site), an
+// incident whose response nobody wrote down (which must not read as nobody
+// having responded), and a watch with no expected round count (which must not
+// read as nought rounds owed).
+
+const TEST_WATCHES = [
+  {
+    watch_shift_id: '00000000-0000-0000-0000-0000000007a1',
+    post: 'main_gate',
+    construction_block_id: null,
+    block_code: null,
+    on_watch: 'J. Mwakio',
+    watch_firm: 'Pwani Security',
+    began_at: '2026-09-29T18:00:00Z',
+    ended_at: '2026-09-30T02:00:00Z',
+    rounds_expected: 4,
+    rounds_recorded: 2,
+    rounds_missing: 2,
+    last_round_at: '2026-09-30T01:00:00Z',
+    logged_hours_after_start: 30.4,
+    never_closed: false,
+    handover_note: null,
+    confidentiality: 'internal',
+  },
+  {
+    // No expected count was ever recorded, and the watch was never closed.
+    watch_shift_id: '00000000-0000-0000-0000-0000000007a2',
+    post: 'perimeter',
+    construction_block_id: null,
+    block_code: null,
+    on_watch: 'A. Kazungu',
+    watch_firm: 'Pwani Security',
+    began_at: '2026-09-27T18:00:00Z',
+    ended_at: null,
+    rounds_expected: null,
+    rounds_recorded: 1,
+    rounds_missing: null,
+    last_round_at: '2026-09-27T20:00:00Z',
+    logged_hours_after_start: 1.2,
+    never_closed: true,
+    handover_note: null,
+    confidentiality: 'internal',
+  },
+];
+
+const TEST_GATE_PRESENCE = [
+  {
+    gate_visit_id: '00000000-0000-0000-0000-0000000007b1',
+    person_name: 'Delivery driver',
+    organisation: 'Coast Hardware',
+    stakeholder_id: null,
+    purpose: 'Cement delivery',
+    vehicle_plate: 'KCD 884Q',
+    escorted_by: null,
+    id_document_seen: false,
+    entered_at: '2026-09-29T21:00:00Z',
+    watch_shift_id: '00000000-0000-0000-0000-0000000007a1',
+    watch_ended_at: '2026-09-30T02:00:00Z',
+    on_watch: 'J. Mwakio',
+    open_hours: 44.0,
+    outlasted_its_watch: true,
+    construction_block_id: null,
+    confidentiality: 'confidential',
+  },
+];
+
+const TEST_INCIDENTS = [
+  {
+    // An accident with somebody hurt, no response written down, no evidence,
+    // and no decision recorded about telling an authority.
+    site_incident_id: '00000000-0000-0000-0000-0000000007c1',
+    kind: 'accident',
+    occurred_at: '2026-09-27T09:00:00Z',
+    construction_block_id: null,
+    block_code: 'A1',
+    watch_shift_id: null,
+    description_en: 'A labourer fell from the second-floor slab edge of block A1.',
+    description_tr: null,
+    intervention_en: null,
+    intervention_tr: null,
+    intervention_unrecorded: true,
+    injured_count: 1,
+    severity: 4,
+    police_ob_number: null,
+    authority_notice: 'unknown',
+    notified_at: null,
+    notification_document_id: null,
+    risk_id: null,
+    legal_case_id: null,
+    confirmed: false,
+    confirmed_at: null,
+    evidence_count: 0,
+    logged_hours_after: 76.5,
+    confidentiality: 'confidential',
+  },
+  {
+    site_incident_id: '00000000-0000-0000-0000-0000000007c2',
+    kind: 'intrusion',
+    occurred_at: '2026-09-29T23:00:00Z',
+    construction_block_id: null,
+    block_code: 'A1',
+    watch_shift_id: '00000000-0000-0000-0000-0000000007a1',
+    description_en: 'Two men came over the north fence and left when the watch approached.',
+    description_tr: null,
+    intervention_en: 'Watch called the Nyali station; patrol attended and took a statement.',
+    intervention_tr: null,
+    intervention_unrecorded: false,
+    injured_count: 0,
+    severity: 3,
+    police_ob_number: 'OB 41/2026',
+    authority_notice: 'notified',
+    notified_at: '2026-09-30T00:00:00Z',
+    notification_document_id: '00000000-0000-0000-0000-0000000000d1',
+    risk_id: null,
+    legal_case_id: null,
+    confirmed: true,
+    confirmed_at: '2026-09-30T06:00:00Z',
+    evidence_count: 1,
+    logged_hours_after: 0.5,
+    confidentiality: 'confidential',
+  },
+];
+
+const TEST_WATCH_HEALTH = {
+  watches_never_closed: 1,
+  watches_without_an_expected_count: 1,
+  watches_short_of_their_rounds: 1,
+  entries_without_an_exit: 1,
+  entries_outlasting_their_watch: 1,
+  incidents_without_evidence: 1,
+  incidents_without_a_response: 1,
+  serious_incidents_with_no_notification_decision: 1,
+  incidents_not_yet_confirmed: 1,
+};
+
 /**
  * One transaction with a receipt and no audit, and one with neither. The
  * badge is the point: the old screen set it from a boolean with a default,
@@ -2251,6 +2391,38 @@ try {
     }),
   );
 
+  await page.route('**/rest/v1/watch_register**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(TEST_WATCHES),
+    }),
+  );
+
+  await page.route('**/rest/v1/gate_presence**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(TEST_GATE_PRESENCE),
+    }),
+  );
+
+  await page.route('**/rest/v1/incident_register**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(TEST_INCIDENTS),
+    }),
+  );
+
+  await page.route('**/rest/v1/watch_health**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(TEST_WATCH_HEALTH),
+    }),
+  );
+
   await page.route('**/rest/v1/site_task_conflicts**', (route) =>
     route.fulfill({
       status: 200,
@@ -2833,6 +3005,63 @@ try {
     /Do not interfere with the boundary/.test(siteView) &&
       /yasağın kapsamında|live prohibition/.test(siteView),
     'open work under a court order is surfaced above the progress',
+  );
+
+  // --- the watch book says what was written, and nothing more ---------------
+  // Each of these is one of the three sentences a watchman's book gets wrong
+  // when it is filled in afterwards from memory.
+  // Read from the list of entries, not from the page: the paragraph above the
+  // list has to say the book does not know whether the person is on site, and
+  // it cannot say that without the words.
+  const openEntries =
+    (await page.textContent('ul[aria-label="Çıkışı kayıtlı olmayan girişler"]')) ?? '';
+  check(
+    /çıkışı kayıtlı değil/.test(openEntries) &&
+      !/\bsahada\b|içeride|on site|inside/i.test(openEntries),
+    'a gate entry with no exit says the exit is unrecorded, never that the person is on site',
+  );
+  check(
+    /büyük olasılıkla yazılmayan bir çıkış|unrecorded exit/i.test(siteView),
+    'and where its watch has closed, it names what that almost certainly is',
+  );
+  check(
+    /Müdahale kayıtlı değil|No response recorded/.test(siteView) &&
+      !/müdahale edilmedi|was not answered/i.test(siteView),
+    'an incident with no response says nobody recorded one, not that nobody responded',
+  );
+  // Also read from the rows. The summary strip above repeats the same phrase,
+  // so a check against the whole page would survive a row that printed a
+  // shortfall against a figure nobody recorded.
+  const watchRows = (await page.textContent('ul[aria-label="Nöbetler ve turlar"]')) ?? '';
+  check(
+    /beklenen tur sayısı kayıtlı değil/.test(watchRows) && !/\/ 0 tur/.test(watchRows),
+    'a watch with no expected round count says so rather than printing a shortfall against nought',
+  );
+  check(
+    /2 \/ 4 tur/.test(watchRows) && /2 tur kayıtlı değil/.test(watchRows),
+    'and one that has a count is shown against it',
+  );
+  check(
+    /Bildirim kararı kayıtlı değil|No notification decision/.test(siteView) &&
+      /Resmî bildirim yapıldı|Authority notified/.test(siteView),
+    'a serious incident with no notification decision is distinguished from one that was notified',
+  );
+  check(
+    /Kanıt kayıtlı değil|No evidence filed/.test(siteView) && /1 kanıt|1 piece/.test(siteView),
+    'an incident with no evidence is named as such beside one that has it',
+  );
+  check(
+    /Teyit edildi — donmuş|Confirmed — frozen/.test(siteView),
+    'a confirmed incident record says it is frozen',
+  );
+  check(
+    /Nöbet defterinin söylemediği şeyler|does not say/.test(siteView) &&
+      /1 nöbet kapatılmamış|never closed/.test(siteView),
+    'what the watch book does not say is counted above the entries',
+  );
+  check(
+    /olaydan 3 gün sonra yazıldı|76 saat/.test(siteView),
+    'and the write-up lag on an incident logged three days later is on the screen',
   );
 
   await actAs(EXTERNAL_AUTHORITY);

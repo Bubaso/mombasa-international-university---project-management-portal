@@ -65,15 +65,27 @@ const {
 
 // --- the registry ----------------------------------------------------------
 
+// 42 tables and 70 pairs: the 41 and 68 measured when the registry was built,
+// plus site_incidents' narrative and response, which 0037 added. The numbers
+// are hard-coded so a new bilingual table cannot arrive without somebody
+// deciding whether a machine may write into it.
 check(
-  TRANSLATED_TABLES.length === 41,
+  TRANSLATED_TABLES.length === 42,
   'the registry covers every bilingual table it may write to',
   `${TRANSLATED_TABLES.length}`,
 );
 check(
-  TRANSLATED_TABLES.reduce((n, t) => n + fieldsOf(t).length, 0) === 68,
+  TRANSLATED_TABLES.reduce((n, t) => n + fieldsOf(t).length, 0) === 70,
   'and every bilingual field pair in them',
   `${TRANSLATED_TABLES.reduce((n, t) => n + fieldsOf(t).length, 0)}`,
+);
+// An incident narrative is written at the gate in whichever language the
+// writer has, and read by trustees in the other. It is translated like any
+// other register — but the marker matters more here than anywhere: a sentence
+// that may be read in court should say when a machine chose its words.
+check(
+  translates('site_incidents') && fieldsOf('site_incidents').length === 2,
+  'an incident narrative and the response to it are both translated (0037)',
 );
 check(
   TRANSLATED_TABLES.every((t) =>

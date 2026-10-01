@@ -5928,6 +5928,500 @@ end;
 $$;
 reset role;
 
+-- ===========================================================================
+-- The watch book (0037): M7-18, M7-12, M6-11
+-- ===========================================================================
+--
+-- What this section is really testing is the difference between what happened
+-- and what somebody wrote down. A watchman's book fails by being filled in
+-- afterwards from memory, every round ticked; the assertions below are the
+-- places where the schema refuses to let that look like a true record.
+
+-- Back into the application role. The section above finishes as the
+-- superuser, and a superuser bypasses row level security outright: every
+-- assertion below would pass for the wrong reason, and the ones that test a
+-- refusal would have reported the refusal missing.
+set role authenticated;
+
+select pg_temp.act_as('44444444-4444-4444-4444-444444444444');  -- field team
+
+-- The gate and the perimeter belong to no block. If the read policy used
+-- can_see_block_child, which requires one, the most important watch post on
+-- the site would be invisible.
+select pg_temp.check(
+  'a watch at a post with no block is still readable',
+  (select count(*) from watch_shifts where construction_block_id is null),
+  2::bigint);
+
+-- Null is not zero. Two rounds against a figure nobody recorded must not
+-- read as two short of nought.
+select pg_temp.check(
+  'no expected count recorded means no shortfall, not a shortfall of nought',
+  (select rounds_missing from watch_register
+    where watch_shift_id = 'b7000000-0000-0000-0000-000000000002'),
+  null::int);
+select pg_temp.check(
+  'and where a count was recorded the shortfall is counted',
+  (select rounds_missing from watch_register
+    where watch_shift_id = 'b7000000-0000-0000-0000-000000000001'),
+  2::int);
+select pg_temp.check(
+  'rounds are counted from what was walked, not from what was due',
+  (select rounds_recorded from watch_register
+    where watch_shift_id = 'b7000000-0000-0000-0000-000000000003'),
+  0::bigint);
+
+-- Nothing closes a shift.
+select pg_temp.check(
+  'a watch left open stays open and is reported as never closed',
+  (select never_closed from watch_register
+    where watch_shift_id = 'b7000000-0000-0000-0000-000000000002'),
+  true);
+select pg_temp.check(
+  'a watch open for two hours is not yet a watch nobody closed',
+  (select never_closed from watch_register
+    where watch_shift_id = 'b7000000-0000-0000-0000-000000000003'),
+  false);
+
+-- The write-up lag is a measurement, and it exists because recorded_at is
+-- the machine's.
+select pg_temp.check(
+  'the register measures how long after the watch began it was written up',
+  (select logged_hours_after_start >= 29.0 from watch_register
+    where watch_shift_id = 'b7000000-0000-0000-0000-000000000001'),
+  true);
+
+-- An entry with no exit is an entry with no exit. It is not a person on site,
+-- and the view carries no column that would let a screen say otherwise.
+select pg_temp.check(
+  'entries with no exit recorded are listed, not closed',
+  (select count(*) from gate_presence),
+  2::bigint);
+select pg_temp.check(
+  'an entry whose watch has ended is flagged as outlasting it',
+  (select outlasted_its_watch from gate_presence
+    where gate_visit_id = 'b7100000-0000-0000-0000-000000000002'),
+  true);
+select pg_temp.check(
+  'an entry inside a watch that is still running is not',
+  (select outlasted_its_watch from gate_presence
+    where gate_visit_id = 'b7100000-0000-0000-0000-000000000003'),
+  false);
+select pg_temp.check(
+  'and the view offers no column that claims the person is present',
+  (select count(*) from information_schema.columns
+    where table_schema = 'public' and table_name = 'gate_presence'
+      and column_name in ('on_site', 'present', 'is_present', 'inside')),
+  0::bigint);
+
+-- What the book does not say, counted.
+select pg_temp.check(
+  'watch_health counts the watches nobody closed',
+  (select watches_never_closed from watch_health), 1::bigint);
+select pg_temp.check(
+  'and the watches with no expected round count at all',
+  (select watches_without_an_expected_count from watch_health), 1::bigint);
+select pg_temp.check(
+  'and the watches short of the rounds they were given',
+  (select watches_short_of_their_rounds from watch_health), 2::bigint);
+select pg_temp.check(
+  'and the entries whose exit was never written down',
+  (select entries_without_an_exit from watch_health), 2::bigint);
+select pg_temp.check(
+  'and the incidents with no evidence filed',
+  (select incidents_without_evidence from watch_health), 2::bigint);
+select pg_temp.check(
+  'and the incidents whose response nobody recorded',
+  (select incidents_without_a_response from watch_health), 1::bigint);
+select pg_temp.check(
+  'and the serious incidents where nobody decided about notifying anyone',
+  (select serious_incidents_with_no_notification_decision from watch_health),
+  1::bigint);
+
+-- An incident with evidence is not reported as one without it, so the count
+-- above is discriminating rather than a row count.
+select pg_temp.check(
+  'the incident with a police abstract filed counts its evidence',
+  (select evidence_count from incident_register
+    where site_incident_id = 'b7200000-0000-0000-0000-000000000001'),
+  1::bigint);
+
+-- ---------------------------------------------------------------------------
+-- "An authority was told" needs the letter
+-- ---------------------------------------------------------------------------
+
+do $$
+begin
+  begin
+    insert into site_incidents
+      (watch_shift_id, kind, occurred_at, description_en, authority_notice,
+       notified_at, recorded_by)
+    values
+      ('b7000000-0000-0000-0000-000000000003', 'theft', now() - interval '1 hour',
+       'Reinforcement bar missing from the store.', 'notified',
+       now(), '44444444-4444-4444-4444-444444444444');
+    raise exception 'FAIL an authority notification was recorded with no letter behind it';
+  exception
+    when check_violation then
+      raise notice 'ok   claiming an authority was notified requires the notification itself';
+  end;
+end;
+$$;
+
+do $$
+begin
+  begin
+    insert into site_incidents
+      (watch_shift_id, kind, occurred_at, description_en, authority_notice,
+       notification_document_id, recorded_by)
+    values
+      ('b7000000-0000-0000-0000-000000000003', 'theft', now() - interval '1 hour',
+       'Reinforcement bar missing from the store.', 'notified',
+       '1b000000-0000-0000-0000-000000000001', '44444444-4444-4444-4444-444444444444');
+    raise exception 'FAIL an authority notification was recorded with no date';
+  exception
+    when check_violation then
+      raise notice 'ok   and the date it was sent';
+  end;
+end;
+$$;
+
+-- The other direction, so the record cannot be half told: a date and a letter
+-- sitting under "unknown" would read as a notification on any screen that
+-- showed them.
+do $$
+begin
+  begin
+    insert into site_incidents
+      (watch_shift_id, kind, occurred_at, description_en, authority_notice,
+       notified_at, notification_document_id, recorded_by)
+    values
+      ('b7000000-0000-0000-0000-000000000003', 'theft', now() - interval '1 hour',
+       'Reinforcement bar missing from the store.', 'unknown',
+       now(), '1b000000-0000-0000-0000-000000000001',
+       '44444444-4444-4444-4444-444444444444');
+    raise exception 'FAIL a notification date was stored without the claim it belongs to';
+  exception
+    when check_violation then
+      raise notice 'ok   a notification date with no claim behind it is refused too';
+  end;
+end;
+$$;
+
+-- And the whole thing is accepted when it is whole, so the rule is a rule and
+-- not a blanket refusal.
+do $$
+declare
+  v_id uuid;
+begin
+  insert into site_incidents
+    (watch_shift_id, kind, occurred_at, description_en, authority_notice,
+     notified_at, notification_document_id, recorded_by)
+  values
+    ('b7000000-0000-0000-0000-000000000003', 'theft', now() - interval '1 hour',
+     'Reinforcement bar missing from the store.', 'notified',
+     now(), '1b000000-0000-0000-0000-000000000001',
+     '44444444-4444-4444-4444-444444444444')
+  returning id into v_id;
+  raise notice 'ok   a notification with its date and its letter is accepted';
+  perform v_id;
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- A near miss is the word for it only because nobody was hurt
+-- ---------------------------------------------------------------------------
+
+do $$
+begin
+  begin
+    insert into site_incidents
+      (watch_shift_id, kind, occurred_at, description_en, injured_count, recorded_by)
+    values
+      ('b7000000-0000-0000-0000-000000000003', 'near_miss', now() - interval '1 hour',
+       'Board slipped and struck a labourer on the shoulder.', 1,
+       '44444444-4444-4444-4444-444444444444');
+    raise exception 'FAIL an injury was filed as a near miss';
+  exception
+    when check_violation then
+      raise notice 'ok   a near miss with somebody hurt is refused';
+  end;
+end;
+$$;
+
+-- The same facts as an accident go in, which is the point: the constraint
+-- moves the record to the right word rather than refusing the record.
+do $$
+begin
+  insert into site_incidents
+    (watch_shift_id, kind, occurred_at, description_en, injured_count, recorded_by)
+  values
+    ('b7000000-0000-0000-0000-000000000003', 'accident', now() - interval '1 hour',
+     'Board slipped and struck a labourer on the shoulder.', 1,
+     '44444444-4444-4444-4444-444444444444');
+  raise notice 'ok   and the same facts are accepted as an accident';
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- When a thing was written down is the machine's to say
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  v_id uuid;
+  v_recorded timestamptz;
+begin
+  insert into watch_shifts (post, on_watch, began_at, recorded_by)
+  values ('other', 'Test watch', now() - interval '1 hour',
+          '44444444-4444-4444-4444-444444444444')
+  returning id into v_id;
+
+  update watch_shifts set recorded_at = timestamptz '1990-01-01 00:00:00+00'
+   where id = v_id;
+  raise exception 'FAIL the moment a watch was written down was edited';
+exception
+  when insufficient_privilege then
+    raise notice 'ok   when a watch was written down cannot be edited afterwards';
+end;
+$$;
+
+do $$
+declare
+  v_recorded timestamptz;
+begin
+  insert into watch_shifts (post, on_watch, began_at, recorded_at, recorded_by)
+  values ('other', 'Backdated watch', now() - interval '1 hour',
+          timestamptz '1990-01-01 00:00:00+00',
+          '44444444-4444-4444-4444-444444444444')
+  returning recorded_at into v_recorded;
+
+  if v_recorded < now() - interval '1 minute' then
+    raise exception 'FAIL a watch was written down in 1990';
+  end if;
+  raise notice 'ok   nor supplied on the way in — the stamp is the machine''s';
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- A round belongs inside its watch, and stays where it was walked
+-- ---------------------------------------------------------------------------
+
+do $$
+begin
+  begin
+    insert into watch_rounds (watch_shift_id, walked_at, recorded_by)
+    values ('b7000000-0000-0000-0000-000000000001', now() - interval '40 hours',
+            '44444444-4444-4444-4444-444444444444');
+    raise exception 'FAIL a round was recorded before its watch began';
+  exception
+    when check_violation then
+      raise notice 'ok   a round before its watch began is refused';
+  end;
+end;
+$$;
+
+do $$
+begin
+  begin
+    insert into watch_rounds (watch_shift_id, walked_at, recorded_by)
+    values ('b7000000-0000-0000-0000-000000000001', now() - interval '2 hours',
+            '44444444-4444-4444-4444-444444444444');
+    raise exception 'FAIL a round was recorded after its watch ended';
+  exception
+    when check_violation then
+      raise notice 'ok   and a round after it ended';
+  end;
+end;
+$$;
+
+do $$
+begin
+  begin
+    update watch_rounds set walked_at = now() - interval '23 hours'
+     where id = 'b7010000-0000-0000-0000-000000000001';
+    raise exception 'FAIL when a round was walked was edited';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   when a round was walked cannot be edited; another round is recorded';
+  end;
+end;
+$$;
+
+-- Closing a watch earlier than its own last round would leave the book
+-- holding a shift whose rounds fall outside it.
+do $$
+begin
+  begin
+    update watch_shifts set ended_at = now() - interval '26 hours'
+     where id = 'b7000000-0000-0000-0000-000000000001';
+    raise exception 'FAIL a watch was closed before a round it already holds';
+  exception
+    when check_violation then
+      raise notice 'ok   a watch cannot be closed before its own last round';
+  end;
+end;
+$$;
+
+-- A watch over a block has to say which block.
+do $$
+begin
+  begin
+    insert into watch_shifts (post, on_watch, began_at, recorded_by)
+    values ('block', 'Nameless post', now() - interval '1 hour',
+            '44444444-4444-4444-4444-444444444444');
+    raise exception 'FAIL a block watch was recorded without a block';
+  exception
+    when check_violation then
+      raise notice 'ok   a watch over a block has to name the block';
+  end;
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- A confirmed incident is fixed, and its response is not
+-- ---------------------------------------------------------------------------
+
+do $$
+begin
+  begin
+    update site_incidents
+       set description_en = 'Nobody came over the fence after all.'
+     where id = 'b7200000-0000-0000-0000-000000000001';
+    raise exception 'FAIL a confirmed incident record was rewritten';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   a confirmed incident record cannot be rewritten';
+  end;
+end;
+$$;
+
+do $$
+begin
+  update site_incidents
+     set intervention_en = intervention_en || ' Fence repaired the same week.'
+   where id = 'b7200000-0000-0000-0000-000000000001';
+  raise notice 'ok   but what was done about it afterwards can still be added';
+end;
+$$;
+
+do $$
+begin
+  begin
+    update site_incidents set confirmed_at = null, confirmed_by = null
+     where id = 'b7200000-0000-0000-0000-000000000001';
+    raise exception 'FAIL a confirmed incident record was unconfirmed';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   and it cannot be unconfirmed';
+  end;
+end;
+$$;
+
+select pg_temp.check(
+  'confirming an incident freezes it and says when',
+  (select confirm_incident('b7200000-0000-0000-0000-000000000003') is not null),
+  true);
+
+do $$
+begin
+  begin
+    perform confirm_incident('b7200000-0000-0000-0000-000000000003');
+    raise exception 'FAIL an incident was confirmed twice';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   confirming is one way: a second attempt is refused';
+  end;
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- Who keeps the book, and what nobody may do to it
+-- ---------------------------------------------------------------------------
+
+select pg_temp.act_as('77777777-7777-7777-7777-777777777777');  -- contractor
+
+-- The watch book is AUTK's own record. A contractor reports progress on their
+-- own blocks (M7-10); the register that may later be read against them is not
+-- theirs to write.
+do $$
+begin
+  begin
+    insert into watch_shifts (post, on_watch, began_at, recorded_by)
+    values ('main_gate', 'Contractor watch', now() - interval '1 hour',
+            '77777777-7777-7777-7777-777777777777');
+    raise exception 'FAIL a contractor wrote in the watch book';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   a contractor cannot write in the watch book';
+  end;
+end;
+$$;
+
+-- Gate entries and incidents default to confidential, and the contractor's
+-- clearance stops below it.
+select pg_temp.check(
+  'a contractor sees no gate entries', (select count(*) from gate_visits), 0::bigint);
+select pg_temp.check(
+  'nor any incident record', (select count(*) from site_incidents), 0::bigint);
+
+do $$
+begin
+  begin
+    perform confirm_incident('b7200000-0000-0000-0000-000000000002');
+    raise exception 'FAIL an incident nobody can see was confirmed';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   and cannot confirm one they cannot see';
+  end;
+end;
+$$;
+
+select pg_temp.act_as('11111111-1111-1111-1111-111111111111');  -- admin
+
+-- An incident record is the thing somebody would most want gone, which is the
+-- reason delete is taken away rather than merely unpoliced: an unpoliced
+-- delete fails with zero rows and no error, which reads like success.
+do $$
+begin
+  begin
+    delete from site_incidents where id = 'b7200000-0000-0000-0000-000000000002';
+    raise exception 'FAIL an incident record was deleted';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   not even an admin may delete an incident record';
+  end;
+end;
+$$;
+
+do $$
+begin
+  begin
+    delete from watch_shifts where id = 'b7000000-0000-0000-0000-000000000001';
+    raise exception 'FAIL a watch was deleted';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   nor a watch somebody wrote down';
+  end;
+end;
+$$;
+
+-- The letter cited as proof that an authority was told cannot leave the vault
+-- while the claim stands. Checked on the constraint rather than by deleting,
+-- because document_vault has no delete policy either and a refusal there
+-- would prove the wrong thing.
+select pg_temp.check(
+  'the cited notification letter cannot be removed from the vault',
+  (select confdeltype from pg_constraint
+    where conrelid = 'site_incidents'::regclass
+      and confrelid = 'document_vault'::regclass),
+  'r'::"char");
+select pg_temp.check(
+  'and neither can a document filed as incident evidence',
+  (select confdeltype from pg_constraint
+    where conrelid = 'incident_evidence'::regclass
+      and confrelid = 'document_vault'::regclass),
+  'r'::"char");
 
 reset role;
 

@@ -557,3 +557,97 @@ values
   ('1f000000-0000-0000-0000-000000000030', 'OUT-2026-004', 'outgoing', 'letter',
    'Request for extension of the temporary occupation licence', current_date - 20,
    'County Government of Mombasa', '1b000000-0000-0000-0000-000000000001', 'internal');
+
+-- ---------------------------------------------------------------------------
+-- The watch book (0037)
+-- ---------------------------------------------------------------------------
+--
+-- Three shifts, chosen so the register's own distinctions are testable: one
+-- closed shift short of its rounds, one left open for three days with no
+-- expected count recorded at all, and one open for two hours at a block.
+-- recorded_at is not given anywhere below — the trigger stamps it, which is
+-- the point, and the write-up lag against began_at falls out of that.
+
+insert into watch_shifts
+  (id, post, construction_block_id, on_watch, watch_firm, began_at, ended_at,
+   rounds_expected, handover_note, recorded_by)
+values
+  ('b7000000-0000-0000-0000-000000000001', 'main_gate', null,
+   'J. Mwakio', 'Pwani Security', now() - interval '30 hours',
+   now() - interval '22 hours', 4, 'Quiet night; gate light out on the north side.',
+   '44444444-4444-4444-4444-444444444444'),
+  -- Never closed. Nothing in the schema will close it.
+  ('b7000000-0000-0000-0000-000000000002', 'perimeter', null,
+   'A. Kazungu', 'Pwani Security', now() - interval '3 days', null,
+   null, null, '44444444-4444-4444-4444-444444444444'),
+  ('b7000000-0000-0000-0000-000000000003', 'block',
+   'bbbb0000-0000-0000-0000-000000000001',
+   'S. Omondi', 'Pwani Security', now() - interval '2 hours', null,
+   2, null, '44444444-4444-4444-4444-444444444444');
+
+insert into watch_rounds (id, watch_shift_id, walked_at, route, note, recorded_by) values
+  ('b7010000-0000-0000-0000-000000000001', 'b7000000-0000-0000-0000-000000000001',
+   now() - interval '29 hours', 'Gate → store → block A1', null,
+   '44444444-4444-4444-4444-444444444444'),
+  ('b7010000-0000-0000-0000-000000000002', 'b7000000-0000-0000-0000-000000000001',
+   now() - interval '24 hours', 'Gate → perimeter north', 'North fence light still out.',
+   '44444444-4444-4444-4444-444444444444'),
+  ('b7010000-0000-0000-0000-000000000003', 'b7000000-0000-0000-0000-000000000002',
+   now() - interval '70 hours', 'Perimeter full', null,
+   '44444444-4444-4444-4444-444444444444');
+
+insert into gate_visits
+  (id, watch_shift_id, construction_block_id, person_name, organisation, purpose,
+   vehicle_plate, escorted_by, id_document_seen, entered_at, exited_at, recorded_by)
+values
+  ('b7100000-0000-0000-0000-000000000001', 'b7000000-0000-0000-0000-000000000001',
+   null, 'County inspector', 'County Government of Mombasa', 'Licence inspection',
+   'KBX 221A', 'S. Omondi', true, now() - interval '29 hours',
+   now() - interval '28 hours', '44444444-4444-4444-4444-444444444444'),
+  -- Entered, never written out. The watch it belongs to has ended, so the
+  -- register can say this is almost certainly an unrecorded exit — and still
+  -- does not close it.
+  ('b7100000-0000-0000-0000-000000000002', 'b7000000-0000-0000-0000-000000000001',
+   null, 'Delivery driver', 'Coast Hardware', 'Cement delivery',
+   'KCD 884Q', null, false, now() - interval '27 hours', null,
+   '44444444-4444-4444-4444-444444444444'),
+  -- Open inside a watch that is still open: nothing is wrong with this one.
+  ('b7100000-0000-0000-0000-000000000003', 'b7000000-0000-0000-0000-000000000003',
+   'bbbb0000-0000-0000-0000-000000000001', 'Surveyor', 'Measure Ltd',
+   'Measuring block A1', null, 'S. Omondi', true, now() - interval '1 hour',
+   null, '44444444-4444-4444-4444-444444444444');
+
+insert into site_incidents
+  (id, watch_shift_id, construction_block_id, kind, occurred_at,
+   description_en, intervention_en, injured_count, severity, police_ob_number,
+   authority_notice, notified_at, notification_document_id,
+   confirmed_at, confirmed_by, recorded_by)
+values
+  -- Notified, with the letter behind it, confirmed, and evidence filed.
+  ('b7200000-0000-0000-0000-000000000001', 'b7000000-0000-0000-0000-000000000001',
+   'bbbb0000-0000-0000-0000-000000000001', 'intrusion', now() - interval '28 hours',
+   'Two men came over the north fence and left when the watch approached.',
+   'Watch called the Nyali station; patrol attended and took a statement.',
+   0, 3, 'OB 41/2026', 'notified', now() - interval '27 hours',
+   '1b000000-0000-0000-0000-000000000001',
+   now() - interval '20 hours', '22222222-2222-2222-2222-222222222222',
+   '44444444-4444-4444-4444-444444444444'),
+  -- An accident with somebody hurt, nobody's response written down, no
+  -- evidence, and no decision recorded about telling an authority. Three
+  -- separate unfinished jobs, and the register counts all three.
+  ('b7200000-0000-0000-0000-000000000002', 'b7000000-0000-0000-0000-000000000002',
+   'bbbb0000-0000-0000-0000-000000000001', 'accident', now() - interval '70 hours',
+   'A labourer fell from the second-floor slab edge of block A1.',
+   null, 1, 4, null, 'unknown', null, null, null, null,
+   '44444444-4444-4444-4444-444444444444'),
+  -- A near miss, which is the word for it only because nobody was hurt.
+  ('b7200000-0000-0000-0000-000000000003', 'b7000000-0000-0000-0000-000000000003',
+   'bbbb0000-0000-0000-0000-000000000001', 'near_miss', now() - interval '2 hours',
+   'Scaffold board slipped; nobody was underneath.',
+   'Board refixed and the bay closed for the shift.',
+   0, 2, null, 'not_required', null, null, null, null,
+   '44444444-4444-4444-4444-444444444444');
+
+insert into incident_evidence (site_incident_id, document_id, note, added_by) values
+  ('b7200000-0000-0000-0000-000000000001', '1b000000-0000-0000-0000-000000000001',
+   'Police abstract', '44444444-4444-4444-4444-444444444444');

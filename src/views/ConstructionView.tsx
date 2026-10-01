@@ -30,6 +30,7 @@ import { clearanceLabel, clearanceStyle } from '../lib/authority';
 import { formatDate, progressLabel, workStateLabel, workStateStyle } from '../lib/site';
 import { ProgressPanel } from '../components/site/ProgressPanel';
 import { ConflictPanel } from '../components/site/ConflictPanel';
+import { WatchPanel } from '../components/site/WatchPanel';
 import { InspectionList } from '../components/site/InspectionList';
 import { CommercialPanel } from '../components/site/CommercialPanel';
 import type { BlockProgress } from '../types';
@@ -106,6 +107,12 @@ export const ConstructionView: React.FC = () => {
           require having already guessed which block to open. Once a block is
           selected this narrows to that block. */}
       <ConflictPanel blockId={selectedId} canAcknowledge={canApprove} />
+
+      {/* The watch book sits beside the works rather than inside a block: the
+          gate and the perimeter belong to no block, and an incident is read
+          by people who were never going to guess which block to open first
+          (M7-18, M7-12, M6-11). */}
+      <WatchPanel canKeep={canPlan} />
 
       {rows.length === 0 ? (
         <EmptyState

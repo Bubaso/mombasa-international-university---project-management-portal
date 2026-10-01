@@ -2262,3 +2262,141 @@ export interface ActionCandidate {
   namesADate: boolean;
   confidentiality: Confidentiality;
 }
+
+// ---------------------------------------------------------------------------
+// The watch book (M7-18, M7-12, M6-11)
+// ---------------------------------------------------------------------------
+
+/** Mirrors watch_post. The gate and the perimeter belong to no block. */
+export type WatchPost = 'main_gate' | 'perimeter' | 'block' | 'store' | 'other';
+
+export type IncidentKind =
+  | 'accident'
+  | 'near_miss'
+  | 'security_breach'
+  | 'intrusion'
+  | 'threat'
+  | 'theft'
+  | 'damage'
+  | 'dispute'
+  | 'fire'
+  | 'other';
+
+/**
+ * Whether a public authority was told. `unknown` is the default and is not
+ * `not_required`: nobody having recorded a decision is an unfinished job,
+ * deciding none was needed is a decision.
+ */
+export type AuthorityNotice = 'unknown' | 'not_required' | 'notified';
+
+/**
+ * A watch as written down. Comes from `watch_register`, so `roundsMissing` is
+ * null when no expected count was recorded — two rounds short of nothing is
+ * not a shortfall of two.
+ */
+export interface WatchShift {
+  watchShiftId: string;
+  post: WatchPost;
+  constructionBlockId: string | null;
+  blockCode: string | null;
+  onWatch: string;
+  watchFirm: string | null;
+  beganAt: string;
+  endedAt: string | null;
+  roundsExpected: number | null;
+  roundsRecorded: number;
+  roundsMissing: number | null;
+  lastRoundAt: string | null;
+  /** How long after the watch began it reached the book. */
+  loggedHoursAfterStart: number | null;
+  neverClosed: boolean;
+  handoverNote: string | null;
+  confidentiality: Confidentiality;
+}
+
+export interface WatchRound {
+  id: string;
+  watchShiftId: string;
+  walkedAt: string;
+  route: string | null;
+  note: string | null;
+}
+
+/**
+ * A gate entry with no exit recorded. Not a person on site: the record says
+ * only that nobody wrote the exit down, and `outlastedItsWatch` marks the
+ * ones where that is almost certainly what happened.
+ */
+export interface GateEntry {
+  gateVisitId: string;
+  personName: string;
+  organisation: string | null;
+  stakeholderId: string | null;
+  purpose: string | null;
+  vehiclePlate: string | null;
+  escortedBy: string | null;
+  idDocumentSeen: boolean;
+  enteredAt: string;
+  watchShiftId: string | null;
+  watchEndedAt: string | null;
+  onWatch: string | null;
+  openHours: number;
+  outlastedItsWatch: boolean;
+  confidentiality: Confidentiality;
+}
+
+export interface GateVisit {
+  id: string;
+  watchShiftId: string | null;
+  personName: string;
+  organisation: string | null;
+  purpose: string | null;
+  vehiclePlate: string | null;
+  escortedBy: string | null;
+  idDocumentSeen: boolean;
+  enteredAt: string;
+  exitedAt: string | null;
+  confidentiality: Confidentiality;
+}
+
+export interface SiteIncident {
+  siteIncidentId: string;
+  kind: IncidentKind;
+  occurredAt: string;
+  constructionBlockId: string | null;
+  blockCode: string | null;
+  watchShiftId: string | null;
+  descriptionEn: string;
+  descriptionTr: string | null;
+  interventionEn: string | null;
+  interventionTr: string | null;
+  /** Nobody wrote down what was done, which is not the same as nothing. */
+  interventionUnrecorded: boolean;
+  injuredCount: number | null;
+  severity: number | null;
+  policeObNumber: string | null;
+  authorityNotice: AuthorityNotice;
+  notifiedAt: string | null;
+  notificationDocumentId: string | null;
+  riskId: string | null;
+  legalCaseId: string | null;
+  confirmed: boolean;
+  confirmedAt: string | null;
+  evidenceCount: number;
+  /** The write-up lag, in hours, against when the incident happened. */
+  loggedHoursAfter: number | null;
+  confidentiality: Confidentiality;
+}
+
+/** What the watch book does not say. Every number is an unfinished job. */
+export interface WatchHealth {
+  watchesNeverClosed: number;
+  watchesWithoutAnExpectedCount: number;
+  watchesShortOfTheirRounds: number;
+  entriesWithoutAnExit: number;
+  entriesOutlastingTheirWatch: number;
+  incidentsWithoutEvidence: number;
+  incidentsWithoutAResponse: number;
+  seriousIncidentsWithNoNotificationDecision: number;
+  incidentsNotYetConfirmed: number;
+}
