@@ -30,6 +30,7 @@ import { OrganPanel } from '../components/governance/OrganPanel';
 import { TrusteeRegister } from '../components/governance/TrusteeRegister';
 import { ResolutionRegister } from '../components/governance/ResolutionRegister';
 import { ConflictPanel } from '../components/governance/ConflictPanel';
+import { CharterReference } from '../components/governance/CharterReference';
 import { DataFreshness } from '../components/DataFreshness';
 import { fetchOrgans } from '../api/governance';
 
@@ -59,6 +60,10 @@ export const GovernanceCharterView: React.FC = () => {
       </header>
 
       <OrganPanel />
+      {/* Directly after the organs, because the first question about an
+          organ is which clause of the deed creates it, and the page's
+          other half is the organs that have no answer (M10-13). */}
+      <CharterReference />
       <ResolutionRegister />
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">

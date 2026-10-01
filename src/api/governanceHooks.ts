@@ -104,3 +104,54 @@ export function useDeclareInterest() {
     },
   });
 }
+
+// --- the governance reference, cited to the trust deed (M10-13) --------------
+
+export const useCharterClauses = () =>
+  useQuery({ queryKey: ['charterClauses'], queryFn: api.fetchCharterClauses });
+
+export const useCharterCitations = () =>
+  useQuery({ queryKey: ['charterCitations'], queryFn: api.fetchCharterCitations });
+
+export const useUncitedGovernance = () =>
+  useQuery({ queryKey: ['uncitedGovernance'], queryFn: api.fetchUncitedGovernance });
+
+const CHARTER_KEYS = ['charterClauses', 'charterCitations', 'uncitedGovernance'];
+
+function useCharterInvalidator(): () => void {
+  const client = useQueryClient();
+  return () => {
+    for (const key of CHARTER_KEYS) void client.invalidateQueries({ queryKey: [key] });
+  };
+}
+
+export function useRecordCharterClause() {
+  const invalidate = useCharterInvalidator();
+  const translate = useAutoTranslate();
+  return useMutation({
+    mutationFn: api.recordCharterClause,
+    onSuccess: () => {
+      invalidate();
+      // The heading and the summary are translated like every other register.
+      // quoted_text is not in the registry at all: a translated quotation is
+      // a paraphrase carrying a quotation's authority, which is the one thing
+      // this page exists to keep apart.
+      void translate('charter_clauses');
+    },
+  });
+}
+
+export function useMarkClauseChecked() {
+  const invalidate = useCharterInvalidator();
+  return useMutation({ mutationFn: api.markClauseChecked, onSuccess: invalidate });
+}
+
+export function useWithdrawClauseCheck() {
+  const invalidate = useCharterInvalidator();
+  return useMutation({ mutationFn: api.withdrawClauseCheck, onSuccess: invalidate });
+}
+
+export function useCiteClause() {
+  const invalidate = useCharterInvalidator();
+  return useMutation({ mutationFn: api.citeClause, onSuccess: invalidate });
+}

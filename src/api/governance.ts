@@ -16,8 +16,10 @@
  */
 import { supabase } from '../lib/supabase';
 import type {
-  AccreditationRequirement,
   AcademicProgramme,
+  AccreditationRequirement,
+  CharterCitation,
+  CharterClause,
   CharterStage,
   ComplianceEntry,
   ConflictDeclaration,
@@ -28,6 +30,7 @@ import type {
   ReadinessStrand,
   SittingQuorum,
   Trustee,
+  UncitedGovernance,
 } from '../types';
 
 function fail(error: { message: string } | null): void {
@@ -654,4 +657,181 @@ export async function fetchReadiness(): Promise<ReadinessStrand[]> {
     ready: row.ready,
     impeded: row.impeded,
   }));
+}
+
+// ---------------------------------------------------------------------------
+// The governance reference, cited to the trust deed (M10-13)
+// ---------------------------------------------------------------------------
+
+export async function fetchCharterClauses(): Promise<CharterClause[]> {
+  const { data, error } = await supabase.from('charter_reference').select('*').order('reference');
+  fail(error);
+  return (
+    (data ?? []) as {
+      clause_id: string;
+      reference: string;
+      heading_en: string | null;
+      heading_tr: string | null;
+      quoted_text: string | null;
+      summary_en: string | null;
+      summary_tr: string | null;
+      document_id: string | null;
+      located_at: string | null;
+      checked_against_the_deed_at: string | null;
+      carries_the_deeds_words: boolean;
+      checked_against_the_deed: boolean;
+      deed_not_attached: boolean;
+      citations: number | string;
+      cited_for: string[] | null;
+      confidentiality: CharterClause['confidentiality'];
+    }[]
+  ).map((row) => ({
+    clauseId: row.clause_id,
+    reference: row.reference,
+    headingEn: row.heading_en,
+    headingTr: row.heading_tr,
+    quotedText: row.quoted_text,
+    summaryEn: row.summary_en,
+    summaryTr: row.summary_tr,
+    documentId: row.document_id,
+    locatedAt: row.located_at,
+    checkedAgainstTheDeedAt: row.checked_against_the_deed_at,
+    carriesTheDeedsWords: row.carries_the_deeds_words,
+    checkedAgainstTheDeed: row.checked_against_the_deed,
+    deedNotAttached: row.deed_not_attached,
+    citations: Number(row.citations ?? 0),
+    citedFor: row.cited_for ?? [],
+    confidentiality: row.confidentiality,
+  }));
+}
+
+export async function fetchCharterCitations(): Promise<CharterCitation[]> {
+  const { data, error } = await supabase
+    .from('charter_citation_register')
+    .select('*')
+    .order('reference');
+  fail(error);
+  return (
+    (data ?? []) as {
+      citation_id: string;
+      clause_id: string;
+      reference: string;
+      clause_checked: boolean;
+      subject_kind: string;
+      subject_label: string | null;
+      note_en: string | null;
+      note_tr: string | null;
+      confidentiality: CharterCitation['confidentiality'];
+    }[]
+  ).map((row) => ({
+    citationId: row.citation_id,
+    clauseId: row.clause_id,
+    reference: row.reference,
+    clauseChecked: row.clause_checked,
+    subjectKind: row.subject_kind,
+    subjectLabel: row.subject_label,
+    noteEn: row.note_en,
+    noteTr: row.note_tr,
+    confidentiality: row.confidentiality,
+  }));
+}
+
+/** The inverse of the reference page, and the reason to build one. */
+export async function fetchUncitedGovernance(): Promise<UncitedGovernance[]> {
+  const { data, error } = await supabase
+    .from('governance_without_a_clause')
+    .select('*')
+    .order('carries_a_rule', { ascending: false });
+  fail(error);
+  return (
+    (data ?? []) as {
+      subject_kind: string;
+      subject_id: string;
+      subject_label: string;
+      carries_a_rule: boolean;
+      clause_typed_in_free_text: string | null;
+      typed_clause_is_not_in_the_register: boolean;
+      confidentiality: UncitedGovernance['confidentiality'];
+    }[]
+  ).map((row) => ({
+    subjectKind: row.subject_kind,
+    subjectId: row.subject_id,
+    subjectLabel: row.subject_label,
+    carriesARule: row.carries_a_rule,
+    clauseTypedInFreeText: row.clause_typed_in_free_text,
+    typedClauseIsNotInTheRegister: row.typed_clause_is_not_in_the_register,
+    confidentiality: row.confidentiality,
+  }));
+}
+
+/**
+ * Recording a clause. `quotedText` is only accepted with the document, and
+ * the signature says so rather than offering the caller a refusal: the
+ * database check would reject it anyway.
+ */
+export async function recordCharterClause(input: {
+  reference: string;
+  headingEn: string | null;
+  summaryEn: string | null;
+  documentId: string | null;
+  quotedText: string | null;
+  locatedAt: string | null;
+}): Promise<string> {
+  if (input.quotedText != null && input.documentId == null) {
+    throw new Error(
+      'A quotation needs the deed it is quoted from. Attach the document, or record a summary instead — a summary is a reading, and the screen says so.',
+    );
+  }
+  const { data, error } = await supabase
+    .from('charter_clauses')
+    .insert({
+      reference: input.reference,
+      heading_en: input.headingEn,
+      summary_en: input.summaryEn,
+      document_id: input.documentId,
+      quoted_text: input.quotedText,
+      located_at: input.locatedAt,
+    })
+    .select('id')
+    .single();
+  fail(error);
+  return (data as { id: string }).id;
+}
+
+/** Somebody opened the file and found the clause where the citation says it is. */
+export async function markClauseChecked(input: { id: string; profileId: string }): Promise<void> {
+  const { error } = await supabase
+    .from('charter_clauses')
+    .update({
+      checked_against_the_deed_at: new Date().toISOString(),
+      checked_by: input.profileId,
+    })
+    .eq('id', input.id);
+  fail(error);
+}
+
+/** Somebody looked again and could not find it. The check has to be falsifiable. */
+export async function withdrawClauseCheck(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('charter_clauses')
+    .update({ checked_against_the_deed_at: null, checked_by: null })
+    .eq('id', id);
+  fail(error);
+}
+
+export async function citeClause(input: {
+  clauseId: string;
+  governanceOrganId?: string | null;
+  complianceRequirementId?: string | null;
+  subjectLabel?: string | null;
+  noteEn: string | null;
+}): Promise<void> {
+  const { error } = await supabase.from('charter_citations').insert({
+    clause_id: input.clauseId,
+    governance_organ_id: input.governanceOrganId ?? null,
+    compliance_requirement_id: input.complianceRequirementId ?? null,
+    subject_label: input.subjectLabel ?? null,
+    note_en: input.noteEn,
+  });
+  fail(error);
 }

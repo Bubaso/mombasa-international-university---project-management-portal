@@ -2554,3 +2554,60 @@ export interface ScenarioOverlap {
   risksReaching: number;
   riskIds: string[];
 }
+
+// ---------------------------------------------------------------------------
+// The governance reference, cited to the trust deed (M10-13, 0041)
+// ---------------------------------------------------------------------------
+
+/**
+ * A clause of the trust deed as somebody recorded it.
+ *
+ * Three things are kept apart on purpose. `quotedText` is the deed's own
+ * words and cannot exist without the file it is quoted from.
+ * `summaryEn`/`summaryTr` are somebody's paraphrase and are never shown as
+ * the deed's words — a paraphrase read out as the deed is how a misquotation
+ * enters a court record. And `checkedAgainstTheDeed` is somebody having
+ * opened the file and found the clause where the citation says it is.
+ */
+export interface CharterClause {
+  clauseId: string;
+  reference: string;
+  headingEn: string | null;
+  headingTr: string | null;
+  quotedText: string | null;
+  summaryEn: string | null;
+  summaryTr: string | null;
+  documentId: string | null;
+  locatedAt: string | null;
+  checkedAgainstTheDeedAt: string | null;
+  carriesTheDeedsWords: boolean;
+  checkedAgainstTheDeed: boolean;
+  deedNotAttached: boolean;
+  citations: number;
+  citedFor: string[];
+  confidentiality: Confidentiality;
+}
+
+export interface CharterCitation {
+  citationId: string;
+  clauseId: string;
+  reference: string;
+  clauseChecked: boolean;
+  subjectKind: string;
+  subjectLabel: string | null;
+  noteEn: string | null;
+  noteTr: string | null;
+  confidentiality: Confidentiality;
+}
+
+/** A governance record with no clause of the deed cited against it. */
+export interface UncitedGovernance {
+  subjectKind: string;
+  subjectId: string;
+  subjectLabel: string;
+  /** A rule that will be enforced against somebody, so an uncited one is not tidiness. */
+  carriesARule: boolean;
+  clauseTypedInFreeText: string | null;
+  typedClauseIsNotInTheRegister: boolean;
+  confidentiality: Confidentiality;
+}

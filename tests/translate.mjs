@@ -65,19 +65,20 @@ const {
 
 // --- the registry ----------------------------------------------------------
 
-// 43 tables and 72 pairs: the 41 and 68 measured when the registry was built,
-// plus site_incidents' narrative and response (0037) and a scenario's name
-// and reasoning (0040) — a scenario a trustee can only read in English is a
+// 44 tables and 74 pairs: the 41 and 68 measured when the registry was built,
+// plus site_incidents' narrative and response (0037), a scenario's name and
+// reasoning (0040), and a charter clause's heading and summary (0041) —
+// never its quoted_text, because a translated quotation is not a quotation — a scenario a trustee can only read in English is a
 // scenario the board cannot discuss. The numbers
 // are hard-coded so a new bilingual table cannot arrive without somebody
 // deciding whether a machine may write into it.
 check(
-  TRANSLATED_TABLES.length === 43,
+  TRANSLATED_TABLES.length === 44,
   'the registry covers every bilingual table it may write to',
   `${TRANSLATED_TABLES.length}`,
 );
 check(
-  TRANSLATED_TABLES.reduce((n, t) => n + fieldsOf(t).length, 0) === 72,
+  TRANSLATED_TABLES.reduce((n, t) => n + fieldsOf(t).length, 0) === 74,
   'and every bilingual field pair in them',
   `${TRANSLATED_TABLES.reduce((n, t) => n + fieldsOf(t).length, 0)}`,
 );
@@ -88,6 +89,14 @@ check(
 check(
   translates('site_incidents') && fieldsOf('site_incidents').length === 2,
   'an incident narrative and the response to it are both translated (0037)',
+);
+// The deed's own words are not translated. A translated quotation is a
+// paraphrase with a quotation's authority, which is the one thing M10-13
+// exists to keep apart.
+check(
+  translates('charter_clauses') &&
+    !fieldsOf('charter_clauses').some((f) => f.base === 'quoted_text'),
+  "a charter clause heading and summary translate; the deed's words do not (0041)",
 );
 check(
   TRANSLATED_TABLES.every((t) =>

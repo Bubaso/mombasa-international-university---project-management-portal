@@ -7248,6 +7248,271 @@ begin
   end;
 end;
 $$;
+-- ===========================================================================
+-- The deed says so, or it does not (0041): M10-13
+-- ===========================================================================
+--
+-- This is the page that gets read out to a registrar. Every assertion below
+-- is about keeping three things apart that a reference page usually runs
+-- together: the deed's words, somebody's paraphrase of them, and whether
+-- anybody has opened the file to check.
+
+set role authenticated;
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- director
+
+-- A quotation needs the file it is quoted from.
+do $$
+begin
+  begin
+    insert into charter_clauses (reference, quoted_text, confidentiality)
+    values ('Clause 9.1',
+            'The Board of Trustees shall consist of not fewer than five members.',
+            'internal');
+    raise exception 'FAIL the deed was quoted with no document behind the quotation';
+  exception
+    when check_violation then
+      raise notice 'ok   quoting the deed requires the deed';
+  end;
+end;
+$$;
+
+-- A paraphrase does not, because it does not claim to be the deed's words.
+insert into charter_clauses
+  (id, reference, heading_en, summary_en, confidentiality)
+values
+  ('b1100000-0000-0000-0000-000000000001', 'Clause 9.1', 'Composition of the Board',
+   'Somebody''s reading: the Board has at least five members.', 'internal');
+
+select pg_temp.check('a paraphrase can be recorded without the file',
+  (select count(*) from charter_clauses
+    where id = 'b1100000-0000-0000-0000-000000000001'), 1::bigint);
+select pg_temp.check('and is not reported as carrying the deed''s words',
+  (select carries_the_deeds_words from charter_reference
+    where clause_id = 'b1100000-0000-0000-0000-000000000001'), false);
+select pg_temp.check('nor as checked against it',
+  (select checked_against_the_deed from charter_reference
+    where clause_id = 'b1100000-0000-0000-0000-000000000001'), false);
+select pg_temp.check('and the register says the deed is not attached to it',
+  (select deed_not_attached from charter_reference
+    where clause_id = 'b1100000-0000-0000-0000-000000000001'), true);
+
+-- Checking a citation against the deed means having the deed.
+do $$
+begin
+  begin
+    update charter_clauses
+       set checked_against_the_deed_at = now(),
+           checked_by = '22222222-2222-2222-2222-222222222222'
+     where id = 'b1100000-0000-0000-0000-000000000001';
+    raise exception 'FAIL a clause was marked checked with no document to check it against';
+  exception
+    when check_violation then
+      raise notice 'ok   checking a clause against the deed requires the deed';
+  end;
+end;
+$$;
+
+-- With the file, both the quotation and the check become possible.
+insert into charter_clauses
+  (id, reference, heading_en, quoted_text, summary_en, document_id, located_at,
+   confidentiality)
+values
+  ('b1100000-0000-0000-0000-000000000002', 'Clause 14(a)', 'Quorum of the Board',
+   'No business shall be transacted unless two thirds of the members are present.',
+   'Somebody''s reading: two thirds of the seats, not of those who turned up.',
+   '1b000000-0000-0000-0000-000000000001', 'Part III, page 12', 'internal');
+
+select pg_temp.check('a clause with the file behind it carries the deed''s words',
+  (select carries_the_deeds_words from charter_reference
+    where clause_id = 'b1100000-0000-0000-0000-000000000002'), true);
+
+update charter_clauses
+   set checked_against_the_deed_at = now(),
+       checked_by = '22222222-2222-2222-2222-222222222222'
+ where id = 'b1100000-0000-0000-0000-000000000002';
+select pg_temp.check('and can be marked as found in the file',
+  (select checked_against_the_deed from charter_reference
+    where clause_id = 'b1100000-0000-0000-0000-000000000002'), true);
+
+-- Moving the reference underneath a check would leave the check standing over
+-- something nobody verified.
+do $$
+begin
+  begin
+    update charter_clauses set reference = 'Clause 14(b)'
+     where id = 'b1100000-0000-0000-0000-000000000002';
+    raise exception 'FAIL a checked clause was renumbered underneath its check';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   a checked clause cannot be renumbered underneath the check';
+  end;
+end;
+$$;
+
+do $$
+begin
+  begin
+    update charter_clauses
+       set quoted_text = 'No business shall be transacted unless a majority are present.'
+     where id = 'b1100000-0000-0000-0000-000000000002';
+    raise exception 'FAIL the quotation under a check was rewritten';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   nor its quotation rewritten';
+  end;
+end;
+$$;
+
+-- But somebody who looks again and cannot find it must be able to say so,
+-- otherwise the check is unfalsifiable.
+do $$
+begin
+  update charter_clauses
+     set checked_against_the_deed_at = null, checked_by = null
+   where id = 'b1100000-0000-0000-0000-000000000002';
+  raise notice 'ok   while a check can be withdrawn by somebody who looked again';
+end;
+$$;
+update charter_clauses
+   set checked_against_the_deed_at = now(),
+       checked_by = '22222222-2222-2222-2222-222222222222'
+ where id = 'b1100000-0000-0000-0000-000000000002';
+
+-- A citation names exactly one subject.
+do $$
+begin
+  begin
+    insert into charter_citations
+      (clause_id, governance_organ_id, subject_label, confidentiality)
+    values ('b1100000-0000-0000-0000-000000000002',
+            (select id from governance_organs where kind = 'board_of_trustees'),
+            'The quorum of the Board', 'internal');
+    raise exception 'FAIL a citation named two subjects at once';
+  exception
+    when check_violation then
+      raise notice 'ok   a citation names exactly one subject';
+  end;
+end;
+$$;
+
+-- The organ, and the rule that is not a row anywhere.
+insert into charter_citations
+  (clause_id, governance_organ_id, note_en, confidentiality)
+values
+  ('b1100000-0000-0000-0000-000000000001',
+   (select id from governance_organs where kind = 'board_of_trustees'),
+   'Where the Board comes from', 'internal');
+insert into charter_citations
+  (clause_id, subject_label, note_en, confidentiality)
+values
+  ('b1100000-0000-0000-0000-000000000002', 'The quorum of the Board',
+   'Two thirds of the seats', 'internal');
+
+select pg_temp.check('the citation register resolves an organ to its name',
+  (select subject_label from charter_citation_register
+    where clause_id = 'b1100000-0000-0000-0000-000000000001'), 'Board of Trustees');
+select pg_temp.check('and keeps a rule that is not a record as the words somebody wrote',
+  (select subject_label from charter_citation_register
+    where clause_id = 'b1100000-0000-0000-0000-000000000002'), 'The quorum of the Board');
+select pg_temp.check('a cited clause counts its citations',
+  (select citations from charter_reference
+    where clause_id = 'b1100000-0000-0000-0000-000000000001'), 1::bigint);
+select pg_temp.check('and says what kind of thing cites it',
+  (select cited_for from charter_reference
+    where clause_id = 'b1100000-0000-0000-0000-000000000001'), '{organ}'::text[]);
+
+-- The inverse, which is the reason to build the page: a rule with no clause.
+-- The Board is now cited; the other two organs are not, and one of them is
+-- about to carry a quorum.
+-- As the admin: app.can_keep_governance() is admin, trustee and board
+-- director, and the project director is not one of them — an update from the
+-- seat above would have matched no policy and changed nothing, silently.
+select pg_temp.act_as('11111111-1111-1111-1111-111111111111');  -- admin
+update governance_organs
+   set quorum_fraction = 0.50
+ where kind = 'management_board';
+select pg_temp.check('the quorum this test needs is actually recorded',
+  (select quorum_fraction from governance_organs where kind = 'management_board'),
+  0.50::numeric);
+
+select pg_temp.check('an organ with no clause cited against it is listed',
+  (select count(*) from governance_without_a_clause
+    where subject_kind = 'organ'), 2::bigint);
+select pg_temp.check('and the one carrying a rule that will be enforced is marked',
+  (select carries_a_rule from governance_without_a_clause
+    where subject_kind = 'organ'
+      and subject_label = 'Management Board'), true);
+select pg_temp.check('while one with no rule recorded is not',
+  (select carries_a_rule from governance_without_a_clause
+    where subject_kind = 'organ'
+      and subject_label = 'Audit Committee'), false);
+select pg_temp.check('the cited organ has left the list',
+  (select count(*) from governance_without_a_clause
+    where subject_kind = 'organ' and subject_label = 'Board of Trustees'), 0::bigint);
+
+-- 0021's free-text hook, reported rather than silently converted.
+update governance_organs
+   set charter_clause = 'Clause 22'
+ where kind = 'audit_committee';
+select pg_temp.check('and the free-text clause it needs too',
+  (select charter_clause from governance_organs where kind = 'audit_committee'),
+  'Clause 22');
+select pg_temp.check('an organ naming a clause the register does not hold is reported',
+  (select typed_clause_is_not_in_the_register from governance_without_a_clause
+    where subject_kind = 'organ' and subject_label = 'Audit Committee'), true);
+update governance_organs
+   set charter_clause = 'Clause 14(a)'
+ where kind = 'audit_committee';
+select pg_temp.check('and not reported once the register holds it',
+  (select typed_clause_is_not_in_the_register from governance_without_a_clause
+    where subject_kind = 'organ' and subject_label = 'Audit Committee'), false);
+
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- director
+
+-- One clause number, one record. Two rows for "Clause 9.1" would mean two
+-- answers to the question this page exists to answer.
+do $$
+begin
+  begin
+    insert into charter_clauses (reference, summary_en, confidentiality)
+    values ('Clause 9.1', 'A second reading of the same clause', 'internal');
+    raise exception 'FAIL one clause number got two records';
+  exception
+    when unique_violation then
+      raise notice 'ok   one clause number has one record';
+  end;
+end;
+$$;
+
+-- Who may cite the deed.
+select pg_temp.act_as('44444444-4444-4444-4444-444444444444');  -- field team
+select pg_temp.check('the field team reads the reference page',
+  (select count(*) from charter_reference), 2::bigint);
+do $$
+begin
+  begin
+    insert into charter_clauses (reference, summary_en, confidentiality)
+    values ('Clause 31', 'Something about the site', 'internal');
+    raise exception 'FAIL the field team recorded a clause of the trust deed';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   but does not record clauses of the trust deed';
+  end;
+end;
+$$;
+
+select pg_temp.act_as('11111111-1111-1111-1111-111111111111');  -- admin
+do $$
+begin
+  begin
+    delete from charter_clauses where id = 'b1100000-0000-0000-0000-000000000002';
+    raise exception 'FAIL a cited clause was deleted';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   a clause this page has quoted cannot be deleted';
+  end;
+end;
+$$;
 reset role;
 
 \echo ''

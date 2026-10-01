@@ -1635,6 +1635,88 @@ const TEST_SCENARIO_OVERLAPS = [
   },
 ];
 
+// ---------------------------------------------------------------------------
+// The governance reference, cited to the trust deed (M10-13, 0041)
+// ---------------------------------------------------------------------------
+//
+// One clause with the deed's words behind it and checked, one with only a
+// paraphrase and no file. The page must render those two differently, because
+// a paraphrase read out as the deed is how a misquotation enters a record.
+
+const TEST_CHARTER_CLAUSES = [
+  {
+    clause_id: '00000000-0000-0000-0000-000000000f71',
+    reference: 'Clause 14(a)',
+    heading_en: 'Quorum of the Board',
+    heading_tr: null,
+    quoted_text: 'No business shall be transacted unless two thirds of the members are present.',
+    summary_en: 'Two thirds of the seats, not of those who turned up.',
+    summary_tr: null,
+    document_id: '00000000-0000-0000-0000-0000000000d1',
+    located_at: 'Part III, page 12',
+    checked_against_the_deed_at: '2026-05-02T09:00:00Z',
+    carries_the_deeds_words: true,
+    checked_against_the_deed: true,
+    deed_not_attached: false,
+    citations: 1,
+    cited_for: ['rule'],
+    confidentiality: 'internal',
+  },
+  {
+    clause_id: '00000000-0000-0000-0000-000000000f72',
+    reference: 'Clause 9.1',
+    heading_en: 'Composition of the Board',
+    heading_tr: null,
+    quoted_text: null,
+    summary_en: 'The Board has at least five members.',
+    summary_tr: null,
+    document_id: null,
+    located_at: null,
+    checked_against_the_deed_at: null,
+    carries_the_deeds_words: false,
+    checked_against_the_deed: false,
+    deed_not_attached: true,
+    citations: 0,
+    cited_for: [],
+    confidentiality: 'internal',
+  },
+];
+
+const TEST_CHARTER_CITATIONS = [
+  {
+    citation_id: '00000000-0000-0000-0000-000000000f81',
+    clause_id: '00000000-0000-0000-0000-000000000f71',
+    reference: 'Clause 14(a)',
+    clause_checked: true,
+    subject_kind: 'rule',
+    subject_label: 'The quorum of the Board',
+    note_en: 'Two thirds of the seats',
+    note_tr: null,
+    confidentiality: 'internal',
+  },
+];
+
+const TEST_UNCITED_GOVERNANCE = [
+  {
+    subject_kind: 'organ',
+    subject_id: '00000000-0000-0000-0000-000000000f91',
+    subject_label: 'Management Board',
+    carries_a_rule: true,
+    clause_typed_in_free_text: 'Clause 22',
+    typed_clause_is_not_in_the_register: true,
+    confidentiality: 'internal',
+  },
+  {
+    subject_kind: 'organ',
+    subject_id: '00000000-0000-0000-0000-000000000f92',
+    subject_label: 'Audit Committee',
+    carries_a_rule: false,
+    clause_typed_in_free_text: null,
+    typed_clause_is_not_in_the_register: false,
+    confidentiality: 'internal',
+  },
+];
+
 const TEST_REVIEWS = [
   {
     id: '00000000-0000-0000-0000-000000000f41',
@@ -2914,6 +2996,9 @@ try {
   await serve('**/rest/v1/financial_close**', TEST_PERIODS);
   await serve('**/rest/v1/scenario_register**', TEST_SCENARIOS);
   await serve('**/rest/v1/scenario_overlap**', TEST_SCENARIO_OVERLAPS);
+  await serve('**/rest/v1/charter_reference**', TEST_CHARTER_CLAUSES);
+  await serve('**/rest/v1/charter_citation_register**', TEST_CHARTER_CITATIONS);
+  await serve('**/rest/v1/governance_without_a_clause**', TEST_UNCITED_GOVERNANCE);
   await serve('**/rest/v1/contract_milestones**', TEST_CONTRACT_MILESTONES);
   await serve('**/rest/v1/milestone_matching**', TEST_MILESTONE_MATCHING);
   await serve('**/rest/v1/unscheduled_valuations**', TEST_UNSCHEDULED_VALUATIONS);
@@ -3986,6 +4071,46 @@ try {
   check(
     /tendering firms/.test(governance),
     'declared interests are on the governance screen (M10-11)',
+  );
+
+  // M10-13: the deed's words, somebody's reading, and whether anybody looked.
+  const clauseList = (await page.textContent('ul[aria-label="Senet maddeleri"]')) ?? '';
+  check(
+    /senedin sözü|the deed’s words/.test(clauseList) &&
+      /Birinin okuması|Somebody's reading/.test(clauseList),
+    "the deed's own words and somebody's reading of them are shown as two things (M10-13)",
+  );
+  check(
+    /senette bulundu|found in the deed/.test(clauseList) &&
+      /senetle karşılaştırılmadı|not checked against the deed/.test(clauseList),
+    'and a clause nobody has found in the file is marked unchecked, not wrong',
+  );
+  check(
+    /senet ekli değil|the deed is not attached/.test(clauseList) &&
+      /Senedin kendi sözü kayıtlı değil|deed’s own words are not recorded/.test(clauseList),
+    'a clause with no file says both that the file is missing and that it holds no quotation',
+  );
+  check(
+    /Bu maddeye hiçbir şey dayandırılmamış|Nothing is cited to this clause/.test(clauseList),
+    'and a clause nothing rests on says so rather than looking used',
+  );
+  const uncitedList =
+    (await page.textContent('ul[aria-label="Senede dayandırılmamış kurallar"]')) ?? '';
+  check(
+    /Management Board/.test(uncitedList) &&
+      /birine karşı uygulanacak|enforced against somebody/.test(uncitedList),
+    'an organ with a recorded rule and no clause behind it is marked as such',
+  );
+  check(
+    /Audit Committee/.test(uncitedList) &&
+      !/Audit Committee[^·]*birine karşı uygulanacak/.test(uncitedList),
+    'while one with no rule recorded is listed without that mark',
+  );
+  check(
+    /"Clause 22" yazılmış ama bu madde kütükte yok|is typed on it, but no such clause/.test(
+      uncitedList,
+    ),
+    'a free-text clause number the register does not hold is reported, not converted',
   );
   check(pageErrors.length === 0, 'the governance screen renders without a runtime error');
 
