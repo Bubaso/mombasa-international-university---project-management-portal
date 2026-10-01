@@ -7694,6 +7694,249 @@ begin
   end;
 end;
 $$;
+-- ===========================================================================
+-- Anchored to a version, not to a rectangle (0043): M9-14, M7-17
+-- ===========================================================================
+--
+-- Both requirements ask for something the portal cannot give — it does not
+-- read document content — so these assertions are mostly about what it says
+-- instead, and about the one column that is deliberately absent.
+
+set role authenticated;
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- director
+
+-- There is no coordinate column, and the absence is the design: a highlight
+-- over a text range would be a rectangle at a position that moves with the
+-- viewer, the zoom and the version.
+select pg_temp.check(
+  'the comment table holds no coordinates, because a highlight would move',
+  (select count(*) from information_schema.columns
+    where table_schema = 'public' and table_name = 'document_comments'
+      and column_name in ('x', 'y', 'width', 'height', 'rect', 'bbox',
+                          'coordinates', 'highlight')), 0::bigint);
+
+-- A comment anchored to the earlier of two versions.
+insert into document_comments
+  (id, document_id, document_version_id, page_no, quoted_excerpt, body_en,
+   created_by, confidentiality)
+values
+  ('b3000000-0000-0000-0000-000000000001', '1b000000-0000-0000-0000-000000000001',
+   '1c000000-0000-0000-0000-000000000001', 12,
+   'the reversion shall vest in the lessor',
+   'This is the sentence the county is relying on.',
+   '22222222-2222-2222-2222-222222222222', 'internal');
+
+select pg_temp.check('a comment is anchored to a version and a page',
+  (select page_no from document_comment_register
+    where comment_id = 'b3000000-0000-0000-0000-000000000001'), 12);
+
+-- And because a newer version exists, the anchor's standing is reported.
+select pg_temp.check(
+  'a comment on an older version is reported as written against a superseded file',
+  (select written_against_a_superseded_version from document_comment_register
+    where comment_id = 'b3000000-0000-0000-0000-000000000001'), true);
+-- Three, not two: the vault section above uploaded a third version of this
+-- document, and a fixture that assumed two would be testing a state the file
+-- is not in.
+select pg_temp.check('with the version that is in force now',
+  (select current_version_no from document_comment_register
+    where comment_id = 'b3000000-0000-0000-0000-000000000001'), 3);
+
+-- A comment on the current version is not.
+insert into document_comments
+  (id, document_id, document_version_id, page_no, body_en, created_by, confidentiality)
+values
+  ('b3000000-0000-0000-0000-000000000002', '1b000000-0000-0000-0000-000000000001',
+   '1c000000-0000-0000-0000-000000000004', 3,
+   'Page 3 of the new copy answers it.',
+   '22222222-2222-2222-2222-222222222222', 'internal');
+select pg_temp.check('while one on the version in force is not',
+  (select written_against_a_superseded_version from document_comment_register
+    where comment_id = 'b3000000-0000-0000-0000-000000000002'), false);
+
+-- A comment about a file the server has never read says so.
+insert into document_comments
+  (id, document_id, document_version_id, body_en, created_by, confidentiality)
+values
+  ('b3000000-0000-0000-0000-000000000003', '1b000000-0000-0000-0000-000000000002',
+   '1c000000-0000-0000-0000-000000000003',
+   'Is this the pack that went to the board, or the draft?',
+   '22222222-2222-2222-2222-222222222222', 'restricted');
+select pg_temp.check('a comment about a file the server never read says so',
+  (select portal_has_not_read_the_file from document_comment_register
+    where comment_id = 'b3000000-0000-0000-0000-000000000003'), true);
+select pg_temp.check('and a comment with no page is allowed, because some are about the whole file',
+  (select page_no from document_comment_register
+    where comment_id = 'b3000000-0000-0000-0000-000000000003'), null::int);
+
+-- The version has to belong to the document the comment is against.
+do $$
+begin
+  begin
+    insert into document_comments
+      (document_id, document_version_id, body_en, created_by, confidentiality)
+    values
+      ('1b000000-0000-0000-0000-000000000001', '1c000000-0000-0000-0000-000000000003',
+       'Pointing at another document''s file', '22222222-2222-2222-2222-222222222222',
+       'internal');
+    raise exception 'FAIL a comment was anchored to another document''s version';
+  exception
+    when check_violation then
+      raise notice 'ok   a comment cannot be anchored to another document''s version';
+  end;
+end;
+$$;
+
+-- A comment with nothing in it is not a comment.
+do $$
+begin
+  begin
+    insert into document_comments
+      (document_id, document_version_id, page_no, created_by, confidentiality)
+    values
+      ('1b000000-0000-0000-0000-000000000001', '1c000000-0000-0000-0000-000000000002',
+       4, '22222222-2222-2222-2222-222222222222', 'internal');
+    raise exception 'FAIL an empty comment was recorded';
+  exception
+    when check_violation then
+      raise notice 'ok   a comment has to say something';
+  end;
+end;
+$$;
+
+-- Closing one without saying why is dismissing it.
+do $$
+begin
+  begin
+    update document_comments
+       set resolved_at = now(), resolved_by = '22222222-2222-2222-2222-222222222222'
+     where id = 'b3000000-0000-0000-0000-000000000002';
+    raise exception 'FAIL a comment was closed with no account of why';
+  exception
+    when check_violation then
+      raise notice 'ok   closing a comment requires saying what answered it';
+  end;
+end;
+$$;
+
+do $$
+begin
+  update document_comments
+     set resolved_at = now(),
+         resolved_by = '22222222-2222-2222-2222-222222222222',
+         resolution_note = 'Answered by the surveyor''s note of 14 June.'
+   where id = 'b3000000-0000-0000-0000-000000000002';
+  raise notice 'ok   and with one it closes';
+end;
+$$;
+
+-- --- comparing two versions (M7-17) ---------------------------------------
+
+-- The two versions of the title copy have different digests, both computed.
+select pg_temp.check('two versions the server has read are compared on their digests',
+  (select bytes_verdict from document_version_steps
+    where document_id = '1b000000-0000-0000-0000-000000000001'
+      and later_version_no = 2), 'different_bytes');
+
+-- And nobody wrote down what changed, which the register says rather than
+-- showing an empty diff.
+select pg_temp.check('with nobody having written down what changed',
+  (select change_not_described from document_version_steps
+    where document_id = '1b000000-0000-0000-0000-000000000001'
+      and later_version_no = 2), true);
+
+-- A change summary cannot be added afterwards: 0012 makes a version
+-- append-only, and that is right for this column too — an account of what
+-- changed that can be rewritten later is not an account of anything.
+do $$
+begin
+  begin
+    update document_versions
+       set change_summary_en = 'Boundary redrawn along the surveyed line.'
+     where id = '1c000000-0000-0000-0000-000000000002';
+    raise exception 'FAIL a change summary was added to a version after the fact';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   a change summary travels with the upload or not at all';
+  end;
+end;
+$$;
+
+-- Somebody uploading the same file twice and believing they issued a
+-- revision. The third version gets the digest the second already has, which
+-- is what that mistake looks like. Written as the superuser because the
+-- digest is the server's column and the app holds no grant on it — which is
+-- itself the rule 0012 exists to enforce.
+reset role;
+update document_versions
+   set sha256 = 'b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c',
+       digest_computed_at = now()
+ where id = '1c000000-0000-0000-0000-000000000004';
+set role authenticated;
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- director
+
+select pg_temp.check('a revision that is the same bytes as the last one is named as such',
+  (select bytes_verdict from document_version_steps
+    where document_id = '1b000000-0000-0000-0000-000000000001'
+      and later_version_no = 3), 'byte_identical');
+
+-- A version uploaded with its account of the change, which is the only way
+-- that account can exist.
+insert into document_versions
+  (id, document_id, storage_path, file_name, revision_label, change_summary_en)
+values
+  ('b3100000-0000-0000-0000-000000000003', '1b000000-0000-0000-0000-000000000001',
+   '1b000000-0000-0000-0000-000000000001/b3100000-0000-0000-0000-000000000003',
+   'title-copy-v4.pdf', 'Rev D',
+   'Boundary redrawn along the surveyed line; schedule 2 re-lettered.');
+
+select pg_temp.check('a version uploaded with its change note carries it',
+  (select change_summary_en from document_version_steps
+    where document_id = '1b000000-0000-0000-0000-000000000001'
+      and later_version_no = 4),
+  'Boundary redrawn along the surveyed line; schedule 2 re-lettered.');
+select pg_temp.check('and that step is not reported as undescribed',
+  (select change_not_described from document_version_steps
+    where document_id = '1b000000-0000-0000-0000-000000000001'
+      and later_version_no = 4), false);
+-- Its own digest has not been computed, so the portal will not say the files
+-- differ — only that it has not read them both.
+select pg_temp.check('while the portal still refuses to say whether its bytes differ',
+  (select bytes_verdict from document_version_steps
+    where document_id = '1b000000-0000-0000-0000-000000000001'
+      and later_version_no = 4), 'unread');
+
+-- And there is no column anywhere here claiming to know what changed in the
+-- drawing itself.
+select pg_temp.check(
+  'nothing in the comparison claims to know what changed inside the file',
+  (select count(*) from information_schema.columns
+    where table_schema = 'public' and table_name = 'document_version_steps'
+      and column_name in ('changed_areas', 'diff', 'changed_pages', 'geometry_diff',
+                          'changed_region')), 0::bigint);
+
+-- --- who sees a comment ----------------------------------------------------
+
+select pg_temp.act_as('44444444-4444-4444-4444-444444444444');  -- field team
+select pg_temp.check('a comment on a restricted document is not readable below the tier',
+  (select count(*) from document_comment_register
+    where comment_id = 'b3000000-0000-0000-0000-000000000003'), 0::bigint);
+select pg_temp.check('while the ones on a readable document are',
+  (select count(*) from document_comment_register
+    where document_id = '1b000000-0000-0000-0000-000000000001'), 2::bigint);
+
+select pg_temp.act_as('11111111-1111-1111-1111-111111111111');  -- admin
+do $$
+begin
+  begin
+    delete from document_comments where id = 'b3000000-0000-0000-0000-000000000001';
+    raise exception 'FAIL a comment on a document was deleted';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   a remark somebody made about evidence cannot be deleted';
+  end;
+end;
+$$;
 reset role;
 
 \echo ''

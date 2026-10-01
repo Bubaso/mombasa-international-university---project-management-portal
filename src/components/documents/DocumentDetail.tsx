@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Download, Eye, History, FileCheck2, FileX2, Upload, Copy, Users } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import * as vault from '../../api/documentHooks';
+import { CommentsAndVersions } from './CommentsAndVersions';
 import { useAuthority } from '../../api/adminHooks';
 import { AUDIT_READERS, actsAs, clearanceLabel, clearanceStyle } from '../../lib/authority';
 import { categoryLabel, fileSize, shortDigest } from '../../lib/documents';
@@ -210,6 +211,11 @@ export const DocumentDetail: React.FC<{
             )}
           </section>
         )}
+
+        {/* Comments and the version steps. Both are about what the portal has
+            and has not read, so they belong with the versions rather than on
+            a screen of their own (M9-14, M7-17). */}
+        <CommentsAndVersions documentId={doc.id} />
       </div>
     </aside>
   );

@@ -1753,6 +1753,100 @@ const TEST_SIMILAR = [
   },
 ];
 
+// ---------------------------------------------------------------------------
+// Comments inside a document, and the step between versions (M9-14, M7-17)
+// ---------------------------------------------------------------------------
+//
+// One comment on a superseded version with a transcribed excerpt, one on a
+// file the server never read, and two steps: a byte-identical re-upload and
+// one the portal cannot judge because it has not read both files.
+
+const TEST_DOC_COMMENTS = [
+  {
+    comment_id: '00000000-0000-0000-0000-00000000fb01',
+    document_id: '00000000-0000-0000-0000-0000000000d1',
+    document_version_id: '00000000-0000-0000-0000-0000000000e1',
+    version_no: 1,
+    file_name: 'title-copy-v1.pdf',
+    revision_label: 'Rev A',
+    page_no: 12,
+    quoted_excerpt: 'the reversion shall vest in the lessor',
+    body_en: 'This is the sentence the county is relying on.',
+    body_tr: null,
+    resolved_at: null,
+    resolution_note: null,
+    created_by: '00000000-0000-0000-0000-0000000000aa',
+    created_at: '2026-06-02T09:00:00Z',
+    written_against_a_superseded_version: true,
+    current_version_no: 3,
+    portal_has_not_read_the_file: false,
+    confidentiality: 'internal',
+  },
+  {
+    comment_id: '00000000-0000-0000-0000-00000000fb02',
+    document_id: '00000000-0000-0000-0000-0000000000d1',
+    document_version_id: '00000000-0000-0000-0000-0000000000e3',
+    version_no: 3,
+    file_name: 'title-copy-v3.pdf',
+    revision_label: null,
+    page_no: null,
+    quoted_excerpt: null,
+    body_en: 'Is this the copy that went to the registry?',
+    body_tr: null,
+    resolved_at: null,
+    resolution_note: null,
+    created_by: '00000000-0000-0000-0000-0000000000aa',
+    created_at: '2026-09-15T09:00:00Z',
+    written_against_a_superseded_version: false,
+    current_version_no: 3,
+    portal_has_not_read_the_file: true,
+    confidentiality: 'internal',
+  },
+];
+
+const TEST_VERSION_STEPS = [
+  {
+    document_id: '00000000-0000-0000-0000-0000000000d1',
+    earlier_version_no: 2,
+    earlier_revision_label: 'Rev B',
+    earlier_file_name: 'title-copy-v2.pdf',
+    earlier_byte_size: 190112,
+    earlier_sha256: 'b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c',
+    later_version_id: '00000000-0000-0000-0000-0000000000e3',
+    later_version_no: 3,
+    later_revision_label: 'Rev C',
+    later_file_name: 'title-copy-v3.pdf',
+    later_byte_size: 190112,
+    later_sha256: null,
+    later_uploaded_at: '2026-09-14T09:00:00Z',
+    change_summary_en: null,
+    change_summary_tr: null,
+    bytes_verdict: 'unread',
+    change_not_described: true,
+    confidentiality: 'internal',
+  },
+  {
+    document_id: '00000000-0000-0000-0000-0000000000d1',
+    earlier_version_no: 1,
+    earlier_revision_label: 'Rev A',
+    earlier_file_name: 'title-copy-v1.pdf',
+    earlier_byte_size: 190112,
+    earlier_sha256: 'b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c',
+    later_version_id: '00000000-0000-0000-0000-0000000000e2',
+    later_version_no: 2,
+    later_revision_label: 'Rev B',
+    later_file_name: 'title-copy-v2.pdf',
+    later_byte_size: 190112,
+    later_sha256: 'b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c',
+    later_uploaded_at: '2026-07-01T09:00:00Z',
+    change_summary_en: 'Re-issued with the registry stamp; no change to the text.',
+    change_summary_tr: null,
+    bytes_verdict: 'byte_identical',
+    change_not_described: false,
+    confidentiality: 'internal',
+  },
+];
+
 const TEST_REVIEWS = [
   {
     id: '00000000-0000-0000-0000-000000000f41',
@@ -2900,6 +2994,22 @@ try {
     }),
   );
 
+  await page.route('**/rest/v1/document_comment_register**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(TEST_DOC_COMMENTS),
+    }),
+  );
+
+  await page.route('**/rest/v1/document_version_steps**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(TEST_VERSION_STEPS),
+    }),
+  );
+
   await page.route('**/rest/v1/document_versions**', (route) =>
     route.fulfill({
       status: 200,
@@ -3474,6 +3584,58 @@ try {
     'with the count stated where it cannot be missed',
   );
   check(/Belge ekle|Add a document/.test(vaultView), 'a director may put documents in the vault');
+
+  // M9-14 and M7-17: open a document and read what the portal will and will
+  // not say about its contents.
+  // The vault is a list of buttons, not a table; click the document the
+  // fixtures above are about by name.
+  await page.locator('button').filter({ hasText: 'Smoke deed' }).first().click();
+  await page.waitForTimeout(500);
+  const stepList = (await page.textContent('ul[aria-label="Sürüm adımları"]')) ?? '';
+  const commentList = (await page.textContent('ul[aria-label="Belge yorumları"]')) ?? '';
+  check(
+    /bu iki sürüm bayt bayt aynı|byte-identical/.test(stepList) &&
+      /aynı dosya iki kez yüklenmiş olabilir|uploaded twice/.test(stepList),
+    'a re-upload of the same bytes under a new revision is named as such (M7-17)',
+  );
+  check(
+    /sunucu iki dosyanın ikisini de okumadı|has not read both files/.test(stepList) &&
+      !/dosyalar farklı[^·]*okumadı/.test(stepList),
+    'and two files the server has not both read are not called different',
+  );
+  check(
+    /Neyin değiştiği kayıtlı değil|wrote down what changed/.test(stepList) &&
+      /Re-issued with the registry stamp/.test(stepList),
+    'a step with no change note says so, beside one that has the issuer’s own words',
+  );
+  // Read from the rows, not the page: the paragraph above them has to use the
+  // words "değişen alanlar" to say there is no such layer, and a check that
+  // banned the phrase outright would fail on the sentence that makes the point.
+  check(
+    !/değişen alanlar|changed areas|geometri/.test(stepList),
+    'no row claims to know what changed inside the drawing',
+  );
+  check(
+    /yorumu yazanın aktardığı metin|commenter’s transcription|commenter's transcription/.test(
+      commentList,
+    ),
+    'a comment excerpt is labelled the commenter’s transcription (M9-14)',
+  );
+  check(
+    /yürürlükteki sürüm 3|version 3 is in force/.test(commentList) &&
+      /artık aynı sayfa olmayabilir|not be the same page/.test(commentList),
+    'and a comment on a superseded version says its page may have moved',
+  );
+  check(
+    /Sunucu bu sürümün dosyasını hiç okumadı|never read this version’s file/.test(commentList),
+    'while a comment about an unread file says the bytes cannot be confirmed',
+  );
+  check(
+    /sürüm 1 \(Rev A\) · sayfa 12|version 1 \(Rev A\) · page 12/.test(commentList) &&
+      /belgenin tamamı hakkında|about the document as a whole/.test(commentList),
+    'the anchor names the version and the page, or says it is about the whole file',
+  );
+  check(pageErrors.length === 0, 'the document detail renders without a runtime error');
 
   // M9 write access follows app.can_write, which does not include somebody
   // outside the organisation — so the control is not drawn for them either.

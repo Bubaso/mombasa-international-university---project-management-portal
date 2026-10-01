@@ -2642,3 +2642,64 @@ export interface SimilarRecord {
   sharedTerms: string[];
   termsInCommon: number;
 }
+
+// ---------------------------------------------------------------------------
+// Comments inside a document, and comparing two versions (M9-14, M7-17, 0043)
+// ---------------------------------------------------------------------------
+
+/**
+ * A comment anchored to a document version and a page.
+ *
+ * There is no coordinate here and none in the database. The portal does not
+ * read document content, so a highlight over a text range would be a
+ * rectangle at a position that moves with the viewer, the zoom and the
+ * version. `quotedExcerpt` is the commenter's own transcription and the
+ * screen says so: the portal cannot check that those words are on that page.
+ */
+export interface DocumentComment {
+  commentId: string;
+  documentId: string;
+  documentVersionId: string;
+  versionNo: number;
+  fileName: string;
+  revisionLabel: string | null;
+  pageNo: number | null;
+  quotedExcerpt: string | null;
+  bodyEn: string | null;
+  bodyTr: string | null;
+  resolvedAt: string | null;
+  resolutionNote: string | null;
+  createdBy: string | null;
+  createdAt: string;
+  /** Page 12 of revision B is not page 12 of revision C. */
+  writtenAgainstASupersededVersion: boolean;
+  currentVersionNo: number | null;
+  portalHasNotReadTheFile: boolean;
+  confidentiality: Confidentiality;
+}
+
+/**
+ * Three answers, because "different" is a claim the portal can only make
+ * about files it has read.
+ */
+export type BytesVerdict = 'unread' | 'byte_identical' | 'different_bytes';
+
+export interface DocumentVersionStep {
+  documentId: string;
+  earlierVersionNo: number;
+  earlierRevisionLabel: string | null;
+  earlierFileName: string;
+  earlierByteSize: number | null;
+  laterVersionId: string;
+  laterVersionNo: number;
+  laterRevisionLabel: string | null;
+  laterFileName: string;
+  laterByteSize: number | null;
+  laterUploadedAt: string;
+  changeSummaryEn: string | null;
+  changeSummaryTr: string | null;
+  bytesVerdict: BytesVerdict;
+  /** Nobody wrote down what changed, which is not the same as nothing changing. */
+  changeNotDescribed: boolean;
+  confidentiality: Confidentiality;
+}

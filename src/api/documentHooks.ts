@@ -67,3 +67,35 @@ export const useUnlinkDocument = () => {
   const invalidate = useInvalidator(['documentLinks']);
   return useMutation({ mutationFn: documents.unlinkDocument, onSuccess: invalidate });
 };
+
+// --- comments, and the step from one version to the next (M9-14, M7-17) -----
+
+export const useDocumentComments = (documentId: string | null) =>
+  useQuery({
+    queryKey: ['documentComments', documentId],
+    queryFn: () => documents.fetchDocumentComments(documentId as string),
+    enabled: documentId != null,
+  });
+
+export const useVersionSteps = (documentId: string | null) =>
+  useQuery({
+    queryKey: ['versionSteps', documentId],
+    queryFn: () => documents.fetchVersionSteps(documentId as string),
+    enabled: documentId != null,
+  });
+
+export function useAddDocumentComment() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: documents.addDocumentComment,
+    onSuccess: () => void client.invalidateQueries({ queryKey: ['documentComments'] }),
+  });
+}
+
+export function useResolveDocumentComment() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: documents.resolveDocumentComment,
+    onSuccess: () => void client.invalidateQueries({ queryKey: ['documentComments'] }),
+  });
+}

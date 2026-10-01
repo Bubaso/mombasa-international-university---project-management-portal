@@ -18,13 +18,16 @@
  */
 import { supabase } from '../lib/supabase';
 import type {
+  BytesVerdict,
   Confidentiality,
   DocumentAccessEntry,
   DocumentActionKind,
   DocumentCategory,
+  DocumentComment,
   DocumentItem,
   DocumentLink,
   DocumentVersion,
+  DocumentVersionStep,
 } from '../types';
 
 const BUCKET = 'documents';
@@ -347,4 +350,147 @@ export async function linkDocument(input: {
 export async function unlinkDocument(id: string): Promise<void> {
   const { error } = await supabase.from('document_links').delete().eq('id', id);
   fail(error);
+}
+
+// ---------------------------------------------------------------------------
+// Comments inside a document, and the step from one version to the next
+// (M9-14, M7-17)
+// ---------------------------------------------------------------------------
+
+export async function fetchDocumentComments(documentId: string): Promise<DocumentComment[]> {
+  const { data, error } = await supabase
+    .from('document_comment_register')
+    .select('*')
+    .eq('document_id', documentId)
+    .order('created_at', { ascending: false });
+  fail(error);
+  return (
+    (data ?? []) as {
+      comment_id: string;
+      document_id: string;
+      document_version_id: string;
+      version_no: number;
+      file_name: string;
+      revision_label: string | null;
+      page_no: number | null;
+      quoted_excerpt: string | null;
+      body_en: string | null;
+      body_tr: string | null;
+      resolved_at: string | null;
+      resolution_note: string | null;
+      created_by: string | null;
+      created_at: string;
+      written_against_a_superseded_version: boolean;
+      current_version_no: number | null;
+      portal_has_not_read_the_file: boolean;
+      confidentiality: DocumentComment['confidentiality'];
+    }[]
+  ).map((row) => ({
+    commentId: row.comment_id,
+    documentId: row.document_id,
+    documentVersionId: row.document_version_id,
+    versionNo: Number(row.version_no),
+    fileName: row.file_name,
+    revisionLabel: row.revision_label,
+    pageNo: row.page_no == null ? null : Number(row.page_no),
+    quotedExcerpt: row.quoted_excerpt,
+    bodyEn: row.body_en,
+    bodyTr: row.body_tr,
+    resolvedAt: row.resolved_at,
+    resolutionNote: row.resolution_note,
+    createdBy: row.created_by,
+    createdAt: row.created_at,
+    writtenAgainstASupersededVersion: row.written_against_a_superseded_version,
+    currentVersionNo: row.current_version_no == null ? null : Number(row.current_version_no),
+    portalHasNotReadTheFile: row.portal_has_not_read_the_file,
+    confidentiality: row.confidentiality,
+  }));
+}
+
+/**
+ * The comment itself. `pageNo` may be null — a remark about the whole file is
+ * a real remark — and `quotedExcerpt` is stored as what the commenter typed,
+ * never presented as the document's own text.
+ */
+export async function addDocumentComment(input: {
+  documentId: string;
+  documentVersionId: string;
+  pageNo: number | null;
+  quotedExcerpt: string | null;
+  bodyEn: string;
+  profileId: string;
+}): Promise<void> {
+  const { error } = await supabase.from('document_comments').insert({
+    document_id: input.documentId,
+    document_version_id: input.documentVersionId,
+    page_no: input.pageNo,
+    quoted_excerpt: input.quotedExcerpt,
+    body_en: input.bodyEn,
+    created_by: input.profileId,
+  });
+  fail(error);
+}
+
+/** Closing one needs an account of what answered it; the database insists. */
+export async function resolveDocumentComment(input: {
+  id: string;
+  profileId: string;
+  note: string;
+}): Promise<void> {
+  const { error } = await supabase
+    .from('document_comments')
+    .update({
+      resolved_at: new Date().toISOString(),
+      resolved_by: input.profileId,
+      resolution_note: input.note,
+    })
+    .eq('id', input.id);
+  fail(error);
+}
+
+/** Each step from one version to the next, as recorded. No geometry. */
+export async function fetchVersionSteps(documentId: string): Promise<DocumentVersionStep[]> {
+  const { data, error } = await supabase
+    .from('document_version_steps')
+    .select('*')
+    .eq('document_id', documentId)
+    .order('later_version_no', { ascending: false });
+  fail(error);
+  return (
+    (data ?? []) as {
+      document_id: string;
+      earlier_version_no: number;
+      earlier_revision_label: string | null;
+      earlier_file_name: string;
+      earlier_byte_size: number | null;
+      later_version_id: string;
+      later_version_no: number;
+      later_revision_label: string | null;
+      later_file_name: string;
+      later_byte_size: number | null;
+      later_uploaded_at: string;
+      change_summary_en: string | null;
+      change_summary_tr: string | null;
+      bytes_verdict: BytesVerdict;
+      change_not_described: boolean;
+      confidentiality: DocumentVersionStep['confidentiality'];
+    }[]
+  ).map((row) => ({
+    documentId: row.document_id,
+    earlierVersionNo: Number(row.earlier_version_no),
+    earlierRevisionLabel: row.earlier_revision_label,
+    earlierFileName: row.earlier_file_name,
+    earlierByteSize: row.earlier_byte_size == null ? null : Number(row.earlier_byte_size),
+    laterVersionId: row.later_version_id,
+    laterVersionNo: Number(row.later_version_no),
+    laterRevisionLabel: row.later_revision_label,
+    laterFileName: row.later_file_name,
+    laterByteSize: row.later_byte_size == null ? null : Number(row.later_byte_size),
+    laterUploadedAt: row.later_uploaded_at,
+    changeSummaryEn: row.change_summary_en,
+    changeSummaryTr: row.change_summary_tr,
+    bytesVerdict: row.bytes_verdict,
+    changeNotDescribed: row.change_not_described,
+    confidentiality: row.confidentiality,
+  }));
 }
