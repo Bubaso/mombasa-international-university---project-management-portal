@@ -37,11 +37,46 @@ const keysToSnake = (o: any): any => {
   return o;
 };
 
+/**
+ * The columns, named.
+ *
+ * `select('*')` would also fetch the three generated search columns 0019
+ * adds — the concatenated text of the record and its two stemmed tsvectors.
+ * Those exist so the database can match a query without tokenising on every
+ * read; sending them to a browser roughly triples the size of a case and
+ * tells it nothing it does not already have.
+ */
+const CASE_COLUMNS = [
+  'id',
+  'case_number',
+  'title',
+  'court',
+  'case_type',
+  'current_status',
+  'priority',
+  'risk_level',
+  'filing_date',
+  'next_hearing_date',
+  'description_en',
+  'description_tr',
+  'key_issues',
+  'documents_count',
+  'lead_counsel_stakeholder_id',
+  'confidentiality',
+  'source_system',
+  'source_id',
+  'source_url',
+  'created_by',
+  'created_at',
+  'updated_by',
+  'updated_at',
+].join(', ');
+
 // Fetchers
 export const fetchLegalCases = async (): Promise<LegalCase[]> => {
   const { data, error } = await supabase
     .from('legal_cases')
-    .select('*')
+    .select(CASE_COLUMNS)
     .order('created_at', { ascending: false });
   if (error) throw error;
   return keysToCamel(data);

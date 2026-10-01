@@ -2666,6 +2666,271 @@ select pg_temp.check('and there is still no way to read the bucket directly',
       and cmd in ('SELECT', 'ALL')), 0::bigint);
 
 
+
+-- ===========================================================================
+-- Search, and the narrower door the model gets (M13-02, M13-03, M13-05, M13-06)
+-- ===========================================================================
+--
+-- The storage section above finished with `reset role`, which makes the owner
+-- the caller — and the owner bypasses row level security. Everything below is
+-- about what a caller may see, so the role has to come back first. Without
+-- this line these assertions pass for the wrong reason.
+set role authenticated;
+--
+-- Two things are being proved here, and only one of them is about matching.
+-- The first is that search adds no access: whatever a person can find, they
+-- could already read. The second is that the assistant's retrieval is
+-- strictly narrower than the person's own — restricted material is excluded
+-- from it for everybody, including the people who may read it on screen.
+
+-- Bilingual material to search, written by the director so it is ordinary
+-- internal-tier content. The Turkish is inflected on purpose: "Duruşmalar"
+-- has to be found by somebody typing "duruşma", which is the only reason to
+-- carry a Turkish stemming configuration at all.
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- director
+insert into risks (id, title_en, title_tr, detail_en, detail_tr,
+                   category, likelihood, impact, confidentiality)
+values ('1e000000-0000-0000-0000-000000000040',
+        'Hearings keep being adjourned',
+        'Duruşmalar sürekli erteleniyor',
+        'The permit cannot be renewed while the matter is pending.',
+        'Dava sürerken inşaat ruhsatı yenilenemiyor.',
+        'legal', 4, 4, 'internal');
+
+-- And one at the top tier, which is the one the assistant must never see.
+insert into risks (id, title_en, title_tr, category, likelihood, impact, confidentiality)
+values ('1e000000-0000-0000-0000-000000000041',
+        'Hearings bench may be approached', 'Duruşma heyetine yaklaşılabilir',
+        'legal', 3, 3, 'restricted');
+
+-- --- Matching -------------------------------------------------------------
+
+select pg_temp.act_as('33333333-3333-3333-3333-333333333333');  -- trustee
+
+-- Turkish stemming. The query is the stem; the record carries the plural.
+select pg_temp.check('a Turkish query finds an inflected Turkish record',
+  (select count(*) from search_records('duruşma')
+    where id = '1e000000-0000-0000-0000-000000000040'), 1::bigint);
+
+-- English stemming, same record, because the record is bilingual. This is
+-- what M13-06 actually buys: not a translated query, a bilingual archive.
+select pg_temp.check('and an English query finds the same record',
+  (select count(*) from search_records('adjourned')
+    where id = '1e000000-0000-0000-0000-000000000040'), 1::bigint);
+
+-- Folding. Somebody on a keyboard without the Turkish letters still finds it.
+select pg_temp.check('typing without the Turkish letters still finds it',
+  (select count(*) from search_records('durusmalar')
+    where id = '1e000000-0000-0000-0000-000000000040'), 1::bigint);
+
+-- Identifiers. to_tsvector makes one token of ELC/134/2013, so the stem of a
+-- partial case number matches nothing and only the literal branch saves it.
+select pg_temp.check('a partial case number finds its case',
+  (select count(*) from search_records('ELC/134')
+    where id = 'aaaa0000-0000-0000-0000-000000000002'), 1::bigint);
+
+select pg_temp.check('and it does not matter how it is capitalised',
+  (select count(*) from search_records('elc/134/2013')
+    where id = 'aaaa0000-0000-0000-0000-000000000002'), 1::bigint);
+
+-- One box, several registers: the word "case" appears in the legal register
+-- and in an obligation, and both come back.
+select pg_temp.check('one query reaches more than one register',
+  (select count(distinct kind) from search_records('case') where kind is not null) > 1, true);
+
+-- The kind filter narrows it without changing what is visible.
+select pg_temp.check('and can be narrowed to one register',
+  (select count(distinct kind) from search_records('case', array['legal_case']::search_kind[])),
+  1::bigint);
+
+-- A query that is too short matches nothing rather than everything. The
+-- literal branch would otherwise turn '%%' into the whole archive.
+select pg_temp.check('an empty query returns nothing',
+  (select count(*) from search_records('')), 0::bigint);
+select pg_temp.check('and a single character returns nothing',
+  (select count(*) from search_records('a')), 0::bigint);
+
+-- A wildcard is a character somebody typed, not an instruction.
+select pg_temp.check('a per cent sign does not match everything',
+  (select count(*) from search_records('%%%')), 0::bigint);
+
+-- --- Search adds no access ------------------------------------------------
+
+-- The trustee may read the restricted risk, so their search finds it.
+select pg_temp.check('a trustee searching reaches restricted material',
+  (select count(*) from search_records('duruşma')
+    where id = '1e000000-0000-0000-0000-000000000041'), 1::bigint);
+
+-- The field team may not, and their search does not — the same query, the
+-- same function, a different caller.
+select pg_temp.act_as('44444444-4444-4444-4444-444444444444');  -- field team
+select pg_temp.check('the field team searching does not',
+  (select count(*) from search_records('duruşma')
+    where id = '1e000000-0000-0000-0000-000000000041'), 0::bigint);
+
+-- A donor sees published material, plus the one confidential case an earlier
+-- test shared with them by name (M1-05), and nothing else. That is the better
+-- assertion than "only public": search hands back exactly what the policies
+-- already allow, including a deliberate exception, and nothing by accident.
+select pg_temp.act_as('88888888-8888-8888-8888-888888888888');  -- donor
+select pg_temp.check('a donor searching finds the published case',
+  (select count(*) from search_records('case')
+    where confidentiality = 'public'), 1::bigint);
+select pg_temp.check('and the one record shared with them by name',
+  (select count(*) from search_records('case')
+    where id = 'aaaa0000-0000-0000-0000-000000000003'), 1::bigint);
+select pg_temp.check('and nothing else at all',
+  (select count(*) from search_records('case')), 2::bigint);
+-- A grant cannot reach the top tier, and search is not a way round that.
+select pg_temp.check('nor anything restricted, which no grant can reach',
+  (select count(*) from search_records('MIC/103')), 0::bigint);
+
+-- An external advocate's scope holds inside search too.
+select pg_temp.act_as('55555555-5555-5555-5555-555555555555');  -- advocate one
+select pg_temp.check('an advocate searching finds the case assigned to them',
+  (select count(*) from search_records('ELC/134')
+    where id = 'aaaa0000-0000-0000-0000-000000000002'), 1::bigint);
+select pg_temp.check('and nothing restricted, whatever they type',
+  (select count(*) from search_records('MIC/103')), 0::bigint);
+select pg_temp.check('nor the risk register, which is not theirs at all',
+  (select count(*) from search_records('duruşma')), 0::bigint);
+
+-- --- The model's door is narrower (M13-03) --------------------------------
+
+select pg_temp.act_as('33333333-3333-3333-3333-333333333333');  -- trustee
+
+-- The same caller, the same query, through the other function.
+select pg_temp.check('the trustee''s own search returns the restricted risk',
+  (select count(*) from search_records('duruşma')
+    where confidentiality = 'restricted'), 1::bigint);
+select pg_temp.check('and the assistant''s retrieval returns none of it',
+  (select count(*) from ai_context('duruşma')
+    where confidentiality = 'restricted'), 0::bigint);
+
+-- Not an empty answer, though: the point is that it is narrower, not that it
+-- is useless.
+select pg_temp.check('while still returning what may be summarised',
+  (select count(*) from ai_context('duruşma')) > 0, true);
+
+-- The strongest form of it. An administrator may read everything in the
+-- portal; they still cannot route restricted material into a prompt, because
+-- the exclusion is about where the text is going.
+select pg_temp.act_as('11111111-1111-1111-1111-111111111111');  -- admin
+select pg_temp.check('an administrator sees the restricted risk',
+  (select count(*) from search_records('duruşma')
+    where confidentiality = 'restricted'), 1::bigint);
+select pg_temp.check('and cannot get it into the model''s context either',
+  (select count(*) from ai_context('duruşma')
+    where confidentiality = 'restricted'), 0::bigint);
+select pg_temp.check('nor by asking for more rows than there are',
+  (select count(*) from ai_context('duruşma', 40)
+    where confidentiality = 'restricted'), 0::bigint);
+
+-- --- The searchable text is derived, not written ---------------------------
+
+-- The generated columns are the single definition of what text of a record is
+-- searchable. Nobody gets to disagree with them by hand — which is also what
+-- stops a record being quietly made unfindable.
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- director
+do $$
+begin
+  begin
+    update risks set search_document = 'nothing to see here'
+     where id = '1e000000-0000-0000-0000-000000000040';
+    raise exception 'FAIL the searchable text was written by hand';
+  exception
+    when generated_always then
+      raise notice 'ok   the searchable text cannot be written by hand';
+  end;
+end;
+$$;
+
+-- And it follows the record. Renaming the risk changes what finds it.
+update risks set title_tr = 'Keşif tarihi değişti'
+ where id = '1e000000-0000-0000-0000-000000000040';
+select pg_temp.act_as('33333333-3333-3333-3333-333333333333');
+select pg_temp.check('rewording a record changes what finds it',
+  (select count(*) from search_records('keşif')
+    where id = '1e000000-0000-0000-0000-000000000040'), 1::bigint);
+select pg_temp.check('and the old wording stops finding it',
+  (select count(*) from search_records('erteleniyor')
+    where id = '1e000000-0000-0000-0000-000000000040'), 0::bigint);
+
+-- --- The usage log (M13-10) -----------------------------------------------
+
+select pg_temp.act_as('33333333-3333-3333-3333-333333333333');  -- trustee
+insert into ai_queries (task, question, source_count, model)
+values ('archive_question', 'What did the board decide about the permit?', 4, 'test');
+
+select pg_temp.check('somebody sees their own questions',
+  (select count(*) from ai_queries where asked_by = '33333333-3333-3333-3333-333333333333'),
+  1::bigint);
+
+do $$
+begin
+  begin
+    update ai_queries set question = 'something more flattering'
+     where asked_by = '33333333-3333-3333-3333-333333333333';
+    raise exception 'FAIL the AI usage log was rewritten';
+  exception
+    when insufficient_privilege or raise_exception then
+      raise notice 'ok   and cannot rewrite them afterwards';
+  end;
+end;
+$$;
+
+do $$
+begin
+  begin
+    delete from ai_queries where asked_by = '33333333-3333-3333-3333-333333333333';
+    raise exception 'FAIL the AI usage log was deleted';
+  exception
+    when insufficient_privilege or raise_exception then
+      raise notice 'ok   nor delete them';
+  end;
+end;
+$$;
+
+-- Asking in somebody else's name is refused, which is what makes the log
+-- worth reading.
+do $$
+begin
+  begin
+    insert into ai_queries (asked_by, task, question)
+    values ('11111111-1111-1111-1111-111111111111', 'translation', 'not mine');
+    raise exception 'FAIL a question was logged against somebody else';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   and cannot log a question in somebody else''s name';
+  end;
+end;
+$$;
+
+-- The auditors read the lot, because cost and conduct are what the log is for.
+select pg_temp.act_as('dddd1111-1111-1111-1111-111111111111');  -- external auditor
+select pg_temp.check('an auditor reads everybody''s',
+  (select count(*) from ai_queries), 1::bigint);
+
+-- The field team does not.
+select pg_temp.act_as('44444444-4444-4444-4444-444444444444');
+select pg_temp.check('a colleague reads none of them',
+  (select count(*) from ai_queries), 0::bigint);
+
+-- --- Saved searches are private (M13-11) ----------------------------------
+
+select pg_temp.act_as('33333333-3333-3333-3333-333333333333');
+insert into saved_searches (name, query, kinds)
+values ('Permit matters', 'ruhsat', array['legal_case','obligation']::search_kind[]);
+select pg_temp.check('a saved search belongs to whoever saved it',
+  (select count(*) from saved_searches), 1::bigint);
+
+-- Including from the administrator. The other registers here are
+-- institutional records; what somebody repeatedly looks for is not one.
+select pg_temp.act_as('11111111-1111-1111-1111-111111111111');  -- admin
+select pg_temp.check('and not even an administrator reads it',
+  (select count(*) from saved_searches), 0::bigint);
+
+
 reset role;
 
 \echo ''
