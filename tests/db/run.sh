@@ -68,3 +68,15 @@ psql_q -f "$ROOT/tests/db/seed.sql" >/dev/null
 echo "→ policy tests"
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -q -f "$ROOT/tests/db/policies.test.sql" 2>&1 |
   sed -e 's/^NOTICE:  //' -e '/^$/d'
+
+# Sütun listesi veritabanından alınıyor, migration metninden değil: 0003'ün
+# yardımcıları sütunları `execute` ile ekliyor ve metni ayrıştıran bir araç
+# onları göremez. Burada zaten uygulanmış bir şema var; kullanılmaması israf.
+echo "→ api column check"
+COLUMNS_JSON="$(mktemp)"
+psql "$DATABASE_URL" -At -c "
+  select coalesce(json_agg(json_build_object('table_name', table_name, 'column_name', column_name)), '[]')
+    from information_schema.columns where table_schema = 'public';
+" > "$COLUMNS_JSON"
+node "$ROOT/tests/api-columns.mjs" "$COLUMNS_JSON"
+rm -f "$COLUMNS_JSON"
