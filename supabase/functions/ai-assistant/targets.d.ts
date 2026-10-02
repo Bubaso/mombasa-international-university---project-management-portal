@@ -7,7 +7,17 @@
  */
 
 export type FieldType =
-  'text' | 'longtext' | 'date' | 'enum' | 'boolean' | 'number' | 'profile' | 'stakeholder';
+  | 'text'
+  | 'longtext'
+  | 'date'
+  | 'enum'
+  | 'boolean'
+  | 'number'
+  /** Portaldaki bir kaydı seçtiren alanlar. Model bunları dolduramaz. */
+  | 'profile'
+  | 'stakeholder'
+  | 'legalCase'
+  | 'meeting';
 
 export interface TargetField {
   name: string;

@@ -18,19 +18,26 @@
  */
 import { supabase } from '../lib/supabase';
 import { createObligation } from './obligations';
-import { addChronologyEntry } from './plan';
+import { addChronologyEntry, addMilestone } from './plan';
 import { addCorrespondence } from './comms';
-import { createAction } from './meetings';
-import { createRisk } from './raid';
+import { createAction, createDecision, createMeeting, createQuestion } from './meetings';
+import { createAssumption, createIssue, createRisk } from './raid';
+import { createFiling, createHearing, createOrder } from './legal';
+import { createStakeholder, logInteraction } from './stakeholders';
 import type {
   ChronologyCategory,
   Confidentiality,
+  ContactChannel,
   CorrespondenceDirection,
   CorrespondenceRoute,
   DatePrecision,
+  FilingKind,
+  HearingKind,
+  MeetingKind,
   ObligationSource,
   PriorityLevel,
   RiskCategory,
+  StakeholderCategory,
 } from '../types';
 
 export type ProposalState = 'proposed' | 'applied' | 'declined';
@@ -185,6 +192,129 @@ const WRITERS: Record<
       ownerProfileId: required(values, 'ownerProfileId', 'An owner'),
       ownerStakeholderId: null,
       confidentiality: 'confidential' as Confidentiality,
+    }),
+
+  hearing: (values) =>
+    createHearing({
+      legalCaseId: required(values, 'legalCaseId', 'A case'),
+      scheduledFor: required(values, 'scheduledFor', 'A date'),
+      kind: (text(values, 'kind') ?? 'hearing') as HearingKind,
+      bench: text(values, 'bench'),
+      requiredDocuments: [],
+    }),
+
+  filing: (values) =>
+    createFiling({
+      legalCaseId: required(values, 'legalCaseId', 'A case'),
+      kind: (text(values, 'kind') ?? 'other') as FilingKind,
+      title: required(values, 'title', 'A title'),
+      dueOn: text(values, 'dueOn'),
+    }),
+
+  order: (values) =>
+    createOrder({
+      legalCaseId: required(values, 'legalCaseId', 'A case'),
+      madeOn: required(values, 'madeOn', 'A date'),
+      madeBy: text(values, 'madeBy'),
+      referenceNo: text(values, 'referenceNo'),
+      textEn: text(values, 'textEn'),
+      textTr: null,
+    }),
+
+  meeting: async (values) =>
+    (
+      await createMeeting({
+        title: required(values, 'title', 'A title'),
+        heldAt: required(values, 'heldAt', 'A date'),
+        location: text(values, 'location'),
+        kind: (text(values, 'kind') ?? 'internal') as MeetingKind,
+        priority: 'normal',
+        // Belgeden kurulan bir toplantı kaydı olmuş bir toplantıdır; tutanağı
+        // yoktur ve olduğunu iddia etmek yanlış olur.
+        status: 'completed',
+        minutesStatus: 'draft',
+        continuesMeetingId: null,
+        confidentiality: 'confidential' as Confidentiality,
+      })
+    ).id,
+
+  decision: (values) =>
+    createDecision({
+      meetingId: text(values, 'meetingId'),
+      referenceNo: text(values, 'referenceNo'),
+      textEn: required(values, 'textEn', 'What was decided'),
+      textTr: null,
+      rationaleEn: text(values, 'rationaleEn'),
+      organ: text(values, 'organ'),
+      vote: null,
+      decidedOn: required(values, 'decidedOn', 'A date'),
+      // Belgeden kurulan bir karar yürürlüktedir; uygulanmış olduğunu
+      // söylemek, uygulandığını kimsenin kaydetmediği bir iddia olurdu.
+      status: 'in_force',
+      confidentiality: 'confidential' as Confidentiality,
+    }),
+
+  question: (values) =>
+    createQuestion({
+      meetingId: text(values, 'meetingId'),
+      questionEn: required(values, 'questionEn', 'The question'),
+      questionTr: null,
+      targetResolutionDate: text(values, 'targetResolutionDate'),
+      ownerProfileId: null,
+      ownerStakeholderId: null,
+      confidentiality: 'confidential' as Confidentiality,
+    }),
+
+  stakeholder: async (values) =>
+    (
+      await createStakeholder({
+        fullName: required(values, 'fullName', 'A name'),
+        title: text(values, 'title'),
+        organizationId: null,
+        category: (text(values, 'category') ?? 'other') as StakeholderCategory,
+        email: text(values, 'email'),
+        phone: text(values, 'phone'),
+        location: null,
+        interestTopic: null,
+        // Kaydedilmemiş bir tutum `unknown`'dır, `neutral` değil
+        // (CLAUDE.md §2). Bir mektuptan tutum okunmaz.
+        stance: 'unknown',
+        influence: number(values, 'influence', 3),
+        interest: number(values, 'interest', 3),
+        relationshipOwner: null,
+        confidentiality: 'confidential' as Confidentiality,
+      })
+    ).id,
+
+  interaction: (values) =>
+    logInteraction({
+      stakeholderId: required(values, 'stakeholderId', 'A stakeholder'),
+      occurredAt: required(values, 'occurredAt', 'A date'),
+      channel: (text(values, 'channel') ?? 'other') as ContactChannel,
+      summary: required(values, 'summary', 'What was said'),
+      outcome: text(values, 'outcome'),
+      confidentiality: 'confidential' as Confidentiality,
+    }),
+
+  milestone: (values) =>
+    addMilestone({
+      titleEn: required(values, 'titleEn', 'A title'),
+      targetOn: text(values, 'targetOn'),
+      critical: boolean(values, 'critical'),
+      detailEn: text(values, 'detailEn'),
+    }),
+
+  issue: (values) =>
+    createIssue({
+      titleEn: required(values, 'titleEn', 'A title'),
+      category: (text(values, 'category') ?? 'legal') as RiskCategory,
+      severity: number(values, 'severity', 3),
+    }),
+
+  assumption: (values) =>
+    createAssumption({
+      statementEn: required(values, 'statementEn', 'The assumption'),
+      riskCategory: (text(values, 'riskCategory') ?? 'legal') as RiskCategory,
     }),
 
   risk: (values) =>

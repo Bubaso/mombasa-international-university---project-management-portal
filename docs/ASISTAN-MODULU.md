@@ -359,20 +359,25 @@ verilecek — zor olan iş o.
 
 Fonksiyonun kendini sınama çağrısından, gerçek anahtar ve gerçek şema ile:
 
-| Ölçülen                                      | Değer                         |
-| -------------------------------------------- | ----------------------------- |
-| Talimat + kütük listesi + şema (sabit kısım) | ~210 belirteç                 |
-| 150 karakterlik sınama metni                 | 249 girdi / 52 çıktı belirteç |
-| 12.000 karakterlik kesit (azami, bir belge)  | ~3.200 girdi / ~60 çıktı      |
-| **Sınıflandırma, belge başına**              | **~$0,001**                   |
-| **Ayda 50 belge**                            | **~$0,06**                    |
+| Ölçülen                                     | Değer                            |
+| ------------------------------------------- | -------------------------------- |
+| Hedef tanımları (16 kütük, alanlarıyla)     | ~2.390 belirteç, her çağrıda     |
+| 150 karakterlik sınama metni, 5 hedefle     | 1.587 girdi / 539 çıktı belirteç |
+| Aynı metin, 16 hedefle                      | 2.857 girdi / 513 çıktı belirteç |
+| 30.000 karakterlik kesit (azami, bir belge) | ~10.400 girdi / ~800 çıktı       |
+| **Okuma + teklif, belge başına**            | **~$0,005**                      |
+| **Ayda 50 belge**                           | **~$0,25**                       |
 
-Yani 1. fazın sınıflandırması, tablodaki Haiku tahmininin (~$0,033) otuzda
-biri mertebesinde. Sebebi hem daha ucuz model hem de tek geçiş: bu fazda
-belgenin tamamı değil ilk 12.000 karakteri okunuyor ve ikinci bir okuma yok.
+Yani teklif üretme dâhil, belge başına maliyet tablodaki Sonnet tahmininin
+(~$0,065) on üçte biri mertebesinde. Üç sebep: daha ucuz model, **tek geçiş**
+(sınıflandırma ve teklifler aynı çağrıda; rapor iki geçiş öngörüyordu), ve
+belgenin tamamı yerine ilk 30.000 karakteri.
 
-Tablodaki büyük rakamlar 2. faz içindir ve hâlâ geçerli: alan çıkarma metni
-ikinci kez okur, alıntı çapası ister ve daha iyi bir model gerektirir.
+Sabit maliyet hedef sayısıyla büyüyor: 16 kütüğün tanımı her çağrıda ~2.390
+belirteç. Kütük sayısı iki katına çıkarsa bu da çıkar, ve o noktada hedefleri
+sınıflandırmaya göre daraltmak (önce ne olduğunu sor, sonra yalnız ilgili
+hedeflerin tanımını gönder) iki geçişi geri getirmeye değer hâle gelir.
+Bugünkü rakamlarda değmiyor: 50 belge ayda çeyrek dolar.
 
 ### 7.5 Maliyet tavanı
 

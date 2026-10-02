@@ -124,15 +124,20 @@ export async function createHearing(input: {
   kind: HearingKind;
   bench: string | null;
   requiredDocuments: string[];
-}): Promise<void> {
-  const { error } = await supabase.from('hearings').insert({
-    legal_case_id: input.legalCaseId,
-    scheduled_for: input.scheduledFor,
-    kind: input.kind,
-    bench: input.bench,
-    required_documents: input.requiredDocuments,
-  });
+}): Promise<string> {
+  const { data, error } = await supabase
+    .from('hearings')
+    .insert({
+      legal_case_id: input.legalCaseId,
+      scheduled_for: input.scheduledFor,
+      kind: input.kind,
+      bench: input.bench,
+      required_documents: input.requiredDocuments,
+    })
+    .select('id')
+    .single();
   fail(error);
+  return (data as { id: string }).id;
 }
 
 export async function setHearingPreparation(input: {
@@ -197,15 +202,20 @@ export async function createFiling(input: {
   kind: FilingKind;
   title: string;
   dueOn: string | null;
-}): Promise<void> {
-  const { error } = await supabase.from('filings').insert({
-    legal_case_id: input.legalCaseId,
-    kind: input.kind,
-    title: input.title,
-    due_on: input.dueOn,
-    state: 'planned',
-  });
+}): Promise<string> {
+  const { data, error } = await supabase
+    .from('filings')
+    .insert({
+      legal_case_id: input.legalCaseId,
+      kind: input.kind,
+      title: input.title,
+      due_on: input.dueOn,
+      state: 'planned',
+    })
+    .select('id')
+    .single();
   fail(error);
+  return (data as { id: string }).id;
 }
 
 /**
@@ -235,16 +245,21 @@ export async function createOrder(input: {
   referenceNo: string | null;
   textEn: string | null;
   textTr: string | null;
-}): Promise<void> {
-  const { error } = await supabase.from('legal_orders').insert({
-    legal_case_id: input.legalCaseId,
-    made_on: input.madeOn,
-    made_by: input.madeBy,
-    reference_no: input.referenceNo,
-    text_en: input.textEn,
-    text_tr: input.textTr,
-  });
+}): Promise<string> {
+  const { data, error } = await supabase
+    .from('legal_orders')
+    .insert({
+      legal_case_id: input.legalCaseId,
+      made_on: input.madeOn,
+      made_by: input.madeBy,
+      reference_no: input.referenceNo,
+      text_en: input.textEn,
+      text_tr: input.textTr,
+    })
+    .select('id')
+    .single();
   fail(error);
+  return (data as { id: string }).id;
 }
 
 export async function setOrderState(input: { id: string; state: OrderState }): Promise<void> {

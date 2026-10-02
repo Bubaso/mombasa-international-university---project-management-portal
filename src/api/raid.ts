@@ -341,13 +341,18 @@ export async function createIssue(input: {
   titleEn: string;
   category: RiskCategory;
   severity: number;
-}): Promise<void> {
-  const { error } = await supabase.from('issues').insert({
-    title_en: input.titleEn,
-    category: input.category,
-    severity: input.severity,
-  });
+}): Promise<string> {
+  const { data, error } = await supabase
+    .from('issues')
+    .insert({
+      title_en: input.titleEn,
+      category: input.category,
+      severity: input.severity,
+    })
+    .select('id')
+    .single();
   fail(error);
+  return (data as { id: string }).id;
 }
 
 export async function resolveIssue(input: { id: string; resolutionEn: string }): Promise<void> {
@@ -408,12 +413,17 @@ export async function fetchAssumptions(): Promise<Assumption[]> {
 export async function createAssumption(input: {
   statementEn: string;
   riskCategory: RiskCategory;
-}): Promise<void> {
-  const { error } = await supabase.from('assumptions').insert({
-    statement_en: input.statementEn,
-    risk_category: input.riskCategory,
-  });
+}): Promise<string> {
+  const { data, error } = await supabase
+    .from('assumptions')
+    .insert({
+      statement_en: input.statementEn,
+      risk_category: input.riskCategory,
+    })
+    .select('id')
+    .single();
   fail(error);
+  return (data as { id: string }).id;
 }
 
 /**

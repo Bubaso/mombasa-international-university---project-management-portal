@@ -473,7 +473,7 @@ const writerKeys = [
   ...PROPOSALS_TS.slice(
     PROPOSALS_TS.indexOf('> = {'),
     PROPOSALS_TS.indexOf('export const writableRegisters'),
-  ).matchAll(/^ {2}([a-z_]+): \(/gm),
+  ).matchAll(/^ {2}([a-z_]+): (?:async )?\(/gm),
 ].map((m) => m[1]);
 
 check(

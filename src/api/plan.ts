@@ -86,16 +86,21 @@ export async function addMilestone(input: {
   targetOn?: string | null;
   critical?: boolean;
   detailEn?: string | null;
-}): Promise<void> {
-  const { error } = await supabase.from('milestones').insert({
-    title_en: input.titleEn.trim(),
-    code: input.code?.trim() || null,
-    phase_id: input.phaseId || null,
-    target_on: input.targetOn || null,
-    critical: input.critical ?? false,
-    detail_en: input.detailEn?.trim() || null,
-  });
+}): Promise<string> {
+  const { data, error } = await supabase
+    .from('milestones')
+    .insert({
+      title_en: input.titleEn.trim(),
+      code: input.code?.trim() || null,
+      phase_id: input.phaseId || null,
+      target_on: input.targetOn || null,
+      critical: input.critical ?? false,
+      detail_en: input.detailEn?.trim() || null,
+    })
+    .select('id')
+    .single();
   fail(error);
+  return (data as { id: string }).id;
 }
 
 /**

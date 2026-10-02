@@ -331,6 +331,516 @@ export const PROPOSAL_TARGETS = [
       },
     ],
   },
+
+  // --- Hukuk -------------------------------------------------------------
+  //
+  // Üçü de bir davaya aittir ve hangi dava olduğunu model bilemez: belge
+  // dosya numarasını yazsa bile portaldaki hangi kayıt olduğunu söyleyemez.
+  // Onaylayan seçer.
+
+  {
+    key: 'hearing',
+    table: 'hearings',
+    label: { en: 'Hearing', tr: 'Duruşma' },
+    what:
+      'A court date: a mention, directions, a hearing, a ruling or a judgment, with the date it ' +
+      'is set for. Propose one for each sitting the document fixes or reports.',
+    fields: [
+      {
+        name: 'legalCaseId',
+        type: 'legalCase',
+        required: true,
+        human: true,
+        label: { en: 'Case', tr: 'Dava' },
+        about: 'Which case. The approver picks it from the register.',
+      },
+      {
+        name: 'scheduledFor',
+        type: 'date',
+        required: true,
+        label: { en: 'Date', tr: 'Tarih' },
+        about: 'The date of the sitting, YYYY-MM-DD.',
+      },
+      {
+        name: 'kind',
+        type: 'enum',
+        required: true,
+        values: ['mention', 'directions', 'hearing', 'ruling', 'judgment', 'application'],
+        label: { en: 'Kind', tr: 'Tür' },
+        about: 'What kind of sitting.',
+      },
+      {
+        name: 'bench',
+        type: 'text',
+        label: { en: 'Bench', tr: 'Hâkim / heyet' },
+        about: 'The judge or bench, if the document names one.',
+      },
+    ],
+  },
+
+  {
+    key: 'filing',
+    table: 'filings',
+    label: { en: 'Filing', tr: 'Layiha' },
+    what:
+      'A document to be filed in court, or one the text records as filed: a pleading, an ' +
+      'affidavit, submissions, an application, an appeal, a notice.',
+    fields: [
+      {
+        name: 'legalCaseId',
+        type: 'legalCase',
+        required: true,
+        human: true,
+        label: { en: 'Case', tr: 'Dava' },
+        about: 'Which case. The approver picks it.',
+      },
+      {
+        name: 'kind',
+        type: 'enum',
+        required: true,
+        values: [
+          'pleading',
+          'affidavit',
+          'submission',
+          'application',
+          'appeal',
+          'record_of_appeal',
+          'notice',
+          'other',
+        ],
+        label: { en: 'Kind', tr: 'Tür' },
+        about: 'What kind of filing.',
+      },
+      {
+        name: 'title',
+        type: 'text',
+        required: true,
+        label: { en: 'Title', tr: 'Başlık' },
+        about: 'What it is called, in one line.',
+      },
+      {
+        name: 'dueOn',
+        type: 'date',
+        label: { en: 'Due', tr: 'Vade' },
+        about: 'Only a date the document states, YYYY-MM-DD.',
+      },
+    ],
+  },
+
+  {
+    key: 'order',
+    table: 'legal_orders',
+    label: { en: 'Court order', tr: 'Mahkeme kararı' },
+    what:
+      'An order the court has made, as the document records it. This is the order itself, as a ' +
+      'legal record; the duty it creates is a separate obligation proposal.',
+    fields: [
+      {
+        name: 'legalCaseId',
+        type: 'legalCase',
+        required: true,
+        human: true,
+        label: { en: 'Case', tr: 'Dava' },
+        about: 'Which case. The approver picks it.',
+      },
+      {
+        name: 'madeOn',
+        type: 'date',
+        required: true,
+        label: { en: 'Made on', tr: 'Tarih' },
+        about: 'The date the order was made, YYYY-MM-DD.',
+      },
+      {
+        name: 'madeBy',
+        type: 'text',
+        label: { en: 'Made by', tr: 'Veren' },
+        about: 'The judge or court, as named.',
+      },
+      {
+        name: 'referenceNo',
+        type: 'text',
+        label: { en: 'Reference', tr: 'Referans' },
+        about: 'The reference the order carries, if any.',
+      },
+      {
+        name: 'textEn',
+        type: 'longtext',
+        label: { en: 'What it orders', tr: 'Hükmü' },
+        about: 'The operative words, as close to the document as you can.',
+      },
+    ],
+  },
+
+  // --- Toplantı, karar, açık soru ----------------------------------------
+
+  {
+    key: 'meeting',
+    table: 'meetings',
+    label: { en: 'Meeting', tr: 'Toplantı' },
+    what:
+      'A meeting the document records or convenes: minutes, an invitation, a note of a visit. ' +
+      'Propose one when the document is about a meeting that is not yet in the register.',
+    fields: [
+      {
+        name: 'title',
+        type: 'text',
+        required: true,
+        label: { en: 'Title', tr: 'Başlık' },
+        about: 'What the meeting was, in one line.',
+      },
+      {
+        name: 'heldAt',
+        type: 'date',
+        required: true,
+        label: { en: 'Held on', tr: 'Tarih' },
+        about: 'The date it was or will be held.',
+      },
+      {
+        name: 'kind',
+        type: 'enum',
+        required: true,
+        values: ['internal', 'trustee', 'official', 'partner', 'legal', 'site', 'community'],
+        label: { en: 'Kind', tr: 'Tür' },
+        about: 'Who it was with.',
+      },
+      {
+        name: 'location',
+        type: 'text',
+        label: { en: 'Where', tr: 'Yer' },
+        about: 'Where it was held, if the document says.',
+      },
+    ],
+  },
+
+  {
+    key: 'decision',
+    table: 'decisions',
+    label: { en: 'Decision', tr: 'Karar' },
+    what:
+      'A decision taken by a body — the board, the trustees, a committee — as the document ' +
+      'records it. Not a plan or an intention: something settled.',
+    fields: [
+      {
+        name: 'textEn',
+        type: 'longtext',
+        required: true,
+        label: { en: 'What was decided', tr: 'Ne karara bağlandı' },
+        about: 'The decision itself, as the document words it.',
+      },
+      {
+        name: 'decidedOn',
+        type: 'date',
+        required: true,
+        label: { en: 'Decided on', tr: 'Karar tarihi' },
+        about: 'The date, YYYY-MM-DD.',
+      },
+      {
+        name: 'organ',
+        type: 'text',
+        label: { en: 'Body', tr: 'Organ' },
+        about: 'Which body took it, as named.',
+      },
+      {
+        name: 'referenceNo',
+        type: 'text',
+        label: { en: 'Reference', tr: 'Karar no' },
+        about: 'The decision number, if it carries one.',
+      },
+      {
+        name: 'rationaleEn',
+        type: 'longtext',
+        label: { en: 'Rationale', tr: 'Gerekçe' },
+        about: 'Why, if the document gives a reason.',
+      },
+      {
+        name: 'meetingId',
+        type: 'meeting',
+        human: true,
+        label: { en: 'Meeting', tr: 'Toplantı' },
+        about: 'The meeting it was taken at, if it is in the register. The approver picks it.',
+      },
+    ],
+  },
+
+  {
+    key: 'question',
+    table: 'open_questions',
+    label: { en: 'Open question', tr: 'Açık soru' },
+    what:
+      'Something the document leaves unresolved and somebody must answer: a point referred ' +
+      'back, a figure not yet agreed, a condition not yet met.',
+    fields: [
+      {
+        name: 'questionEn',
+        type: 'longtext',
+        required: true,
+        label: { en: 'The question', tr: 'Soru' },
+        about: 'What is unresolved, as a question.',
+      },
+      {
+        name: 'targetResolutionDate',
+        type: 'date',
+        label: { en: 'Answer needed by', tr: 'Cevap tarihi' },
+        about: 'Only a date the document states.',
+      },
+      {
+        name: 'meetingId',
+        type: 'meeting',
+        human: true,
+        label: { en: 'Meeting', tr: 'Toplantı' },
+        about: 'The meeting it came from, if any. The approver picks it.',
+      },
+    ],
+  },
+
+  // --- Paydaş ------------------------------------------------------------
+
+  {
+    key: 'stakeholder',
+    table: 'stakeholders',
+    label: { en: 'Stakeholder', tr: 'Paydaş' },
+    what:
+      'A person or body that matters to the project and is named in the document: a minister, ' +
+      'an official, a contractor, a partner trust, counsel. Propose one only for somebody who ' +
+      'acts in the matter, not for every name on a distribution list.',
+    fields: [
+      {
+        name: 'fullName',
+        type: 'text',
+        required: true,
+        label: { en: 'Name', tr: 'Ad' },
+        about: 'As the document writes it.',
+      },
+      {
+        name: 'title',
+        type: 'text',
+        label: { en: 'Title', tr: 'Unvan' },
+        about: 'Their office or role, as given.',
+      },
+      {
+        name: 'category',
+        type: 'enum',
+        required: true,
+        values: [
+          'government',
+          'judiciary',
+          'partner_trust',
+          'legal',
+          'contractor',
+          'community',
+          'academic',
+          'media',
+          'donor',
+          'internal',
+          'other',
+        ],
+        label: { en: 'Category', tr: 'Kategori' },
+        about: 'Which kind.',
+      },
+      {
+        name: 'email',
+        type: 'text',
+        label: { en: 'Email', tr: 'E-posta' },
+        about: 'Only if the document prints one.',
+      },
+      {
+        name: 'phone',
+        type: 'text',
+        label: { en: 'Phone', tr: 'Telefon' },
+        about: 'Only if the document prints one.',
+      },
+      // Nüfuz ve ilgi bir mektuptan okunamaz, ve tutum kaydedilmemişse
+      // `unknown`'dır — `neutral` değil (CLAUDE.md §2). Model bunlara
+      // dokunmuyor; sayıları onaylayan verir.
+      {
+        name: 'influence',
+        type: 'number',
+        required: true,
+        human: true,
+        min: 1,
+        max: 5,
+        label: { en: 'Influence (1-5)', tr: 'Nüfuz (1-5)' },
+        about: 'Not readable from one document. The approver sets it.',
+      },
+      {
+        name: 'interest',
+        type: 'number',
+        required: true,
+        human: true,
+        min: 1,
+        max: 5,
+        label: { en: 'Interest (1-5)', tr: 'İlgi (1-5)' },
+        about: 'Not readable from one document. The approver sets it.',
+      },
+    ],
+  },
+
+  {
+    key: 'interaction',
+    table: 'stakeholder_interactions',
+    label: { en: 'Contact log entry', tr: 'Temas kaydı' },
+    what:
+      'A recorded contact with a stakeholder: a meeting, a call, a letter sent or received. ' +
+      'Propose one when the document reports somebody speaking to somebody.',
+    fields: [
+      {
+        name: 'stakeholderId',
+        type: 'stakeholder',
+        required: true,
+        human: true,
+        label: { en: 'Stakeholder', tr: 'Paydaş' },
+        about: 'Who was contacted. The approver picks them from the register.',
+      },
+      {
+        name: 'occurredAt',
+        type: 'date',
+        required: true,
+        label: { en: 'When', tr: 'Tarih' },
+        about: 'The date of the contact, YYYY-MM-DD.',
+      },
+      {
+        name: 'channel',
+        type: 'enum',
+        required: true,
+        values: ['in_person', 'phone', 'message', 'email', 'formal_letter', 'other'],
+        label: { en: 'Channel', tr: 'Mecra' },
+        about: 'How the contact happened.',
+      },
+      {
+        name: 'summary',
+        type: 'longtext',
+        required: true,
+        label: { en: 'What was said', tr: 'Ne konuşuldu' },
+        about: 'What passed between them, in two or three sentences.',
+      },
+      {
+        name: 'outcome',
+        type: 'text',
+        label: { en: 'Outcome', tr: 'Sonuç' },
+        about: 'What came of it, if the document says.',
+      },
+    ],
+  },
+
+  // --- Plan, sorun, varsayım ---------------------------------------------
+
+  {
+    key: 'milestone',
+    table: 'milestones',
+    label: { en: 'Milestone', tr: 'Kilometre taşı' },
+    what:
+      'A dated point the project must reach, which the document sets or reports: a licence, an ' +
+      'approval, a handover, an opening.',
+    fields: [
+      {
+        name: 'titleEn',
+        type: 'text',
+        required: true,
+        label: { en: 'What is to be reached', tr: 'Hedef' },
+        about: 'One line, in English.',
+      },
+      {
+        name: 'targetOn',
+        type: 'date',
+        label: { en: 'Target date', tr: 'Hedef tarih' },
+        about: 'Only a date the document states.',
+      },
+      {
+        name: 'critical',
+        type: 'boolean',
+        label: { en: 'On the critical path', tr: 'Kritik yolda' },
+        about: 'True only where the document says other work waits on it.',
+      },
+      {
+        name: 'detailEn',
+        type: 'longtext',
+        label: { en: 'Detail', tr: 'Ayrıntı' },
+        about: 'What the document adds.',
+      },
+    ],
+  },
+
+  {
+    key: 'issue',
+    table: 'issues',
+    label: { en: 'Issue', tr: 'Sorun' },
+    what:
+      'Something that has already gone wrong and is being dealt with. A thing that MIGHT go ' +
+      'wrong is a risk, not an issue, and the two are different records.',
+    fields: [
+      {
+        name: 'titleEn',
+        type: 'text',
+        required: true,
+        label: { en: 'The issue', tr: 'Sorun' },
+        about: 'What has gone wrong, in one line.',
+      },
+      {
+        name: 'category',
+        type: 'enum',
+        required: true,
+        values: [
+          'legal',
+          'political',
+          'financial',
+          'reputational',
+          'site_safety',
+          'construction',
+          'accreditation',
+          'partnership',
+          'climate',
+        ],
+        label: { en: 'Category', tr: 'Kategori' },
+        about: 'Which kind.',
+      },
+      {
+        name: 'severity',
+        type: 'number',
+        required: true,
+        min: 1,
+        max: 5,
+        label: { en: 'Severity (1-5)', tr: 'Şiddet (1-5)' },
+        about: 'How bad it is, 1 to 5, as the document makes it sound.',
+      },
+    ],
+  },
+
+  {
+    key: 'assumption',
+    table: 'assumptions',
+    label: { en: 'Assumption', tr: 'Varsayım' },
+    what:
+      'Something the document takes for granted and the project depends on: that a permission ' +
+      'will be granted, that a party will agree, that a rate will hold. Worth recording because ' +
+      'a collapsed assumption opens a risk by itself.',
+    fields: [
+      {
+        name: 'statementEn',
+        type: 'longtext',
+        required: true,
+        label: { en: 'The assumption', tr: 'Varsayım' },
+        about: 'Written as a statement that could turn out false.',
+      },
+      {
+        name: 'riskCategory',
+        type: 'enum',
+        required: true,
+        values: [
+          'legal',
+          'political',
+          'financial',
+          'reputational',
+          'site_safety',
+          'construction',
+          'accreditation',
+          'partnership',
+          'climate',
+        ],
+        label: { en: 'If it fails, the risk is', tr: 'Çökerse riski' },
+        about: 'Which kind of risk its failure would be.',
+      },
+    ],
+  },
 ];
 
 export const PROPOSAL_KEYS = PROPOSAL_TARGETS.map((t) => t.key);

@@ -287,16 +287,21 @@ export async function logInteraction(input: {
   summary: string;
   outcome: string | null;
   confidentiality: Confidentiality;
-}): Promise<void> {
-  const { error } = await supabase.from('stakeholder_interactions').insert({
-    stakeholder_id: input.stakeholderId,
-    occurred_at: input.occurredAt,
-    channel: input.channel,
-    summary: input.summary,
-    outcome: input.outcome,
-    confidentiality: input.confidentiality,
-  });
+}): Promise<string> {
+  const { data, error } = await supabase
+    .from('stakeholder_interactions')
+    .insert({
+      stakeholder_id: input.stakeholderId,
+      occurred_at: input.occurredAt,
+      channel: input.channel,
+      summary: input.summary,
+      outcome: input.outcome,
+      confidentiality: input.confidentiality,
+    })
+    .select('id')
+    .single();
   fail(error);
+  return (data as { id: string }).id;
 }
 
 // ---------------------------------------------------------------------------

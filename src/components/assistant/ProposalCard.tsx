@@ -3,6 +3,9 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Check, Quote, X } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useProfiles } from '../../api/adminHooks';
+import { useLegalCases } from '../../api/hooks';
+import { useMeetings } from '../../api/meetingHooks';
+import { useStakeholders } from '../../api/stakeholderHooks';
 import { applyProposal, declineProposal, type Proposal } from '../../api/proposals';
 import { ActionButton, Field, Pill, Select, TextInput, WriteError } from '../ui/Controls';
 import { formatDate } from '../../lib/site';
@@ -43,7 +46,26 @@ export const ProposalCard: React.FC<{ proposal: Proposal }> = ({ proposal }) => 
   const tr = language === 'tr';
   const queryClient = useQueryClient();
   const target = targetFor(proposal.register);
+  // Modelin dolduramadığı alanların seçenekleri. Hepsi aynı anda çekiliyor;
+  // bir teklif kartı bunlardan en fazla birini kullanıyor ama hangisi
+  // olduğunu hedefin alanları söylüyor ve hook sayısı sabit kalmak zorunda.
   const profiles = useProfiles();
+  const cases = useLegalCases();
+  const meetings = useMeetings();
+  const stakeholders = useStakeholders();
+
+  /** Bir seçici alanın seçenekleri: kimlik ve ekranda görünecek ad. */
+  const optionsFor = (type: TargetField['type']): { id: string; label: string }[] => {
+    if (type === 'profile')
+      return (profiles.data ?? []).map((x) => ({ id: x.id, label: x.fullName }));
+    if (type === 'stakeholder')
+      return (stakeholders.data ?? []).map((x) => ({ id: x.id, label: x.fullName }));
+    if (type === 'legalCase')
+      return (cases.data ?? []).map((x) => ({ id: x.id, label: `${x.caseNumber} — ${x.title}` }));
+    if (type === 'meeting')
+      return (meetings.data ?? []).map((x) => ({ id: x.id, label: `${x.title} (${x.heldAt})` }));
+    return [];
+  };
 
   const [values, setValues] = React.useState<Record<string, unknown>>(() => ({
     ...proposal.values,
@@ -136,7 +158,7 @@ export const ProposalCard: React.FC<{ proposal: Proposal }> = ({ proposal }) => 
                 field={field}
                 tr={tr}
                 value={values[field.name]}
-                people={field.type === 'profile' ? (profiles.data ?? []) : []}
+                options={optionsFor(field.type)}
                 onChange={(next) => setValues((current) => ({ ...current, [field.name]: next }))}
               />
             ))}
@@ -187,9 +209,9 @@ const ProposalField: React.FC<{
   field: TargetField;
   tr: boolean;
   value: unknown;
-  people: { id: string; fullName: string }[];
+  options: { id: string; label: string }[];
   onChange: (next: unknown) => void;
-}> = ({ field, tr, value, people, onChange }) => {
+}> = ({ field, tr, value, options, onChange }) => {
   const label = field.label[tr ? 'tr' : 'en'] + (field.required ? ' *' : '');
   const asText = value === undefined || value === null ? '' : String(value);
 
@@ -208,14 +230,16 @@ const ProposalField: React.FC<{
     );
   }
 
-  if (field.type === 'profile') {
+  // Portaldaki bir kaydı seçtiren alanlar. Hepsi aynı biçimde çiziliyor:
+  // belge bir ad yazabilir, portaldaki hangi kayıt olduğunu söyleyemez.
+  if (['profile', 'stakeholder', 'legalCase', 'meeting'].includes(field.type)) {
     return (
       <Field label={label}>
         <Select value={asText} onChange={(e) => onChange(e.target.value)}>
-          <option value="">{tr ? '— kimse —' : '— nobody —'}</option>
-          {people.map((person) => (
-            <option key={person.id} value={person.id}>
-              {person.fullName}
+          <option value="">{tr ? '— seçilmedi —' : '— not set —'}</option>
+          {options.map((option) => (
+            <option key={option.id} value={option.id}>
+              {option.label}
             </option>
           ))}
         </Select>
