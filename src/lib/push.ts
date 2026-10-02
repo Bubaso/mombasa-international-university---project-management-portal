@@ -16,9 +16,30 @@
  * they believe their phone will tell them.
  */
 
-/** What this device can actually be told, and why not when it cannot. */
+/**
+ * What this device can actually be told, and why not when it cannot.
+ *
+ * `checking` is the one that was missing and had to be added after the live
+ * screen was caught saying something false. The panel derives the state from
+ * `keyOnRecord`, which comes from a query; while that query is in flight the
+ * caller used to pass `false`, so the screen asserted "no key is on record
+ * for this project" — a verdict about the database, printed before the
+ * database had answered. On a cold service worker that stale line survived
+ * twelve seconds. Not knowing yet is its own state and it says so.
+ *
+ * `worker_not_ready` is the same principle applied to the other wait: the
+ * browser has push, but its service worker has not activated, so nothing can
+ * subscribe yet and that is neither "unsupported" nor "off".
+ */
 export type PushState =
-  'unsupported' | 'no_key' | 'blocked' | 'not_asked' | 'granted_not_subscribed' | 'subscribed';
+  | 'checking'
+  | 'unsupported'
+  | 'no_key'
+  | 'blocked'
+  | 'not_asked'
+  | 'worker_not_ready'
+  | 'granted_not_subscribed'
+  | 'subscribed';
 
 /** A P-256 point and an auth secret, as the push service will want them. */
 export interface DeviceKeys {
@@ -70,6 +91,15 @@ function keysOf(subscription: PushSubscription): DeviceKeys | null {
 }
 
 /**
+ * How long to wait for the service worker before calling it not ready. On a
+ * first visit to the live site a cold registration took about twelve seconds,
+ * so this is generous; the point is that it ends, because `ready` on its own
+ * never does and a promise that never settles leaves the screen showing
+ * whatever it last said.
+ */
+const WORKER_WAIT_MS = 20000;
+
+/**
  * The worker the PWA plugin registered. Awaited rather than assumed: on a
  * first visit the registration is still in flight, and subscribing against
  * nothing throws an error about an invalid state that says nothing about why.
@@ -77,21 +107,35 @@ function keysOf(subscription: PushSubscription): DeviceKeys | null {
 async function worker(): Promise<ServiceWorkerRegistration | null> {
   if (!pushIsSupported()) return null;
   try {
-    return await navigator.serviceWorker.ready;
+    return await Promise.race([
+      navigator.serviceWorker.ready,
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), WORKER_WAIT_MS)),
+    ]);
   } catch {
     return null;
   }
 }
 
-/** What this device's position is, without asking for anything. */
-export async function readPushState(keyOnRecord: boolean): Promise<PushState> {
+/**
+ * What this device's position is, without asking for anything.
+ *
+ * `keyOnRecord` is `boolean | undefined` on purpose: undefined means the
+ * query has not answered, and the only honest reading of that is `checking`.
+ * Taking undefined for `false` is what made the screen claim there was no key
+ * when there was one.
+ */
+export async function readPushState(keyOnRecord: boolean | undefined): Promise<PushState> {
   if (!pushIsSupported()) return 'unsupported';
+  if (keyOnRecord === undefined) return 'checking';
   if (!keyOnRecord) return 'no_key';
   if (Notification.permission === 'denied') return 'blocked';
   if (Notification.permission === 'default') return 'not_asked';
 
   const registration = await worker();
-  if (!registration) return 'unsupported';
+  // Push is supported — that was established above — so a missing
+  // registration means it has not activated, which is a wait and not a
+  // verdict about the browser.
+  if (!registration) return 'worker_not_ready';
   const existing = await registration.pushManager.getSubscription();
   return existing ? 'subscribed' : 'granted_not_subscribed';
 }
@@ -151,6 +195,14 @@ export async function unsubscribeThisDevice(): Promise<string | null> {
 /** What the state means, in the language on screen. Never "on" when it is not. */
 export function pushStateWords(state: PushState, tr: boolean): string {
   switch (state) {
+    case 'checking':
+      return tr
+        ? 'Bu cihazın durumu kontrol ediliyor.'
+        : 'Checking what this device is set up for.';
+    case 'worker_not_ready':
+      return tr
+        ? "Tarayıcı bildirimi destekliyor ama bu sekmenin service worker'ı henüz hazır değil. Sayfayı yenileyin; hazır olmadan abonelik kurulamaz."
+        : "This browser supports push, but this tab's service worker has not started yet. Reload the page; nothing can subscribe until it has.";
     case 'unsupported':
       return tr
         ? 'Bu tarayıcı anlık bildirim desteklemiyor. Portalı açmadan haber alamazsınız.'

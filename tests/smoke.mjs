@@ -2836,6 +2836,34 @@ const LEGAL_TABS = {
 /** A page that rendered its shell has at least this much text. */
 const MIN_TEXT = 200;
 
+/**
+ * Refuses to run against a server this suite did not start.
+ *
+ * waitForServer is satisfied by anything answering on the port, which makes a
+ * stale `vite preview` from an earlier run indistinguishable from the one
+ * spawned here — and it will be serving whatever directory that run built.
+ * That happened: an orphan on 4173 kept serving the real build while this
+ * suite believed it was testing the smoke build, and every route failed at the
+ * sign-in gate for a reason that had nothing to do with the code. It could as
+ * easily have passed for the wrong reason.
+ */
+async function refuseAStrangerOnThePort(url) {
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(2000) });
+    if (res.ok) {
+      throw new Error(
+        `Something is already serving ${url}. It is not this suite's server, and whatever ` +
+          'it is built from is what would be tested. Stop it (by pid, not `pkill -f`, which ' +
+          'matches the shell running it) and try again.',
+      );
+    }
+  } catch (error) {
+    if (error instanceof Error && error.message.startsWith('Something is already serving'))
+      throw error;
+    // Nothing listening, which is what we want.
+  }
+}
+
 async function waitForServer(url, attempts = 40) {
   for (let i = 0; i < attempts; i++) {
     try {
@@ -2849,9 +2877,47 @@ async function waitForServer(url, attempts = 40) {
   throw new Error(`Preview server did not come up at ${url}`);
 }
 
-const server = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--host', '127.0.0.1'], {
-  stdio: 'ignore',
-});
+// dist-smoke, not dist: build:smoke writes its own directory so that `dist`
+// is always the real build. Deploying the directory verify happened to leave
+// behind is how the live site once ended up pointing at smoke.supabase.co.
+await refuseAStrangerOnThePort(BASE);
+
+const server = spawn(
+  'npx',
+  ['vite', 'preview', '--port', String(PORT), '--host', '127.0.0.1', '--outDir', 'dist-smoke'],
+  {
+    stdio: 'ignore',
+    // A process group of its own: `npx vite` is a wrapper, so killing the
+    // child this handle points at leaves the real vite running and holding
+    // the port. Signalling -pid takes the wrapper and everything under it.
+    detached: true,
+  },
+);
+
+/**
+ * Takes the preview server down with this process, however it ends.
+ *
+ * `server.kill()` in a finally block covers a normal exit, but not a SIGTERM —
+ * and `timeout 600 node tests/...` sends exactly that, killing the suite and
+ * leaving `vite preview` holding the port. Those orphans are what the guard
+ * above had to be written for; these handlers are why it should rarely fire.
+ */
+/** Kills the preview server's whole process group, wrapper included. */
+const stopServer = () => {
+  try {
+    if (server.pid) process.kill(-server.pid);
+  } catch {
+    // already gone
+  }
+};
+
+for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
+  process.on(signal, () => {
+    stopServer();
+    process.exit(1);
+  });
+}
+process.on('exit', stopServer);
 
 let browser;
 let failures = 0;
@@ -5042,9 +5108,25 @@ try {
     'and no column is claimed either way while it is unknown',
   );
 
-  // --- this device, and the four ways it can fail to ring (M11-05) ---------
+  // --- this device, and the ways it can fail to ring (M11-05) --------------
+  //
+  // Waited for rather than slept on. These two assertions used to read the
+  // panel 400ms after navigation and passed locally while failing in CI, for
+  // the reason the panel itself was wrong about: the state is derived from a
+  // query, and until that query answers the panel knows nothing. A fixed
+  // sleep makes the test a race against the runner's speed, and the thing it
+  // races against was a line claiming "no key is on record" before the
+  // database had been asked. The panel now says `kontrol ediliyor` in that
+  // gap, so the test can wait for it to stop saying that.
   const device = page.locator('[aria-label="Bu cihazda bildirim"]');
-  const noKey = (await device.textContent()) ?? '';
+  const settled = async () => {
+    await device
+      .locator('text=/kontrol ediliyor|checking/')
+      .waitFor({ state: 'detached', timeout: 15000 })
+      .catch(() => {});
+    return (await device.textContent()) ?? '';
+  };
+  const noKey = await settled();
   check(
     /Projede kayıtlı bir anahtar yok/.test(noKey),
     'with no key on record the panel says no device can subscribe, rather than offering a switch',
@@ -5055,10 +5137,35 @@ try {
   );
 
   await serve('**/rest/v1/delivery_media**', TEST_MEDIA);
+
+  // The gap before the answer. A slow push_health read is held, and the panel
+  // must say it is still looking rather than deliver a verdict about the
+  // project — the live screen asserted "no key is on record" here, and on a
+  // cold service worker that false line stayed up for twelve seconds.
+  await page.route('**/rest/v1/push_health**', async (route) => {
+    await new Promise((r) => setTimeout(r, 3000));
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(TEST_PUSH_HEALTH),
+    });
+  });
+  await page.goto(BASE + '/communication', { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(600);
+  const midFlight = (await device.textContent()) ?? '';
+  check(
+    /kontrol ediliyor|checking/.test(midFlight),
+    'while the read is in flight the panel says it is checking, not that there is no key',
+    midFlight.slice(0, 80),
+  );
+  check(
+    !/Projede kayıtlı bir anahtar yok|No key is on record/.test(midFlight),
+    'and passes no verdict on the project before the project has answered',
+  );
+
   await serve('**/rest/v1/push_health**', TEST_PUSH_HEALTH);
   await page.goto(BASE + '/communication', { waitUntil: 'networkidle' });
-  await page.waitForTimeout(400);
-  const asked = (await device.textContent()) ?? '';
+  const asked = await settled();
   check(
     /Bu cihaz henüz bildirim almıyor/.test(asked),
     'with a key on record and permission never asked, it says this device is not receiving yet',
@@ -5081,8 +5188,7 @@ try {
   // not round it up to a delivery.
   await serve('**/rest/v1/push_health**', TEST_PUSH_NOWHERE);
   await page.goto(BASE + '/communication', { waitUntil: 'networkidle' });
-  await page.waitForTimeout(400);
-  const nowhere = (await device.textContent()) ?? '';
+  const nowhere = await settled();
   check(
     /2 bildirim sırada bekliyor ve gidecek kayıtlı cihaz yok/.test(nowhere),
     'queued with no registered device is said in those words (M11-05)',
@@ -5097,8 +5203,7 @@ try {
   await serve('**/rest/v1/push_health**', TEST_PUSH_HEALTH);
   pageErrors = [];
   await page.goto(BASE + '/communication', { waitUntil: 'networkidle' });
-  await page.waitForTimeout(400);
-  const unsupported = (await device.textContent()) ?? '';
+  const unsupported = await settled();
   check(
     /Bu tarayıcı anlık bildirim desteklemiyor/.test(unsupported),
     'a browser without push says so instead of showing a switch that would do nothing',
@@ -5288,7 +5393,7 @@ try {
   await actAs(TEST_AUTHORITY);
 } finally {
   await browser?.close();
-  server.kill();
+  stopServer();
 }
 
 console.log(failures === 0 ? '\nAll smoke checks passed.' : `\n${failures} smoke check(s) failed.`);

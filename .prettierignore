@@ -1,4 +1,5 @@
 dist
+dist-smoke
 dev-dist
 node_modules
 .firebase

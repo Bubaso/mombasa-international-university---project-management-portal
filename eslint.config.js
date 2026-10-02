@@ -8,7 +8,7 @@ import prettier from 'eslint-config-prettier';
 
 export default tseslint.config(
   {
-    ignores: ['dist', 'dev-dist', 'node_modules', '.firebase', 'public'],
+    ignores: ['dist', 'dist-smoke', 'dev-dist', 'node_modules', '.firebase', 'public'],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,

@@ -30,6 +30,34 @@ function resolveChromium() {
   return candidates.find((p) => p && existsSync(p));
 }
 
+/**
+ * Refuses to run against a server this suite did not start.
+ *
+ * waitForServer is satisfied by anything answering on the port, which makes a
+ * stale `vite preview` from an earlier run indistinguishable from the one
+ * spawned here — and it will be serving whatever directory that run built.
+ * That happened: an orphan on 4173 kept serving the real build while this
+ * suite believed it was testing the smoke build, and every route failed at the
+ * sign-in gate for a reason that had nothing to do with the code. It could as
+ * easily have passed for the wrong reason.
+ */
+async function refuseAStrangerOnThePort(url) {
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(2000) });
+    if (res.ok) {
+      throw new Error(
+        `Something is already serving ${url}. It is not this suite's server, and whatever ` +
+          'it is built from is what would be tested. Stop it (by pid, not `pkill -f`, which ' +
+          'matches the shell running it) and try again.',
+      );
+    }
+  } catch (error) {
+    if (error instanceof Error && error.message.startsWith('Something is already serving'))
+      throw error;
+    // Nothing listening, which is what we want.
+  }
+}
+
 async function waitForServer(url, attempts = 40) {
   for (let i = 0; i < attempts; i++) {
     try {
@@ -43,9 +71,40 @@ async function waitForServer(url, attempts = 40) {
   throw new Error(`Preview server did not come up at ${url}`);
 }
 
+await refuseAStrangerOnThePort(BASE);
+
 const server = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--host', '127.0.0.1'], {
   stdio: 'ignore',
+  // A process group of its own: `npx vite` is a wrapper, so killing the
+  // child this handle points at leaves the real vite running and holding
+  // the port. Signalling -pid takes the wrapper and everything under it.
+  detached: true,
 });
+
+/**
+ * Takes the preview server down with this process, however it ends.
+ *
+ * `server.kill()` in a finally block covers a normal exit, but not a SIGTERM —
+ * and `timeout 600 node tests/...` sends exactly that, killing the suite and
+ * leaving `vite preview` holding the port. Those orphans are what the guard
+ * above had to be written for; these handlers are why it should rarely fire.
+ */
+/** Kills the preview server's whole process group, wrapper included. */
+const stopServer = () => {
+  try {
+    if (server.pid) process.kill(-server.pid);
+  } catch {
+    // already gone
+  }
+};
+
+for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
+  process.on(signal, () => {
+    stopServer();
+    process.exit(1);
+  });
+}
+process.on('exit', stopServer);
 
 let browser;
 let failures = 0;
@@ -269,5 +328,5 @@ try {
   process.exitCode = 1;
 } finally {
   if (browser) await browser.close();
-  server.kill();
+  stopServer();
 }

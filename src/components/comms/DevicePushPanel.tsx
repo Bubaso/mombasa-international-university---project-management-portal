@@ -41,7 +41,12 @@ export const DevicePushPanel: React.FC = () => {
   const [problem, setProblem] = React.useState<unknown>(null);
   const [busy, setBusy] = React.useState(false);
 
-  const keyOnRecord = health.data?.keyOnRecord ?? false;
+  // Undefined while the query is in flight, and passed through as undefined.
+  // Defaulting it to false here is what made the live screen assert "no key
+  // is on record for this project" before the project had answered — a
+  // verdict about the database printed in the gap before reading it, and on a
+  // cold service worker it stayed on screen for twelve seconds.
+  const keyOnRecord = health.data?.keyOnRecord;
 
   const refresh = React.useCallback(() => {
     void readPushState(keyOnRecord).then(setState);
@@ -96,7 +101,11 @@ export const DevicePushPanel: React.FC = () => {
           {tr ? 'Bu cihaz' : 'This device'}
         </span>
 
-        {subscribed ? (
+        {state === null || state === 'checking' ? (
+          <Pill className="border-slate-300 bg-slate-50 text-slate-500">
+            {tr ? 'kontrol ediliyor' : 'checking'}
+          </Pill>
+        ) : subscribed ? (
           <Pill className="border-emerald-300 bg-emerald-50 text-emerald-900">
             <Bell className="mr-1 inline h-3 w-3" aria-hidden="true" />
             {tr ? 'kayıtlı' : 'registered'}
@@ -142,10 +151,13 @@ export const DevicePushPanel: React.FC = () => {
       {state != null && (
         <p
           className={`mt-1 flex items-start gap-1.5 text-[11px] ${
-            state === 'subscribed' ? 'text-slate-500' : 'text-amber-900'
+            state === 'subscribed' || state === 'checking' ? 'text-slate-500' : 'text-amber-900'
           }`}
         >
-          {state !== 'subscribed' && (
+          {/* No warning triangle while it is still reading: an unknown is not
+              a problem, and dressing it as one teaches the reader to ignore
+              the ones that are. */}
+          {state !== 'subscribed' && state !== 'checking' && (
             <CircleAlert className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
           )}
           {pushStateWords(state, tr)}
