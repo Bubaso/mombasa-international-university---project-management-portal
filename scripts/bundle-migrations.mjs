@@ -12,16 +12,28 @@
  * the repository, because a second copy of the schema is a second thing to
  * forget to update.
  *
- * The whole file runs as one transaction, so a failure part-way leaves
- * nothing behind. That is the point: a half-applied schema is the hardest
- * state to diagnose, because every policy raises and none of it looks like a
- * migration problem from outside.
+ * Each migration is its own transaction, as it is when the CLI applies them
+ * one file at a time. The whole file used to be wrapped in a single one, so
+ * that a failure part-way left nothing behind, and that was wrong: Postgres
+ * refuses `alter type ... add value` and a use of the new value in the same
+ * transaction, which the stack does across 0019 and 0020 (`calendar_kind`
+ * gains 'contract', a later migration selects on it). Measured 2 Oct 2026 —
+ * the full bundle could not apply at all, and had been that way unnoticed
+ * because it was always pasted in smaller ranges.
  *
- * Every file ends with a SELECT that returns a row. That is not decoration.
- * A DDL script produces no output, so an editor reports "Success" whether the
- * work committed or the paste was cut short before `commit;` and the open
+ * A partial apply used to be the hardest state to diagnose. It is not any
+ * more: the verification query below names every object that is missing, and
+ * the migration numbers are in the file, so the range to re-run is readable
+ * off the answer.
+ *
+ * Every file ends with a verification query naming every object the script
+ * creates, and whether the database has it. That is not decoration. A DDL
+ * script produces no output, so an editor reports "Success" whether the work
+ * committed or the paste was cut short before `commit;` and the open
  * transaction was discarded when the connection went back to the pool. No
- * visible row at the end means the paste did not finish.
+ * rows at the end means the paste did not finish; rows with `missing > 0`
+ * name what is not there. The same query is written out on its own, so the
+ * check can be re-run later without re-running the migrations.
  *
  * Usage:
  *   node scripts/bundle-migrations.mjs            # everything, one file
@@ -31,6 +43,7 @@
 import { readdirSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { objectsIn, censusSql } from './sql-objects.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const migrationsDir = join(root, 'supabase', 'migrations');
@@ -51,13 +64,18 @@ const parts = [
   '--',
   `-- ${selected.length} migration(s): ${selected[0]} … ${selected[selected.length - 1]}`,
   '--',
-  '-- Paste the whole thing into the Supabase SQL editor and run it once. It is',
-  '-- a single transaction: if anything fails, nothing is applied, and the error',
-  '-- names the statement that stopped it.',
-  '',
-  'begin;',
+  '-- Paste the whole thing into the Supabase SQL editor and run it once.',
+  '--',
+  '-- Each migration is its own transaction. A failure stops that migration and',
+  '-- leaves the ones before it applied; the error names the statement, and the',
+  '-- verification query at the bottom names everything that did not land.',
   '',
 ];
+
+/** Her migration'ın metni: hem yığına, hem doğrulamanın türetildiği yere. */
+const bodies = new Map(
+  selected.map((name) => [name, readFileSync(join(migrationsDir, name), 'utf8').trimEnd()]),
+);
 
 for (const name of selected) {
   parts.push(
@@ -65,7 +83,11 @@ for (const name of selected) {
     `-- ${name}`,
     `-- ${'='.repeat(73)}`,
     '',
-    readFileSync(join(migrationsDir, name), 'utf8').trimEnd(),
+    'begin;',
+    '',
+    bodies.get(name),
+    '',
+    'commit;',
     '',
   );
 }
@@ -86,6 +108,8 @@ parts.push(
   '-- If this block errors, drop it and run the rest: it affects what the CLI',
   '-- believes, not what the database contains.',
   '',
+  'begin;',
+  '',
   'create schema if not exists supabase_migrations;',
   'create table if not exists supabase_migrations.schema_migrations (',
   '  version text primary key',
@@ -99,22 +123,32 @@ parts.push(
   '',
 );
 
-/** Proof of work, so "Success" with no row is recognisably a cut-off paste. */
-function confirmation(label) {
-  return [
-    `select '${label}' as applied,`,
-    '  (select count(*) from information_schema.tables',
-    "    where table_schema = 'public') as public_tables;",
-    '',
-  ];
+/**
+ * Proof of work, and proof of *which* work.
+ *
+ * Bir satır döndürmek yetmiyordu. 2 Ekim 2026'da 0047 yapıştırıldı,
+ * doğrulama iki sıfır döndürdü, ve o iki sıfır "tablo oluşmadı" ile "tablo
+ * oluştu ama politikalarını almadı"nın ikisine de uyuyordu. Sayı değil, isim
+ * sorulmalı: betiğin isimlendirdiği her nesne orada mı. Cevap her zaman satır
+ * döndürür, yani satır yokluğu artık tek bir şey anlatıyor — yapıştırma
+ * `commit;`'e varmadan kesildi.
+ */
+function confirmation(label, sql) {
+  return [censusSql(objectsIn(sql), label), ''];
 }
 
-parts.push(
-  ...confirmation(`${selected[0].slice(0, 4)}-${selected[selected.length - 1].slice(0, 4)}`),
-);
+const span = `${selected[0].slice(0, 4)}-${selected[selected.length - 1].slice(0, 4)}`;
+const selectedSql = selected.map((name) => bodies.get(name)).join('\n');
+
+parts.push(...confirmation(span, selectedSql));
 
 const outDir = join(root, 'supabase', 'bundled');
 mkdirSync(outDir, { recursive: true });
+
+// Doğrulama ayrıca tek başına yazılır: "uyguladım, oldu mu" sorusu
+// migration'ları tekrar çalıştırmadan cevaplanabilsin. Bir kere gerekti.
+const verifyFile = join(outDir, `verify-${span}.sql`);
+writeFileSync(verifyFile, censusSql(objectsIn(selectedSql), span), 'utf8');
 
 const split = process.argv.includes('--split');
 
@@ -139,7 +173,7 @@ if (split) {
       '',
       'commit;',
       '',
-      ...confirmation(version),
+      ...confirmation(version, bodies.get(name)),
     ].join('\n');
     const file = join(splitDir, name);
     writeFileSync(file, body, 'utf8');
@@ -147,12 +181,14 @@ if (split) {
   }
   console.log(`\n${selected.length} file(s) → ${splitDir}`);
   console.log('Apply them in numeric order, one paste each.');
+  console.log(`Re-runnable check → ${verifyFile}`);
 } else {
   const target = join(outDir, `migrations-${selected[0].slice(0, 4)}-onwards.sql`);
   writeFileSync(target, parts.join('\n'), 'utf8');
   const kb = (Buffer.byteLength(parts.join('\n'), 'utf8') / 1024).toFixed(0);
   console.log(`${selected.length} migration(s) → ${target} (${kb} KB)`);
   for (const name of selected) console.log(`  ${name}`);
+  console.log(`Re-runnable check → ${verifyFile}`);
   if (Number(kb) > 100) {
     console.log(
       `\nThat is a large paste for a browser editor. If it reports success and` +
