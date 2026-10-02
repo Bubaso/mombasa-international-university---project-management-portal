@@ -248,8 +248,16 @@ export const LegalAffairsView: React.FC = () => {
         onSelect={setSelectedCaseId}
       />
 
-      {/* Navigation Sub-Tabs */}
-      <div className="flex items-center gap-1.5 border-b border-slate-200 pb-2 overflow-x-auto scrollbar-none snap-x py-1 -mx-1 px-1 sm:mx-0 sm:px-0">
+      {/* Navigation Sub-Tabs
+          Wrapped, not scrolled. Thirteen tabs in a horizontal scroller put most
+          of them off-screen with nothing saying they are there, so a reader who
+          does not think to drag the strip never finds the chronology or the
+          bench questions. Two or three rows cost a little height and show every
+          tab at once. */}
+      <div
+        aria-label={language === 'tr' ? 'Hukuk sekmeleri' : 'Legal sub-tabs'}
+        className="flex flex-wrap items-center gap-1.5 border-b border-slate-200 pb-2"
+      >
         {[
           { id: 'hearings', labelEn: 'Hearings', labelTr: 'Duruşmalar' },
           { id: 'filings', labelEn: 'Filings & Deadlines', labelTr: 'Layiha ve Süreler' },
@@ -295,7 +303,7 @@ export const LegalAffairsView: React.FC = () => {
           <button
             key={tab.id}
             onClick={() => setActiveSubTab(tab.id as typeof activeSubTab)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap shrink-0 snap-start ${
+            className={`flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors ${
               activeSubTab === tab.id
                 ? 'bg-amber-600 text-white font-semibold shadow-xs'
                 : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'

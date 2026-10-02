@@ -14,14 +14,20 @@
  * register.
  */
 import React, { useState } from 'react';
-import { CalendarClock, FileBadge, Plus, UserMinus, Users2 } from 'lucide-react';
+import { CalendarClock, FileBadge, Plus, Trash2, UserMinus, Users2 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { useAddTrustee, useStandDownTrustee, useTrusteeRegister } from '../../api/governanceHooks';
+import {
+  useAddTrustee,
+  useDeleteTrustee,
+  useStandDownTrustee,
+  useTrusteeRegister,
+} from '../../api/governanceHooks';
 import { useAuthority } from '../../api/adminHooks';
 import { QueryStatus } from '../QueryStatus';
 import { ActionButton, Field, Pill, TextInput, WriteError } from '../ui/Controls';
 import { GOVERNANCE_KEEPERS, actsAs } from '../../lib/authority';
 import { formatDate } from '../../lib/site';
+import { bilingual } from '../../lib/meetings';
 import { todayIso } from '../../lib/date';
 
 /** How close to the end of a term counts as worth flagging. */
@@ -39,6 +45,7 @@ export const TrusteeRegister: React.FC = () => {
   const authority = useAuthority();
   const add = useAddTrustee();
   const standDown = useStandDownTrustee();
+  const remove = useDeleteTrustee();
 
   const mayKeep = actsAs(authority.data, ...GOVERNANCE_KEEPERS);
   const [adding, setAdding] = useState(false);
@@ -47,10 +54,11 @@ export const TrusteeRegister: React.FC = () => {
     appointingBody: '',
     appointedOn: '',
     termEndsOn: '',
-    seatEn: '',
+    seat: '',
     email: '',
   });
   const [standingDown, setStandingDown] = useState<string | null>(null);
+  const [removing, setRemoving] = useState<string | null>(null);
   const [standDownOn, setStandDownOn] = useState(todayIso());
 
   const rows = register.data ?? [];
@@ -59,19 +67,25 @@ export const TrusteeRegister: React.FC = () => {
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.fullName.trim() || !form.appointingBody.trim()) return;
-    add.mutate(form, {
-      onSuccess: () => {
-        setForm({
-          fullName: '',
-          appointingBody: '',
-          appointedOn: '',
-          termEndsOn: '',
-          seatEn: '',
-          email: '',
-        });
-        setAdding(false);
+    // The language matters: the seat lands in the column it is actually
+    // written in, so the list can show it instead of reading an empty
+    // seat_tr and printing nothing.
+    add.mutate(
+      { ...form, seatLanguage: language },
+      {
+        onSuccess: () => {
+          setForm({
+            fullName: '',
+            appointingBody: '',
+            appointedOn: '',
+            termEndsOn: '',
+            seat: '',
+            email: '',
+          });
+          setAdding(false);
+        },
       },
-    });
+    );
   };
 
   return (
@@ -138,8 +152,8 @@ export const TrusteeRegister: React.FC = () => {
           </Field>
           <Field label={tr ? 'Görev' : 'Seat'}>
             <TextInput
-              value={form.seatEn}
-              onChange={(e) => setForm({ ...form, seatEn: e.target.value })}
+              value={form.seat}
+              onChange={(e) => setForm({ ...form, seat: e.target.value })}
               placeholder={tr ? 'Başkan, üye…' : 'Chair, member…'}
             />
           </Field>
@@ -193,8 +207,14 @@ export const TrusteeRegister: React.FC = () => {
                       >
                         {trustee.fullName}
                       </span>
-                      {(tr ? trustee.seatTr : trustee.seatEn) && (
-                        <Pill>{tr ? trustee.seatTr : trustee.seatEn}</Pill>
+                      {/* bilingual() prefers the reader's language and falls
+                          back to the other rather than showing nothing. Read
+                          directly as `tr ? seatTr : seatEn` this printed no
+                          seat at all for a seat typed in the other language,
+                          which is how a recorded fact looked like a missing
+                          one. */}
+                      {bilingual(trustee.seatEn, trustee.seatTr, language) && (
+                        <Pill>{bilingual(trustee.seatEn, trustee.seatTr, language)}</Pill>
                       )}
                       {trustee.identityDocumentId ? (
                         <Pill className="border-emerald-300 bg-emerald-50 text-emerald-900">
@@ -243,6 +263,22 @@ export const TrusteeRegister: React.FC = () => {
                         {tr ? 'görevden ayır' : 'stand down'}
                       </button>
                     )}
+                    {/* A different act, and labelled as one. Standing somebody
+                        down says a person served and left; a record entered by
+                        mistake needs the opposite statement. The database
+                        decides who may and which rows can (0046), and
+                        `mayDelete` is that answer rather than this screen's
+                        guess. */}
+                    {trustee.mayDelete && removing !== trustee.id && (
+                      <button
+                        type="button"
+                        onClick={() => setRemoving(trustee.id)}
+                        className="flex cursor-pointer items-center gap-1 text-[11px] text-slate-500 hover:text-rose-700"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                        {tr ? 'kaydı sil' : 'delete the record'}
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -282,6 +318,58 @@ export const TrusteeRegister: React.FC = () => {
                       <WriteError error={standDown.error} />
                     </div>
                   </form>
+                )}
+
+                {removing === trustee.id && (
+                  <div className="mt-2 rounded-lg border border-rose-300 bg-rose-50 p-2">
+                    <p className="text-[11px] text-rose-900">
+                      {tr
+                        ? 'Bu kaydı tamamen siler. Görevden ayırmaktan farklı: ayırmak, bir kişinin görev yapıp ayrıldığını söyler. Silmek, kaydın hiç olmaması gerektiğini söyler — yanlış girilmiş bir satır için doğru olan budur.'
+                        : 'This removes the record outright. Not the same as standing somebody down, which says a person served and left; deleting says the record should never have existed, which is the true statement about a mistaken entry.'}
+                    </p>
+                    <p className="mt-1 text-[11px] text-slate-600">
+                      {tr
+                        ? 'Denetim kaydı kalır: bu portalda denetim izi silinmez.'
+                        : 'The audit trail keeps it: an audit trail is not something this portal deletes.'}
+                    </p>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <ActionButton
+                        onClick={() =>
+                          remove.mutate(trustee.id, { onSuccess: () => setRemoving(null) })
+                        }
+                        disabled={remove.isPending}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                        {tr ? `${trustee.fullName} kaydını sil` : `Delete ${trustee.fullName}`}
+                      </ActionButton>
+                      <button
+                        type="button"
+                        onClick={() => setRemoving(null)}
+                        className="cursor-pointer text-[11px] text-slate-500 underline"
+                      >
+                        {tr ? 'vazgeç' : 'cancel'}
+                      </button>
+                    </div>
+                    <WriteError error={remove.error} />
+                  </div>
+                )}
+
+                {/* Why the control is absent, for the case where it is absent
+                    because of the record rather than because of the reader.
+                    "No delete button" with no reason is the dead end that sent
+                    somebody to stand down a trustee who never served. */}
+                {/* Not gated on the reader's authority. "This trustee
+                    appears in the record" is a fact about the trustee, useful
+                    to anybody reading the register, and it is also the answer
+                    to the dead end that sent somebody to stand down a trustee
+                    who never served. Gated on mayKeep it was invisible to the
+                    reader most likely to be looking for it. */}
+                {trustee.onTheRecord && (
+                  <p className="mt-1 text-[11px] text-slate-500">
+                    {tr
+                      ? 'Bu mütevelli kayıtlarda geçiyor (organ koltuğu, çıkar beyanı ya da senet atfı), o yüzden silinemez — geçmiş bir oturumun nisabını da götürürdü. Görevden ayırmak doğru olan.'
+                      : 'This trustee appears in the record — a seat, a declared interest or a deed citation — so they cannot be deleted: it would take a past sitting’s quorum with them. Standing them down is the right act.'}
+                  </p>
                 )}
               </li>
             );

@@ -8640,5 +8640,176 @@ select pg_temp.check('and it is not counted as sent, because nothing was',
   (select my_queued::text || '/' || my_sent::text from push_health), '1/1');
 reset role;
 
+-- ---------------------------------------------------------------------------
+-- A seat, a quorum rule, and a record that never was (0046)
+--
+-- organ_memberships and governance_organs have had their write policies since
+-- 0021 and the portal never called them, so the live project had three organs,
+-- no seats and no quorum rule — the data the rule tests against had no way in.
+-- These assertions cover the write side and the one rule this migration adds:
+-- a trustee anything refers to cannot be deleted.
+-- ---------------------------------------------------------------------------
+set role authenticated;
+select pg_temp.act_as('11111111-1111-1111-1111-111111111111');  -- admin
+
+-- A fourth trustee, referred to by nothing at all.
+insert into trustees (id, full_name, appointing_body, appointed_on, confidentiality)
+values ('a0000000-0000-0000-0000-000000000004', 'Entered By Mistake',
+        'Nobody', current_date, 'internal');
+
+select pg_temp.check('a trustee nothing refers to is not on the record',
+  (select on_the_record from trustee_register
+    where id = 'a0000000-0000-0000-0000-000000000004'), false);
+select pg_temp.check('and an administrator is offered the delete',
+  (select may_delete from trustee_register
+    where id = 'a0000000-0000-0000-0000-000000000004'), true);
+
+-- Seating somebody: the write path that did not exist in the portal.
+insert into organ_memberships (organ_id, trustee_id, seat, voting, started_on, confidentiality)
+select o.id, 'a0000000-0000-0000-0000-000000000002', 'Member', true, current_date, 'internal'
+  from governance_organs o where o.kind = 'board_of_trustees';
+select pg_temp.check('a trustee can be seated on an organ',
+  (select count(*) from organ_memberships
+    where trustee_id = 'a0000000-0000-0000-0000-000000000002'), 1::bigint);
+
+-- One person per seat, and the database says so rather than the form.
+do $$
+begin
+  begin
+    insert into organ_memberships (organ_id, trustee_id, profile_id, started_on)
+    select o.id, 'a0000000-0000-0000-0000-000000000002',
+           '33333333-3333-3333-3333-333333333333', current_date
+      from governance_organs o where o.kind = 'board_of_trustees';
+    raise exception 'FAIL a seat held two people at once';
+  exception
+    when check_violation then
+      raise notice 'ok   a seat is one person, not a trustee and a profile at once';
+  end;
+end;
+$$;
+
+-- Now the seated trustee is on the record, and the delete is gone from the
+-- register before anybody presses it.
+select pg_temp.check('a seated trustee is on the record',
+  (select on_the_record from trustee_register
+    where id = 'a0000000-0000-0000-0000-000000000002'), true);
+select pg_temp.check('and is not offered for deletion',
+  (select may_delete from trustee_register
+    where id = 'a0000000-0000-0000-0000-000000000002'), false);
+
+-- And the database refuses it, naming what holds them. Without this the three
+-- `on delete cascade` references would take a past sitting''s quorum with the
+-- trustee, silently.
+do $$
+begin
+  begin
+    delete from trustees where id = 'a0000000-0000-0000-0000-000000000002';
+    raise exception 'FAIL a trustee on the record was deleted';
+  exception
+    when foreign_key_violation then
+      raise notice 'ok   a trustee with a seat cannot be deleted';
+  end;
+end;
+$$;
+
+select pg_temp.check('the refusal names which register holds them',
+  (select 'a seat on an organ' = any (app.what_holds_the_trustee(
+     'a0000000-0000-0000-0000-000000000002'))), true);
+
+-- A declared interest holds them just as a seat does.
+insert into conflict_declarations (trustee_id, interest_en, declared_on, confidentiality)
+values ('a0000000-0000-0000-0000-000000000003', 'A supplier in the family',
+        current_date, 'confidential');
+select pg_temp.check('a declared interest holds a trustee too',
+  (select on_the_record from trustee_register
+    where id = 'a0000000-0000-0000-0000-000000000003'), true);
+
+-- The one that only passes because the function is definer.
+--
+-- A project director may read the trustee register but is not one of the four
+-- roles conflict_declarations_read admits, so the declaration above is
+-- invisible to them. An invoker version of what_holds_the_trustee would
+-- therefore answer "nothing refers to this trustee" — and on the delete path
+-- that answer runs the cascade.
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- project director
+select pg_temp.check('the director can see the trustee',
+  (select count(*) from trustees
+    where id = 'a0000000-0000-0000-0000-000000000003'), 1::bigint);
+select pg_temp.check('but not the declaration that holds them',
+  (select count(*) from conflict_declarations
+    where trustee_id = 'a0000000-0000-0000-0000-000000000003'), 0::bigint);
+select pg_temp.check('and the rule still counts it, because it reads past their clearance',
+  (select cardinality(app.what_holds_the_trustee(
+     'a0000000-0000-0000-0000-000000000003')) > 0), true);
+select pg_temp.check('while the register offers them no delete, which is not the same reason',
+  (select may_delete from trustee_register
+    where id = 'a0000000-0000-0000-0000-000000000004'), false);
+
+-- Seats and the quorum rule are the governance keepers''. A project director
+-- runs the project; the board keeps its own composition.
+do $$
+begin
+  begin
+    insert into organ_memberships (organ_id, trustee_id, started_on)
+    select o.id, 'a0000000-0000-0000-0000-000000000004', current_date
+      from governance_organs o where o.kind = 'audit_committee';
+    raise exception 'FAIL the project director seated somebody on an organ';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   seating somebody is the board''s, not the project''s';
+  end;
+end;
+$$;
+
+-- Not written as an expected exception, which is how this assertion was wrong
+-- the first time. An UPDATE whose rows the policy's `using` clause excludes
+-- changes nothing and raises nothing: RLS filters rather than refusing. The
+-- honest test is therefore that the rule did not move. CLAUDE.md records this
+-- trap from an earlier section where a statement matched no policy, changed
+-- nothing and reported success.
+update governance_organs set quorum_members = 1 where kind = 'audit_committee';
+select pg_temp.check('nor is recording the quorum rule theirs — the rule does not move',
+  (select quorum_members from governance_organs where kind = 'audit_committee'), null::int);
+
+-- The mistaken record goes, as the mistake it was.
+select pg_temp.act_as('11111111-1111-1111-1111-111111111111');  -- admin
+delete from trustees where id = 'a0000000-0000-0000-0000-000000000004';
+select pg_temp.check('a trustee nothing refers to is deleted outright',
+  (select count(*) from trustees
+    where id = 'a0000000-0000-0000-0000-000000000004'), 0::bigint);
+
+-- Ending a seat is a date, not a disappearance: the quorum for a sitting held
+-- in March is computed from who held a seat in March.
+update organ_memberships set ended_on = current_date
+ where trustee_id = 'a0000000-0000-0000-0000-000000000002';
+select pg_temp.check('an ended seat is still on the record, with its end date',
+  (select count(*) from organ_memberships
+    where trustee_id = 'a0000000-0000-0000-0000-000000000002'
+      and ended_on is not null), 1::bigint);
+select pg_temp.check('so the trustee is still held by it',
+  (select on_the_record from trustee_register
+    where id = 'a0000000-0000-0000-0000-000000000002'), true);
+
+-- A quorum rule can be recorded, and null stays "nobody wrote it down".
+update governance_organs set quorum_members = 3, quorum_fraction = 0.5
+ where kind = 'management_board';
+select pg_temp.check('an administrator records a quorum rule',
+  (select quorum_members from governance_organs where kind = 'management_board'), 3);
+select pg_temp.check('and both halves may be held at once',
+  (select quorum_fraction from governance_organs where kind = 'management_board'), 0.50);
+do $$
+begin
+  begin
+    update governance_organs set quorum_members = 0 where kind = 'management_board';
+    raise exception 'FAIL a quorum of nought was recorded';
+  exception
+    when check_violation then
+      raise notice 'ok   a quorum of nought is not a rule';
+  end;
+end;
+$$;
+
+reset role;
+
 \echo ''
 \echo 'All policy tests passed.'

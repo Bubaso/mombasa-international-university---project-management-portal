@@ -1695,6 +1695,18 @@ export interface Trustee {
   stoodDownOn: string | null;
   note: string | null;
   confidentiality: Confidentiality;
+  /**
+   * Whether anything in the portal refers to this trustee: a seat on an organ,
+   * a declared interest, a citation of the deed. Computed in the database
+   * because the answer has to include rows the reader cannot see (0046).
+   */
+  onTheRecord: boolean;
+  /**
+   * Deleting is for a record that should never have existed. Kept apart from
+   * `onTheRecord` on purpose: an ordinary reader may delete nothing, and a
+   * screen that hides the control for the wrong reason teaches the wrong rule.
+   */
+  mayDelete: boolean;
 }
 
 export interface OrganMembership {

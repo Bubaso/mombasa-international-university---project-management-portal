@@ -16,6 +16,7 @@
  */
 import { supabase } from '../lib/supabase';
 import type {
+  Language,
   AcademicProgramme,
   AccreditationRequirement,
   CharterCitation,
@@ -178,11 +179,17 @@ export async function fetchSittings(limit = 20): Promise<SittingQuorum[]> {
 const TRUSTEE_COLUMNS =
   'id, stakeholder_id, full_name, appointing_body, appointed_on, term_ends_on, ' +
   'seat_en, seat_tr, email, phone, identity_document_id, active, stood_down_on, ' +
-  'note, confidentiality';
+  'note, confidentiality, on_the_record, may_delete';
 
+/**
+ * Read from the view rather than the table (0046), for the two columns the
+ * table cannot carry: whether anything refers to this trustee, and whether
+ * this reader may delete them. Both are answers to rules, and the rules live
+ * in the database.
+ */
 export async function fetchTrustees(): Promise<Trustee[]> {
   const { data, error } = await supabase
-    .from('trustees')
+    .from('trustee_register')
     .select(TRUSTEE_COLUMNS)
     .order('active', { ascending: false })
     .order('full_name');
@@ -204,6 +211,8 @@ export async function fetchTrustees(): Promise<Trustee[]> {
     stood_down_on: string | null;
     note: string | null;
     confidentiality: Trustee['confidentiality'];
+    on_the_record: boolean;
+    may_delete: boolean;
   }>(data).map((row) => ({
     id: row.id,
     stakeholderId: row.stakeholder_id,
@@ -220,6 +229,8 @@ export async function fetchTrustees(): Promise<Trustee[]> {
     stoodDownOn: row.stood_down_on,
     note: row.note,
     confidentiality: row.confidentiality,
+    onTheRecord: Boolean(row.on_the_record),
+    mayDelete: Boolean(row.may_delete),
   }));
 }
 
@@ -228,19 +239,45 @@ export async function addTrustee(input: {
   appointingBody: string;
   appointedOn?: string | null;
   termEndsOn?: string | null;
-  seatEn?: string | null;
+  /** The seat as typed, in whatever language the form was in. */
+  seat?: string | null;
+  /** Which language that was, so the words land in the column they are in. */
+  seatLanguage?: Language;
   email?: string | null;
   phone?: string | null;
 }): Promise<void> {
+  // The seat used to go into seat_en whatever the interface language. A
+  // Turkish user typed Turkish into the English column and the Turkish list
+  // then showed no seat at all, because it reads seat_tr. Writing to the
+  // column the words are actually in fixes both halves: the reader sees it,
+  // and the machine translator has something true to translate from.
+  const seat = input.seat?.trim() || null;
+  const intoTurkish = input.seatLanguage === 'tr';
+
   const { error } = await supabase.from('trustees').insert({
     full_name: input.fullName.trim(),
     appointing_body: input.appointingBody.trim(),
     appointed_on: input.appointedOn || null,
     term_ends_on: input.termEndsOn || null,
-    seat_en: input.seatEn?.trim() || null,
+    seat_en: intoTurkish ? null : seat,
+    seat_tr: intoTurkish ? seat : null,
     email: input.email?.trim() || null,
     phone: input.phone?.trim() || null,
   });
+  fail(error);
+}
+
+/**
+ * Deleting a trustee entered by mistake.
+ *
+ * Not the same act as standing somebody down, and the portal must not offer it
+ * as though it were: standing down says a person served and left, which is a
+ * false statement about somebody who never served. The database refuses to
+ * delete a trustee anything refers to (0046) and names what holds them, so the
+ * destructive reading of `on delete cascade` cannot happen by accident.
+ */
+export async function deleteTrustee(id: string): Promise<void> {
+  const { error } = await supabase.from('trustees').delete().eq('id', id);
   fail(error);
 }
 
@@ -254,6 +291,87 @@ export async function standDownTrustee(id: string, on: string): Promise<void> {
     .from('trustees')
     .update({ active: false, stood_down_on: on })
     .eq('id', id);
+  fail(error);
+}
+
+// ---------------------------------------------------------------------------
+// Seats on an organ (M10-02, M3-14)
+// ---------------------------------------------------------------------------
+//
+// organ_memberships has had its write policies since 0021 and nothing in the
+// portal ever called them, so a trustee could be entered in the register and
+// never seated anywhere. That is why the live project had three organs, zero
+// seats and a quorum that could never be computed: the data the quorum rule
+// tests against had no way in.
+
+export async function seatOnOrgan(input: {
+  organId: string;
+  /** Exactly one of these three, which the database also insists on. */
+  trusteeId?: string | null;
+  profileId?: string | null;
+  stakeholderId?: string | null;
+  seat?: string | null;
+  /**
+   * A secretary who attends but does not vote still counts as present and
+   * does not count towards the quorum, so this is asked rather than assumed.
+   */
+  voting: boolean;
+  startedOn: string;
+}): Promise<void> {
+  const { error } = await supabase.from('organ_memberships').insert({
+    organ_id: input.organId,
+    trustee_id: input.trusteeId ?? null,
+    profile_id: input.profileId ?? null,
+    stakeholder_id: input.stakeholderId ?? null,
+    seat: input.seat?.trim() || null,
+    voting: input.voting,
+    started_on: input.startedOn,
+  });
+  fail(error);
+}
+
+/**
+ * Ending a seat, with the date.
+ *
+ * Not a delete: the quorum for a sitting held in March is computed from who
+ * held a seat in March, so a seat that simply disappears rewrites the past.
+ * The date is required for the same reason it is required when a trustee
+ * stands down.
+ */
+export async function endSeat(id: string, on: string): Promise<void> {
+  const { error } = await supabase.from('organ_memberships').update({ ended_on: on }).eq('id', id);
+  fail(error);
+}
+
+/**
+ * Removing a seat that should never have been recorded. An administrator's,
+ * like deleting a trustee, and for the same reason: it is the only act here
+ * that can change what a past sitting's quorum was computed from.
+ */
+export async function removeSeat(id: string): Promise<void> {
+  const { error } = await supabase.from('organ_memberships').delete().eq('id', id);
+  fail(error);
+}
+
+/**
+ * Recording an organ's quorum rule.
+ *
+ * Both halves are nullable and either may be set alone: the deed may say "five
+ * members", "half the seats", or both. Null stays meaningful — it is "nobody
+ * has transcribed the rule", which the panel prints in those words rather than
+ * calling a sitting short.
+ */
+export async function setQuorumRule(
+  organId: string,
+  rule: { quorumMembers: number | null; quorumFraction: number | null },
+): Promise<void> {
+  const { error } = await supabase
+    .from('governance_organs')
+    .update({
+      quorum_members: rule.quorumMembers,
+      quorum_fraction: rule.quorumFraction,
+    })
+    .eq('id', organId);
   fail(error);
 }
 

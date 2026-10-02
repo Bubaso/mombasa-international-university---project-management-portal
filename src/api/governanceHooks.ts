@@ -71,6 +71,61 @@ export function useStandDownTrustee() {
   });
 }
 
+/**
+ * Everything a seat touches.
+ *
+ * A seat changes who held a place on the day of every past sitting the
+ * register covers, so the sittings have to be refetched with it — the quorum
+ * verdict on a meeting minuted last March is derived, not stored.
+ */
+function useSeatInvalidator(): () => void {
+  const client = useQueryClient();
+  return () => {
+    for (const key of ['organs', 'organMemberships', 'sittings', 'trusteeRegister']) {
+      void client.invalidateQueries({ queryKey: [key] });
+    }
+  };
+}
+
+export function useDeleteTrustee() {
+  const invalidate = useSeatInvalidator();
+  return useMutation({ mutationFn: api.deleteTrustee, onSuccess: invalidate });
+}
+
+export function useSeatOnOrgan() {
+  const invalidate = useSeatInvalidator();
+  return useMutation({ mutationFn: api.seatOnOrgan, onSuccess: invalidate });
+}
+
+export function useEndSeat() {
+  const invalidate = useSeatInvalidator();
+  return useMutation({
+    mutationFn: (input: { id: string; on: string }) => api.endSeat(input.id, input.on),
+    onSuccess: invalidate,
+  });
+}
+
+export function useRemoveSeat() {
+  const invalidate = useSeatInvalidator();
+  return useMutation({ mutationFn: api.removeSeat, onSuccess: invalidate });
+}
+
+export function useSetQuorumRule() {
+  const invalidate = useSeatInvalidator();
+  return useMutation({
+    mutationFn: (input: {
+      organId: string;
+      quorumMembers: number | null;
+      quorumFraction: number | null;
+    }) =>
+      api.setQuorumRule(input.organId, {
+        quorumMembers: input.quorumMembers,
+        quorumFraction: input.quorumFraction,
+      }),
+    onSuccess: invalidate,
+  });
+}
+
 export function useSignResolution() {
   const client = useQueryClient();
   return useMutation({

@@ -113,7 +113,7 @@ servisine ve oradan gerçek bir cihaza giden ağ adımı. Kripto gidiş-dönüş
 durum makinesi 882 assertion'la, service worker gerçek push olaylarıyla
 doğrulandı; bu adım bir gerçek abonelikle sınanmayı bekliyor.
 
-## 3. Mütevelli kütüğündeki üç kusur
+## 3. Mütevelli kütüğündeki üç kusur — düzeltildi (0046)
 
 Bir mütevelli eklenip organ listesinde görülemediği, silinemediği ve "görevden
 ayrıldı" işaretlenince üstünün çizildiği bildirildi. Üçü de gerçek boşluk.
@@ -149,14 +149,64 @@ otomatik çeviri listesinde (`trustees: ['seat']`), ama bu projede makine
 Türkçe girilen bir görev, çeviri kuyruğunda onaylanana kadar Türkçe arayüzde
 görünmez.
 
-### Önerilen düzeltme
+### Yapılan
 
-Üçü de küçük ve birbirine bağlı; bir arada yapılması doğru olur:
+Üçü birlikte düzeltildi; `0046_a_seat_a_rule_and_a_record_that_never_was.sql`
+ve ona bağlı istemci değişiklikleri.
 
-1. `organ_memberships` için yazma yolu: bir mütevelliyi (ya da portal
-   kullanıcısını, ya da paydaşı) bir organa koltukla ve oy hakkıyla oturtan bir
-   kontrol. Nisap hesabının çalışması buna bağlı.
-2. Kütükte yönetici için silme: yalnızca hiçbir organ üyeliği, çıkar beyanı ya
-   da senet atfı olmayan bir kayıt için, ve ekranda "görevden ayrıldı"dan ayrı
-   bir şey olduğu yazılı.
-3. Görev alanı arayüzün diline göre doğru kolona yazsın.
+**(a) Koltuk.** Organ panelinde artık bir mütevelli koltuğa oturtulabiliyor:
+hangi mütevelli, hangi koltuk, **oy hakkı var mı**, hangi tarihten itibaren.
+Oy hakkı soruluyor, varsayılmıyor — oy kullanmayan bir sekreter hazır sayılır
+ama nisaba sayılmaz, ve ikisini birbirine karıştırmak bir oturumun yetkisiz
+olduğu hâlde yetkili gibi tutanağa geçmesinin yoludur. Koltuğu bitirmek bir
+**tarih**, bir silme değil: Mart'ta yapılmış bir oturumun nisabı Mart'ta kimin
+koltuğu olduğundan hesaplanıyor, dolayısıyla ortadan kaybolan bir koltuk
+geçmişi yeniden yazar. Yanlış girilmiş bir koltuğu silmek ayrı bir eylem ve
+yöneticinin.
+
+Nisap kuralı da artık kaydedilebiliyor (en az üye sayısı, koltukların yüzdesi,
+ya da ikisi). Bu dördüncü boşluktu ve (a) onsuz yarım kalırdı: koltuklar
+girilse bile kural olmadan `quorum_met` yine `null` kalırdı. Boş bırakılan alan
+`null` kalıyor, yani "kimse kuralı yazmamış" — "nisap yok" değil.
+
+**(b) Silme.** Kütükte yöneticiye silme geldi, ama kuralı **Postgres'te**:
+`app.what_holds_the_trustee()` üç sicile bakıyor (organ koltuğu, çıkar beyanı,
+senet atfı) ve bir mütevelliyi tutan varsa tetikleyici silmeyi **hangi sicilin
+tuttuğunu söyleyerek** reddediyor. Üç yabancı anahtar da `on delete cascade`
+olduğu için bu olmadan gerçekten görev yapmış birini silmek geçmiş bir oturumun
+nisabını sessizce götürürdü. Fonksiyon `security definer`: çağıranın
+göremediği bir beyanı da sayması gerekiyor, yoksa yetkisi yetmeyen biri için
+"bunu tutan bir şey yok" cevabı verir ve cascade çalışır.
+
+Aynı fonksiyon `trustee_register` görünümünde de okunuyor, yani ekran düğmeyi
+**basılmadan önce** doğru gösteriyor. Kural tek yerde: ilk taslakta aynı üç
+`exists` hem fonksiyonda hem tetikleyicide yazılıydı, ki CLAUDE.md §4 tam
+bunun için var.
+
+**(c) Görev alanı.** İki yarısı birlikte düzeltildi: form artık yazıldığı dilin
+kolonuna yazıyor, ve liste `bilingual()` kullanıyor — okuyucunun dilini tercih
+edip diğerine düşüyor. Depoda bu helper zaten vardı, panel onu kullanmıyordu.
+
+**Testler.** Politika tarafında yedi yeni assertion, smoke tarafında on bir.
+Yedi mutasyon denendi, yedisi de isimli bir assertion'ı öldürdü. İkisi ilk
+seferde **hayatta kaldı** ve ikisi de fixture boşluğuydu: görev yalnızca
+Türkçe yazılı bir satırla Türkçe okurken eski kod da geçiyordu (satır
+İngilizce'ye çevrildi), ve yazma tarafı hiç gönderilmediği için hangi kolona
+gittiği sınanmıyordu (form artık gönderiliyor ve gövdesi okunuyor).
+
+Bu arada bir test kendi yanlışıyla da yakalandı: "proje direktörü nisap
+kuralını değiştiremez" assertion'ı beklenen bir hata olarak yazılmıştı, oysa
+RLS UPDATE'te satırı **süzer**, hata vermez — sıfır satır değişir ve sessizce
+geçer. Doğru test kuralın yerinde kaldığını ölçmek.
+
+## 4. Hukuk ekranındaki sekme şeridi
+
+On üç sekme yatay kayan bir şeritteydi, yani çoğu ekran dışında kalıyordu ve
+orada olduklarını söyleyen hiçbir şey yoktu: şeridi sürüklemeyi akıl etmeyen
+biri kronolojiyi ya da hâkim sorularını hiç bulamıyordu. Şerit artık satır
+atlıyor, hepsi bir anda görünüyor.
+
+Mevcut sekme testleri bu kusuru yakalayamazdı: Playwright tıklamadan önce
+öğeyi görünüre kaydırdığı için on üç sekmenin tıklanabilirliği her iki hâlde de
+geçiyordu. Yeni assertion tıklamayı değil şeridin yatay taşmasını ölçüyor —
+eski hâlinde 2223px içerik 960px kutuya sığmıyordu, şimdi sığıyor.

@@ -82,6 +82,22 @@ const TEST_AUTHORITY = {
   delegations: [],
 };
 
+/**
+ * A governance keeper. Seats and quorum rules belong to the board, not to
+ * whoever runs the project: app.can_keep_governance() is admin, trustee or
+ * board_director, and the policy tests assert a project director cannot seat
+ * anybody. So these controls have to be tested as somebody who may — and as
+ * somebody who may not, which is the half that would otherwise go uncovered.
+ */
+const TRUSTEE_AUTHORITY = {
+  role: 'trustee',
+  roles: ['trustee'],
+  clearance: 'restricted',
+  isInternal: true,
+  isAdmin: false,
+  delegations: [],
+};
+
 /** The same question answered for someone outside the organisation. */
 const EXTERNAL_AUTHORITY = {
   role: 'contractor',
@@ -850,6 +866,14 @@ const TEST_SITTINGS = [
   },
 ];
 
+/**
+ * The trustee register, from the view the client reads since 0046.
+ *
+ * Three rows for the three answers the register can give. The second is the
+ * one the panel used to get wrong: its seat is recorded in Turkish only, and
+ * read as `tr ? seat_tr : seat_en` an English reader saw no seat at all — a
+ * recorded fact looking like a missing one.
+ */
 const TEST_TRUSTEES = [
   {
     id: '00000000-0000-0000-0000-0000000009b1',
@@ -867,6 +891,71 @@ const TEST_TRUSTEES = [
     stood_down_on: null,
     note: null,
     confidentiality: 'internal',
+    // Holds a seat, so deleting would take a past sitting's quorum with them.
+    on_the_record: true,
+    may_delete: false,
+  },
+  {
+    id: '00000000-0000-0000-0000-0000000009b2',
+    stakeholder_id: null,
+    full_name: 'English Seat Only',
+    appointing_body: 'Africa Foundation',
+    appointed_on: '2025-06-01',
+    term_ends_on: '2031-06-01',
+    // English only, and the suite reads in Turkish. That is the whole point of
+    // the row: `tr ? seat_tr : seat_en` resolves to null here and prints no
+    // seat at all, so a recorded fact looks like a missing one. A fixture whose
+    // seat was Turkish passed either way — the mutation survived until this
+    // row was turned round.
+    seat_en: 'Vice Chair',
+    seat_tr: null,
+    email: null,
+    phone: null,
+    identity_document_id: null,
+    active: true,
+    stood_down_on: null,
+    note: null,
+    confidentiality: 'internal',
+    on_the_record: true,
+    may_delete: false,
+  },
+  {
+    id: '00000000-0000-0000-0000-0000000009b3',
+    stakeholder_id: null,
+    full_name: 'Entered By Mistake',
+    appointing_body: 'Nobody',
+    appointed_on: '2026-10-02',
+    term_ends_on: null,
+    seat_en: null,
+    seat_tr: null,
+    email: null,
+    phone: null,
+    identity_document_id: null,
+    active: true,
+    stood_down_on: null,
+    note: null,
+    confidentiality: 'internal',
+    // Nothing refers to this one, so it can go as the mistake it was.
+    on_the_record: false,
+    may_delete: true,
+  },
+];
+
+/** A seat held by a trustee, which is what the portal could not record. */
+const TEST_SEATS = [
+  {
+    id: '00000000-0000-0000-0000-0000000009d1',
+    organ_id: '00000000-0000-0000-0000-000000000991',
+    trustee_id: '00000000-0000-0000-0000-0000000009b1',
+    profile_id: null,
+    stakeholder_id: null,
+    seat: 'Chair',
+    voting: true,
+    started_on: '2025-05-27',
+    ended_on: null,
+    trustee: { full_name: 'Smoke Trustee' },
+    profile: null,
+    stakeholder: null,
   },
 ];
 
@@ -3341,8 +3430,8 @@ try {
 
   await serve('**/rest/v1/governance_organs**', TEST_ORGANS);
   await serve('**/rest/v1/governance_sitting_quorum**', TEST_SITTINGS);
-  await serve('**/rest/v1/organ_memberships**', []);
-  await serve('**/rest/v1/trustees**', TEST_TRUSTEES);
+  await serve('**/rest/v1/organ_memberships**', TEST_SEATS);
+  await serve('**/rest/v1/trustee_register**', TEST_TRUSTEES);
   await serve('**/rest/v1/decision_implementation**', TEST_RESOLUTIONS);
   await serve('**/rest/v1/compliance_calendar**', TEST_COMPLIANCE);
   await serve('**/rest/v1/accreditation_requirements**', TEST_ACCREDITATION);
@@ -3427,6 +3516,30 @@ try {
   }
 
   await page.goto(BASE + '/legal', { waitUntil: 'networkidle' });
+
+  // Thirteen tabs, all of them reachable without dragging. They used to sit in
+  // a horizontal scroller, which put most of them off-screen with nothing
+  // saying they were there: a reader who did not think to drag the strip never
+  // found the chronology or the bench questions. Playwright scrolls a locator
+  // into view before clicking, so the tab clicks below pass either way — this
+  // is the assertion that does not.
+  const tabStrip = page.locator('[aria-label="Hukuk sekmeleri"]');
+  const overflow = await tabStrip.evaluate((el) => ({
+    scrollWidth: el.scrollWidth,
+    clientWidth: el.clientWidth,
+    rows: Math.round(el.getBoundingClientRect().height / 30),
+  }));
+  check(
+    overflow.scrollWidth <= overflow.clientWidth,
+    'the legal tabs all fit without a horizontal scroller',
+    `scrollWidth=${overflow.scrollWidth} clientWidth=${overflow.clientWidth}`,
+  );
+  check(
+    overflow.rows >= 2,
+    'wrapping onto more than one row, which is what makes them all visible',
+    `about ${overflow.rows} rows`,
+  );
+
   for (const [tab, label] of Object.entries(LEGAL_TABS)) {
     pageErrors = [];
     await page.locator('button').filter({ hasText: label }).first().click();
@@ -4497,6 +4610,157 @@ try {
     /kimlik belgesi yok|no ID document/.test(governance),
     'and flags a trustee whose identity document is not in the vault',
   );
+
+  // --- 0046: the three gaps somebody found by trying to use this screen ----
+  //
+  // A trustee was entered, could not be seated on any organ, could not be
+  // deleted when the entry turned out to be wrong, and had to be marked as
+  // having stood down instead — which states that a person served and left
+  // about somebody who never served.
+  const trusteeList = page.locator('section', {
+    has: page.locator('h2', { hasText: /Mütevelli kütüğü|Trustee register/ }),
+  });
+
+  // (c) The seat recorded in Turkish only. Read as `tr ? seat_tr : seat_en`
+  // this printed nothing for an English reader; bilingual() falls back.
+  check(
+    /Vice Chair/.test((await trusteeList.textContent()) ?? ''),
+    'a seat recorded only in English is shown to a reader in Turkish (0046)',
+  );
+
+  // (b) Deleting is offered for the record nothing refers to, and only that
+  // one. The answer comes from the database, not from this screen's guess.
+  const deleteButtons = trusteeList.locator('button', {
+    hasText: /kaydı sil|delete the record/,
+  });
+  check(
+    (await deleteButtons.count()) === 1,
+    'exactly the trustee nothing refers to is offered for deletion',
+    `counted ${await deleteButtons.count()}`,
+  );
+  check(
+    /kayıtlarda geçiyor|appears in the record/.test(await trusteeList.textContent()),
+    'and the ones that cannot be deleted say why, rather than offering nothing',
+  );
+
+  await deleteButtons.first().click();
+  await page.waitForTimeout(200);
+  const confirming = (await trusteeList.textContent()) ?? '';
+  check(
+    /Görevden ayırmaktan farklı|Not the same as standing somebody down/.test(confirming),
+    'the confirmation says how deleting differs from standing somebody down',
+  );
+  check(
+    /Denetim kaydı kalır|audit trail keeps it/.test(confirming),
+    'and that the audit trail keeps the record either way',
+  );
+
+  // (a) Seating somebody, which the portal could not do at all.
+  const organs = page.locator('section', {
+    has: page.locator('h2', { hasText: /Organlar ve nisap|organs and their quorum/ }),
+  });
+  await organs
+    .locator('button', { hasText: /Mütevelli Heyeti|Board of Trustees/ })
+    .first()
+    .click();
+  await page.waitForTimeout(300);
+  const asDirector = (await organs.textContent()) ?? '';
+  check(
+    /Smoke Trustee/.test(asDirector),
+    'an organ lists the trustee seated on it, by name (0046)',
+  );
+  check(
+    !/Koltuğa birini oturt|Seat somebody/.test(asDirector),
+    'and a project director is offered no way to seat anybody — the board keeps its own composition',
+  );
+
+  // The same screen as somebody who may. Both halves matter: a control that
+  // appears for everybody is as wrong as one that appears for nobody, and the
+  // policy tests already assert the database refuses the director.
+  await actAs(TRUSTEE_AUTHORITY);
+  pageErrors = [];
+  await page.goto(BASE + '/governance', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(500);
+  await organs
+    .locator('button', { hasText: /Mütevelli Heyeti|Board of Trustees/ })
+    .first()
+    .click();
+  await page.waitForTimeout(300);
+  const organText = (await organs.textContent()) ?? '';
+  check(
+    /Koltuğa birini oturt|Seat somebody/.test(organText),
+    'a governance keeper is offered a way to seat somebody, which no screen used to do',
+  );
+  check(
+    /Nisap kuralını kaydet|Record the quorum rule/.test(organText),
+    'and the quorum rule is recordable rather than only reported as absent',
+  );
+
+  await organs
+    .locator('button', { hasText: /Koltuğa birini oturt|Seat somebody/ })
+    .first()
+    .click();
+  await page.waitForTimeout(250);
+  const seatForm = (await organs.textContent()) ?? '';
+  check(
+    /Oy hakkı|Voting/.test(seatForm),
+    'the seat form asks whether the seat votes, because a non-voting seat does not count to the quorum',
+  );
+  check(
+    /Başlangıç|Started on/.test(seatForm),
+    'and when the seat started, since a quorum is computed from who held one on the day',
+  );
+  check(pageErrors.length === 0, 'the seat and quorum controls render without a page error');
+
+  // (c), the write side. The display fallback is tested above; this is the
+  // other half, and the mutation that writes every seat to seat_en survived
+  // until it existed. The form is filled in Turkish, so the words have to land
+  // in seat_tr — written to seat_en they would be invisible to the reader who
+  // typed them, which is the fault being fixed.
+  let trusteeInsert = null;
+  await page.route('**/rest/v1/trustees*', async (route) => {
+    if (route.request().method() === 'POST') {
+      try {
+        trusteeInsert = JSON.parse(route.request().postData() ?? 'null');
+      } catch {
+        trusteeInsert = 'unparseable';
+      }
+      return route.fulfill({ status: 201, contentType: 'application/json', body: '[]' });
+    }
+    return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+  });
+
+  await trusteeList
+    .locator('button', { hasText: /Mütevelli ekle|Add a trustee/ })
+    .first()
+    .click();
+  await page.waitForTimeout(200);
+  const addForm = trusteeList.locator('form').first();
+  await addForm.locator('input').nth(0).fill('Yeni Mütevelli');
+  await addForm.locator('input').nth(1).fill('Afrika Vakfı');
+  await addForm.locator('input').nth(4).fill('Başkan Yardımcısı');
+  await trusteeList
+    .locator('button', { hasText: /Kütüğe ekle|Add to the register/ })
+    .first()
+    .click();
+  await page.waitForTimeout(600);
+
+  const sent = Array.isArray(trusteeInsert) ? trusteeInsert[0] : trusteeInsert;
+  check(
+    sent != null && sent.seat_tr === 'Başkan Yardımcısı',
+    'a seat typed in Turkish is written to the Turkish column (0046)',
+    sent == null ? 'no insert was sent' : `seat_tr=${JSON.stringify(sent.seat_tr)}`,
+  );
+  check(
+    sent != null && sent.seat_en === null,
+    'and not into the English one, where its own author could not read it',
+    sent == null ? 'no insert was sent' : `seat_en=${JSON.stringify(sent.seat_en)}`,
+  );
+  await page.unroute('**/rest/v1/trustees*');
+
+  await actAs(TEST_AUTHORITY);
+  await page.goto(BASE + '/governance', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(400);
   // M10-03 / M10-04: the state that matters.
   check(
     /BOT\/2026\/01/.test(governance) &&
