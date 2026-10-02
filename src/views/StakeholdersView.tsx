@@ -116,7 +116,7 @@ export const StakeholdersView: React.FC = () => {
         <Field label={tr ? 'Ara' : 'Search'} className="min-w-[180px] flex-1">
           <div className="relative">
             <Search
-              className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400"
+              className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500"
               aria-hidden="true"
             />
             <TextInput
@@ -222,7 +222,7 @@ export const StakeholdersView: React.FC = () => {
                       <span className="font-mono text-xs">
                         {s.influence} · {s.interest}
                       </span>
-                      <div className="text-xs text-slate-400">
+                      <div className="text-xs text-slate-500">
                         {quadrantLabel(quadrantOf(s), language)}
                       </div>
                     </Td>

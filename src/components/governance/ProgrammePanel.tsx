@@ -99,7 +99,7 @@ export const ProgrammePanel: React.FC = () => {
                   </span>
                 ) : (
                   <span className="font-mono text-xs text-slate-700">
-                    <Users className="mr-1 inline h-3 w-3 text-slate-400" aria-hidden="true" />
+                    <Users className="mr-1 inline h-3 w-3 text-slate-500" aria-hidden="true" />
                     {p.appointedAcademicStaff}/{p.requiredAcademicStaff}
                     {p.staffGap != null && p.staffGap > 0 && (
                       <span className="ml-1 font-semibold text-amber-800">−{p.staffGap}</span>

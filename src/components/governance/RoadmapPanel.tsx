@@ -56,7 +56,7 @@ export const RoadmapPanel: React.FC = () => {
           {rows.map((stage, i) => (
             <li key={stage.id}>
               {i > 0 && (
-                <ArrowDown className="mx-auto mb-1 h-3 w-3 text-slate-300" aria-hidden="true" />
+                <ArrowDown className="mx-auto mb-1 h-3 w-3 text-slate-500" aria-hidden="true" />
               )}
               <div
                 className={`rounded-lg border p-3 ${
@@ -68,7 +68,7 @@ export const RoadmapPanel: React.FC = () => {
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="font-mono text-xs text-slate-400">{stage.sequence}</span>
+                      <span className="font-mono text-xs text-slate-500">{stage.sequence}</span>
                       <span className="text-sm font-medium text-slate-900">
                         <Bilingual
                           table="charter_stages"

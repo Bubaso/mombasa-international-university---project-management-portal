@@ -290,7 +290,7 @@ export const ContractPanel: React.FC = () => {
                               className="flex flex-wrap items-center justify-between gap-2 py-1.5"
                             >
                               <span className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
-                                <span className="font-mono text-xs text-slate-400">
+                                <span className="font-mono text-xs text-slate-500">
                                   {m.sequence}
                                 </span>
                                 <span className="text-sm text-slate-900">

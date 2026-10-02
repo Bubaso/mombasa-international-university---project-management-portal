@@ -285,9 +285,9 @@ const RiskRow: React.FC<{
             {risk.score}
           </span>
           {open ? (
-            <ChevronUp className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
+            <ChevronUp className="h-3.5 w-3.5 text-slate-500" aria-hidden="true" />
           ) : (
-            <ChevronDown className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
+            <ChevronDown className="h-3.5 w-3.5 text-slate-500" aria-hidden="true" />
           )}
         </div>
       </button>
@@ -354,7 +354,7 @@ const RiskRow: React.FC<{
                     {change.fromScore != null && change.toScore > change.fromScore && (
                       <ArrowUpRight className="h-3 w-3 text-rose-600" aria-hidden="true" />
                     )}
-                    <span className="text-slate-400">
+                    <span className="text-slate-500">
                       {formatDate(change.changedAt, language)}
                       {change.changedByName && ` · ${change.changedByName}`}
                     </span>

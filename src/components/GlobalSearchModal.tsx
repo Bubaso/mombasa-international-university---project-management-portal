@@ -174,7 +174,7 @@ export const GlobalSearchModal: React.FC = () => {
               type="button"
               onClick={() => setSearchQuery('')}
               aria-label={tr ? 'Temizle' : 'Clear'}
-              className="cursor-pointer p-1 text-slate-400 hover:text-slate-600"
+              className="cursor-pointer p-1 text-slate-500 hover:text-slate-600"
             >
               <X className="h-4 w-4" />
             </button>
@@ -229,7 +229,7 @@ export const GlobalSearchModal: React.FC = () => {
                   ? 'On dokuz kütüğün tamamında arar: davalar, kararlar, tutanaklar, belgeler, paydaşlar, yükümlülükler, riskler, saha işleri, ödemeler.'
                   : 'Searches all nineteen registers: cases, orders, minutes, documents, stakeholders, obligations, risks, site work, payments.'}
               </p>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-500">
                 {tr
                   ? 'Türkçe sorgu İngilizce kaydı bulur, çünkü kayıtlar iki dilli tutuluyor. Dava numarası yazarsanız harfi harfine eşleşir.'
                   : 'A Turkish query finds an English record, because the records are kept in both. Type a case number and it matches literally.'}
@@ -262,7 +262,7 @@ export const GlobalSearchModal: React.FC = () => {
                         type="button"
                         onClick={() => forget.mutate(item.id)}
                         aria-label={tr ? 'Aramayı sil' : 'Delete saved search'}
-                        className="cursor-pointer p-1 text-slate-400 hover:text-rose-600"
+                        className="cursor-pointer p-1 text-slate-500 hover:text-rose-600"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -356,7 +356,7 @@ export const GlobalSearchModal: React.FC = () => {
                         className="flex w-full cursor-pointer items-start gap-2.5 py-2 text-left hover:bg-slate-50"
                       >
                         <Icon
-                          className="mt-0.5 h-4 w-4 shrink-0 text-slate-400"
+                          className="mt-0.5 h-4 w-4 shrink-0 text-slate-500"
                           aria-hidden="true"
                         />
                         <div className="min-w-0 flex-1">
@@ -382,7 +382,7 @@ export const GlobalSearchModal: React.FC = () => {
                                 record, and saying how many places it matched
                                 in is more useful than four identical rows. */}
                             {alsoMatched > 0 && (
-                              <span className="text-xs text-slate-400">
+                              <span className="text-xs text-slate-500">
                                 {tr
                                   ? `+${alsoMatched} yerde daha geçiyor`
                                   : `+${alsoMatched} more ${alsoMatched === 1 ? 'match' : 'matches'} here`}

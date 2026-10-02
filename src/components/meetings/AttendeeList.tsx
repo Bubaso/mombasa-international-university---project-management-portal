@@ -111,7 +111,7 @@ export const AttendeeList: React.FC<{ meetingId: string; canKeep: boolean }> = (
                 <span className="text-xs text-slate-800">
                   {attendee.name ?? (tr ? 'bilinmiyor' : 'unknown')}
                 </span>
-                <span className="text-xs text-slate-400">
+                <span className="text-xs text-slate-500">
                   {attendanceRoleLabel(attendee.roleAtMeeting, language)}
                 </span>
                 {attendee.stakeholderId && (
@@ -123,7 +123,7 @@ export const AttendeeList: React.FC<{ meetingId: string; canKeep: boolean }> = (
                     onClick={() => remove.mutate(attendee.id)}
                     disabled={remove.isPending}
                     aria-label={tr ? 'Çıkar' : 'Remove'}
-                    className="cursor-pointer rounded p-0.5 text-slate-400 hover:bg-rose-50 hover:text-rose-700"
+                    className="cursor-pointer rounded p-0.5 text-slate-500 hover:bg-rose-50 hover:text-rose-700"
                   >
                     <X className="h-3 w-3" />
                   </button>

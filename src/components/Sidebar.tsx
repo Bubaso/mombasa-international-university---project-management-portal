@@ -36,7 +36,7 @@ export const Sidebar: React.FC = () => {
       >
         {NAV_GROUPS.map((group, index) => (
           <div key={group.id} className={index > 0 ? 'mt-4' : ''}>
-            <h2 className="px-3 pb-1.5 text-xs font-semibold tracking-wider text-slate-400 uppercase">
+            <h2 className="px-3 pb-1.5 text-xs font-semibold tracking-wider text-slate-500 uppercase">
               {group.heading[language]}
             </h2>
             <ul className="space-y-0.5">
@@ -98,7 +98,7 @@ export const Sidebar: React.FC = () => {
       <div className="border-t border-slate-200 bg-slate-50 p-3">
         <div className="rounded-lg border border-slate-200 bg-white p-2.5 text-xs text-slate-600 shadow-xs">
           <div className="font-semibold text-slate-700">MIU · Utange/Majaoni</div>
-          <div className="mt-0.5 text-xs text-slate-400">
+          <div className="mt-0.5 text-xs text-slate-500">
             {language === 'tr' ? 'Parsel MN/I/5141 · Fasıl 164' : 'Plot MN/I/5141 · Cap 164'}
           </div>
         </div>

@@ -135,7 +135,7 @@ const NoteSectionRow: React.FC<{
             </Pill>
           )}
           {!body && hasOtherLanguage && (
-            <span className="text-xs text-slate-400">
+            <span className="text-xs text-slate-500">
               {tr ? 'diğer dilde yazılmış' : 'written in the other language'}
             </span>
           )}
@@ -179,7 +179,7 @@ const NoteSectionRow: React.FC<{
       ) : body ? (
         <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-800">{body}</p>
       ) : (
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-slate-500">
           {locked
             ? tr
               ? 'Bu başlık boş bırakılmış ve tutanak kesinleşti.'

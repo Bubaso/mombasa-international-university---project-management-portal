@@ -135,7 +135,7 @@ export const AgendaPanel: React.FC<{ limit?: number; compact?: boolean }> = ({
                   >
                     <Icon
                       className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${
-                        item.overdue ? 'text-rose-600' : 'text-slate-400'
+                        item.overdue ? 'text-rose-600' : 'text-slate-500'
                       }`}
                       aria-hidden="true"
                     />

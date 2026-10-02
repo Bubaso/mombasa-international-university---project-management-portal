@@ -25,6 +25,7 @@
  * written next to both.
  */
 import React, { useMemo, useState } from 'react';
+import { CATEGORICAL, CATEGORICAL_FILL, GRID, INK, STATUS } from '../../lib/palette';
 import { Explain } from '../ui/Explain';
 import { GanttChartSquare, Info } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
@@ -34,15 +35,14 @@ import { QueryStatus } from '../QueryStatus';
 import { Pill } from '../ui/Controls';
 import { formatDate } from '../../lib/site';
 
-/** Sequential blue: the plan itself, one hue. */
-const PLAN_FILL = '#9ec5f4';
-const PLAN_EDGE = '#2a78d6';
-/** Status, reserved and never reused as a series colour. */
-const GOOD = '#0ca30c';
-const CRITICAL = '#d03b3b';
-const SERIOUS = '#ec835a';
-const INK = '#586e75';
-const GRID = '#e2ddd0';
+// Every colour here comes from lib/palette.ts. These seven were written out
+// in this file and again in CurvePanel, so the two could — and did — disagree
+// about what the axis ink was.
+const PLAN_FILL = CATEGORICAL_FILL[0];
+const PLAN_EDGE = CATEGORICAL[0];
+const GOOD = STATUS.good;
+const CRITICAL = STATUS.critical;
+const SERIOUS = STATUS.serious;
 
 const DAY = 86_400_000;
 const ROW = 26;

@@ -200,7 +200,7 @@ export const NotificationPanel: React.FC = () => {
                     )}
                   </div>
                   {n.body && <p className="mt-0.5 text-xs text-slate-600">{n.body}</p>}
-                  <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-slate-400">
+                  <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-slate-500">
                     <span className="font-mono">{formatDate(n.raisedAt, language)}</span>
                     {n.raisedBy && <span>{n.raisedBy}</span>}
                   </div>
@@ -284,7 +284,7 @@ export const NotificationPanel: React.FC = () => {
                             className={`cursor-pointer rounded border px-1.5 py-0.5 text-xs disabled:cursor-not-allowed ${
                               on
                                 ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
-                                : 'border-slate-200 bg-white text-slate-400'
+                                : 'border-slate-200 bg-white text-slate-500'
                             }`}
                           >
                             {on ? (

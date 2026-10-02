@@ -147,7 +147,7 @@ export const DependencyList: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
                       ],
                     )}
                   </span>
-                  <span className="text-slate-400">→</span>
+                  <span className="text-slate-500">→</span>
                   <span className="text-slate-700">
                     {describe(
                       dependency.dependentLabel,

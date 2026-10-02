@@ -148,7 +148,7 @@ export const PendingDecisions: React.FC<{ limit?: number }> = ({ limit }) => {
                   <div className="flex min-w-0 flex-1 items-start gap-2">
                     <Icon
                       className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${
-                        isMine ? 'text-indigo-600' : 'text-slate-400'
+                        isMine ? 'text-indigo-600' : 'text-slate-500'
                       }`}
                       aria-hidden="true"
                     />
@@ -193,7 +193,7 @@ export const PendingDecisions: React.FC<{ limit?: number }> = ({ limit }) => {
                         {tr ? `${days} gün` : `${days}d`}
                       </span>
                     )}
-                    <ArrowUpRight className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
+                    <ArrowUpRight className="h-3.5 w-3.5 text-slate-500" aria-hidden="true" />
                   </div>
                 </button>
               </li>

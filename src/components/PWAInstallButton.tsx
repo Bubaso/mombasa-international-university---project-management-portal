@@ -54,7 +54,7 @@ export const PWAInstallButton: React.FC = () => {
                 </h3>
                 <button
                   onClick={() => setShowIOSGuide(false)}
-                  className="text-slate-400 hover:text-slate-700 cursor-pointer p-1"
+                  className="text-slate-500 hover:text-slate-700 cursor-pointer p-1"
                 >
                   <X className="w-4 h-4" />
                 </button>

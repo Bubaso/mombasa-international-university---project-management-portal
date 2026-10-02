@@ -205,7 +205,7 @@ export const CounselPanel: React.FC<{ caseId: string; canManage: boolean }> = ({
                       <p className="text-xs font-medium text-slate-700">
                         {opinion.givenByName ?? (tr ? 'kim olduğu kayıtlı değil' : 'unattributed')}
                         {opinion.givenOn && (
-                          <span className="ml-1.5 font-mono text-xs text-slate-400">
+                          <span className="ml-1.5 font-mono text-xs text-slate-500">
                             {opinion.givenOn}
                           </span>
                         )}

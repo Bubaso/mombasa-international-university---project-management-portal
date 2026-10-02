@@ -324,7 +324,7 @@ export const ReportsView: React.FC = () => {
                 </div>
 
                 {/* The two limits, said rather than implied. */}
-                <p className="mt-2 text-xs text-slate-400 print:hidden">
+                <p className="mt-2 text-xs text-slate-500 print:hidden">
                   {tr
                     ? 'PDF tarayıcının yazdırma penceresinden çıkar — portalda PDF üreten bir şey yok. İndirme Markdown’dır; Word onu açar, ama bu bir .docx değil.'
                     : 'The PDF comes from the browser’s print dialogue — nothing here generates one. The download is Markdown, which Word opens; it is not a .docx.'}
@@ -448,7 +448,7 @@ export const ReportsView: React.FC = () => {
                             {/* The measure: no material figure without its
                                 source. It travels with the row, including
                                 into the print and the download. */}
-                            <span className="font-mono text-xs text-slate-400">
+                            <span className="font-mono text-xs text-slate-500">
                               {row.sourceNote ?? '—'}
                             </span>
                           </Td>

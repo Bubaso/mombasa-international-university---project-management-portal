@@ -63,7 +63,7 @@ export const DocumentDetail: React.FC<{
           type="button"
           onClick={onClose}
           aria-label={tr ? 'Kapat' : 'Close'}
-          className="shrink-0 cursor-pointer rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+          className="shrink-0 cursor-pointer rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
         >
           <X className="h-4 w-4" />
         </button>
@@ -89,9 +89,9 @@ export const DocumentDetail: React.FC<{
         {/* ---- versions -------------------------------------------------- */}
         <section>
           <h3 className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-700">
-            <History className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
+            <History className="h-3.5 w-3.5 text-slate-500" aria-hidden="true" />
             {tr ? 'Sürümler' : 'Versions'}
-            <span className="font-normal text-slate-400">
+            <span className="font-normal text-slate-500">
               {tr ? '— eskiler silinmez' : '— older ones are never removed'}
             </span>
           </h3>
@@ -179,7 +179,7 @@ export const DocumentDetail: React.FC<{
         {canReadLog && (
           <section>
             <h3 className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-700">
-              <Users className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
+              <Users className="h-3.5 w-3.5 text-slate-500" aria-hidden="true" />
               {tr ? 'Kim okudu' : 'Who has read it'}
             </h3>
             {(access.data ?? []).length === 0 ? (
@@ -190,12 +190,12 @@ export const DocumentDetail: React.FC<{
               <ul className="space-y-0.5">
                 {(access.data ?? []).map((entry) => (
                   <li key={entry.id} className="flex items-baseline gap-2 text-xs">
-                    <span className="shrink-0 font-mono text-slate-400">
+                    <span className="shrink-0 font-mono text-slate-500">
                       {entry.at.slice(0, 16).replace('T', ' ')}
                     </span>
                     <span className="min-w-0 truncate text-slate-700">
                       {entry.readerName ?? entry.profileId}
-                      <span className="ml-1.5 text-slate-400">
+                      <span className="ml-1.5 text-slate-500">
                         {entry.action === 'downloaded'
                           ? tr
                             ? 'indirdi'

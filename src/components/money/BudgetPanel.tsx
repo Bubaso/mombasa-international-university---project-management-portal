@@ -306,7 +306,7 @@ export const BudgetPanel: React.FC<{ canSpend: boolean }> = ({ canSpend }) => {
                     </span>
                     <span className="font-mono text-slate-600">
                       {fmt(category.spentKes, 'KES')}
-                      {pct != null && <span className="ml-1.5 text-slate-400">{pct}%</span>}
+                      {pct != null && <span className="ml-1.5 text-slate-500">{pct}%</span>}
                     </span>
                   </div>
                   {pct != null && (

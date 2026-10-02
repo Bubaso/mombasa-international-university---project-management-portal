@@ -90,7 +90,7 @@ export const ReadinessBoard: React.FC = () => {
                 <>
                   <p className="mt-1 font-mono text-base font-bold text-slate-900">
                     {strand.ready}
-                    <span className="text-slate-400">/{strand.total}</span>
+                    <span className="text-slate-500">/{strand.total}</span>
                     {share != null && (
                       <span className="ml-1.5 text-xs font-normal text-slate-500">{share}%</span>
                     )}

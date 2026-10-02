@@ -34,7 +34,7 @@ export const CaseStrip: React.FC<{
           {tr ? `Dosyalar (${cases.length})` : `Case files (${cases.length})`}
         </h2>
         {cases.length === 1 && (
-          <span className="text-xs text-slate-400">
+          <span className="text-xs text-slate-500">
             {tr
               ? 'Tek dosya kayıtlı — diğerlerini eklemek portala bakan herkesin aynı tabloyu görmesini sağlar'
               : 'Only one file recorded — adding the others is what makes everyone see the same picture'}
@@ -86,7 +86,7 @@ export const CaseStrip: React.FC<{
               <div className="mt-0.5 truncate text-xs text-slate-700 sm:max-w-[220px]">
                 {legalCase.title}
               </div>
-              <div className="mt-0.5 flex items-center gap-2 text-xs text-slate-400">
+              <div className="mt-0.5 flex items-center gap-2 text-xs text-slate-500">
                 <span>{legalCase.court}</span>
                 {active && prohibitions > 0 && (
                   <span className="flex items-center gap-0.5 text-rose-600">

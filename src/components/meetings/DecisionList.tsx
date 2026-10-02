@@ -83,7 +83,7 @@ export const DecisionList: React.FC<{
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
                   {decision.referenceNo && (
-                    <span className="mr-1.5 font-mono text-xs text-slate-400">
+                    <span className="mr-1.5 font-mono text-xs text-slate-500">
                       {decision.referenceNo}
                     </span>
                   )}

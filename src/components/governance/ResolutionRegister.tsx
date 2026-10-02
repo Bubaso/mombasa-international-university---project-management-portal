@@ -134,7 +134,7 @@ export const ResolutionRegister: React.FC = () => {
                     {implementationLabel(row.implementation, language)}
                   </Pill>
                   {row.daysSince != null && (
-                    <span className="font-mono text-xs text-slate-400">
+                    <span className="font-mono text-xs text-slate-500">
                       {tr ? `${row.daysSince} gün önce` : `${row.daysSince}d ago`}
                     </span>
                   )}

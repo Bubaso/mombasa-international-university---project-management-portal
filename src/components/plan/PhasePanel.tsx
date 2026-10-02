@@ -63,7 +63,7 @@ export const PhasePanel: React.FC = () => {
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="font-mono text-xs text-slate-400">{phase.sequence}</span>
+                      <span className="font-mono text-xs text-slate-500">{phase.sequence}</span>
                       {phase.code && (
                         <span className="font-mono text-xs font-semibold text-indigo-800">
                           {phase.code}

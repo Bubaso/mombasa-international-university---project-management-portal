@@ -255,7 +255,7 @@ export const AssistantView: React.FC = () => {
             >
               <div className="flex items-center gap-2">
                 <Icon
-                  className={`h-4 w-4 shrink-0 ${on ? 'text-indigo-600' : 'text-slate-400'}`}
+                  className={`h-4 w-4 shrink-0 ${on ? 'text-indigo-600' : 'text-slate-500'}`}
                   aria-hidden="true"
                 />
                 <span className="text-sm font-semibold text-slate-900">
@@ -312,14 +312,14 @@ export const AssistantView: React.FC = () => {
                 className="mt-0.5 block rounded border border-slate-300 px-2 py-1 text-sm"
               />
             </label>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-500">
               {tr ? `bugün ${formatDate(today, language)}` : `today ${formatDate(today, language)}`}
             </p>
           </div>
         )}
 
         <div className="flex items-center justify-between gap-2">
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-500">
             {tr
               ? 'Sorduğunuz kaydedilir: kim ne sordu, kaç kayda dayandı (M13-10).'
               : 'What you ask is logged: who asked what, and how many records it rested on (M13-10).'}
@@ -428,7 +428,7 @@ export const AssistantView: React.FC = () => {
               <ol className="space-y-1">
                 {answer.sources.map((source, i) => (
                   <li key={source.marker} className="flex items-start gap-2">
-                    <span className="mt-0.5 font-mono text-xs text-slate-400">{i + 1}</span>
+                    <span className="mt-0.5 font-mono text-xs text-slate-500">{i + 1}</span>
                     <button
                       type="button"
                       onClick={() =>
@@ -460,7 +460,7 @@ export const AssistantView: React.FC = () => {
             </div>
           )}
 
-          <p className="mt-3 text-xs text-slate-400">
+          <p className="mt-3 text-xs text-slate-500">
             {tr
               ? 'Kaydetme düğmesi yok. Bu metni bir kayda eklemek isteyen kişi ilgili ekranda kendi adıyla ekler (M13-09).'
               : 'There is no save button. Putting this into a record is done on that record’s own screen, under the name of whoever does it (M13-09).'}
@@ -511,7 +511,7 @@ export const AssistantView: React.FC = () => {
                       .join(' · ')}
                   </p>
                 </div>
-                <span className="shrink-0 font-mono text-xs text-slate-400">
+                <span className="shrink-0 font-mono text-xs text-slate-500">
                   {formatDate(row.askedAt, language)}
                 </span>
               </li>

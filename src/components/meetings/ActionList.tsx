@@ -237,7 +237,7 @@ const ActionRow: React.FC<{
             </Field>
           )}
           {mine && !canKeep && (
-            <p className="pb-1.5 text-xs text-slate-400">
+            <p className="pb-1.5 text-xs text-slate-500">
               {tr
                 ? 'Tarihi ve tanımı yalnızca toplantıyı tutan değiştirebilir.'
                 : 'Only whoever keeps the record can change the date or the wording.'}

@@ -176,7 +176,7 @@ export const MeetingsView: React.FC = () => {
                         )}
                       </div>
                     </div>
-                    <span className="shrink-0 text-xs text-slate-400">
+                    <span className="shrink-0 text-xs text-slate-500">
                       {meetingStatusLabel(meeting.status, language)}
                     </span>
                   </button>

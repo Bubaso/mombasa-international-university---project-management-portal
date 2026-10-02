@@ -195,7 +195,7 @@ export const ChainPanel: React.FC = () => {
                 <ArrowRight className="h-4 w-4 shrink-0 text-rose-500" aria-hidden="true" />
               ) : (
                 <span
-                  className="flex shrink-0 items-center gap-0.5 text-slate-400"
+                  className="flex shrink-0 items-center gap-0.5 text-slate-500"
                   title={
                     tr
                       ? 'Portal bunun ne zaman çözüleceğini söyleyemez — mahkemedeki bir dava gibi.'

@@ -263,9 +263,9 @@ const DonationRow: React.FC<{
         )}
         <div className="mt-1 flex justify-end">
           {open ? (
-            <ChevronUp className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
+            <ChevronUp className="h-3.5 w-3.5 text-slate-500" aria-hidden="true" />
           ) : (
-            <ChevronDown className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
+            <ChevronDown className="h-3.5 w-3.5 text-slate-500" aria-hidden="true" />
           )}
         </div>
       </button>

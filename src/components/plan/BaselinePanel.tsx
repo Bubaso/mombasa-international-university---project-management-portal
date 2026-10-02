@@ -49,7 +49,7 @@ const PLAN_KEEPERS: UserRole[] = [
 /** Days a date was moved, said in words rather than as a signed integer. */
 function movedText(days: number | null, tr: boolean): { text: string; tone: string } {
   if (days == null)
-    return { text: tr ? 'karşılaştırılamaz' : 'nothing to compare', tone: 'text-slate-400' };
+    return { text: tr ? 'karşılaştırılamaz' : 'nothing to compare', tone: 'text-slate-500' };
   if (days === 0) return { text: tr ? 'değişmedi' : 'unmoved', tone: 'text-slate-500' };
   if (days < 0)
     return {

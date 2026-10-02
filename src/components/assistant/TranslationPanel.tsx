@@ -192,8 +192,8 @@ export const TranslationPanel: React.FC = () => {
                 <span className="text-slate-500">
                   {LANGUAGE[row.fromLanguage]} → {LANGUAGE[row.intoLanguage]}
                 </span>
-                <span className="font-mono text-slate-400">{row.model}</span>
-                <span className="font-mono text-slate-400">
+                <span className="font-mono text-slate-500">{row.model}</span>
+                <span className="font-mono text-slate-500">
                   {formatDate(row.translatedAt, language)}
                 </span>
                 {row.approvedAt == null && row.stillTheMachinesWords && (

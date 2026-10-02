@@ -108,14 +108,14 @@ export const HearingList: React.FC<{ caseId: string; canWrite: boolean }> = ({
 
                 {hearing.requiredDocuments.length > 0 && (
                   <div className="mt-1.5">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                       {tr ? 'O gün elde olması gerekenler' : 'What has to be in hand'}
                     </p>
                     <ul className="mt-0.5 space-y-0.5">
                       {hearing.requiredDocuments.map((doc, i) => (
                         <li key={i} className="flex items-start gap-1.5 text-xs text-slate-700">
                           <CircleAlert
-                            className="mt-0.5 h-2.5 w-2.5 shrink-0 text-slate-400"
+                            className="mt-0.5 h-2.5 w-2.5 shrink-0 text-slate-500"
                             aria-hidden="true"
                           />
                           {doc}

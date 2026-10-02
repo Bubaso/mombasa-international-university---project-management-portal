@@ -20,17 +20,17 @@
  * import, and a line through them would show a trend that no time produced.
  */
 import React from 'react';
+import { CATEGORICAL, GRID, INK } from '../../lib/palette';
 import { ChartLine, Info } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useCurves } from '../../api/reportsHooks';
 import { QueryStatus } from '../QueryStatus';
 import type { Curve, Point } from '../../api/curves';
 
-/** Categorical slots 1 and 2, in fixed order. Validated: ΔE 24.7 under protan. */
-const PLANNED = '#2a78d6';
-const DONE = '#eb6834';
-const INK = '#586e75';
-const GRID = '#e2ddd0';
+// Categorical slots 1 and 2, in fixed order, from lib/palette.ts. The ΔE 24.7
+// this file used to claim in a comment is now measured by tests/palette.mjs.
+const PLANNED = CATEGORICAL[0];
+const DONE = CATEGORICAL[1];
 
 const W = 420;
 const H = 120;

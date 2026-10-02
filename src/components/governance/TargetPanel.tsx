@@ -99,7 +99,7 @@ export const TargetPanel: React.FC = () => {
                       <>
                         <p className="font-mono text-base font-bold text-slate-900">
                           {row.achieved ?? 0}
-                          <span className="text-slate-400">/{row.targetValue}</span>
+                          <span className="text-slate-500">/{row.targetValue}</span>
                         </p>
                         <p className="text-xs text-slate-500">
                           {row.unit}

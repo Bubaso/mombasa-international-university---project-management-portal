@@ -85,7 +85,7 @@ export const GovernanceCharterView: React.FC = () => {
               : 'The Cap 164 and KRA calendar, the CUE checklist, the charter road map, the programmes and the quantified obligations.'}
           </p>
         </div>
-        <ArrowUpRight className="h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
+        <ArrowUpRight className="h-4 w-4 shrink-0 text-slate-500" aria-hidden="true" />
       </Link>
     </div>
   );

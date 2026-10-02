@@ -243,7 +243,7 @@ export const SignInPage: React.FC = () => {
           </form>
         )}
 
-        <div className="flex items-center justify-between text-xs text-slate-400">
+        <div className="flex items-center justify-between text-xs text-slate-500">
           <span>{tr ? 'Erişim davetle verilir.' : 'Access is granted by invitation.'}</span>
           <button
             onClick={() => setLanguage(tr ? 'en' : 'tr')}

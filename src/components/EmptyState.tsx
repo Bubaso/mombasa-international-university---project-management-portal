@@ -20,7 +20,7 @@ const TONE_STYLES: Record<EmptyStateTone, { wrap: string; badge: string; icon: s
   empty: {
     wrap: 'bg-slate-50 border-slate-200',
     badge: 'bg-white text-slate-600 border-slate-200',
-    icon: 'text-slate-400',
+    icon: 'text-slate-500',
   },
   unsourced: {
     wrap: 'bg-amber-50/50 border-amber-200',

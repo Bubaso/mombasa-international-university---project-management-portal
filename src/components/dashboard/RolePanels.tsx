@@ -359,7 +359,7 @@ export const ProjectPulse: React.FC = () => {
           <dt className="text-slate-600">{tr ? 'Kanıtlı ilerleme' : 'Evidenced progress'}</dt>
           <dd
             className={`font-mono font-semibold ${
-              average == null ? 'text-slate-400' : 'text-slate-900'
+              average == null ? 'text-slate-500' : 'text-slate-900'
             }`}
           >
             {progressLabel(average, language)}
@@ -401,7 +401,7 @@ export const ProjectPulse: React.FC = () => {
                 </span>
                 <span className="shrink-0 font-mono text-rose-700">
                   {risk.score}
-                  <span className="ml-1 text-slate-400">
+                  <span className="ml-1 text-slate-500">
                     {riskCategoryLabel(risk.category, language)}
                   </span>
                 </span>

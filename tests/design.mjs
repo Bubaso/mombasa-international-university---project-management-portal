@@ -236,6 +236,92 @@ const PROBE = () => {
     };
   });
 
+  // ---- T9-01: text contrast, against whatever is actually behind it ----
+  //
+  // The colour comes out of the browser and goes through a 1x1 canvas, which
+  // converts whatever syntax it is into sRGB. Tailwind 4 emits `oklch()` and
+  // Chrome keeps that in computed style, so a regex over the digits of
+  // "oklch(0.208 0.042 265.755)" reads 265 as a blue channel and reports dark
+  // navy on white as 1.24:1. That is how the first run of this check produced
+  // a list of "failures" that were all fine.
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = 1;
+  const cx = cv.getContext('2d', { willReadFrequently: true });
+  const toRgba = (css) => {
+    if (!css) return null;
+    cx.clearRect(0, 0, 1, 1);
+    cx.fillStyle = '#000';
+    cx.fillStyle = css;
+    if (cx.fillStyle === '#000' && !/^(#000|black|rgb\(0, 0, 0\))/.test(css.trim())) return null;
+    cx.fillRect(0, 0, 1, 1);
+    const d = cx.getImageData(0, 0, 1, 1).data;
+    return [d[0] / 255, d[1] / 255, d[2] / 255, d[3] / 255];
+  };
+  const toLin = (c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+  const relLum = (rgb) => {
+    const [r, g, b] = rgb.map(toLin);
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+  const ratio = (a, b) => {
+    const [hi, lo] = [relLum(a), relLum(b)].sort((x, y) => y - x);
+    return (hi + 0.05) / (lo + 0.05);
+  };
+  /** The nearest ancestor that actually paints something behind this text. */
+  const backdrop = (el) => {
+    for (let p = el; p; p = p.parentElement) {
+      const c = toRgba(getComputedStyle(p).backgroundColor);
+      if (c && c[3] > 0.5) return c.slice(0, 3);
+    }
+    return [1, 1, 1];
+  };
+
+  const lowContrast = [];
+  let textMeasured = 0;
+  for (const el of document.querySelectorAll('main *, header *, aside *, nav *')) {
+    const own = Array.from(el.childNodes)
+      .filter((n) => n.nodeType === 3)
+      .map((n) => n.textContent.trim())
+      .join('');
+    if (own.length < 2 || !visible(el)) continue;
+    const st = getComputedStyle(el);
+    const fg = toRgba(st.color);
+    if (!fg) continue;
+    const size = parseFloat(st.fontSize);
+    const bold = parseInt(st.fontWeight, 10) >= 700;
+    // WCAG's "large text" is 24px, or 18.66px when bold.
+    const need = size >= 24 || (size >= 18.66 && bold) ? 3 : 4.5;
+    const r = ratio(fg.slice(0, 3), backdrop(el));
+    textMeasured++;
+    if (r < need) {
+      lowContrast.push({
+        r: Math.round(r * 100) / 100,
+        need,
+        px: Math.round(size),
+        text: own.slice(0, 34),
+      });
+    }
+  }
+
+  // ---- T9-02: no state told by colour alone ----
+  //
+  // A legend swatch carries its label BESIDE it, not inside it, and that is
+  // the correct pattern — the first version of this check flagged the risk
+  // matrix's own legend, which is three swatches each followed by its word.
+  // So a coloured mark counts as labelled when it holds text, when its parent
+  // does, or when it names itself to a screen reader.
+  const colourOnly = [];
+  for (const el of document.querySelectorAll('main span, main div')) {
+    if (!/bg-(rose|amber|emerald|teal|red|green|yellow)-\d{2,3}/.test(String(el.className)))
+      continue;
+    if (!visible(el)) continue;
+    const named =
+      (el.textContent ?? '').trim().length > 0 ||
+      (el.parentElement?.textContent ?? '').trim().length > 0 ||
+      !!el.getAttribute('aria-label') ||
+      !!el.getAttribute('title');
+    if (!named) colourOnly.push(String(el.className).slice(0, 48));
+  }
+
   // ---- navigation: labels whole, strips not scrolling (T1-02, T1-08) ----
   //
   // Truncation is measured, not guessed from the class list: an element is
@@ -335,6 +421,9 @@ const PROBE = () => {
     strips,
     reachable,
     texts,
+    lowContrast,
+    textMeasured,
+    colourOnly,
     registerRows,
     explains,
     firstLook,
@@ -481,6 +570,54 @@ try {
         .join(', ');
       console.log(`  ${w.name} ${route.padEnd(15)} ${flag || 'clean'}`);
     }
+    // T9-03, by focusing every control rather than by reading the stylesheet.
+    //
+    // The first version pressed Tab thirty times, and passed — on a build
+    // with NO focus styling at all, because Chrome's own `:focus-visible`
+    // ring covered every stop that walk happened to reach. The controls that
+    // were actually blind were elsewhere: the sign-in page's email and
+    // password inputs, which carry `focus:outline-none`, showed
+    // `outline: none 0px` and no shadow. A keyboard user could not see which
+    // field they were in, on the first screen of the application.
+    //
+    // So every focusable control on the route is focused and asked, and the
+    // ring must be an outline specifically: counting any box-shadow passed
+    // every button that happened to carry a decorative `shadow-xs`.
+    if (!w.mobile) {
+      const blind = [];
+      let examined = 0;
+      for (const route of ['/legal', '/admin']) {
+        await page.goto(BASE + route, { waitUntil: 'domcontentloaded' });
+        await page.waitForLoadState('networkidle', { timeout: 20000 }).catch(() => {});
+        await sleep(700);
+        const r = await page.evaluate(() => {
+          const out = [];
+          let n = 0;
+          for (const el of document.querySelectorAll(
+            'input:not([type="hidden"]), select, textarea, button, a[href], summary',
+          )) {
+            const b = el.getBoundingClientRect();
+            if (b.width === 0 || b.height === 0) continue;
+            el.focus();
+            if (document.activeElement !== el) continue;
+            n++;
+            const s = getComputedStyle(el);
+            const ring = s.outlineStyle !== 'none' && parseFloat(s.outlineWidth) > 0;
+            if (!ring) {
+              out.push(
+                `${el.tagName.toLowerCase()} "${(el.getAttribute('aria-label') || el.textContent || el.getAttribute('placeholder') || '').trim().slice(0, 20)}"`,
+              );
+            }
+          }
+          return { blind: out, examined: n };
+        });
+        blind.push(...r.blind.map((x) => `${route} ${x}`));
+        examined += r.examined;
+      }
+      report.focus = { checked: examined, invisible: blind };
+      console.log(`  focus visible on ${examined - blind.length}/${examined} controls`);
+    }
+
     // T6-02, by doing it rather than by inspecting classes: open one
     // explanation and see that more text is there afterwards. A collapsed
     // paragraph that cannot be opened would pass every height check in this
@@ -809,6 +946,40 @@ if (report.opened) {
   );
 } else {
   check(false, 'T6-02 could not be measured: no explanation was found to open');
+}
+
+// ---------------------------------------------------------------------------
+// T9 — accessibility
+// ---------------------------------------------------------------------------
+for (const [name, routes] of Object.entries(report.widths)) {
+  const rs = Object.entries(routes);
+  const bad = rs.flatMap(([route, m]) =>
+    m.lowContrast.map((c) => `${route} ${c.r}:1 (needs ${c.need}) ${c.px}px "${c.text}"`),
+  );
+  const measured = rs.reduce((a, [, m]) => a + m.textMeasured, 0);
+  check(
+    bad.length === 0,
+    `T9-01 every piece of text on ${name} clears its contrast threshold`,
+    bad.length ? bad.slice(0, 3).join(' | ') : `${measured} measured`,
+  );
+  const colourOnly = rs.flatMap(([route, m]) => m.colourOnly.map((c) => `${route} ${c}`));
+  check(
+    colourOnly.length === 0,
+    `T9-02 and no state on ${name} is told by colour alone`,
+    colourOnly.slice(0, 3).join(' | '),
+  );
+}
+
+if (report.focus) {
+  check(
+    report.focus.invisible.length === 0,
+    'T9-03 every control shows where the keyboard is',
+    report.focus.invisible.length
+      ? report.focus.invisible.slice(0, 3).join(' | ')
+      : `${report.focus.checked} tab stops, all with a ring`,
+  );
+} else {
+  check(false, 'T9-03 could not be measured: the tab walk did not run');
 }
 
 // T10-08: the dashboard opens on figures rather than on a paragraph.

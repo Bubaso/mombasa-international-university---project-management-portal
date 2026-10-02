@@ -185,9 +185,9 @@ const TaskGroup: React.FC<{
                   {progressLabel(task.percentComplete, language)}
                 </span>
                 {openTask === task.id ? (
-                  <ChevronUp className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
+                  <ChevronUp className="h-3.5 w-3.5 text-slate-500" aria-hidden="true" />
                 ) : (
-                  <ChevronDown className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
+                  <ChevronDown className="h-3.5 w-3.5 text-slate-500" aria-hidden="true" />
                 )}
               </div>
             </button>
@@ -241,7 +241,7 @@ const TaskDetail: React.FC<{ task: SiteTask; canReport: boolean }> = ({ task, ca
                     {report.documentTitle ?? (tr ? 'belge' : 'document')}
                   </span>
                   <span className="text-slate-500">{report.reportedByName ?? '—'}</span>
-                  <span className="text-slate-400">{formatDate(report.reportedAt, language)}</span>
+                  <span className="text-slate-500">{formatDate(report.reportedAt, language)}</span>
                   {/* The gap between taking the picture and filing it is the
                       thing a reader needs, and the thing nobody volunteers. */}
                   {gap != null && (

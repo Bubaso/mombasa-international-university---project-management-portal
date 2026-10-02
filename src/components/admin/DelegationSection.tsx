@@ -160,7 +160,7 @@ export const DelegationSection: React.FC<{ authority: Authority | null | undefin
                 <Td>
                   <Pill className={STATE_STYLES[state]}>{STATE_LABELS[state][language]}</Pill>
                   {state === 'revoked' && d.revokedByName && (
-                    <div className="mt-0.5 text-xs text-slate-400">{d.revokedByName}</div>
+                    <div className="mt-0.5 text-xs text-slate-500">{d.revokedByName}</div>
                   )}
                 </Td>
                 <Td className="text-right">
@@ -188,12 +188,12 @@ export const DelegationSection: React.FC<{ authority: Authority | null | undefin
                       </ActionButton>
                     )}
                     {mayApprove && alreadyApproved && state === 'awaiting' && (
-                      <span className="self-center text-xs text-slate-400">
+                      <span className="self-center text-xs text-slate-500">
                         {tr ? 'Onayınız kayıtlı' : 'Your approval is in'}
                       </span>
                     )}
                     {d.toUserId === user?.id && state === 'awaiting' && (
-                      <span className="self-center text-xs text-slate-400">
+                      <span className="self-center text-xs text-slate-500">
                         {tr ? 'Kendi devrinizi onaylayamazsınız' : 'You cannot approve your own'}
                       </span>
                     )}

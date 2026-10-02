@@ -271,7 +271,7 @@ export const CommentsAndVersions: React.FC<{ documentId: string }> = ({ document
 
                 {comment.quotedExcerpt != null && (
                   <p className="mt-1 flex items-start gap-1.5 border-l-2 border-slate-300 pl-2 text-xs text-slate-700">
-                    <Quote className="mt-0.5 h-3 w-3 shrink-0 text-slate-400" aria-hidden="true" />
+                    <Quote className="mt-0.5 h-3 w-3 shrink-0 text-slate-500" aria-hidden="true" />
                     <span>
                       {comment.quotedExcerpt}
                       <span className="ml-1 text-slate-500">

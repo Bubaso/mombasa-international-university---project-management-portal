@@ -228,7 +228,7 @@ export const RequestPanel: React.FC = () => {
             >
               {tr ? 'vazgeç' : 'cancel'}
             </button>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-500">
               {tr
                 ? 'Tahmin, kimin onaylayabileceğini belirleyen bandı seçiyor.'
                 : 'The estimate decides which approval band applies.'}
@@ -465,7 +465,7 @@ export const RequestPanel: React.FC = () => {
                                 <span className="font-mono text-xs text-slate-700">
                                   {money(c.feeAmount, c.feeCurrency)}
                                 </span>
-                                <span className="block text-xs text-slate-400">
+                                <span className="block text-xs text-slate-500">
                                   {feeBasisLabel(c.feeBasis, language)}
                                 </span>
                               </Td>

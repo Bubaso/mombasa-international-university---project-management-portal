@@ -286,7 +286,7 @@ export const ThreadPanel: React.FC = () => {
                       />
                     ) : (
                       <MessageSquare
-                        className="h-3.5 w-3.5 shrink-0 text-slate-400"
+                        className="h-3.5 w-3.5 shrink-0 text-slate-500"
                         aria-hidden="true"
                       />
                     )}
@@ -374,7 +374,7 @@ export const ThreadPanel: React.FC = () => {
                             sender, which the database pins to the caller. */}
                         {m.senderName ?? (tr ? '(bilinmeyen kişi)' : '(unknown)')}
                       </span>
-                      <span className="font-mono text-xs text-slate-400">
+                      <span className="font-mono text-xs text-slate-500">
                         {formatDate(m.createdAt, language)}
                       </span>
                     </div>
@@ -449,7 +449,7 @@ export const ThreadPanel: React.FC = () => {
                             </button>
                           ),
                         )}
-                        <span className="text-xs text-slate-400">
+                        <span className="text-xs text-slate-500">
                           {tr
                             ? '— tepki bir tutum kaydı değil; tutum paydaş kütüğünde durur'
                             : '— a reaction is not a recorded position; stance lives in the stakeholder register'}

@@ -163,10 +163,10 @@ export const TriagePanel: React.FC = () => {
             <div key={group.title + group.heldAt}>
               <h3 className="mb-1 flex items-baseline gap-2 text-xs font-semibold text-slate-700">
                 {group.title}
-                <span className="font-mono font-normal text-slate-400">
+                <span className="font-mono font-normal text-slate-500">
                   {formatDate(group.heldAt, language)}
                 </span>
-                <span className="font-normal text-slate-400">
+                <span className="font-normal text-slate-500">
                   {group.rows.length} {tr ? 'satır' : 'lines'}
                 </span>
               </h3>
@@ -174,7 +174,7 @@ export const TriagePanel: React.FC = () => {
                 {group.rows.map((c) => (
                   <li key={c.id} className="rounded-lg border border-slate-200 bg-slate-50 p-2">
                     <div className="flex flex-wrap items-start gap-2">
-                      <span className="font-mono text-xs text-slate-400">{c.sequence}</span>
+                      <span className="font-mono text-xs text-slate-500">{c.sequence}</span>
                       <p className="min-w-0 flex-1 text-sm text-slate-900">
                         {(tr ? c.textTr : c.textEn) ?? c.textEn}
                       </p>

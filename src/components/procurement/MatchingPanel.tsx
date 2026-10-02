@@ -266,7 +266,7 @@ export const MatchingPanel: React.FC = () => {
                 return (
                   <li key={row.contractMilestoneId} className="py-1.5">
                     <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                      <span className="font-mono text-xs text-slate-400">{row.sequence}</span>
+                      <span className="font-mono text-xs text-slate-500">{row.sequence}</span>
                       <span className="text-sm text-slate-900">{row.titleEn}</span>
                       <span className="text-xs text-slate-500">
                         {row.referenceNo ?? row.counterpartyName}

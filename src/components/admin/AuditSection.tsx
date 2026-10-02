@@ -96,7 +96,7 @@ export const AuditSection: React.FC = () => {
               </Td>
               <Td className="font-medium text-slate-900">
                 {entry.actorName ?? (
-                  <span className="font-normal text-slate-400">{tr ? 'sistem' : 'the system'}</span>
+                  <span className="font-normal text-slate-500">{tr ? 'sistem' : 'the system'}</span>
                 )}
               </Td>
               <Td>
@@ -107,7 +107,7 @@ export const AuditSection: React.FC = () => {
               <Td>
                 <span className="font-mono text-xs">{entry.entityType}</span>
                 {entry.entityId && (
-                  <span className="ml-1.5 font-mono text-xs text-slate-400">
+                  <span className="ml-1.5 font-mono text-xs text-slate-500">
                     {entry.entityId.slice(0, 8)}…
                   </span>
                 )}

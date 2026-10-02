@@ -114,7 +114,7 @@ export const DigestPanel: React.FC = () => {
       {chosen && (
         <p className="mb-2 flex items-start gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
           <CalendarRange
-            className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400"
+            className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-500"
             aria-hidden="true"
           />
           {tr ? chosen.why.tr : chosen.why.en}

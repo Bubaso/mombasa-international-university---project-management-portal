@@ -311,7 +311,7 @@ export const MilestonePanel: React.FC = () => {
                         <span className={slip.tone}>{slip.text}</span>
                       ) : (
                         m.state !== 'achieved' && (
-                          <span className="text-slate-400">
+                          <span className="text-slate-500">
                             {tr ? 'gecikme henüz bilinmiyor' : 'slip not known yet'}
                           </span>
                         )

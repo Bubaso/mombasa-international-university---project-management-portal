@@ -70,7 +70,7 @@ export const ObligationDetail: React.FC<{
           type="button"
           onClick={onClose}
           aria-label={tr ? 'Kapat' : 'Close'}
-          className="shrink-0 cursor-pointer rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+          className="shrink-0 cursor-pointer rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
         >
           <X className="h-4 w-4" />
         </button>
@@ -141,7 +141,7 @@ export const ObligationDetail: React.FC<{
             className={`flex items-center gap-1.5 text-xs font-medium ${
               obligation.sourceMeetingId
                 ? 'cursor-pointer text-amber-700 hover:text-amber-900'
-                : 'cursor-default text-slate-400'
+                : 'cursor-default text-slate-500'
             }`}
           >
             <Link2 className="h-3 w-3" aria-hidden="true" />
@@ -161,7 +161,7 @@ export const ObligationDetail: React.FC<{
             <h3 className="text-xs font-semibold text-slate-700">
               {tr ? 'Uyum kanıtı' : 'Evidence'}
             </h3>
-            <span className="text-xs text-slate-400">
+            <span className="text-xs text-slate-500">
               {rows.length === 0
                 ? tr
                   ? 'kanıtsız kapatılamaz'
@@ -183,7 +183,7 @@ export const ObligationDetail: React.FC<{
               {rows.map((item) => (
                 <li key={item.id} className="rounded-lg border border-slate-200 px-2.5 py-1.5">
                   <p className="text-xs text-slate-800">{item.description}</p>
-                  <p className="mt-0.5 text-xs text-slate-400">
+                  <p className="mt-0.5 text-xs text-slate-500">
                     {[item.observedOn, item.addedByName].filter(Boolean).join(' · ')}
                   </p>
                 </li>

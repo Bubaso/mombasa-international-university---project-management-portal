@@ -143,11 +143,11 @@ export const SharingSection: React.FC<{ canManage: boolean }> = ({ canManage }) 
           {rows.map((grant) => {
             const lapsed = isExpired(grant.expiresAt);
             return (
-              <tr key={grant.id} className={lapsed ? 'text-slate-400' : undefined}>
+              <tr key={grant.id} className={lapsed ? 'text-slate-500' : undefined}>
                 <Td className="font-medium text-slate-900">{grant.userName ?? grant.userId}</Td>
                 <Td>
                   <div>{describe(grant.entityType, grant.entityId)}</div>
-                  <div className="text-xs text-slate-400">
+                  <div className="text-xs text-slate-500">
                     {ENTITY_TYPES.includes(grant.entityType as EntityType)
                       ? ENTITY_LABELS[grant.entityType as EntityType][language]
                       : grant.entityType}
@@ -180,7 +180,7 @@ export const SharingSection: React.FC<{ canManage: boolean }> = ({ canManage }) 
                       grant.expiresAt.slice(0, 10)
                     )
                   ) : (
-                    <span className="text-slate-400">{tr ? 'Süresiz' : 'Open-ended'}</span>
+                    <span className="text-slate-500">{tr ? 'Süresiz' : 'Open-ended'}</span>
                   )}
                 </Td>
                 <Td className="max-w-[220px] truncate text-slate-500">{grant.reason ?? '—'}</Td>

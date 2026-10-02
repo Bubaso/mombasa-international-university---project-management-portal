@@ -71,7 +71,7 @@ export const MobileMoreSheet: React.FC<MobileMoreSheetProps> = ({ isOpen, onClos
           <button
             onClick={onClose}
             aria-label={language === 'tr' ? 'Kapat' : 'Close'}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer"
+            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -135,7 +135,7 @@ export const MobileMoreSheet: React.FC<MobileMoreSheetProps> = ({ isOpen, onClos
                           </span>
                         </span>
                         <ChevronRight
-                          className="w-4 h-4 text-slate-400 shrink-0"
+                          className="w-4 h-4 text-slate-500 shrink-0"
                           aria-hidden="true"
                         />
                       </button>
@@ -208,7 +208,7 @@ export const MobileMoreSheet: React.FC<MobileMoreSheetProps> = ({ isOpen, onClos
           </div>
         )}
 
-        <div className="pt-2 text-center text-xs text-slate-400">
+        <div className="pt-2 text-center text-xs text-slate-500">
           Mombasa International University · AUTK Cap 164 · Plot MN/I/5141
         </div>
       </div>

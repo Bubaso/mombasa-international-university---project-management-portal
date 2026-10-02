@@ -251,7 +251,7 @@ export const CalendarView: React.FC = () => {
                 >
                   {group.label[language]}
                 </h2>
-                <span className="text-xs text-slate-400">{group.rows.length}</span>
+                <span className="text-xs text-slate-500">{group.rows.length}</span>
               </header>
               <ul className="divide-y divide-slate-100">
                 {group.rows.map((entry) => {
@@ -266,7 +266,7 @@ export const CalendarView: React.FC = () => {
                         <div className="flex min-w-0 flex-1 items-start gap-2.5">
                           <Icon
                             className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${
-                              entry.needsAttention ? 'text-rose-600' : 'text-slate-400'
+                              entry.needsAttention ? 'text-rose-600' : 'text-slate-500'
                             }`}
                             aria-hidden="true"
                           />
@@ -295,7 +295,7 @@ export const CalendarView: React.FC = () => {
                           >
                             {daysFrom(entry.dueOn, language)}
                           </span>
-                          <span className="hidden font-mono text-xs text-slate-400 sm:inline">
+                          <span className="hidden font-mono text-xs text-slate-500 sm:inline">
                             {entry.dueOn}
                           </span>
                         </div>

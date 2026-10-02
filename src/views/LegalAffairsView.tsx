@@ -981,7 +981,7 @@ export const LegalAffairsView: React.FC = () => {
                       <p className="text-slate-600 text-xs leading-relaxed">
                         {(language === 'tr' ? ord.textTr : ord.textEn) ?? ord.textEn ?? ord.textTr}
                       </p>
-                      {ord.madeBy && <p className="text-slate-400 text-xs">{ord.madeBy}</p>}
+                      {ord.madeBy && <p className="text-slate-500 text-xs">{ord.madeBy}</p>}
                     </div>
                   ))
                 )}
@@ -1479,7 +1479,7 @@ export const LegalAffairsView: React.FC = () => {
               </h3>
               <button
                 onClick={() => setShowNewMotionModal(false)}
-                className="text-slate-400 hover:text-slate-700 text-base cursor-pointer p-1"
+                className="text-slate-500 hover:text-slate-700 text-base cursor-pointer p-1"
               >
                 ✕
               </button>

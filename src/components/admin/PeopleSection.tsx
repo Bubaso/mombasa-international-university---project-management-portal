@@ -185,7 +185,7 @@ export const PeopleSection: React.FC<{ canAdminister: boolean }> = ({ canAdminis
                         <div className="font-medium text-slate-900">{person.fullName}</div>
                         <div className="text-xs text-slate-500">{person.email}</div>
                         {person.organization && (
-                          <div className="text-xs text-slate-400">{person.organization}</div>
+                          <div className="text-xs text-slate-500">{person.organization}</div>
                         )}
                       </Td>
                       <Td>{roleLabel(person.role, language)}</Td>

@@ -23,10 +23,23 @@
   --color-slate-100: #eee8d5;
   --color-slate-200: #dfd7c2;
   --color-slate-300: #d3c9b0;
+  /* The steps text is written in. Solarized's own mid-greys do not reach
+     4.5:1 on this palette's own surfaces — measured, base1 #93a1a1 gives
+     2.18:1 and base0 #839496 gives 2.58:1 against slate-100, and even base01
+     #586e75 only reaches 4.39:1 — so the four steps below are shifted along
+     the base01→base02 line until each clears the threshold on white, on the
+     page background and on a tinted panel. A 5% shift is enough for the
+     first one, which is why these still read as Solarized.
+
+     This is where T9-01 actually lives. Patching the 571 places that use
+     these classes would have left the next one to be written wrong; the
+     scale is the single place the rule belongs.
+
+     slate-400 stays as Solarized base1. It is no longer used for text. */
   --color-slate-400: #93a1a1;
-  --color-slate-500: #839496;
-  --color-slate-600: #657b83;
-  --color-slate-700: #586e75;
+  --color-slate-500: #546b72; /* 4.60:1 worst case — muted text */
+  --color-slate-600: #44616a; /* 5.42:1 — secondary text */
+  --color-slate-700: #334d55; /* 7.34:1 — body text */
   --color-slate-800: #073642;
   --color-slate-900: #002b36;
 
@@ -35,15 +48,24 @@
   --color-amber-100: #f7ebc3;
   --color-amber-200: #eed692;
   --color-amber-500: #b58900;
-  --color-amber-600: #b58900;
-  --color-amber-700: #9e7500;
-  --color-amber-800: #805e00;
+  /* White sits on amber-600: it is the primary button. Solarized yellow gives
+     white text 3.21:1, under the 4.5:1 of T9-01 at the 14px the buttons use,
+     so this step is darkened along its own hue line to 5.17:1. amber-500
+     keeps the original for fills and accents that carry no text. */
+  --color-amber-600: #8a6800;
+  /* Text steps, so both clear 4.5:1 on white, on the page background and on
+     a tinted panel. #9e7500 was 3.43:1 at the 14px the legal screen's section
+     label uses. */
+  --color-amber-700: #7d5e00; /* 4.93:1 worst case */
+  --color-amber-800: #6b5000; /* 6.18:1 */
 
   --color-emerald-50: #f1f6e0;
   --color-emerald-100: #e2ecc1;
-  --color-emerald-600: #859900;
-  --color-emerald-700: #718200;
-  --color-emerald-800: #5c6b00;
+  /* Solarized green as text is 2.62:1 on these surfaces. Darkened along its
+     own line to 4.58:1; white on it reaches 5.61:1. */
+  --color-emerald-600: #53711a;
+  --color-emerald-700: #466821; /* 5.25:1 worst case */
+  --color-emerald-800: #3a5a1e; /* 6.6:1 */
 
   --color-blue-50: #eaf3fa;
   --color-blue-100: #d4e7f5;
@@ -344,5 +366,59 @@ body {
   }
   table.register td:nth-child(9) {
     --col-label: var(--col-9);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Keyboard focus (T9-03).
+
+   There was no focus styling in this file at all, and fourteen components
+   call `focus:outline-none` — so a keyboard user lost the ring the browser
+   would have drawn and got nothing in its place. Every action in the portal
+   is reachable by tab; until now you could not see where you were.
+
+   NOT in @layer base, unlike the tap-target rule above. A base rule loses to
+   every utility, and `focus:outline-none` is a utility: it would erase this
+   on exactly the fourteen controls that need it most. Outside a layer, this
+   wins, which is the intent — a component may choose its own ring colour,
+   but it may not choose to have none.
+
+   `:focus-visible` rather than `:focus`, so a mouse click does not leave a
+   ring behind. Both an outline and a shadow: `outline-none` sets
+   `outline-style`, so the shadow survives it, and the outline survives a
+   `shadow-*` utility. Belt and braces, because the failure mode here is
+   silent and the people it affects are the ones least able to work around it.
+   --------------------------------------------------------------------------- */
+:focus-visible {
+  outline: 2px solid var(--color-amber-600);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--color-amber-600) 30%, transparent);
+}
+
+/* A focus ring drawn inside an overflow-hidden parent gets clipped, so the
+   element is lifted while focused. */
+:focus-visible {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---------------------------------------------------------------------------
+   Reduced motion (T9-05).
+
+   The portal animates a sheet sliding up, a spinner and several colour
+   transitions. Somebody who has asked their system for less movement has
+   usually asked for a reason — vestibular disorders make a sliding panel
+   genuinely unpleasant. Transitions collapse to near-instant rather than to
+   zero: a 1ms duration still fires `transitionend`, so nothing that waits on
+   one hangs.
+   --------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
   }
 }

@@ -245,9 +245,9 @@ const VoucherRow: React.FC<{
             {fmt(voucher.amount, voucher.currency)}
           </span>
           {open ? (
-            <ChevronUp className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
+            <ChevronUp className="h-3.5 w-3.5 text-slate-500" aria-hidden="true" />
           ) : (
-            <ChevronDown className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
+            <ChevronDown className="h-3.5 w-3.5 text-slate-500" aria-hidden="true" />
           )}
         </div>
       </button>

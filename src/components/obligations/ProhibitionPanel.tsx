@@ -106,7 +106,7 @@ export const ProhibitionPanel: React.FC<{ canRecord: boolean }> = ({ canRecord }
                     >
                       <p className="text-xs font-medium text-slate-800">{r.noteOfWhat}</p>
                       <p className="text-xs leading-relaxed text-slate-600">{r.reason}</p>
-                      <p className="mt-0.5 text-xs text-slate-400">
+                      <p className="mt-0.5 text-xs text-slate-500">
                         {r.acknowledgedByName ?? '—'} · {r.acknowledgedAt.slice(0, 10)}
                       </p>
                     </div>

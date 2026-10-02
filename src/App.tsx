@@ -77,7 +77,27 @@ const ProcurementView = lazy(() =>
   import('./views/ProcurementView').then((m) => ({ default: m.ProcurementView })),
 );
 
+/**
+ * Whether a service worker is actually driving this page.
+ *
+ * Asked rather than assumed: the footer used to state that the PWA was
+ * enabled from a fixed string, which would have gone on saying so after a
+ * failed registration.
+ */
+function useOfflineReady(): boolean {
+  const [ready, setReady] = React.useState(false);
+  React.useEffect(() => {
+    if (!('serviceWorker' in navigator)) return;
+    const check = () => setReady(!!navigator.serviceWorker.controller);
+    check();
+    navigator.serviceWorker.addEventListener('controllerchange', check);
+    return () => navigator.serviceWorker.removeEventListener('controllerchange', check);
+  }, []);
+  return ready;
+}
+
 const MainLayout: React.FC = () => {
+  const offlineReady = useOfflineReady();
   const { language } = useApp();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -143,10 +163,19 @@ const MainLayout: React.FC = () => {
               <span>
                 {language === 'tr' ? 'Fasıl 164 Kenya Kanunları' : 'Cap 164 Laws of Kenya'}
               </span>
-              <span>·</span>
-              <span className="text-emerald-600 font-mono font-medium">
-                {language === 'tr' ? 'PWA Etkin' : 'PWA Enabled'}
-              </span>
+              {/* Only when a service worker is actually driving this page.
+                  It used to be a fixed string, so it said "PWA Etkin" whether
+                  or not registration had succeeded — the same kind of claim
+                  the navigation badges were making. Now the footer says
+                  nothing rather than something it has not checked. */}
+              {offlineReady && (
+                <>
+                  <span>·</span>
+                  <span className="font-mono font-medium text-emerald-600">
+                    {language === 'tr' ? 'Çevrimdışı hazır' : 'Offline ready'}
+                  </span>
+                </>
+              )}
               {/* The invested total used to sit here, typed in. A figure
                   that appears on every page reads as current, and this one
                   came from nowhere — there is no query behind it and no date

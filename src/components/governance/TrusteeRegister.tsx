@@ -202,7 +202,7 @@ export const TrusteeRegister: React.FC = () => {
                     <div className="flex flex-wrap items-center gap-1.5">
                       <span
                         className={`text-sm font-medium ${
-                          trustee.active ? 'text-slate-900' : 'text-slate-400 line-through'
+                          trustee.active ? 'text-slate-900' : 'text-slate-500 line-through'
                         }`}
                       >
                         {trustee.fullName}

@@ -196,7 +196,7 @@ export const ReachPanel: React.FC = () => {
                 {m.fullName ?? m.profileId.slice(0, 8)}
               </span>
               {m.note && <span className="text-xs text-slate-500">{m.note}</span>}
-              <span className="ml-auto font-mono text-xs text-slate-400">
+              <span className="ml-auto font-mono text-xs text-slate-500">
                 {formatDate(m.addedAt, language)}
               </span>
             </li>

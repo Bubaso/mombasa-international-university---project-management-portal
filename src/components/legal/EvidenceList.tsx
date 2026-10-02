@@ -114,7 +114,7 @@ export const EvidenceList: React.FC<{ caseId: string; canWrite: boolean }> = ({
                     <ol className="mt-1 space-y-0.5">
                       {chain.map((link) => (
                         <li key={link.id} className="text-xs text-slate-700">
-                          <span className="font-mono text-slate-400">
+                          <span className="font-mono text-slate-500">
                             {link.handedOverAt.slice(0, 10)}
                           </span>{' '}
                           {link.fromParty} → <span className="font-medium">{link.toParty}</span>

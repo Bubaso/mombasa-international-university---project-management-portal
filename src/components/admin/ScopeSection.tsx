@@ -140,7 +140,7 @@ const ScopeTable: React.FC<{
               <Td>{label(row.targetId)}</Td>
               <Td className="text-slate-500">
                 {row.assignedByName ?? '—'}
-                <span className="ml-1.5 text-slate-400">{row.assignedAt.slice(0, 10)}</span>
+                <span className="ml-1.5 text-slate-500">{row.assignedAt.slice(0, 10)}</span>
               </Td>
               <Td className="text-right">
                 {canManage && (

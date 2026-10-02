@@ -76,7 +76,7 @@ export const ReadinessView: React.FC = () => {
               : 'The three organs and their quorum, the trustee register, the formal resolutions, the declarations.'}
           </p>
         </div>
-        <ArrowUpRight className="h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
+        <ArrowUpRight className="h-4 w-4 shrink-0 text-slate-500" aria-hidden="true" />
       </Link>
     </div>
   );

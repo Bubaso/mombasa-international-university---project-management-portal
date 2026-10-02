@@ -186,7 +186,7 @@ export const ObligationsView: React.FC = () => {
                   <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
                     <Pill className={SOURCE_STYLES[group]}>{sourceLabel(group, language)}</Pill>
                   </h2>
-                  <span className="text-xs text-slate-400">{items.length}</span>
+                  <span className="text-xs text-slate-500">{items.length}</span>
                 </header>
                 <ul className="divide-y divide-slate-100">
                   {items.map((o) => {

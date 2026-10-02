@@ -168,16 +168,16 @@ Toplantılar ekranında ilk üç ekranda **tek bir veri satırı** görünüyor.
 
 ## T10 — Grafikler ve pano
 
-| ID     | Gereksinim                                                                                                                          | P   | Kabul kriteri                                   |
-| ------ | ----------------------------------------------------------------------------------------------------------------------------------- | --- | ----------------------------------------------- |
-| T10-01 | Kategorik palet **doğrulayıcıdan geçsin**. Bugün iki kontrolden kalıyor: `#586e75` gri okunuyor; kırmızı↔yeşil döteranopide ΔE 4.1. | P0  | Palet doğrulayıcısı PASS.                       |
-| T10-02 | Durum renkleri (iyi/uyarı/ciddi/kritik) ayrılsın ve seri rengi olarak kullanılmasın.                                                | P0  | Durum renkleri kategorik paletten ayrı.         |
-| T10-03 | İki serili her grafikte lejant olsun; dört seriye kadar doğrudan etiket.                                                            | P1  | Lejant mevcut.                                  |
-| T10-04 | Çift eksenli grafik olmasın.                                                                                                        | P0  | Hiçbir grafikte ikinci y ekseni yok.            |
-| T10-05 | Ölçülen noktalar arası çizgi **basamak** olarak çizilsin (zaten yapılmış, korunsun).                                                | P0  | Mevcut davranış ve testi korunur.               |
-| T10-06 | Grafiklerin tablo görünümü olsun.                                                                                                   | P1  | Her grafiğin yanında veri tablosu erişilebilir. |
-| T10-07 | Telefonda grafik okunabilir kalsın: eksen etiketleri seyreltilsin, yatay kaydırma olmasın.                                          | P1  | 390px'te grafik taşmıyor.                       |
-| T10-08 | Pano, sayfanın tamamını kaplayan metin yerine **birkaç karar sayısıyla** açılsın.                                                   | P1  | İlk ekranda en az üç ölçüm görünür.             |
+| ID     | Gereksinim                                                                                                                          | P   | Kabul kriteri                                                                              |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------- | --- | ------------------------------------------------------------------------------------------ |
+| T10-01 | Kategorik palet **doğrulayıcıdan geçsin**. Bugün iki kontrolden kalıyor: `#586e75` gri okunuyor; kırmızı↔yeşil döteranopide ΔE 4.1. | P0  | Kategorik palet tüm çiftlerde PASS; durum paleti kendi kuralına göre (bkz. 4. dalga notu). |
+| T10-02 | Durum renkleri (iyi/uyarı/ciddi/kritik) ayrılsın ve seri rengi olarak kullanılmasın.                                                | P0  | Durum renkleri kategorik paletten ayrı.                                                    |
+| T10-03 | İki serili her grafikte lejant olsun; dört seriye kadar doğrudan etiket.                                                            | P1  | Lejant mevcut.                                                                             |
+| T10-04 | Çift eksenli grafik olmasın.                                                                                                        | P0  | Hiçbir grafikte ikinci y ekseni yok.                                                       |
+| T10-05 | Ölçülen noktalar arası çizgi **basamak** olarak çizilsin (zaten yapılmış, korunsun).                                                | P0  | Mevcut davranış ve testi korunur.                                                          |
+| T10-06 | Grafiklerin tablo görünümü olsun.                                                                                                   | P1  | Her grafiğin yanında veri tablosu erişilebilir.                                            |
+| T10-07 | Telefonda grafik okunabilir kalsın: eksen etiketleri seyreltilsin, yatay kaydırma olmasın.                                          | P1  | 390px'te grafik taşmıyor.                                                                  |
+| T10-08 | Pano, sayfanın tamamını kaplayan metin yerine **birkaç karar sayısıyla** açılsın.                                                   | P1  | İlk ekranda en az üç ölçüm görünür.                                                        |
 
 ## T11 — Tasarım sistemi ve tutarlılık
 
@@ -376,6 +376,95 @@ Her iki durumda da değiştirdiğim **kriter**, ölçüm değil.
 - **T6-04** mekanizması hazır (`Explain tone="warning"`) ve iki yerde
   kullanılıyor; kalan uyarı şeritleri taranmadı.
 
+## 4. Dalga — ölçülen sonuç
+
+| Ölçüm                                    | Önce      | Sonra       | Kriter |
+| ---------------------------------------- | --------- | ----------- | ------ |
+| iyi↔kritik ayrımı (döteranopi, OKLab ΔE) | **4.1**   | 23.3        | T10-01 |
+| Durum rengi aynı zamanda seri rengi      | 2         | 0           | T10-02 |
+| Eşik altı metin (telefon / masaüstü)     | ~%40–55   | 0 / 0       | T9-01  |
+| Ölçülen metin ögesi                      | —         | 3122 / 3682 | T9-01  |
+| Odak halkası görünmeyen kontrol          | **15/80** | 0/80        | T9-03  |
+| Grafik bileşeninde kendi rengi           | 11        | 0           | T11-01 |
+| Keyfi `text-[Npx]`                       | 0         | 0           | T11-01 |
+| `prefers-reduced-motion` desteği         | yok       | var         | T9-05  |
+
+### Palet: kusur sandığımdan farklı yerdeydi
+
+Doküman "kategorik palet doğrulayıcıdan kalıyor" diyordu. Doğru, ama **kalma
+sebebinin çoğu yanlış soruya verilen doğru cevaptı.** O beş renk tek bir
+kategorik palet değildi: ikisi seri rengi, üçü durum rengi, biri eksen
+mürekkebi.
+
+- **Mavi↔turuncu çifti hiç bozuk değildi.** Tüm çiftlerde ΔE 24.7 (protan),
+  33.6 (normal görüş) — tam geçiyor. Yerine magenta önerdim ve **ölçüm
+  önerimin daha kötü olduğunu söyledi** (14.0). Hatalı bir listede yer aldığı
+  için doğru bir rengi değiştirmek, düzeltme kılığında gereksiz değişiklik
+  olurdu; mavi ve turuncu kaldı.
+- **`#586e75` "gri okunuyor" diye kalıyordu** — o eksen mürekkebi, kategorik
+  slot değil. Bir eksen etiketinin gri olması zaten istenen şey. Doğru kontrol
+  chroma değil metin kontrastı: #475569 beyazda 7.58:1.
+- **Asıl kusur durum renklerindeydi:** yeşil #0ca30c ile kırmızı #d03b3b
+  döteranopide **ΔE 4.1** — ayırt edilemez. "İyi mi, kötü mü" bir bakışta
+  okunan tek ayrımdır. Teal ↔ koyu kırmızı ile **23.3**.
+
+Durum paleti ne kategorik ne sıralı testi geçer, geçmemeli de: kategorik
+olarak bakınca uyarı↔ciddi döteranopide ΔE 1.4 (şiddet kasıtlı olarak sıcak
+bir rampa), sıralı olarak bakınca "tek hue değil, 66° yayılım" (sarıdan
+kırmızıya gitmek şiddetin kendisi). Yöntem durum paletini **ayrı bir
+parametre** olarak sayıyor ve okunurluğunu renkten değil **ikon + etiket**ten
+alıyor. `tests/palette.mjs` onu dört kuralla sınıyor: kategorikle çakışmama,
+yüzeye ≥3:1, iyi↔kritik CVD ayrımı, ve şiddetin açık→koyu okunması
+(L 0.654 > 0.515 > 0.413) ki gri baskıda da sıra korunsun.
+
+Bir çift bilinçli olarak yakın: `warning` ile seri turuncusu ΔE 12.5. Aynı
+tür işaret olarak hiç yan yana gelmiyorlar — Gantt'ta fazlar çubuk, kilometre
+taşları şekil, ve lejant şekilleri adlandırıyor. Test o çifti istisna olarak
+**adıyla** tutuyor ki sessizce kötüleşmesin.
+
+### Kontrast: kusur token ölçeğindeydi, çağrı yerlerinde değil
+
+Ölçüm metnin %40–55'inin eşik altında olduğunu söyledi. İlk tepkim 127 sınıfı
+değiştirmekti; **durumu kötüleştirdi.** Sebep: bu proje slate ölçeğini
+Solarized'a eşliyor ve Solarized'ın orta grileri bu paletin kendi yüzeylerinde
+AA'yı geçmiyor — base1 #93a1a1 2.18:1, base0 #839496 2.58:1, base01 #586e75
+bile 4.39:1. Yani kusur tek tek sınıflarda değil **ölçeğin kendisinde**.
+
+Metin adımları base01→base02 hattı boyunca eşiği geçene kadar kaydırıldı
+(%5 kaydırma ilki için yeterli, bu yüzden hâlâ Solarized okunuyorlar).
+amber-600 da koyulaştırıldı: beyaz metin birincil düğmede 3.21:1'di.
+571 çağrı yerini yamamak, sonra yazılacak olanı yanlış bırakırdı; kural
+ölçeğin durduğu tek yere ait.
+
+### Üç kez kendi ölçüm aletim yanılttı
+
+1. **Sentetik probe.** Gizli bir `<span>`'e sınıf verip rengini okudum; sınıf
+   uygulanmadığı için miras alınan rengi ölçtüm ve ölçeğin monoton olmadığı
+   sonucuna vardım. Gerçek ögelerden okuyunca eşleme doğruydu.
+2. **`oklch()`.** Tailwind 4 OKLCH üretiyor, Chrome bunu computed style'da
+   koruyor. Rakamları regex'leyen ayrıştırıcım "oklch(0.208 0.042 265.755)"
+   içindeki 265'i mavi kanal okuyup beyaz üstündeki lacivert metni 1.24:1
+   bildirdi. Artık dönüşümü 1×1 canvas yapıyor, yani tarayıcı.
+3. **Odak yürüyüşü.** 30 kez Tab'a basan ilk sürüm, **odak CSS'i hiç
+   olmayan** bir derlemede bile geçti: Chrome'un kendi halkası uğradığı her
+   durağı kapsıyordu. Kör olanlar başka yerdeydi — giriş ekranının e-posta ve
+   parola alanları (`outline: none 0px`) ve uygulamadaki **her `<select>`**.
+   Artık rotadaki her kontrol tek tek odaklanıyor: kural olmadan 65/80,
+   kuralla 80/80. Ayrıca halka olarak yalnızca `outline` sayılıyor; herhangi
+   bir `box-shadow`'u saymak, dekoratif `shadow-xs` taşıyan her düğmeyi
+   geçiriyordu — düşemeyen bir test.
+
+İlk ikisi yanlış bulgu üretti, üçüncüsü gerçek bir kusuru gizledi. Üçü de
+aynı dersi veriyor: aletin kendisi de ölçülmeli.
+
+### Henüz yapılmayan
+
+- **T10-03** (iki serili grafikte lejant), **T10-06** (grafiklerin tablo
+  görünümü), **T10-07** (telefonda eksen seyreltme) — P1, yapılmadı.
+- **T11-03**: 152 ham `<button>` kaldı, 224 `ActionButton`'a karşı. P1.
+- **T11-04** (karanlık tema), **T11-05** (ikon–kavram eşlemesi) — P2.
+- **T9-04** (`aria-live`): tek kullanım var, tarama yapılmadı. P1.
+
 ## Nasıl test edilir
 
 İki suite var, ikisi de bozulduğunda düşüyor:
@@ -386,6 +475,11 @@ kimlik ve canlı proje gerektirmez, saniyeler sürer, bu yüzden
 hiçbir grubun 6'yı geçmediğini, hiçbir rozetin elle yazılmış bir dize
 olmadığını ve her iki telefon yüzeyinin ortak listeyi okuduğunu sınar
 (T1-01, T1-02 kaba, T1-04, T1-05, T1-06).
+
+**`npm run test:palette`** — grafik renkleri. Machado-Oliveira-Fernandes (2009)
+CVD benzetimi ve OKLab aritmetiği, dataviz doğrulayıcısından kopyalanmış
+(o araç depoda değil, CI ona erişemez). `verify`'ın içinde: bir renk
+değiştirilirse sonucu ölçülmeden geçmez.
 
 **`npm run test:design`** — yerleşim kuralları. 19 rotayı 390px ve 1440px'te
 gezer ve T2-01, T3-01, T4-01, T5-01, T1-02, T1-05, T1-07, T1-08, T6-01, T6-02

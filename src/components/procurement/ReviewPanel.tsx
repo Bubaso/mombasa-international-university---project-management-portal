@@ -33,7 +33,7 @@ const Score: React.FC<{ value: number }> = ({ value }) => (
     {[1, 2, 3, 4, 5].map((n) => (
       <Star
         key={n}
-        className={`h-3 w-3 ${n <= value ? 'fill-amber-400 text-amber-500' : 'text-slate-300'}`}
+        className={`h-3 w-3 ${n <= value ? 'fill-amber-400 text-amber-500' : 'text-slate-500'}`}
         aria-hidden="true"
       />
     ))}
@@ -237,7 +237,7 @@ export const ReviewPanel: React.FC = () => {
                       </span>
                     ))}
                   </div>
-                  <p className="mt-0.5 text-xs text-slate-400">
+                  <p className="mt-0.5 text-xs text-slate-500">
                     {[
                       review.reviewedByName,
                       formatDate(review.reviewedAt, language),

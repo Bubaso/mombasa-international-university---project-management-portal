@@ -309,7 +309,7 @@ export const LedgerPanel: React.FC<Props> = ({ canSpend, canAudit }) => {
             <tr key={transaction.id} className="border-t border-slate-100">
               <Td>
                 <span className="font-mono text-xs">{transaction.referenceNo}</span>
-                <span className="block text-xs text-slate-400">
+                <span className="block text-xs text-slate-500">
                   {formatDate(transaction.date, language)}
                 </span>
               </Td>
@@ -322,7 +322,7 @@ export const LedgerPanel: React.FC<Props> = ({ canSpend, canAudit }) => {
               <Td className="text-right font-mono">
                 {fmt(transaction.amount, transaction.currency)}
                 {transaction.currency !== 'KES' && (
-                  <span className="block text-xs text-slate-400">
+                  <span className="block text-xs text-slate-500">
                     {fmt(transaction.amountKes, 'KES')}
                   </span>
                 )}

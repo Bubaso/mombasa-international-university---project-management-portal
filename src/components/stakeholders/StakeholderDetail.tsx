@@ -102,7 +102,7 @@ export const StakeholderDetail: React.FC<Props> = ({
             type="button"
             onClick={onClose}
             aria-label={tr ? 'Kapat' : 'Close'}
-            className="cursor-pointer rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+            className="cursor-pointer rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
           >
             <X className="h-4 w-4" />
           </button>
@@ -184,7 +184,7 @@ export const StakeholderDetail: React.FC<Props> = ({
             <ol className="space-y-1">
               {(history.data ?? []).map((change) => (
                 <li key={change.id} className="flex items-baseline gap-2 text-xs">
-                  <span className="shrink-0 font-mono text-slate-400">
+                  <span className="shrink-0 font-mono text-slate-500">
                     {change.changedAt.slice(0, 10)}
                   </span>
                   <span className="min-w-0 text-slate-700">
@@ -192,7 +192,7 @@ export const StakeholderDetail: React.FC<Props> = ({
                       ? `${stanceLabel(change.fromStance, language)} → ${stanceLabel(change.toStance, language)}`
                       : `${stanceLabel(change.toStance, language)} ${tr ? '(ilk kayıt)' : '(first recorded)'}`}
                     {change.changedByName && (
-                      <span className="ml-1.5 text-slate-400">{change.changedByName}</span>
+                      <span className="ml-1.5 text-slate-500">{change.changedByName}</span>
                     )}
                   </span>
                 </li>
@@ -223,7 +223,7 @@ export const StakeholderDetail: React.FC<Props> = ({
                     <span className="font-medium text-slate-900">
                       {channelLabel(entry.channel, language)}
                     </span>
-                    <span className="font-mono text-slate-400">
+                    <span className="font-mono text-slate-500">
                       {entry.occurredAt.slice(0, 10)}
                     </span>
                   </div>
@@ -305,7 +305,7 @@ export const StakeholderDetail: React.FC<Props> = ({
                         </span>
                       </>
                     )}
-                    <span className="ml-1.5 font-mono text-xs text-slate-400">
+                    <span className="ml-1.5 font-mono text-xs text-slate-500">
                       {edge.strength}/5
                     </span>
                   </li>
@@ -360,7 +360,7 @@ const Detail: React.FC<{ icon: React.ElementType; label: string; value: string |
   value,
 }) => (
   <div className="flex items-baseline gap-1.5">
-    <Icon className="h-3 w-3 shrink-0 translate-y-0.5 text-slate-400" aria-hidden="true" />
+    <Icon className="h-3 w-3 shrink-0 translate-y-0.5 text-slate-500" aria-hidden="true" />
     <dt className="shrink-0 text-slate-500">{label}</dt>
     <dd className="min-w-0 truncate text-slate-800">{value ?? '—'}</dd>
   </div>
@@ -375,10 +375,10 @@ const Block: React.FC<{
   <section>
     <div className="mb-1.5 flex items-baseline justify-between gap-2">
       <h3 className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
-        <Icon className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
+        <Icon className="h-3.5 w-3.5 text-slate-500" aria-hidden="true" />
         {title}
       </h3>
-      {note && <span className="shrink-0 text-xs text-slate-400">{note}</span>}
+      {note && <span className="shrink-0 text-xs text-slate-500">{note}</span>}
     </div>
     {children}
   </section>

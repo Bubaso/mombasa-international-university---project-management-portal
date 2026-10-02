@@ -181,7 +181,7 @@ const ScopeList: React.FC<{
         {items.map((item) => (
           <li key={item.key} className="flex items-baseline justify-between gap-2 text-xs">
             <span className="min-w-0 truncate text-slate-700">{item.label}</span>
-            {item.note && <span className="shrink-0 text-slate-400">{item.note}</span>}
+            {item.note && <span className="shrink-0 text-slate-500">{item.note}</span>}
           </li>
         ))}
       </ul>
