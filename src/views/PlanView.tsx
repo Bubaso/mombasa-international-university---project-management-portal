@@ -13,6 +13,7 @@
  * waiting on what, what did we say six months ago, and how did we get here.
  */
 import React from 'react';
+import { Explain } from '../components/ui/Explain';
 import { GanttChartSquare } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { GanttPanel } from '../components/plan/GanttPanel';
@@ -44,11 +45,11 @@ export const PlanView: React.FC = () => {
             <h1 className="text-lg font-bold text-slate-900">
               {tr ? 'Proje planı ve kilometre taşları' : 'Project plan and milestones'}
             </h1>
-            <p className="max-w-2xl text-sm text-slate-500">
+            <Explain id="plan.overview">
               {tr
                 ? 'Planın omurgası, ama buradaki hiçbir şey elle işaretlenmiyor: bir taş kasaya belge düştüğünde başarılmış sayılır, bir faz bitiş tarihini geçmiş açık blokları varsa süresini aşmış sayılır. Plan kayıtları okur.'
                 : 'The backbone of the plan, though nothing on it is ticked by hand: a milestone counts as achieved when its document reaches the vault, a phase as overrun when work is still open past its end date. The plan reads the registers.'}
-            </p>
+            </Explain>
           </div>
         </div>
         <DataFreshness queries={[milestones]} />

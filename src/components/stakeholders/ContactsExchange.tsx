@@ -19,7 +19,8 @@
  * "influence 3" would redraw the project's map without anybody drawing it.
  */
 import React, { useMemo, useRef, useState } from 'react';
-import { ArrowDownToLine, ArrowUpFromLine, Info, TriangleAlert, Users } from 'lucide-react';
+import { Explain } from '../ui/Explain';
+import { ArrowDownToLine, ArrowUpFromLine, Info, Users } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useCreateStakeholder } from '../../api/stakeholderHooks';
 import { parseContacts, toCsv, toVCard } from '../../lib/contacts';
@@ -109,11 +110,11 @@ export const ContactsExchange: React.FC<{ people: Stakeholder[] }> = ({ people }
           <h2 className="text-base font-bold text-slate-900">
             {tr ? 'Kütüğü dışa ve içe aktar' : 'Take the register out, or bring contacts in'}
           </h2>
-          <p className="max-w-2xl text-xs text-slate-500">
+          <Explain id="contacts.formats">
             {tr
               ? 'vCard telefon rehberi için, CSV hesap tablosu için. İçe aktarmada hiçbir şey, dosyanın ne yapacağını görmeden yazılmaz.'
               : 'vCard for an address book, CSV for a spreadsheet. On the way in, nothing is written before somebody has seen what the file would do.'}
-          </p>
+          </Explain>
         </div>
       </header>
 
@@ -168,12 +169,11 @@ export const ContactsExchange: React.FC<{ people: Stakeholder[] }> = ({ people }
             </Pill>
           )}
         </div>
-        <p className="mt-2 flex items-start gap-1.5 text-xs leading-relaxed text-amber-800">
-          <TriangleAlert className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
+        <Explain id="contacts.privacy" tone="warning">
           {tr
             ? 'vCard yalnızca iletişim bilgisi taşır; tutum, nüfuz, ilgi ve notlar portalda kalır — bu bilgiler kişinin kendisi hakkındaki değerlendirmemizdir ve bir telefon rehberine girmez. CSV’ye koymayı seçerseniz o değerlendirme dosyayla birlikte portalın erişim denetiminin dışına çıkar.'
             : 'A vCard carries contact facts only: stance, influence, interest and notes stay in the portal, because they are our reading of that person and an address book is not the place for them. Choosing to put them in the CSV takes them outside the portal’s access control with the file.'}
-        </p>
+        </Explain>
       </div>
 
       {/* --- in --- */}
@@ -196,11 +196,11 @@ export const ContactsExchange: React.FC<{ people: Stakeholder[] }> = ({ people }
           />
           {fileName && <span className="font-mono text-xs text-slate-500">{fileName}</span>}
         </div>
-        <p className="mt-1 text-xs text-slate-500">
+        <Explain id="contacts.columns">
           {tr
             ? 'Beklenen kolonlar: full_name (zorunlu), title, organization, category, email, phone, whatsapp, location, preferred_language, interest_topic.'
             : 'Expected columns: full_name (required), title, organization, category, email, phone, whatsapp, location, preferred_language, interest_topic.'}
-        </p>
+        </Explain>
 
         {parsed && (
           <div className="mt-2 space-y-1.5">

@@ -35,6 +35,7 @@ import {
   SiteToday,
 } from '../components/dashboard/RolePanels';
 import { DataFreshness } from '../components/DataFreshness';
+import { FirstLook } from '../components/dashboard/FirstLook';
 import { fetchCalendar } from '../api/calendar';
 import { roleLabel } from '../lib/roles';
 import type { UserRole } from '../types';
@@ -141,8 +142,14 @@ export const DashboardView: React.FC = () => {
         <DataFreshness queries={[calendar]} />
       </header>
 
-      {/* Above everything, for everybody: the only part of the portal that
-          asks somebody for something instead of describing a state (M12-02). */}
+      {/* Three figures before any prose, so the screen opens with the state
+          of the project (T10-08). Measured, the first screenful on a phone
+          carried two numbers, both at 12px. */}
+      <FirstLook entries={calendar.data} />
+
+      {/* Above everything else, for everybody: the only part of the portal
+          that asks somebody for something instead of describing a state
+          (M12-02). */}
       <AgendaPanel limit={6} compact />
 
       {wide.map((name) => {

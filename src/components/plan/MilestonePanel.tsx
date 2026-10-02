@@ -15,6 +15,7 @@
  *   abandoned → a reason
  */
 import React, { useState } from 'react';
+import { Explain } from '../ui/Explain';
 import { Bilingual } from '../ui/Bilingual';
 import { CalendarClock, CircleCheck, CircleX, Flag, Plus, TriangleAlert } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
@@ -126,11 +127,11 @@ export const MilestonePanel: React.FC = () => {
             <h2 className="text-base font-bold text-slate-900">
               {tr ? 'Kilometre taşları' : 'Milestones'}
             </h2>
-            <p className="text-xs text-slate-500">
+            <Explain id="plan.milestones">
               {tr
                 ? 'Hedef tarih ve gerçekleşen tarih iki ayrı kolon; gecikme ikisinin çıkarması. Tek tarih tutan bir sistem, çatının doksan gün geciktiğini söyleyemez.'
                 : 'The target and the outcome are two columns, and the slip is the subtraction. A system that keeps one date cannot tell you the roof was ninety days late.'}
-            </p>
+            </Explain>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">

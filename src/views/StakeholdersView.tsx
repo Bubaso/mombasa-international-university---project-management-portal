@@ -102,8 +102,6 @@ export const StakeholdersView: React.FC = () => {
 
       <AttentionStrip onOpen={setSelectedId} />
 
-      <ContactsExchange people={rows} />
-
       {adding && (
         <AddStakeholderForm
           organizations={(organizations.data ?? []).map((o) => ({ id: o.id, name: o.name }))}
@@ -249,6 +247,14 @@ export const StakeholdersView: React.FC = () => {
           />
         )}
       </div>
+
+      {/* Taking contacts out, below the register rather than above it.
+          It used to sit between the attention strip and the register, and on
+          a phone that put the first stakeholder at 1038px: three screenfuls
+          of export guidance before a single name. Somebody comes to this
+          screen to read the register; exporting it is something they do after
+          finding what they were looking for. */}
+      <ContactsExchange people={rows} />
     </div>
   );
 };

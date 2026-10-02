@@ -20,7 +20,7 @@
  */
 import { chromium } from 'playwright';
 import { spawn } from 'node:child_process';
-import { existsSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { setTimeout as sleep } from 'node:timers/promises';
 
 const LABEL = process.argv[2] ?? 'design-measurement';
@@ -278,6 +278,52 @@ const PROBE = () => {
     ),
   ];
 
+  // ---- what the first screenful is spent on (T6-01, T6-04, T10-08) ----
+  const VH = window.innerHeight;
+  const mainTop = main ? main.getBoundingClientRect().top : 0;
+
+  /** Every text-bearing element, so the caller can sort data from prose. */
+  const texts = [];
+  if (main) {
+    for (const el of main.querySelectorAll('p, td, li, h1, h2, h3, h4, span, div')) {
+      if (!visible(el)) continue;
+      const own = Array.from(el.childNodes)
+        .filter((n) => n.nodeType === 3)
+        .map((n) => n.textContent)
+        .join('')
+        .replace(/\s+/g, ' ')
+        .trim();
+      if (own.length < 25) continue;
+      const b = el.getBoundingClientRect();
+      texts.push({ y: Math.round(b.top - mainTop), h: Math.round(b.height), text: own });
+    }
+    texts.sort((a, b) => a.y - b.y);
+  }
+
+  /** Rows actually on screen: a route with none cannot show one. */
+  const registerRows = main
+    ? Array.from(main.querySelectorAll('table.register tbody tr')).filter(visible).length
+    : 0;
+
+  /** Collapsed explanations, and whether each can be opened. */
+  const explains = main
+    ? Array.from(main.querySelectorAll('[data-explain]'))
+        .filter(visible)
+        .map((el) => ({
+          id: el.getAttribute('data-explain'),
+          open: el.getAttribute('data-open') === 'yes',
+          h: Math.round(el.getBoundingClientRect().height),
+          hasControl: !!el.querySelector('button[aria-expanded]'),
+        }))
+    : [];
+
+  /** The dashboard's opening figures. */
+  const firstLook = main
+    ? Array.from(main.querySelectorAll('[data-first-look] button'))
+        .filter(visible)
+        .filter((el) => el.getBoundingClientRect().top - mainTop < VH).length
+    : 0;
+
   return {
     smallText,
     smallTargets,
@@ -288,6 +334,11 @@ const PROBE = () => {
     navLabels,
     strips,
     reachable,
+    texts,
+    registerRows,
+    explains,
+    firstLook,
+    viewportHeight: VH,
   };
 };
 
@@ -342,6 +393,32 @@ if (!existsSync(new URL('../dist/index.html', import.meta.url))) {
   console.error('No dist/ to measure. Run `npm run build` first.');
   process.exit(1);
 }
+
+/**
+ * Every string the application was built with.
+ *
+ * This is how explanation is told apart from data, and it is not a nicety:
+ * the first version of this measurement counted any paragraph over ninety
+ * characters as prose, which on the plan screen meant counting the chronology
+ * — "Signed by Mr. Mwaeli, Minister of Education…" — as something to hide.
+ * Acting on that number would have buried the records the screen exists for.
+ *
+ * An explanation is written into the source, so it is in the bundle. A record
+ * arrives from the project at runtime, so it is not. Nothing else about the
+ * two is reliably different.
+ */
+const BUNDLE = readdirSync(new URL('../dist/assets', import.meta.url))
+  .filter((f) => f.endsWith('.js'))
+  .map((f) => readFileSync(new URL(`../dist/assets/${f}`, import.meta.url), 'utf8'))
+  .join('\n');
+
+/** Was this sentence written into the application, or read from the project? */
+const isExplanation = (text) => {
+  // A middle slice, because the DOM collapses whitespace and may join a
+  // bilingual pair that the source keeps apart.
+  const probe = text.replace(/\s+/g, ' ').trim().slice(10, 50);
+  return probe.length > 20 && BUNDLE.includes(probe);
+};
 
 await refuseAStrangerOnThePort(BASE);
 
@@ -404,6 +481,26 @@ try {
         .join(', ');
       console.log(`  ${w.name} ${route.padEnd(15)} ${flag || 'clean'}`);
     }
+    // T6-02, by doing it rather than by inspecting classes: open one
+    // explanation and see that more text is there afterwards. A collapsed
+    // paragraph that cannot be opened would pass every height check in this
+    // file and still have lost what it was hiding.
+    if (w.mobile) {
+      await page.goto(BASE + '/plan', { waitUntil: 'domcontentloaded' });
+      await page.waitForLoadState('networkidle', { timeout: 20000 }).catch(() => {});
+      await sleep(700);
+      const block = page.locator('[data-explain]').first();
+      if ((await block.count()) > 0) {
+        const before = (await block.innerText()).length;
+        const beforeH = (await block.boundingBox())?.height ?? 0;
+        await block.locator('button[aria-expanded]').click();
+        await sleep(350);
+        const after = (await block.innerText()).length;
+        const afterH = (await block.boundingBox())?.height ?? 0;
+        report.opened = { before, after, beforeH: Math.round(beforeH), afterH: Math.round(afterH) };
+      }
+    }
+
     // What a phone can reach (T1-05). The sheet has to be open for its links
     // to be in the document, so it is opened deliberately rather than hoped
     // for: six routes used to be in neither this sheet nor the bottom bar,
@@ -601,6 +698,127 @@ if (report.menu) {
   );
 } else {
   check(false, 'T1-05 could not be measured: the phone menu never opened');
+}
+
+// ---------------------------------------------------------------------------
+// T6 — the records, not the reasoning, are what a screen opens with
+// ---------------------------------------------------------------------------
+//
+// Two amendments to the requirements as written, both forced by measurement
+// and both recorded in docs/TASARIM-GEREKSINIMLERI.md:
+//
+//   T6-01 asked for a data row in the first screenful on every route. On a
+//   route whose registers are empty there is no row to show, and the only way
+//   to make one appear sooner would be to hide the empty-state sentences
+//   saying WHY it is empty — which T5-05 exists to protect. So the rule
+//   applies where there is data, and a route with none is held to the other
+//   half of the same intent: the first screenful must say what is missing.
+//
+//   T6-03 asked for an unread explanation to default to open. That would put
+//   the data back off the screen in any browser that cannot keep a
+//   preference — a private window, cleared site data — so collapsed is the
+//   default and storage remembers only what a reader chose to keep open.
+//   Nothing is lost: the full text is one tap away either way.
+const phoneRoutes = Object.entries(report.widths.phone ?? {});
+const withData = phoneRoutes.filter(([, m]) => m.registerRows > 0);
+
+/** The first thing on this route that came from the project, not the source. */
+const firstDataY = (m) => {
+  for (const t of m.texts) if (!isExplanation(t.text)) return t.y;
+  return null;
+};
+/** Does the opening screen say what is missing? */
+const saysWhatIsMissing = (m) =>
+  m.texts.some((t) => t.y < m.viewportHeight && isExplanation(t.text) && t.text.length > 40);
+
+const lateData = withData.filter(([, m]) => {
+  const y = firstDataY(m);
+  return y === null || y >= m.viewportHeight;
+});
+check(
+  lateData.length === 0,
+  'T6-01 every route with register rows shows one in the first screenful',
+  lateData.map(([r, m]) => `${r} @${firstDataY(m) ?? 'none'}px`).join(', ') ||
+    `${withData.length} of ${phoneRoutes.length} routes have rows on load today`,
+);
+
+// `registerRows` counts rows in a register table, which is not the same as
+// "has data": the dashboard's figures, the legal case strip and the plan's
+// chronology are all records in another shape. So the guarantee that holds
+// for EVERY route is the weaker and more useful one — the first screenful is
+// never blank and never pure preamble. It either shows something from the
+// project or says what is missing.
+const openingBlind = phoneRoutes.filter(([, m]) => {
+  const y = firstDataY(m);
+  if (y !== null && y < m.viewportHeight) return false; // opens on data
+  return !saysWhatIsMissing(m); // otherwise it must say why not
+});
+check(
+  openingBlind.length === 0,
+  'T6-01 no route opens on neither data nor an explanation of its absence',
+  openingBlind.map(([r]) => r).join(', ') || `${phoneRoutes.length} routes`,
+);
+
+const onData = phoneRoutes.filter(([, m]) => {
+  const y = firstDataY(m);
+  return y !== null && y < m.viewportHeight;
+});
+console.log(
+  `     (${onData.length}/${phoneRoutes.length} routes open on records; the rest open on a ` +
+    `sentence saying what is not recorded yet)`,
+);
+
+// T6-01's mechanism: a collapsed explanation is one line. If this slips, the
+// criterion above starts failing for a reason nobody can see in the numbers.
+// Two lines of slack, because a long first word can wrap the control.
+const fatExplains = phoneRoutes.flatMap(([route, m]) =>
+  m.explains.filter((e) => !e.open && e.h > 56).map((e) => `${route} ${e.id} ${e.h}px`),
+);
+const allExplains = phoneRoutes.flatMap(([, m]) => m.explains);
+check(
+  allExplains.length > 0,
+  'T6-01 the explanations are actually collapsible',
+  `${allExplains.length} on screen across ${phoneRoutes.length} routes`,
+);
+check(
+  fatExplains.length === 0,
+  'T6-01 and a collapsed one takes a single line',
+  fatExplains.slice(0, 4).join(', '),
+);
+
+// T6-02: moved, not deleted — every one of them can be opened.
+const mute = allExplains.filter((e) => !e.hasControl);
+check(
+  mute.length === 0,
+  'T6-02 each one carries the control that opens it',
+  mute.map((e) => e.id).join(', '),
+);
+
+if (report.opened) {
+  const o = report.opened;
+  // Height, not character count. `line-clamp` does not remove the words from
+  // the document, it stops painting them — so innerText reads the same open
+  // or closed, and the first version of this check failed on 216 → 216 while
+  // the box went 44px → 114px. That the text is always in the DOM is worth
+  // knowing rather than working around: a collapsed explanation is still
+  // there for a screen reader and for the browser's own find.
+  check(
+    o.afterH > o.beforeH,
+    'T6-02 and opening one really does show more of it',
+    `${o.beforeH}px → ${o.afterH}px (text was in the document all along: ${o.after} chars)`,
+  );
+} else {
+  check(false, 'T6-02 could not be measured: no explanation was found to open');
+}
+
+// T10-08: the dashboard opens on figures rather than on a paragraph.
+const dash = report.widths.phone?.['/'];
+if (dash) {
+  check(
+    dash.firstLook >= 3,
+    'T10-08 the dashboard opens with at least three figures',
+    `${dash.firstLook} in the first screenful`,
+  );
 }
 
 console.log(

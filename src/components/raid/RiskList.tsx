@@ -12,6 +12,7 @@
  * they do the register says so rather than quietly carrying on.
  */
 import React, { useState } from 'react';
+import { Explain } from '../ui/Explain';
 import { Bilingual } from '../ui/Bilingual';
 import { ArrowUpRight, Bell, ChevronDown, ChevronUp, Plus, ShieldAlert } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
@@ -75,16 +76,18 @@ export const RiskList: React.FC<Props> = ({ canKeep, canAcknowledge }) => {
 
       {withoutTrigger > 0 && (
         <div className="mb-3 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2">
-          <p className="text-xs leading-relaxed text-amber-900">
-            <span className="font-semibold">
-              {tr
-                ? `${withoutTrigger} riskin tetikleyicisi yazılmamış.`
-                : `${withoutTrigger} live risks have no trigger written down.`}
-            </span>{' '}
+          {/* The count is a reading of the register, so it stays on screen.
+              Only the sentence explaining why it matters collapses. */}
+          <p className="text-sm font-semibold text-amber-900">
+            {tr
+              ? `${withoutTrigger} riskin tetikleyicisi yazılmamış.`
+              : `${withoutTrigger} live risks have no trigger written down.`}
+          </p>
+          <Explain id="risks.triggers" tone="warning">
             {tr
               ? 'Tetikleyicisi olmayan bir risk izlenemez: gerçekleşip gerçekleşmediğini kimse söyleyemez. Yönetilen değil, endişe edilen bir şeydir.'
               : 'A risk with no trigger cannot be watched — nobody can tell you whether it is happening. It is something worried about rather than managed.'}
-          </p>
+          </Explain>
         </div>
       )}
 

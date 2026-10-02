@@ -25,6 +25,7 @@
  * written next to both.
  */
 import React, { useMemo, useState } from 'react';
+import { Explain } from '../ui/Explain';
 import { GanttChartSquare, Info } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { usePhases, usePlanMilestones } from '../../api/planHooks';
@@ -140,11 +141,11 @@ export const GanttPanel: React.FC = () => {
             <h2 className="text-base font-bold text-slate-900">
               {tr ? 'Zaman çizgisi' : 'The plan on one timeline'}
             </h2>
-            <p className="max-w-2xl text-xs text-slate-500">
+            <Explain id="plan.gantt">
               {tr
                 ? 'Fazlar çubuk, çünkü bir fazın başlangıcı ve bitişi kayıtlı. Kilometre taşları hedef tarihine konmuş birer işaret — bir kilometre taşı bir nokta, bir süre değil, ve kayıtta süresi yok. Ulaşılmış olanın hedefiyle arasındaki çizgi gecikmenin kendisi; ölçülmüş, göze hoş gelsin diye çizilmemiş.'
                 : 'Phases are bars, because a phase has a start and an end on the record. A milestone is a mark at its target date — it is a point, not a span, and the register holds no duration for it. The line to an achieved date is the slip itself, measured rather than drawn to look right.'}
-            </p>
+            </Explain>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">

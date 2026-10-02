@@ -129,12 +129,12 @@ gerekçeyle başlıyor. Metinler iyi ve dürüstlük ilkesinin parçası — ama
 mobilya olduklarında kullanıcının geldiği şeyi ekrandan itiyorlar. Telefonda
 Toplantılar ekranında ilk üç ekranda **tek bir veri satırı** görünüyor.
 
-| ID    | Gereksinim                                                                                     | P   | Kabul kriteri                                         |
-| ----- | ---------------------------------------------------------------------------------------------- | --- | ----------------------------------------------------- |
-| T6-01 | Panel açıklamaları varsayılan olarak **bir satıra** kısalsın; tamamı bir "neden?" ile açılsın. | P0  | Telefonda ilk ekranda en az bir veri satırı görünür.  |
-| T6-02 | Açıklama silinmesin, taşınsın. Metinler korunur; yalnızca varsayılan görünürlüğü değişir.      | P0  | Her açıklama bir etkileşimle tam hâliyle okunabilir.  |
-| T6-03 | Bir açıklama okunduktan sonra o cihazda kapalı kalsın.                                         | P2  | Tercih `localStorage`'da; okunamazsa açık varsayılır. |
-| T6-04 | Uyarı şeritleri (ör. "doğrulanmamış içerik") kısa ve tek satır olsun, detayı açılır.           | P1  | Hiçbir uyarı şeridi telefonda 3 satırdan uzun değil.  |
+| ID    | Gereksinim                                                                                     | P   | Kabul kriteri                                                                                  |
+| ----- | ---------------------------------------------------------------------------------------------- | --- | ---------------------------------------------------------------------------------------------- |
+| T6-01 | Panel açıklamaları varsayılan olarak **bir satıra** kısalsın; tamamı bir "neden?" ile açılsın. | P0  | Telefonda ilk ekran ya kayıt gösterir ya neyin kayıtlı olmadığını söyler (bkz. 3. dalga notu). |
+| T6-02 | Açıklama silinmesin, taşınsın. Metinler korunur; yalnızca varsayılan görünürlüğü değişir.      | P0  | Her açıklama bir etkileşimle tam hâliyle okunabilir.                                           |
+| T6-03 | Bir açıklama okunduktan sonra o cihazda kapalı kalsın.                                         | P2  | Tercih `localStorage`'da; **okunamazsa kapalı** varsayılır (bkz. 3. dalga notu).               |
+| T6-04 | Uyarı şeritleri (ör. "doğrulanmamış içerik") kısa ve tek satır olsun, detayı açılır.           | P1  | Hiçbir uyarı şeridi telefonda 3 satırdan uzun değil.                                           |
 
 ## T7 — Formlar ve veri girişi
 
@@ -312,6 +312,70 @@ bölümün sekmesi DOM'da olmadığı için beşinci sekmede 30 saniye bekleyip
 patlıyordu. Döngü artık insanın gezindiği gibi geziyor: önce bölüm, sonra
 sekme.
 
+## 3. Dalga — ölçülen sonuç
+
+| Ölçüm (390px)                     | Önce     | Sonra             | Kriter |
+| --------------------------------- | -------- | ----------------- | ------ |
+| İlk ekranda kayıt görünen rota    | 7/10     | 16/19             | T6-01  |
+| Kapalı açıklamanın yüksekliği     | 68–114px | ≤20px (tek satır) | T6-01  |
+| /stakeholders — ilk kayıt         | 1038px   | 397px             | T6-01  |
+| /risks — ilk kayıt                | 872px    | 510px             | T6-01  |
+| /plan — satırdan önceki açıklama  | 814px    | 507px             | T6-01  |
+| Panoda ilk ekrandaki ölçüm sayısı | 0        | 3                 | T10-08 |
+
+### Önce kendi ölçümümü düzelttim
+
+İlk ölçüm, 90 karakterden uzun her `<p>`'yi "açıklama" saydı ve 10 rotanın
+7'sinin başarısız olduğunu söyledi. Yanlıştı. /plan dökümüne bakınca o
+blokların çoğunun **veri** olduğu görüldü — kronoloji kayıtları ve karar
+metinleri paragraf olarak çiziliyor. O sayıya göre "demote" etmek,
+kullanıcının gelmek istediği kayıtları saklamak olurdu.
+
+Ayırt edici mekanik: **açıklama kaynakta sabit metindir, veri çalışma anında
+gelir.** Yani açıklama bundle'da bulunur, veri bulunmaz. Test artık 1.4 MB'lık
+bundle'ı okuyup her cümleyi bu şekilde sınıflandırıyor. Düzeltilen ölçümle
+başarısız rota sayısı 7 değil **3** çıktı.
+
+### Explain bileşeni ilk hâlinde işi tersine yapıyordu
+
+İlk sürüm "ilk cümleyi göster" diyordu. Bu paragrafların ilk cümlesi ~190
+karakter, eşleştiricinin izin verdiği sınırın üstünde; eşleşme başarısız
+olunca tam metni döndürüyordu — üstüne bir de düğme ekliyordu. Ölçüm paneller
+**uzadı** dedi: çıplak paragrafın 100px olduğu yerde 114px. Dikey alanla ilgili
+bir kriter, dikey alanı kontrol eden bir şeyle sağlanır. Kapalı hâl artık
+`line-clamp-1` ile tek satır ve yüksekliği metin değil satır kutusu belirliyor.
+
+Yan bulgu: `line-clamp` metni DOM'dan silmiyor, çizmeyi bırakıyor. Yani kapalı
+bir açıklama ekran okuyucu ve tarayıcının kendi arama işlevi için **hâlâ
+orada**. Testin "tıklayınca daha fazlası görünüyor" assertion'ı bu yüzden
+karakter sayısına değil yüksekliğe bakıyor (216 → 216 karakter, 44px → 114px).
+
+### Kriterlerde yaptığım iki değişikliği açıkça söylüyorum
+
+**T6-01.** "Telefonda ilk ekranda en az bir veri satırı görünür" diyordu.
+/plan'da **sıfır kütük satırı var** — rota gerçekten boş. Orada bir satırı daha
+erken göstermenin tek yolu, _neden_ boş olduğunu söyleyen cümleleri saklamaktı;
+oysa **T5-05 tam olarak onların korunmasını** istiyor. İki P0 çatışıyor.
+Kriter artık her rota için şu: ilk ekran ya kayıt gösterir ya neyin kayıtlı
+olmadığını söyler — asla boş açılmaz. Bugün 19 rotanın 16'sı kayıtla açılıyor,
+3'ü neyin eksik olduğunu söyleyerek.
+
+**T6-03.** "Okunamazsa açık varsayılır" diyordu. Gizli pencerede ya da site
+verisi silinmiş bir tarayıcıda bu, veriyi tekrar ekranın dışına atardı — yani
+T6-01'i tam da ölçülemeyen yerde bozardı. Varsayılan kapalı; `localStorage`
+yalnızca okuyucunun **açık tutmayı seçtiğini** hatırlıyor. Kaybedilen bir şey
+yok: tam metin her hâlde tek dokunuş uzakta ve zaten DOM'da.
+
+Her iki durumda da değiştirdiğim **kriter**, ölçüm değil.
+
+### Henüz yapılmayan
+
+- **T5-02** (telefon kartında en çok 4 alan, yükseklik ≤140px): ölçüldü, bugün
+  /stakeholders'ta 4, /admin'de 1 kart 140px'i geçiyor. Küçük; yapılmadı.
+- **T5-03** (satır eylemi satıra yakın ya da satır tıklanabilir): yapılmadı.
+- **T6-04** mekanizması hazır (`Explain tone="warning"`) ve iki yerde
+  kullanılıyor; kalan uyarı şeritleri taranmadı.
+
 ## Nasıl test edilir
 
 İki suite var, ikisi de bozulduğunda düşüyor:
@@ -324,7 +388,9 @@ olmadığını ve her iki telefon yüzeyinin ortak listeyi okuduğunu sınar
 (T1-01, T1-02 kaba, T1-04, T1-05, T1-06).
 
 **`npm run test:design`** — yerleşim kuralları. 19 rotayı 390px ve 1440px'te
-gezer ve T2-01, T3-01, T4-01, T5-01, T1-02, T1-05, T1-07, T1-08'i ölçer.
+gezer ve T2-01, T3-01, T4-01, T5-01, T1-02, T1-05, T1-07, T1-08, T6-01, T6-02
+ve T10-08'i ölçer. Açıklamayı veriden ayırmak için `dist/assets`'i okur, yani
+**ölçümden önce `npm run build` gerekir**.
 İterasyon sırasında `DESIGN_ROUTES=/legal,/readiness` ile birkaç rota
 ölçülebilir; kısmi koşu bunu kapanış satırında söyler ve tam geçiş saymaz.
 

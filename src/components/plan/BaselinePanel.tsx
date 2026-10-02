@@ -16,6 +16,7 @@
  * second. This one keeps both and shows them in adjacent columns.
  */
 import React, { useState } from 'react';
+import { Explain } from '../ui/Explain';
 import { Bilingual } from '../ui/Bilingual';
 import { CameraOff, History, Plus } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
@@ -96,11 +97,11 @@ export const BaselinePanel: React.FC = () => {
             <h2 className="text-base font-bold text-slate-900">
               {tr ? 'Temel plan ve sapma' : 'Baseline and variance'}
             </h2>
-            <p className="text-xs text-slate-500">
+            <Explain id="plan.baseline">
               {tr
                 ? '“Altı ay önce ne demiştik?” — tarihin ne kadar ertelendiği ile işin ne kadar geciktiği iki ayrı kolon. Hedefini dört kez erteleyip “zamanında” diyen bir proje tam olarak bu ikisinin karıştırılmasından yararlanıyor.'
                 : '“What did we say six months ago?” How far the date was pushed and how late the thing was are separate columns. A project that moves its target four times and reports on time is exploiting the conflation of the two.'}
-            </p>
+            </Explain>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">

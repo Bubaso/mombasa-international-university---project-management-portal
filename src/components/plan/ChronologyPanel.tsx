@@ -13,6 +13,7 @@
  * day the portal does not know is how an invention becomes a fact.
  */
 import React, { useState } from 'react';
+import { Explain } from '../ui/Explain';
 import { Bilingual } from '../ui/Bilingual';
 import { BookMarked, FileCheck2, Plus, Quote } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -111,11 +112,11 @@ export const ChronologyPanel: React.FC = () => {
             <h2 className="text-base font-bold text-slate-900">
               {tr ? 'Proje kronolojisi' : 'Project chronology'}
             </h2>
-            <p className="text-xs text-slate-500">
+            <Explain id="plan.chronology">
               {tr
                 ? 'Tek zaman çizelgesi: kütüklerin görmediği yıllar elle, gerisi kütüklerden. Her olay kaynağına bağlı — bu hem kurumsal hafıza hem hukukî delil olduğu için.'
                 : 'One time line: the years the registers never saw are hand-recorded, the rest come from the registers. Every event names its source, because this is legal evidence as well as memory.'}
-            </p>
+            </Explain>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">

@@ -19,6 +19,7 @@
  *     of them breaks.
  */
 import React, { useState } from 'react';
+import { Explain } from '../components/ui/Explain';
 import {
   AlertTriangle,
   GitBranch,
@@ -67,24 +68,30 @@ export const RisksView: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4">
       <header className="flex items-start gap-2.5">
         <TriangleAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" aria-hidden="true" />
         <div>
           <h1 className="text-lg font-bold text-slate-900">
             {tr ? 'Risk, Sorun, Varsayım, Bağımlılık' : 'Risk, Issue, Assumption, Dependency'}
           </h1>
-          <p className="max-w-2xl text-sm text-slate-500">
+          <Explain id="risks.overview">
             {tr
               ? 'Kafadaki risk, yönetilen risk değildir. Skor iki sayıdan hesaplanır, her hareketi kayda geçer, ve eşiği geçtiğinde bu bir olay olarak yazılır.'
               : 'A risk in somebody’s head is not a managed risk. The score is computed from two numbers, every movement is recorded, and crossing the line is written down as an event.'}
-          </p>
+          </Explain>
         </div>
       </header>
 
-      {/* The matrix stays above the tabs. It is the thing people argue with,
-          and burying it behind a tab would make it a report. */}
-      <RiskMatrix />
+      {/* The matrix is the thing people argue with, so it is not behind a tab:
+          that would make it a report. On a desktop it keeps its place above
+          the registers. On a phone it goes below them — measured, it put the
+          first risk at 872px, just past an 844px screen, so the register a
+          reader came for was never on the first screenful. Where there is
+          room the matrix leads; where there is not, the records do. */}
+      <div className="order-last md:order-none">
+        <RiskMatrix />
+      </div>
 
       <div className="flex flex-wrap gap-1.5">
         {TABS.map(({ key, icon: Icon, label }) => (

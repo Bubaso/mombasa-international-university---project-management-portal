@@ -12,6 +12,7 @@
  * change a status.
  */
 import React from 'react';
+import { Explain } from '../ui/Explain';
 import { Layers, TriangleAlert } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { usePhases } from '../../api/planHooks';
@@ -31,11 +32,11 @@ export const PhasePanel: React.FC = () => {
         <Layers className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" aria-hidden="true" />
         <div>
           <h2 className="text-base font-bold text-slate-900">{tr ? 'Faz yapısı' : 'Phases'}</h2>
-          <p className="text-xs text-slate-500">
+          <Explain id="plan.phases">
             {tr
               ? 'Kapsam yazıyla, içerik sayımla. Kapsamı “A1 ve B2 blokları” diyen ama tek blok sayan bir faz, artık güncellenmeyen bir fazdır.'
               : 'The scope in prose, the contents by count. A phase whose scope says “blocks A1 and B2” and whose count says one is a phase nobody is maintaining.'}
-          </p>
+          </Explain>
         </div>
       </header>
 

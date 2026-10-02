@@ -18,6 +18,7 @@
  * will clear and can tell exactly when the second will.
  */
 import React, { useMemo } from 'react';
+import { Explain } from '../ui/Explain';
 import { ArrowRight, CircleHelp, GitFork } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useDependencies } from '../../api/raidHooks';
@@ -159,11 +160,11 @@ export const ChainPanel: React.FC = () => {
           <h2 className="text-base font-bold text-slate-900">
             {tr ? 'Bağımlılık zinciri' : 'Dependency chain'}
           </h2>
-          <p className="text-xs text-slate-500">
+          <Explain id="plan.chain">
             {tr
               ? 'Hukukî karar → inşaat → akreditasyon → öğrenci alımı. Her halkanın sahibi başka ve çoğu yalnızca kendi ucunu görüyor: avukat kararın beklediğini bilir, alım tarihinin ona bağlı olduğunu bilmez.'
               : 'A ruling, then the works, then accreditation, then an intake. Each link has a different owner and most see only their own end: the advocate knows the ruling is pending and not that the intake waits on it.'}
-          </p>
+          </Explain>
         </div>
       </header>
 
