@@ -34,11 +34,11 @@ export const RiskMatrix: React.FC = () => {
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-4">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="flex items-center gap-1.5 text-xs font-bold text-slate-900">
+        <h2 className="flex items-center gap-1.5 text-sm font-bold text-slate-900">
           <Grid3x3 className="h-4 w-4 text-amber-600" aria-hidden="true" />
           {tr ? 'Risk matrisi' : 'Risk matrix'}
         </h2>
-        <div className="flex flex-wrap items-center gap-2 text-[10px]">
+        <div className="flex flex-wrap items-center gap-2 text-xs">
           {(['low', 'medium', 'high'] as const).map((key) => (
             <span key={key} className="flex items-center gap-1">
               <span
@@ -53,7 +53,7 @@ export const RiskMatrix: React.FC = () => {
       </div>
 
       <div className="-mx-4 overflow-x-auto px-4">
-        <table className="text-center text-[11px]">
+        <table className="text-center text-xs">
           <caption className="sr-only">
             {tr ? 'Olasılığa ve etkiye göre açık riskler' : 'Open risks by likelihood and impact'}
           </caption>
@@ -99,7 +99,7 @@ export const RiskMatrix: React.FC = () => {
         </table>
       </div>
 
-      <p className="mt-2 text-[11px] text-slate-500">
+      <p className="mt-2 text-xs text-slate-500">
         {tr
           ? `${total} açık risk. Yatay eksen etki, dikey eksen olasılık; skor ikisinin çarpımı.`
           : `${total} open risks. Impact across, likelihood down; the score is the product.`}

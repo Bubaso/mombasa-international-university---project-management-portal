@@ -53,7 +53,7 @@ export const QuestionList: React.FC<{
   return (
     <section className="rounded-xl border border-slate-200 bg-white shadow-xs">
       <header className="flex items-center justify-between gap-2 border-b border-slate-200 px-4 py-3">
-        <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+        <h2 className="flex items-center gap-2 text-base font-semibold text-slate-900">
           <HelpCircle className="h-4 w-4 text-amber-600" aria-hidden="true" />
           {tr ? 'Açık sorular' : 'Open questions'}
           <Pill>{rows.filter((q) => q.status === 'open' || q.status === 'escalated').length}</Pill>
@@ -76,7 +76,7 @@ export const QuestionList: React.FC<{
         )}
 
         {rows.length === 0 && !adding ? (
-          <p className="text-[11px] leading-relaxed text-slate-500">
+          <p className="text-xs leading-relaxed text-slate-500">
             {tr
               ? 'Cevapsız kalan bir konu yok. Bir görüş ayrılığı kapanmadan kaybolmasın diye burası var.'
               : 'Nothing is waiting for an answer. This is where a disagreement lives so it does not vanish unresolved.'}
@@ -92,7 +92,7 @@ export const QuestionList: React.FC<{
                 }`}
               >
                 <div className="flex flex-wrap items-start justify-between gap-2">
-                  <p className="min-w-0 flex-1 text-xs text-slate-900">
+                  <p className="min-w-0 flex-1 text-sm text-slate-900">
                     {bilingual(question.questionEn, question.questionTr, language)}
                     {marks.is(
                       question.id,
@@ -105,7 +105,7 @@ export const QuestionList: React.FC<{
                   </Pill>
                 </div>
 
-                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-slate-500">
+                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-slate-500">
                   {question.name && (
                     <span>
                       {tr ? 'sorumlu: ' : 'owner: '}
@@ -121,7 +121,7 @@ export const QuestionList: React.FC<{
                 </div>
 
                 {question.answerEn && (
-                  <p className="mt-1 text-[11px] leading-relaxed text-slate-700">
+                  <p className="mt-1 text-xs leading-relaxed text-slate-700">
                     <span className="font-medium">{tr ? 'Cevap: ' : 'Answer: '}</span>
                     {question.answerEn}
                   </p>

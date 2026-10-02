@@ -53,12 +53,12 @@ export const PrintHeader: React.FC = () => {
     <header className="mb-3 hidden border-b-2 border-black pb-2 print:block">
       <div className="flex items-baseline justify-between gap-4">
         <div>
-          <p className="text-[13px] font-bold">
+          <p className="text-sm font-bold">
             Mombasa International University — {tr ? 'Proje Portalı' : 'Project Portal'}
           </p>
-          <p className="text-[11px]">{tr ? screen.tr : screen.en}</p>
+          <p className="text-xs">{tr ? screen.tr : screen.en}</p>
         </div>
-        <div className="text-right text-[10px]">
+        <div className="text-right text-xs">
           {/* Printed-at rather than loaded-at: a page left open and printed an
               hour later would otherwise carry the wrong moment. */}
           <p>{new Date().toLocaleString(tr ? 'tr-TR' : 'en-GB')}</p>
@@ -74,7 +74,7 @@ export const PrintHeader: React.FC = () => {
           )}
         </div>
       </div>
-      <p className="mt-1 text-[10px] leading-snug">
+      <p className="mt-1 text-xs leading-snug">
         {tr
           ? 'Bu çıktı portalın erişim denetiminin dışındadır. Portalda bir kaydı kimin görebileceğine veritabanı karar veriyor; bu sayfayı masada kim varsa okur. Ekranda görülenler yazdıran kişinin yetkisine göre süzülmüştür — başkası için daha fazlası ya da daha azı olabilir.'
           : 'This sheet is outside the portal’s access control. In the portal the database decides who may read a record; this page is read by whoever is at the table. What it shows was filtered by the clearance of the person who printed it, and would be more or less for somebody else.'}

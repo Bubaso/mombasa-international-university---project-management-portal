@@ -33,12 +33,12 @@ export const Section: React.FC<SectionProps> = ({
       <div className="flex items-start gap-2.5 min-w-0">
         <Icon className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />
         <div className="min-w-0">
-          <h2 className="text-sm font-semibold text-slate-900">{title}</h2>
-          <p className="text-[11px] leading-relaxed text-slate-500">{subtitle}</p>
+          <h2 className="text-base font-semibold text-slate-900">{title}</h2>
+          <p className="text-xs leading-relaxed text-slate-500">{subtitle}</p>
         </div>
       </div>
       <p
-        className={`flex shrink-0 items-center gap-1.5 rounded-lg border px-2 py-1 text-[11px] ${
+        className={`flex shrink-0 items-center gap-1.5 rounded-lg border px-2 py-1 text-xs ${
           canUse
             ? 'border-slate-200 bg-slate-50 text-slate-600'
             : 'border-amber-200 bg-amber-50 text-amber-900'
@@ -63,13 +63,16 @@ export const Field: React.FC<{ label: string; children: React.ReactNode; classNa
   className = '',
 }) => (
   <label className={`flex flex-col gap-1 ${className}`}>
-    <span className="text-[11px] font-medium text-slate-600">{label}</span>
+    <span className="text-xs font-medium text-slate-600">{label}</span>
     {children}
   </label>
 );
 
+// 44px on a phone, 32px from tablet up. The touch minimum is the phone
+// number; a mouse is precise enough that 32px is comfortable, and forcing 44
+// everywhere would make a dense desktop register taller for no one's benefit.
 const CONTROL =
-  'w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs text-slate-900 ' +
+  'min-h-11 md:min-h-8 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-900 ' +
   'focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 ' +
   'disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500';
 
@@ -96,7 +99,8 @@ export const ActionButton: React.FC<
     {...props}
     className={
       'inline-flex shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-lg border ' +
-      `px-2.5 py-1.5 text-xs font-semibold transition-colors disabled:cursor-not-allowed ` +
+      // See CONTROL: 44px of tap target on a phone, 32px once there is a mouse.
+      `min-h-11 md:min-h-8 px-3 py-1.5 text-sm font-semibold transition-colors disabled:cursor-not-allowed ` +
       `disabled:opacity-50 ${TONES[tone]} ${className}`
     }
   />
@@ -107,24 +111,66 @@ export const Pill: React.FC<{ children: React.ReactNode; className?: string }> =
   className = 'border-slate-300 bg-slate-100 text-slate-700',
 }) => (
   <span
-    className={`inline-block shrink-0 rounded border px-1.5 py-0.5 text-[10px] font-medium ${className}`}
+    className={`inline-block shrink-0 rounded border px-1.5 py-0.5 text-xs font-medium ${className}`}
   >
     {children}
   </span>
 );
 
-/** A horizontally scrollable table, because these are wide and phones are not. */
+/** The visible text inside a header cell, however it was nested. */
+function textOf(node: React.ReactNode): string {
+  if (node == null || typeof node === 'boolean') return '';
+  if (typeof node === 'string' || typeof node === 'number') return String(node);
+  if (Array.isArray(node)) return node.map(textOf).join(' ');
+  if (React.isValidElement(node)) {
+    return textOf((node.props as { children?: React.ReactNode }).children);
+  }
+  return '';
+}
+
+/**
+ * A register, as a table on a screen with room and as cards on one without.
+ *
+ * It used to carry an unconditional `min-w-[640px]`, and it is used in 43
+ * places: every register in the portal scrolled sideways on a 390px phone,
+ * showing about three fifths of itself with the status and the date — the
+ * columns people came for — off the right edge.
+ *
+ * Below `sm` the header is hidden and each row becomes a card whose cells
+ * stack, each labelled with its own column heading. The labels are not asked
+ * of the 43 call sites: the headings are already in `head`, so they are read
+ * from there and published as custom properties that `td::before` picks up by
+ * position. Nothing at a call site changes, and a table that gains a column
+ * gains its label too.
+ */
 export const TableFrame: React.FC<{ head: React.ReactNode; children: React.ReactNode }> = ({
   head,
   children,
-}) => (
-  <div className="-mx-4 overflow-x-auto px-4">
-    <table className="w-full min-w-[640px] text-left text-xs">
-      <thead className="text-[11px] uppercase tracking-wide text-slate-500">{head}</thead>
-      <tbody className="divide-y divide-slate-100">{children}</tbody>
-    </table>
-  </div>
-);
+}) => {
+  const labels = React.useMemo(() => {
+    const row = React.Children.toArray(head)[0];
+    if (!React.isValidElement(row)) return [];
+    const cells = (row.props as { children?: React.ReactNode }).children;
+    return React.Children.toArray(cells).map((cell) =>
+      React.isValidElement(cell)
+        ? textOf((cell.props as { children?: React.ReactNode }).children)
+        : '',
+    );
+  }, [head]);
+
+  const columnLabels = Object.fromEntries(
+    labels.map((label, i) => [`--col-${i + 1}`, label ? `'${label.replace(/'/g, '')}'` : "''"]),
+  ) as React.CSSProperties;
+
+  return (
+    <div className="-mx-4 overflow-x-auto px-4">
+      <table style={columnLabels} className="register w-full text-left text-sm sm:min-w-[640px]">
+        <thead className="text-xs uppercase tracking-wide text-slate-500">{head}</thead>
+        <tbody className="divide-y divide-slate-100">{children}</tbody>
+      </table>
+    </div>
+  );
+};
 
 export const Th: React.FC<{ children?: React.ReactNode; className?: string }> = ({
   children,
@@ -141,7 +187,7 @@ export const WriteError: React.FC<{ error: unknown }> = ({ error }) => {
   if (!error) return null;
   const message = error instanceof Error ? error.message : String(error);
   return (
-    <p className="mt-2 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-[11px] text-rose-800">
+    <p className="mt-2 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs text-rose-800">
       {message}
     </p>
   );

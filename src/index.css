@@ -210,3 +210,139 @@ body {
     color: #555;
   }
 }
+
+/* --------------------------------------------------------------------------
+   Tap targets on a phone (T4-01)
+   --------------------------------------------------------------------------
+   Measured before this rule existed: 455 of 607 interactive elements on a
+   390px screen were under the 44px touch minimum, and 372 were under 32px.
+   The shared controls carry their own min-height, which covers 543 of them;
+   this is for the 148 buttons written inline across the views, which are too
+   many and too varied to reach one at a time.
+
+   In @layer base on purpose: every Tailwind utility beats it, so a button
+   that already declares its own height keeps it, and nothing here can win an
+   argument with a deliberate class.
+
+   `button` is inline-block by default, which honours min-height, so no
+   display change is needed and no flex row is rearranged. Links are left
+   alone: an `a` is inline, would need display:inline-flex to honour a
+   min-height at all, and that would stretch every citation marker inside a
+   sentence. Navigation links carry their own height in their components. */
+@layer base {
+  @media (max-width: 767px) {
+    button,
+    [role='button'],
+    input,
+    select,
+    textarea,
+    summary {
+      min-height: 44px;
+    }
+
+    /* A checkbox or radio is a 44px *target*, not a 44px box: stretching the
+       control itself would draw an enormous tick. The label beside it is the
+       target, and it is already a hit area. */
+    input[type='checkbox'],
+    input[type='radio'] {
+      min-height: 0;
+    }
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Registers become cards on a phone (T5-01)
+   --------------------------------------------------------------------------
+   TableFrame is used 43 times and carried an unconditional min-width of
+   640px, so every register scrolled sideways on a 390px screen — about three
+   fifths visible, with the status and the date off the right edge.
+
+   Below sm the header row is hidden and each body row becomes a card whose
+   cells stack. The label on each cell is its own column heading: TableFrame
+   reads the headings out of `head` and publishes them as --col-1…--col-9 on
+   the table, and each cell picks up the one matching its position. No call
+   site passes a label, and a table that gains a column gains its label with
+   it. */
+@media (max-width: 639px) {
+  table.register thead {
+    display: none;
+  }
+
+  table.register,
+  table.register tbody,
+  table.register tr,
+  table.register td {
+    display: block;
+    width: 100%;
+  }
+
+  table.register tr {
+    margin-bottom: 0.5rem;
+    border: 1px solid var(--color-slate-200);
+    border-radius: 0.5rem;
+    padding: 0.25rem 0.5rem;
+  }
+
+  table.register td {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.375rem 0;
+    text-align: right;
+  }
+
+  table.register td + td {
+    border-top: 1px solid var(--color-slate-100);
+  }
+
+  table.register td::before {
+    content: var(--col-label, '');
+    flex: 0 0 auto;
+    max-width: 45%;
+    text-align: left;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-slate-500);
+  }
+
+  /* A cell that spans the table is an empty state or a note, not a field, so
+     it keeps neither a label nor the two-column shape. */
+  table.register td[colspan] {
+    display: block;
+    text-align: left;
+  }
+
+  table.register td[colspan]::before {
+    content: none;
+  }
+
+  table.register td:nth-child(1) {
+    --col-label: var(--col-1);
+  }
+  table.register td:nth-child(2) {
+    --col-label: var(--col-2);
+  }
+  table.register td:nth-child(3) {
+    --col-label: var(--col-3);
+  }
+  table.register td:nth-child(4) {
+    --col-label: var(--col-4);
+  }
+  table.register td:nth-child(5) {
+    --col-label: var(--col-5);
+  }
+  table.register td:nth-child(6) {
+    --col-label: var(--col-6);
+  }
+  table.register td:nth-child(7) {
+    --col-label: var(--col-7);
+  }
+  table.register td:nth-child(8) {
+    --col-label: var(--col-8);
+  }
+  table.register td:nth-child(9) {
+    --col-label: var(--col-9);
+  }
+}

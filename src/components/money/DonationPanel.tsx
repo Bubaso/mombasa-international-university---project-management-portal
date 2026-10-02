@@ -193,8 +193,8 @@ const Figure: React.FC<{ label: string; value: number; tone?: string }> = ({
   tone = 'text-slate-900',
 }) => (
   <div className="rounded-lg border border-slate-200 bg-white px-3 py-2">
-    <div className="text-[11px] text-slate-500">{label}</div>
-    <div className={`font-mono text-sm font-semibold ${tone}`}>{fmt(value, 'KES')}</div>
+    <div className="text-xs text-slate-500">{label}</div>
+    <div className={`font-mono text-base font-semibold ${tone}`}>{fmt(value, 'KES')}</div>
   </div>
 );
 
@@ -226,7 +226,7 @@ const DonationRow: React.FC<{
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-xs font-medium text-slate-900">{donation.donorName}</span>
+              <span className="text-sm font-medium text-slate-900">{donation.donorName}</span>
               <Pill>{donationStateLabel(donation.state, language)}</Pill>
               {donation.unevidencedTranches > 0 && (
                 <Pill className="border-amber-300 bg-amber-100 text-amber-900">
@@ -236,7 +236,7 @@ const DonationRow: React.FC<{
                 </Pill>
               )}
             </div>
-            <div className="mt-0.5 text-[11px] text-slate-500">
+            <div className="mt-0.5 text-xs text-slate-500">
               {tr ? 'Taahhüt: ' : 'Pledged '}
               {fmt(donation.pledgedAmount, donation.pledgedCurrency)}
               {' · '}
@@ -244,10 +244,10 @@ const DonationRow: React.FC<{
             </div>
           </div>
           <div className="shrink-0 text-right">
-            <div className="font-mono text-xs font-semibold text-emerald-700">
+            <div className="font-mono text-sm font-semibold text-emerald-700">
               {fmt(donation.receivedKes, 'KES')}
             </div>
-            <div className="text-[11px] text-slate-500">
+            <div className="text-xs text-slate-500">
               {tr ? 'bekleyen ' : 'outstanding '}
               <span className="font-mono">{fmt(donation.outstandingKes, 'KES')}</span>
             </div>
@@ -271,7 +271,7 @@ const DonationRow: React.FC<{
       </button>
 
       {open && (
-        <div className="space-y-2 border-t border-slate-100 bg-slate-50/60 px-3 py-3 text-[11px]">
+        <div className="space-y-2 border-t border-slate-100 bg-slate-50/60 px-3 py-3 text-xs">
           <QueryStatus queries={[tranches]} />
           {(tranches.data ?? []).length === 0 ? (
             <p className="text-slate-500">

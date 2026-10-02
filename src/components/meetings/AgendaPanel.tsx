@@ -80,11 +80,11 @@ export const AgendaPanel: React.FC<{ limit?: number; compact?: boolean }> = ({
         <div className="flex items-start gap-2.5">
           <ListChecks className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />
           <div>
-            <h2 className="text-sm font-semibold text-slate-900">
+            <h2 className="text-base font-semibold text-slate-900">
               {tr ? 'Bir sonraki gündem' : 'The next agenda'}
             </h2>
             {!compact && (
-              <p className="text-[11px] text-slate-500">
+              <p className="text-xs text-slate-500">
                 {tr
                   ? 'Kapanmamış her aksiyon ve cevaplanmamış her soru. Listeden çıkmanın tek yolu bitirmek ya da iptal ettiğini söylemek.'
                   : 'Every action not finished and every question not answered. The only way off is to do it or to say it is cancelled.'}
@@ -140,11 +140,11 @@ export const AgendaPanel: React.FC<{ limit?: number; compact?: boolean }> = ({
                       aria-hidden="true"
                     />
                     <span className="min-w-0 flex-1">
-                      <span className="block text-xs text-slate-900">
+                      <span className="block text-sm text-slate-900">
                         {bilingual(item.textEn, item.textTr, language)}
                         {machineWritten(item) && <MachineBadge className="ml-1.5" />}
                       </span>
-                      <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-slate-500">
+                      <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-slate-500">
                         {who && (
                           <span>
                             {tr ? 'sorumlu: ' : 'owner: '}
@@ -183,7 +183,7 @@ export const AgendaPanel: React.FC<{ limit?: number; compact?: boolean }> = ({
           <button
             type="button"
             onClick={() => navigate('/meetings')}
-            className="mt-2 cursor-pointer text-[11px] font-semibold text-amber-700 hover:text-amber-900"
+            className="mt-2 cursor-pointer text-xs font-semibold text-amber-700 hover:text-amber-900"
           >
             {tr ? `Kalan ${all.length - limit} maddeyi gör` : `See the other ${all.length - limit}`}
           </button>

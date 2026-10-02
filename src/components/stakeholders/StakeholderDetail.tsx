@@ -85,8 +85,8 @@ export const StakeholderDetail: React.FC<Props> = ({
     <aside className="rounded-xl border border-slate-200 bg-white shadow-xs">
       <header className="flex items-start justify-between gap-3 border-b border-slate-200 px-4 py-3">
         <div className="min-w-0">
-          <h2 className="truncate text-sm font-bold text-slate-900">{stakeholder.fullName}</h2>
-          <p className="truncate text-[11px] text-slate-500">
+          <h2 className="truncate text-base font-bold text-slate-900">{stakeholder.fullName}</h2>
+          <p className="truncate text-xs text-slate-500">
             {[stakeholder.title, stakeholder.organizationName].filter(Boolean).join(' · ') ||
               categoryLabel(stakeholder.category, language)}
           </p>
@@ -138,7 +138,7 @@ export const StakeholderDetail: React.FC<Props> = ({
               </Pill>
             </div>
 
-            <dl className="grid grid-cols-1 gap-x-4 gap-y-1.5 text-[11px] sm:grid-cols-2">
+            <dl className="grid grid-cols-1 gap-x-4 gap-y-1.5 text-xs sm:grid-cols-2">
               <Detail
                 icon={Building2}
                 label={tr ? 'Kurum' : 'Organization'}
@@ -153,7 +153,7 @@ export const StakeholderDetail: React.FC<Props> = ({
               <Detail icon={Phone} label={tr ? 'Telefon' : 'Phone'} value={stakeholder.phone} />
             </dl>
 
-            <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px]">
+            <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="text-slate-500">
                   {tr ? 'İlişki sorumlusu' : 'Relationship owner'}
@@ -183,7 +183,7 @@ export const StakeholderDetail: React.FC<Props> = ({
           ) : (
             <ol className="space-y-1">
               {(history.data ?? []).map((change) => (
-                <li key={change.id} className="flex items-baseline gap-2 text-[11px]">
+                <li key={change.id} className="flex items-baseline gap-2 text-xs">
                   <span className="shrink-0 font-mono text-slate-400">
                     {change.changedAt.slice(0, 10)}
                   </span>
@@ -219,7 +219,7 @@ export const StakeholderDetail: React.FC<Props> = ({
             <ul className="mt-2 space-y-2">
               {(interactions.data ?? []).map((entry) => (
                 <li key={entry.id} className="rounded-lg border border-slate-200 px-2.5 py-2">
-                  <div className="flex flex-wrap items-baseline justify-between gap-2 text-[11px]">
+                  <div className="flex flex-wrap items-baseline justify-between gap-2 text-xs">
                     <span className="font-medium text-slate-900">
                       {channelLabel(entry.channel, language)}
                     </span>
@@ -227,11 +227,9 @@ export const StakeholderDetail: React.FC<Props> = ({
                       {entry.occurredAt.slice(0, 10)}
                     </span>
                   </div>
-                  <p className="mt-0.5 text-[11px] leading-relaxed text-slate-700">
-                    {entry.summary}
-                  </p>
+                  <p className="mt-0.5 text-xs leading-relaxed text-slate-700">{entry.summary}</p>
                   {entry.outcome && (
-                    <p className="mt-1 text-[11px] text-slate-500">
+                    <p className="mt-1 text-xs text-slate-500">
                       <span className="font-medium">{tr ? 'Sonuç: ' : 'Outcome: '}</span>
                       {entry.outcome}
                     </p>
@@ -248,7 +246,7 @@ export const StakeholderDetail: React.FC<Props> = ({
           if (!record) return null;
           return (
             <Block icon={Handshake} title={tr ? 'Verilen sözler' : 'What they undertook'}>
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px]">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
                 <span className="text-slate-700">
                   <span className="font-semibold text-slate-900">{record.undertaken}</span>{' '}
                   {tr ? 'taahhüt' : 'undertaken'}
@@ -268,7 +266,7 @@ export const StakeholderDetail: React.FC<Props> = ({
                   </span>
                 )}
               </div>
-              <p className="mt-1 text-[11px] text-slate-600">
+              <p className="mt-1 text-xs text-slate-600">
                 {record.keptPercent == null
                   ? tr
                     ? 'Henüz kapanmış bir taahhüdü yok — bu sıfır demek değil, ölçülecek bir şey olmaması demek.'
@@ -291,7 +289,7 @@ export const StakeholderDetail: React.FC<Props> = ({
                 const outgoing = edge.fromStakeholderId === stakeholder.id;
                 const other = outgoing ? edge.toName : edge.fromName;
                 return (
-                  <li key={edge.id} className="text-[11px] text-slate-700">
+                  <li key={edge.id} className="text-xs text-slate-700">
                     {outgoing ? (
                       <>
                         <span className="text-slate-500">
@@ -307,7 +305,7 @@ export const StakeholderDetail: React.FC<Props> = ({
                         </span>
                       </>
                     )}
-                    <span className="ml-1.5 font-mono text-[10px] text-slate-400">
+                    <span className="ml-1.5 font-mono text-xs text-slate-400">
                       {edge.strength}/5
                     </span>
                   </li>
@@ -321,25 +319,25 @@ export const StakeholderDetail: React.FC<Props> = ({
         <div className="rounded-lg border border-rose-200 bg-rose-50/50">
           <div className="flex items-center gap-1.5 border-b border-rose-200 px-3 py-2">
             <Lock className="h-3.5 w-3.5 shrink-0 text-rose-700" aria-hidden="true" />
-            <h3 className="text-[11px] font-semibold text-rose-900">
+            <h3 className="text-xs font-semibold text-rose-900">
               {tr ? 'Gizli değerlendirme' : 'Private assessment'}
             </h3>
-            <span className="ml-auto text-[10px] text-rose-800/70">
+            <span className="ml-auto text-xs text-rose-800/70">
               {tr ? 'dış paydaşlara hiçbir şekilde açılmaz' : 'never reaches anyone outside'}
             </span>
           </div>
           <div className="px-3 py-2">
             {canAssess && <AssessmentForm stakeholderId={stakeholder.id} />}
             {(assessments.data ?? []).length === 0 ? (
-              <p className="text-[11px] text-rose-900/60">
+              <p className="text-xs text-rose-900/60">
                 {tr ? 'Değerlendirme yazılmamış.' : 'No assessment written.'}
               </p>
             ) : (
               <ul className="mt-2 space-y-2">
                 {(assessments.data ?? []).map((note) => (
-                  <li key={note.id} className="text-[11px]">
+                  <li key={note.id} className="text-xs">
                     <p className="leading-relaxed text-rose-950">{note.body}</p>
-                    <p className="mt-0.5 text-[10px] text-rose-800/60">
+                    <p className="mt-0.5 text-xs text-rose-800/60">
                       {note.authorName ?? (tr ? 'bilinmiyor' : 'unknown')} ·{' '}
                       {note.assessedAt.slice(0, 10)}
                     </p>
@@ -376,18 +374,18 @@ const Block: React.FC<{
 }> = ({ icon: Icon, title, note, children }) => (
   <section>
     <div className="mb-1.5 flex items-baseline justify-between gap-2">
-      <h3 className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-700">
+      <h3 className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
         <Icon className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
         {title}
       </h3>
-      {note && <span className="shrink-0 text-[10px] text-slate-400">{note}</span>}
+      {note && <span className="shrink-0 text-xs text-slate-400">{note}</span>}
     </div>
     {children}
   </section>
 );
 
 const Empty: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <p className="text-[11px] text-slate-500">{children}</p>
+  <p className="text-xs text-slate-500">{children}</p>
 );
 
 // ---------------------------------------------------------------------------
@@ -491,7 +489,7 @@ const EditForm: React.FC<{
         </Field>
       </div>
 
-      <p className="text-[10px] leading-relaxed text-slate-500">
+      <p className="text-xs leading-relaxed text-slate-500">
         {tr
           ? 'Tutumu değiştirmek geçmişe bir satır ekler; o satır sonradan düzeltilemez.'
           : 'Changing the stance appends a line to the history, and that line cannot be corrected later.'}

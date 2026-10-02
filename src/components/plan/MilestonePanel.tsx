@@ -123,10 +123,10 @@ export const MilestonePanel: React.FC = () => {
         <div className="flex items-start gap-2.5">
           <Flag className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" aria-hidden="true" />
           <div>
-            <h2 className="text-sm font-bold text-slate-900">
+            <h2 className="text-base font-bold text-slate-900">
               {tr ? 'Kilometre taşları' : 'Milestones'}
             </h2>
-            <p className="text-[11px] text-slate-500">
+            <p className="text-xs text-slate-500">
               {tr
                 ? 'Hedef tarih ve gerçekleşen tarih iki ayrı kolon; gecikme ikisinin çıkarması. Tek tarih tutan bir sistem, çatının doksan gün geciktiğini söyleyemez.'
                 : 'The target and the outcome are two columns, and the slip is the subtraction. A system that keeps one date cannot tell you the roof was ninety days late.'}
@@ -212,7 +212,7 @@ export const MilestonePanel: React.FC = () => {
             </Select>
           </Field>
           <Field label={tr ? 'Kritik mi' : 'Critical'}>
-            <label className="flex items-center gap-2 pt-1.5 text-[11px] text-slate-600">
+            <label className="flex items-center gap-2 pt-1.5 text-xs text-slate-600">
               <input
                 type="checkbox"
                 checked={form.critical}
@@ -232,7 +232,7 @@ export const MilestonePanel: React.FC = () => {
             <button
               type="button"
               onClick={() => setAdding(false)}
-              className="cursor-pointer text-[11px] text-slate-500 underline"
+              className="cursor-pointer text-xs text-slate-500 underline"
             >
               {tr ? 'vazgeç' : 'cancel'}
             </button>
@@ -249,7 +249,7 @@ export const MilestonePanel: React.FC = () => {
       <WriteError error={miss.error} />
 
       {rows.length === 0 ? (
-        <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-900">
+        <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
           {tr
             ? 'Planda kilometre taşı yok. Portalda on beş modül var ama onları birbirine bağlayan zaman ekseni burada başlıyor — bir taş girilmeden ne geri sayım ne sapma hesaplanabilir.'
             : 'The plan has no milestones. The portal has fifteen registers and this is where the time axis joining them starts: without one, neither a countdown nor a variance can be computed.'}
@@ -268,10 +268,8 @@ export const MilestonePanel: React.FC = () => {
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-1.5">
-                      {m.code && (
-                        <span className="font-mono text-[11px] text-slate-500">{m.code}</span>
-                      )}
-                      <span className="text-xs font-medium text-slate-900">
+                      {m.code && <span className="font-mono text-xs text-slate-500">{m.code}</span>}
+                      <span className="text-sm font-medium text-slate-900">
                         <Bilingual
                           table="milestones"
                           id={m.id}
@@ -294,7 +292,7 @@ export const MilestonePanel: React.FC = () => {
                         </Pill>
                       )}
                     </div>
-                    <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
+                    <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
                       {m.phaseName && <span>{m.phaseName}</span>}
                       {m.ownerName && <span>{m.ownerName}</span>}
                       <span className="font-mono">
@@ -318,7 +316,7 @@ export const MilestonePanel: React.FC = () => {
                         )
                       )}
                     </div>
-                    {m.note && <p className="mt-0.5 text-[11px] text-slate-600">{m.note}</p>}
+                    {m.note && <p className="mt-0.5 text-xs text-slate-600">{m.note}</p>}
                   </div>
 
                   {mayKeep && !open && m.state !== 'achieved' && m.state !== 'abandoned' && (
@@ -330,7 +328,7 @@ export const MilestonePanel: React.FC = () => {
                           setAchievedOn(todayIso());
                           setEvidence('');
                         }}
-                        className="flex cursor-pointer items-center gap-1 text-[11px] text-emerald-800 hover:underline"
+                        className="flex cursor-pointer items-center gap-1 text-xs text-emerald-800 hover:underline"
                       >
                         <CircleCheck className="h-3.5 w-3.5" aria-hidden="true" />
                         {tr ? 'ulaşıldı' : 'achieved'}
@@ -342,13 +340,13 @@ export const MilestonePanel: React.FC = () => {
                             setClosing({ id: m.id, how: 'missed' });
                             setReason('');
                           }}
-                          className="flex cursor-pointer items-center gap-1 text-[11px] text-slate-500 hover:underline"
+                          className="flex cursor-pointer items-center gap-1 text-xs text-slate-500 hover:underline"
                         >
                           <CircleX className="h-3.5 w-3.5" aria-hidden="true" />
                           {tr ? 'kaçırıldı' : 'missed'}
                         </button>
                       )}
-                      <label className="flex cursor-pointer items-center gap-1 text-[11px] text-slate-500">
+                      <label className="flex cursor-pointer items-center gap-1 text-xs text-slate-500">
                         <CalendarClock className="h-3.5 w-3.5" aria-hidden="true" />
                         <span className="sr-only">
                           {tr ? 'Hedef tarihi değiştir' : 'Move the target date'}
@@ -359,7 +357,7 @@ export const MilestonePanel: React.FC = () => {
                           onChange={(e) =>
                             move.mutate({ id: m.id, targetOn: e.target.value || null })
                           }
-                          className="rounded border border-slate-300 px-1 py-0.5 text-[11px]"
+                          className="rounded border border-slate-300 px-1 py-0.5 text-xs"
                         />
                       </label>
                     </div>
@@ -408,7 +406,7 @@ export const MilestonePanel: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setClosing(null)}
-                      className="cursor-pointer pb-1 text-[11px] text-slate-500 underline"
+                      className="cursor-pointer pb-1 text-xs text-slate-500 underline"
                     >
                       {tr ? 'vazgeç' : 'cancel'}
                     </button>
@@ -441,7 +439,7 @@ export const MilestonePanel: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setClosing(null)}
-                      className="cursor-pointer pb-1 text-[11px] text-slate-500 underline"
+                      className="cursor-pointer pb-1 text-xs text-slate-500 underline"
                     >
                       {tr ? 'vazgeç' : 'cancel'}
                     </button>

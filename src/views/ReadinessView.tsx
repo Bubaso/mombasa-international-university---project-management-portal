@@ -41,7 +41,7 @@ export const ReadinessView: React.FC = () => {
             <h1 className="text-lg font-bold text-slate-900">
               {tr ? 'Uyum ve akademik hazırlık' : 'Compliance and academic readiness'}
             </h1>
-            <p className="max-w-2xl text-xs text-slate-500">
+            <p className="max-w-2xl text-sm text-slate-500">
               {tr
                 ? 'Projenin amacı bir üniversite; inşaat aracı. Burada o amacın nerede olduğu duruyor: mevzuat takvimi, CUE şartları, berat yol haritası, programlar ve kira sözleşmesinden doğan sayılı taahhütler.'
                 : 'The point of the project is a university; the construction is the means. This is where the end stands: the statutory calendar, the CUE standards, the charter road map, the programmes, and the counted undertakings the lease imposes.'}
@@ -67,8 +67,10 @@ export const ReadinessView: React.FC = () => {
         className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 hover:bg-slate-50"
       >
         <div>
-          <p className="text-sm font-semibold text-slate-900">{tr ? 'Yönetişim' : 'Governance'}</p>
-          <p className="text-[11px] text-slate-500">
+          <p className="text-base font-semibold text-slate-900">
+            {tr ? 'Yönetişim' : 'Governance'}
+          </p>
+          <p className="text-xs text-slate-500">
             {tr
               ? 'Üç organ ve nisapları, mütevelli kütüğü, resmî karar kütüğü, çıkar beyanları.'
               : 'The three organs and their quorum, the trustee register, the formal resolutions, the declarations.'}

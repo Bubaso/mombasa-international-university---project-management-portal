@@ -111,10 +111,10 @@ export const ClosePanel: React.FC<{ canClose: boolean }> = ({ canClose }) => {
         <header className="mb-2 flex items-start gap-2.5">
           <CalendarCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" aria-hidden="true" />
           <div className="min-w-0">
-            <h3 className="text-xs font-semibold text-slate-900">
+            <h3 className="text-sm font-semibold text-slate-900">
               {tr ? 'Dönemsel mali kapanış' : 'Periodic financial close'}
             </h3>
-            <p className="max-w-3xl text-[11px] leading-relaxed text-slate-500">
+            <p className="max-w-3xl text-xs leading-relaxed text-slate-500">
               {tr
                 ? 'Bir kapanış, neyi dışarıda bıraktığını söylediği ölçüde kapanıştır. Rakamlar kapanış anında dondurulur ve saklanır — yeniden hesaplanan bir toplam, geciken bir fatura girildiğinde sessizce değişir, ve değişen rakam kapanış değildir.'
                 : 'A close is a close to the extent that it says what it leaves out. The figures are frozen and stored at the moment of closing — a recomputed total moves silently when a late invoice arrives, and a figure that moves is not a close.'}
@@ -179,7 +179,7 @@ export const ClosePanel: React.FC<{ canClose: boolean }> = ({ canClose }) => {
         <QueryStatus queries={[periods]} />
 
         {rows.length === 0 ? (
-          <p className="text-[11px] text-slate-500">
+          <p className="text-xs text-slate-500">
             {tr
               ? 'Tanımlı dönem yok. Bu, hiçbir şeyin kapanmadığı anlamına gelir — hepsinin yolunda olduğu anlamına gelmez.'
               : 'No period is defined. That means nothing has been closed — not that everything is in order.'}
@@ -195,8 +195,8 @@ export const ClosePanel: React.FC<{ canClose: boolean }> = ({ canClose }) => {
                   className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2"
                 >
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-xs font-semibold text-slate-900">{period.code}</span>
-                    <span className="text-[11px] text-slate-500">
+                    <span className="text-sm font-semibold text-slate-900">{period.code}</span>
+                    <span className="text-xs text-slate-500">
                       {formatDate(period.startsOn, language)} –{' '}
                       {formatDate(period.endsOn, language)}
                     </span>
@@ -228,13 +228,13 @@ export const ClosePanel: React.FC<{ canClose: boolean }> = ({ canClose }) => {
                   </div>
 
                   {closed ? (
-                    <p className="mt-1 font-mono text-[11px] text-slate-600">
+                    <p className="mt-1 font-mono text-xs text-slate-600">
                       {period.closingTransactions} {tr ? 'kayıt' : 'records'} ·{' '}
                       {amount(period.closingLedgerKes, 'KES')} {tr ? 'defter' : 'ledger'} ·{' '}
                       {amount(period.closingReceiptsKes, 'KES')} {tr ? 'tahsilat' : 'receipts'}
                     </p>
                   ) : (
-                    <p className="mt-1 text-[11px] text-slate-500">
+                    <p className="mt-1 text-xs text-slate-500">
                       {tr
                         ? 'Kapanış alınmadı, bu yüzden dondurulmuş bir rakam yok. Buradaki boşluklar da sayılmadı — sıfır oldukları anlamına gelmez.'
                         : 'The close has not been taken, so there is no frozen figure. The gaps have not been counted either, which does not mean they are zero.'}
@@ -244,13 +244,13 @@ export const ClosePanel: React.FC<{ canClose: boolean }> = ({ canClose }) => {
                   {/* What the close left out. */}
                   {closed &&
                     (gaps.length === 0 ? (
-                      <p className="mt-0.5 text-[11px] text-slate-500">
+                      <p className="mt-0.5 text-xs text-slate-500">
                         {tr
                           ? 'Kapanış anında sayılan eksik yok.'
                           : 'No gap was counted at the close.'}
                       </p>
                     ) : (
-                      <p className="mt-0.5 text-[11px] text-amber-800">
+                      <p className="mt-0.5 text-xs text-amber-800">
                         {tr ? 'Kapanışın dışında bıraktıkları: ' : 'What the close leaves out: '}
                         {gaps.join(' · ')}
                       </p>
@@ -258,7 +258,7 @@ export const ClosePanel: React.FC<{ canClose: boolean }> = ({ canClose }) => {
 
                   {/* The drift. A late invoice is a real payment. */}
                   {period.entriesAddedAfterTheClose > 0 && (
-                    <p className="mt-0.5 flex items-start gap-1.5 text-[11px] text-amber-900">
+                    <p className="mt-0.5 flex items-start gap-1.5 text-xs text-amber-900">
                       <ShieldAlert className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
                       <span>
                         {tr
@@ -278,7 +278,7 @@ export const ClosePanel: React.FC<{ canClose: boolean }> = ({ canClose }) => {
 
         {lastFile != null && (
           <p
-            className={`mt-2 rounded-lg border px-2.5 py-2 text-[11px] ${
+            className={`mt-2 rounded-lg border px-2.5 py-2 text-xs ${
               lastFile.withheld > 0
                 ? 'border-amber-200 bg-amber-50 text-amber-900'
                 : 'border-slate-200 bg-slate-50 text-slate-600'

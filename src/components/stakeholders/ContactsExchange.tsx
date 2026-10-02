@@ -106,10 +106,10 @@ export const ContactsExchange: React.FC<{ people: Stakeholder[] }> = ({ people }
       <header className="mb-3 flex items-start gap-2.5">
         <Users className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" aria-hidden="true" />
         <div>
-          <h2 className="text-sm font-bold text-slate-900">
+          <h2 className="text-base font-bold text-slate-900">
             {tr ? 'Kütüğü dışa ve içe aktar' : 'Take the register out, or bring contacts in'}
           </h2>
-          <p className="max-w-2xl text-[11px] text-slate-500">
+          <p className="max-w-2xl text-xs text-slate-500">
             {tr
               ? 'vCard telefon rehberi için, CSV hesap tablosu için. İçe aktarmada hiçbir şey, dosyanın ne yapacağını görmeden yazılmaz.'
               : 'vCard for an address book, CSV for a spreadsheet. On the way in, nothing is written before somebody has seen what the file would do.'}
@@ -119,12 +119,12 @@ export const ContactsExchange: React.FC<{ people: Stakeholder[] }> = ({ people }
 
       {/* --- out --- */}
       <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-        <h3 className="mb-1.5 text-[11px] font-semibold tracking-wider text-slate-500 uppercase">
+        <h3 className="mb-1.5 text-xs font-semibold tracking-wider text-slate-500 uppercase">
           <ArrowDownToLine className="mr-1 inline h-3.5 w-3.5" aria-hidden="true" />
           {tr ? 'Dışa' : 'Out'}
         </h3>
         <div className="flex flex-wrap items-center gap-3">
-          <label className="flex cursor-pointer items-center gap-1.5 text-[11px] text-slate-700">
+          <label className="flex cursor-pointer items-center gap-1.5 text-xs text-slate-700">
             <input
               type="checkbox"
               checked={includeClosed}
@@ -151,7 +151,7 @@ export const ContactsExchange: React.FC<{ people: Stakeholder[] }> = ({ people }
           >
             {tr ? 'CSV indir' : 'Download CSV'}
           </ActionButton>
-          <label className="flex cursor-pointer items-center gap-1.5 text-[11px] text-slate-700">
+          <label className="flex cursor-pointer items-center gap-1.5 text-xs text-slate-700">
             <input
               type="checkbox"
               checked={includeAssessment}
@@ -168,7 +168,7 @@ export const ContactsExchange: React.FC<{ people: Stakeholder[] }> = ({ people }
             </Pill>
           )}
         </div>
-        <p className="mt-2 flex items-start gap-1.5 text-[11px] leading-relaxed text-amber-800">
+        <p className="mt-2 flex items-start gap-1.5 text-xs leading-relaxed text-amber-800">
           <TriangleAlert className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
           {tr
             ? 'vCard yalnızca iletişim bilgisi taşır; tutum, nüfuz, ilgi ve notlar portalda kalır — bu bilgiler kişinin kendisi hakkındaki değerlendirmemizdir ve bir telefon rehberine girmez. CSV’ye koymayı seçerseniz o değerlendirme dosyayla birlikte portalın erişim denetiminin dışına çıkar.'
@@ -178,7 +178,7 @@ export const ContactsExchange: React.FC<{ people: Stakeholder[] }> = ({ people }
 
       {/* --- in --- */}
       <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
-        <h3 className="mb-1.5 text-[11px] font-semibold tracking-wider text-slate-500 uppercase">
+        <h3 className="mb-1.5 text-xs font-semibold tracking-wider text-slate-500 uppercase">
           <ArrowUpFromLine className="mr-1 inline h-3.5 w-3.5" aria-hidden="true" />
           {tr ? 'İçe' : 'In'}
         </h3>
@@ -191,12 +191,12 @@ export const ContactsExchange: React.FC<{ people: Stakeholder[] }> = ({ people }
               const file = e.target.files?.[0];
               if (file) void read(file);
             }}
-            className="text-[11px] text-slate-700"
+            className="text-xs text-slate-700"
             aria-label={tr ? 'CSV dosyası' : 'CSV file'}
           />
-          {fileName && <span className="font-mono text-[11px] text-slate-500">{fileName}</span>}
+          {fileName && <span className="font-mono text-xs text-slate-500">{fileName}</span>}
         </div>
-        <p className="mt-1 text-[11px] text-slate-500">
+        <p className="mt-1 text-xs text-slate-500">
           {tr
             ? 'Beklenen kolonlar: full_name (zorunlu), title, organization, category, email, phone, whatsapp, location, preferred_language, interest_topic.'
             : 'Expected columns: full_name (required), title, organization, category, email, phone, whatsapp, location, preferred_language, interest_topic.'}
@@ -227,14 +227,14 @@ export const ContactsExchange: React.FC<{ people: Stakeholder[] }> = ({ people }
             </div>
 
             {parsed.ignoredColumns.length > 0 && (
-              <p className="text-[11px] text-slate-600">
+              <p className="text-xs text-slate-600">
                 {tr ? 'Karşılığı olmayan kolonlar: ' : 'Columns with no field here: '}
                 <span className="font-mono">{parsed.ignoredColumns.join(', ')}</span>
               </p>
             )}
 
             {parsed.contacts.filter((c) => c.takesDefaultGrid).length > 0 && (
-              <p className="flex items-start gap-1.5 rounded border border-amber-200 bg-amber-50 px-2 py-1.5 text-[11px] text-amber-900">
+              <p className="flex items-start gap-1.5 rounded border border-amber-200 bg-amber-50 px-2 py-1.5 text-xs text-amber-900">
                 <Info className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
                 {tr
                   ? `${parsed.contacts.filter((c) => c.takesDefaultGrid).length} satır nüfuz ve ilgi vermiyor. Kütük bu alanları boş bırakamıyor, varsayılan olarak 3 yazıyor — yani bu kişiler nüfuz/ilgi ızgarasının tam ortasına, kimsenin koymadığı bir yere düşer. Tutumları ise 'bilinmiyor' kalır, 'nötr' değil.`
@@ -245,7 +245,7 @@ export const ContactsExchange: React.FC<{ people: Stakeholder[] }> = ({ people }
             {parsed.refused.length > 0 && (
               <ul className="space-y-0.5">
                 {parsed.refused.map((r) => (
-                  <li key={r.line} className="text-[11px] text-rose-800">
+                  <li key={r.line} className="text-xs text-rose-800">
                     {tr ? `satır ${r.line}: ` : `line ${r.line}: `}
                     {r.reason}
                   </li>
@@ -258,7 +258,7 @@ export const ContactsExchange: React.FC<{ people: Stakeholder[] }> = ({ people }
                 {parsed.contacts
                   .filter((c) => c.matches.length > 0)
                   .map((c) => (
-                    <li key={c.line} className="text-[11px] text-amber-900">
+                    <li key={c.line} className="text-xs text-amber-900">
                       {tr ? `satır ${c.line}: ` : `line ${c.line}: `}
                       <span className="font-semibold">{c.fullName}</span>
                       {tr ? ' — kütükteki ' : ' — matches '}
@@ -285,11 +285,11 @@ export const ContactsExchange: React.FC<{ people: Stakeholder[] }> = ({ people }
                     setFileName(null);
                     if (fileInput.current) fileInput.current.value = '';
                   }}
-                  className="cursor-pointer text-[11px] text-slate-500 underline"
+                  className="cursor-pointer text-xs text-slate-500 underline"
                 >
                   {tr ? 'vazgeç' : 'cancel'}
                 </button>
-                <span className="text-[11px] text-slate-500">
+                <span className="text-xs text-slate-500">
                   {tr
                     ? 'Gizlilik seviyesi gizli olarak açılır — kimsenin sınıflandırmadığı bir kişi açık tarafta durmaz.'
                     : 'Each is opened as confidential: somebody nobody has classified does not sit on the open side.'}
@@ -301,7 +301,7 @@ export const ContactsExchange: React.FC<{ people: Stakeholder[] }> = ({ people }
 
         {imported && (
           <p
-            className={`mt-2 rounded px-2 py-1.5 text-[11px] ${
+            className={`mt-2 rounded px-2 py-1.5 text-xs ${
               imported.failed > 0
                 ? 'border border-amber-200 bg-amber-50 text-amber-900'
                 : 'border border-emerald-200 bg-emerald-50 text-emerald-900'

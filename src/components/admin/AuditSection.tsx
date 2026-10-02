@@ -53,7 +53,7 @@ export const AuditSection: React.FC = () => {
     >
       <div className="mb-2.5 flex items-end gap-2">
         <label className="flex flex-col gap-1">
-          <span className="text-[11px] font-medium text-slate-600">
+          <span className="text-xs font-medium text-slate-600">
             {tr ? 'Kayıt türü' : 'Record type'}
           </span>
           <Select
@@ -69,13 +69,13 @@ export const AuditSection: React.FC = () => {
             ))}
           </Select>
         </label>
-        <span className="pb-1.5 text-[11px] text-slate-500">
+        <span className="pb-1.5 text-xs text-slate-500">
           {tr ? `${shown.length} kayıt` : `${shown.length} entries`}
         </span>
       </div>
 
       {shown.length === 0 ? (
-        <p className="text-[11px] text-slate-500">
+        <p className="text-xs text-slate-500">
           {tr ? 'Gösterilecek kayıt yok.' : 'Nothing to show.'}
         </p>
       ) : (
@@ -91,7 +91,7 @@ export const AuditSection: React.FC = () => {
         >
           {shown.map((entry) => (
             <tr key={entry.id}>
-              <Td className="whitespace-nowrap font-mono text-[11px] text-slate-500">
+              <Td className="whitespace-nowrap font-mono text-xs text-slate-500">
                 {entry.at.slice(0, 16).replace('T', ' ')}
               </Td>
               <Td className="font-medium text-slate-900">
@@ -105,9 +105,9 @@ export const AuditSection: React.FC = () => {
                 </Pill>
               </Td>
               <Td>
-                <span className="font-mono text-[11px]">{entry.entityType}</span>
+                <span className="font-mono text-xs">{entry.entityType}</span>
                 {entry.entityId && (
-                  <span className="ml-1.5 font-mono text-[11px] text-slate-400">
+                  <span className="ml-1.5 font-mono text-xs text-slate-400">
                     {entry.entityId.slice(0, 8)}…
                   </span>
                 )}

@@ -61,7 +61,7 @@ export const FinanceAccountingView: React.FC = () => {
           <h1 className="text-lg font-bold text-slate-900">
             {tr ? 'Bütçe ve Finans' : 'Budget and Finance'}
           </h1>
-          <p className="max-w-2xl text-xs text-slate-500">
+          <p className="max-w-2xl text-sm text-slate-500">
             {tr
               ? 'Bağışçılar Türkiye’de, harcama Kenya’da, denetim üçüncü bir yerde. Her tutar kendi para biriminde ve kullanılan kurla birlikte durur; "denetlendi" rozetini yalnızca denetçi koyabilir.'
               : 'Donors are in Türkiye, the spending is in Kenya, the audit is somewhere else. Every amount keeps its own currency and the rate used, and only an auditor can produce the audited badge.'}
@@ -75,7 +75,7 @@ export const FinanceAccountingView: React.FC = () => {
             key={key}
             type="button"
             onClick={() => setTab(key)}
-            className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
+            className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors ${
               tab === key
                 ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
                 : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'

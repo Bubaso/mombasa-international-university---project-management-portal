@@ -91,7 +91,7 @@ export const BudgetPanel: React.FC<{ canSpend: boolean }> = ({ canSpend }) => {
                   }}
                   className="space-y-2 rounded-lg border border-slate-200 bg-white p-2.5"
                 >
-                  <p className="text-[11px] text-slate-600">
+                  <p className="text-xs text-slate-600">
                     {tr
                       ? 'Henüz kategori yok. Harcama dağılımı kategorilerden hesaplandığı için önce bir tane açın.'
                       : 'No categories yet. The spend distribution is computed from them, so open one first.'}
@@ -291,7 +291,7 @@ export const BudgetPanel: React.FC<{ canSpend: boolean }> = ({ canSpend }) => {
       >
         <QueryStatus queries={[spend]} />
         {(spend.data ?? []).length === 0 ? (
-          <p className="text-[11px] text-slate-500">
+          <p className="text-xs text-slate-500">
             {tr ? 'Gösterilecek kategori yok.' : 'No categories to show.'}
           </p>
         ) : (
@@ -300,7 +300,7 @@ export const BudgetPanel: React.FC<{ canSpend: boolean }> = ({ canSpend }) => {
               const pct = share(category.spentKes, totals.budget);
               return (
                 <li key={category.budgetCategoryId}>
-                  <div className="flex flex-wrap items-baseline justify-between gap-2 text-[11px]">
+                  <div className="flex flex-wrap items-baseline justify-between gap-2 text-xs">
                     <span className="font-medium text-slate-800">
                       {tr ? (category.nameTr ?? category.nameEn) : category.nameEn}
                     </span>

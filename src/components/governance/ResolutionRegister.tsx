@@ -46,10 +46,10 @@ export const ResolutionRegister: React.FC = () => {
         <div className="flex items-start gap-2.5">
           <Gavel className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" aria-hidden="true" />
           <div>
-            <h2 className="text-sm font-bold text-slate-900">
+            <h2 className="text-base font-bold text-slate-900">
               {tr ? 'Resmî karar kütüğü' : 'Formal resolution register'}
             </h2>
-            <p className="text-[11px] text-slate-500">
+            <p className="text-xs text-slate-500">
               {tr
                 ? 'Organların kararları, numaralı ve imzalı. İmzalandıktan sonra metni değiştirilemez — geri alınabilir, üstüne karar alınabilir, ama yeniden yazılamaz.'
                 : 'The organs’ resolutions, numbered and signed. Once signed the text is closed: a resolution can be rescinded or superseded, not rewritten.'}
@@ -74,7 +74,7 @@ export const ResolutionRegister: React.FC = () => {
       <WriteError error={sign.error} />
 
       {rows.length === 0 ? (
-        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] text-slate-600">
+        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
           {tr
             ? 'Hiçbir organa bağlı karar yok. Toplantı ekranında bir kararı organa bağlayınca resmî kütüğe burada girer.'
             : 'No resolution belongs to an organ yet. Attach a decision to an organ on the meetings screen and it enters the formal register here.'}
@@ -87,11 +87,11 @@ export const ResolutionRegister: React.FC = () => {
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-1.5">
                     {row.referenceNo && (
-                      <span className="font-mono text-[11px] font-semibold text-indigo-800">
+                      <span className="font-mono text-xs font-semibold text-indigo-800">
                         {row.referenceNo}
                       </span>
                     )}
-                    <span className="text-xs font-medium text-slate-900">
+                    <span className="text-sm font-medium text-slate-900">
                       <Bilingual
                         table="decisions"
                         id={row.decisionId}
@@ -101,7 +101,7 @@ export const ResolutionRegister: React.FC = () => {
                       />
                     </span>
                   </div>
-                  <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-500">
+                  <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
                     {row.organKind && <span>{organLabel(row.organKind, language)}</span>}
                     {row.decidedOn && <span>{formatDate(row.decidedOn, language)}</span>}
                     {row.signedAt ? (
@@ -134,7 +134,7 @@ export const ResolutionRegister: React.FC = () => {
                     {implementationLabel(row.implementation, language)}
                   </Pill>
                   {row.daysSince != null && (
-                    <span className="font-mono text-[11px] text-slate-400">
+                    <span className="font-mono text-xs text-slate-400">
                       {tr ? `${row.daysSince} gün önce` : `${row.daysSince}d ago`}
                     </span>
                   )}
@@ -143,7 +143,7 @@ export const ResolutionRegister: React.FC = () => {
                       type="button"
                       onClick={() => sign.mutate({ decisionId: row.decisionId })}
                       disabled={sign.isPending}
-                      className="flex cursor-pointer items-center gap-1 text-[11px] text-indigo-700 hover:underline disabled:opacity-50"
+                      className="flex cursor-pointer items-center gap-1 text-xs text-indigo-700 hover:underline disabled:opacity-50"
                     >
                       <PenLine className="h-3.5 w-3.5" aria-hidden="true" />
                       {tr ? 'kütüğe imzala' : 'sign into the register'}
@@ -154,7 +154,7 @@ export const ResolutionRegister: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => navigate('/meetings')}
-                    className="cursor-pointer text-[11px] text-slate-500 hover:underline"
+                    className="cursor-pointer text-xs text-slate-500 hover:underline"
                   >
                     {tr ? 'tutanağa git' : 'open the minute'}
                   </button>
@@ -166,7 +166,7 @@ export const ResolutionRegister: React.FC = () => {
       )}
 
       {unactioned > 0 && (
-        <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-900">
+        <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
           {tr
             ? '“Aksiyona bağlanmamış”, “başlanmadı” değildir: bu kararın ne yapılarak uygulanacağını kimse yazmamış. Bir karar sessizce uygulanmamaya işte böyle dönüşüyor.'
             : '“Not turned into an action” is not “not started”: nobody has written down what carrying this resolution out would consist of. That is how a decision quietly becomes a decision not to act.'}

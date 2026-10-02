@@ -49,7 +49,7 @@ export const GovernanceCharterView: React.FC = () => {
           <Users2 className="mt-0.5 h-5 w-5 shrink-0 text-indigo-600" aria-hidden="true" />
           <div>
             <h1 className="text-lg font-bold text-slate-900">{tr ? 'Yönetişim' : 'Governance'}</h1>
-            <p className="max-w-2xl text-xs text-slate-500">
+            <p className="max-w-2xl text-sm text-slate-500">
               {tr
                 ? 'Üç organ, mütevelli kütüğü, resmî kararlar ve beyanlar. Buradaki her rakam bir sorgudan geliyor: nisap yoklamadan, kararın uygulanıp uygulanmadığı aksiyonlarından.'
                 : 'Three organs, the trustee register, the formal resolutions and the declarations. Every figure here comes from a query: the quorum from the attendance, and whether a resolution happened from its actions.'}
@@ -76,10 +76,10 @@ export const GovernanceCharterView: React.FC = () => {
         className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 hover:bg-slate-50"
       >
         <div>
-          <p className="text-sm font-semibold text-slate-900">
+          <p className="text-base font-semibold text-slate-900">
             {tr ? 'Uyum ve akademik hazırlık' : 'Compliance and academic readiness'}
           </p>
-          <p className="text-[11px] text-slate-500">
+          <p className="text-xs text-slate-500">
             {tr
               ? 'Fasıl 164 ve KRA takvimi, CUE kontrol listesi, berat yol haritası, programlar ve sayılı yükümlülükler.'
               : 'The Cap 164 and KRA calendar, the CUE checklist, the charter road map, the programmes and the quantified obligations.'}

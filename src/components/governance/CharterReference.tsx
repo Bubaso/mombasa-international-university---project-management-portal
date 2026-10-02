@@ -93,10 +93,10 @@ export const CharterReference: React.FC = () => {
         <div className="flex min-w-0 items-start gap-2.5">
           <ScrollText className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" aria-hidden="true" />
           <div className="min-w-0">
-            <h2 className="text-sm font-semibold text-slate-900">
+            <h2 className="text-base font-semibold text-slate-900">
               {tr ? 'Vakıf senedi referansı' : 'Trust deed reference'}
             </h2>
-            <p className="max-w-3xl text-[11px] leading-relaxed text-slate-500">
+            <p className="max-w-3xl text-xs leading-relaxed text-slate-500">
               {tr
                 ? 'Bu sayfa okunur: bir sicil memuru "bu yetki hangi maddeden geliyor" diye sorduğunda buradaki şey alıntılanır. Bu yüzden senedin kendi sözleri, birinin okuması, ve maddenin dosyada bulunup bulunmadığı üç ayrı şey olarak durur — portal senedi okumuyor, dosya olarak tutuyor.'
                 : 'This page gets read out: when a registrar asks which clause a power comes from, what is here is what gets quoted. So the deed’s own words, somebody’s reading of them, and whether the clause has been found in the file are three separate things — the portal does not read the deed, it holds it as a file.'}
@@ -152,7 +152,7 @@ export const CharterReference: React.FC = () => {
               <ActionButton type="submit" disabled={record.isPending}>
                 {tr ? 'Maddeyi kaydet' : 'Record the clause'}
               </ActionButton>
-              <p className="mt-1 text-[11px] text-slate-500">
+              <p className="mt-1 text-xs text-slate-500">
                 {tr
                   ? 'Buraya girilen özet bir okumadır, senedin sözü değil. Senedin kendi sözünü kaydetmek senedin kendisini ister — dosya kasada olmadan alıntı girilemez.'
                   : 'A summary entered here is a reading, not the deed’s words. Recording the deed’s own words requires the deed: no quotation can be entered without the file in the vault.'}
@@ -163,7 +163,7 @@ export const CharterReference: React.FC = () => {
         )}
 
         {rows.length === 0 ? (
-          <p className="text-[11px] text-slate-500">
+          <p className="text-xs text-slate-500">
             {tr
               ? 'Kayıtlı madde yok. Bu, yönetişim kurallarının senede dayanmadığı anlamına gelmez — hangi maddeye dayandığının hiç yazılmadığı anlamına gelir.'
               : 'No clause is recorded. That does not mean the governance rules have no basis in the deed — it means nobody has written down which clause each rests on.'}
@@ -182,11 +182,11 @@ export const CharterReference: React.FC = () => {
                       className="h-3.5 w-3.5 shrink-0 text-indigo-600"
                       aria-hidden="true"
                     />
-                    <span className="font-mono text-xs font-semibold text-slate-900">
+                    <span className="font-mono text-sm font-semibold text-slate-900">
                       {clause.reference}
                     </span>
                     {(clause.headingEn != null || clause.headingTr != null) && (
-                      <span className="text-xs text-slate-700">
+                      <span className="text-sm text-slate-700">
                         <Bilingual
                           table="charter_clauses"
                           id={clause.clauseId}
@@ -236,7 +236,7 @@ export const CharterReference: React.FC = () => {
 
                   {/* The deed's words, marked as a quotation. */}
                   {clause.quotedText != null ? (
-                    <p className="mt-1 flex items-start gap-1.5 border-l-2 border-indigo-300 pl-2 text-[11px] leading-relaxed text-slate-800">
+                    <p className="mt-1 flex items-start gap-1.5 border-l-2 border-indigo-300 pl-2 text-xs leading-relaxed text-slate-800">
                       <Quote
                         className="mt-0.5 h-3 w-3 shrink-0 text-indigo-500"
                         aria-hidden="true"
@@ -250,7 +250,7 @@ export const CharterReference: React.FC = () => {
                       </span>
                     </p>
                   ) : (
-                    <p className="mt-1 text-[11px] text-slate-500">
+                    <p className="mt-1 text-xs text-slate-500">
                       {tr
                         ? 'Senedin kendi sözü kayıtlı değil.'
                         : 'The deed’s own words are not recorded.'}
@@ -259,7 +259,7 @@ export const CharterReference: React.FC = () => {
 
                   {/* Somebody's reading, labelled as one. */}
                   {(clause.summaryEn != null || clause.summaryTr != null) && (
-                    <p className="mt-0.5 text-[11px] text-slate-600">
+                    <p className="mt-0.5 text-xs text-slate-600">
                       <span className="font-medium">
                         {tr ? 'Birinin okuması: ' : "Somebody's reading: "}
                       </span>
@@ -274,7 +274,7 @@ export const CharterReference: React.FC = () => {
                   )}
 
                   {cited.length > 0 ? (
-                    <p className="mt-1 text-[11px] text-slate-600">
+                    <p className="mt-1 text-xs text-slate-600">
                       {tr ? 'Dayandırılan: ' : 'Cited for: '}
                       {cited
                         .map(
@@ -284,7 +284,7 @@ export const CharterReference: React.FC = () => {
                         .join(' · ')}
                     </p>
                   ) : (
-                    <p className="mt-1 text-[11px] text-slate-500">
+                    <p className="mt-1 text-xs text-slate-500">
                       {tr
                         ? 'Bu maddeye hiçbir şey dayandırılmamış.'
                         : 'Nothing is cited to this clause.'}
@@ -298,11 +298,11 @@ export const CharterReference: React.FC = () => {
 
         {/* The inverse, and the reason to have the page. */}
         <div className="border-t border-slate-200 pt-2">
-          <p className="mb-1.5 text-[11px] font-semibold tracking-wider text-slate-600 uppercase">
+          <p className="mb-1.5 text-xs font-semibold tracking-wider text-slate-600 uppercase">
             {tr ? 'Senede dayandırılmamış kurallar' : 'Rules with no clause behind them'}
           </p>
           {gaps.length === 0 ? (
-            <p className="text-[11px] text-slate-500">
+            <p className="text-xs text-slate-500">
               {tr
                 ? 'Her yönetişim kaydının arkasında bir madde var.'
                 : 'Every governance record has a clause behind it.'}
@@ -317,7 +317,7 @@ export const CharterReference: React.FC = () => {
               {gaps.map((gap) => (
                 <li
                   key={`${gap.subjectKind}-${gap.subjectId}`}
-                  className={`flex flex-wrap items-baseline gap-x-2 gap-y-0.5 rounded-lg border px-2.5 py-1.5 text-[11px] ${
+                  className={`flex flex-wrap items-baseline gap-x-2 gap-y-0.5 rounded-lg border px-2.5 py-1.5 text-xs ${
                     gap.carriesARule
                       ? 'border-amber-200 bg-amber-50 text-amber-900'
                       : 'border-slate-200 bg-slate-50 text-slate-600'

@@ -156,10 +156,10 @@ export const ChainPanel: React.FC = () => {
       <header className="mb-3 flex items-start gap-2.5">
         <GitFork className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" aria-hidden="true" />
         <div>
-          <h2 className="text-sm font-bold text-slate-900">
+          <h2 className="text-base font-bold text-slate-900">
             {tr ? 'Bağımlılık zinciri' : 'Dependency chain'}
           </h2>
-          <p className="text-[11px] text-slate-500">
+          <p className="text-xs text-slate-500">
             {tr
               ? 'Hukukî karar → inşaat → akreditasyon → öğrenci alımı. Her halkanın sahibi başka ve çoğu yalnızca kendi ucunu görüyor: avukat kararın beklediğini bilir, alım tarihinin ona bağlı olduğunu bilmez.'
               : 'A ruling, then the works, then accreditation, then an intake. Each link has a different owner and most see only their own end: the advocate knows the ruling is pending and not that the intake waits on it.'}
@@ -170,7 +170,7 @@ export const ChainPanel: React.FC = () => {
       <QueryStatus queries={[dependencies]} />
 
       {edges.length === 0 ? (
-        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] text-slate-600">
+        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
           {tr
             ? 'Kayıtlı bağımlılık yok. “Bu, şu bitmeden olmaz” cümlesi bir yere yazılmadıkça kimse göremez.'
             : 'No dependency is recorded. “This cannot happen until that does” is invisible until somebody writes it down.'}
@@ -185,7 +185,7 @@ export const ChainPanel: React.FC = () => {
               <Pill className={kindOf(from.kind).tone}>
                 {tr ? kindOf(from.kind).tr : kindOf(from.kind).en}
               </Pill>
-              <span className="min-w-0 truncate text-xs text-slate-900">{from.label}</span>
+              <span className="min-w-0 truncate text-sm text-slate-900">{from.label}</span>
 
               {/* The three-valued verdict, carried all the way here. */}
               {d.blockerSettled === true ? (
@@ -209,7 +209,7 @@ export const ChainPanel: React.FC = () => {
               <Pill className={kindOf(to.kind).tone}>
                 {tr ? kindOf(to.kind).tr : kindOf(to.kind).en}
               </Pill>
-              <span className="min-w-0 truncate text-xs text-slate-900">{to.label}</span>
+              <span className="min-w-0 truncate text-sm text-slate-900">{to.label}</span>
 
               <span className="ml-auto shrink-0">
                 {d.blockerSettled === true ? (
@@ -228,7 +228,7 @@ export const ChainPanel: React.FC = () => {
               </span>
 
               {(tr ? d.noteEn : d.noteEn) && (
-                <p className="w-full text-[11px] text-slate-600">{d.noteEn}</p>
+                <p className="w-full text-xs text-slate-600">{d.noteEn}</p>
               )}
             </li>
           ))}

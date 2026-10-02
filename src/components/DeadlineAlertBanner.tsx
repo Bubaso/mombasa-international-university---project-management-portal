@@ -53,8 +53,8 @@ export const DeadlineAlertBanner: React.FC = () => {
 
   return (
     <div className="border-b border-amber-200 bg-amber-50/90 px-3 py-1.5 sm:px-4 sm:py-2.5">
-      <div className="mx-auto flex max-w-7xl flex-col gap-1.5 text-xs sm:flex-row sm:items-center sm:gap-3">
-        <div className="flex shrink-0 items-center gap-2 text-[11px] font-semibold tracking-wider text-amber-900 uppercase sm:text-xs">
+      <div className="mx-auto flex max-w-7xl flex-col gap-1.5 text-sm sm:flex-row sm:items-center sm:gap-3">
+        <div className="flex shrink-0 items-center gap-2 text-xs font-semibold tracking-wider text-amber-900 uppercase sm:text-sm">
           <ShieldAlert className="h-3.5 w-3.5 shrink-0 text-amber-600" aria-hidden="true" />
           <span>{tr ? 'Kritik tarihler' : 'Critical dates'}</span>
         </div>
@@ -80,7 +80,7 @@ export const DeadlineAlertBanner: React.FC = () => {
                 {/* Signed, and said in words. "−3 days" is a number people
                     misread; "3 days ago" is not. */}
                 <span
-                  className={`shrink-0 rounded border px-1.5 py-0.5 font-mono text-[10px] ${
+                  className={`shrink-0 rounded border px-1.5 py-0.5 font-mono text-xs ${
                     past
                       ? 'border-rose-300 bg-rose-100 text-rose-900'
                       : date.daysAway <= 7

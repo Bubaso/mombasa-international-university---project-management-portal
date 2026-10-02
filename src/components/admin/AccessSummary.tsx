@@ -62,7 +62,7 @@ export const AccessSummary: React.FC<{ authority: Authority | null | undefined }
       canUse
     >
       {!authority ? (
-        <p className="text-xs text-slate-600">
+        <p className="text-sm text-slate-600">
           {tr
             ? 'Etkin bir profiliniz olmadığı için hiçbir kayda erişiminiz yok.'
             : 'You have no active profile, so you can reach nothing.'}
@@ -71,13 +71,13 @@ export const AccessSummary: React.FC<{ authority: Authority | null | undefined }
         <div className="space-y-4">
           <dl className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-              <dt className="text-[11px] text-slate-500">{tr ? 'Göreviniz' : 'Your role'}</dt>
-              <dd className="text-xs font-semibold text-slate-900">
+              <dt className="text-xs text-slate-500">{tr ? 'Göreviniz' : 'Your role'}</dt>
+              <dd className="text-sm font-semibold text-slate-900">
                 {roleLabel(authority.role, language)}
               </dd>
             </div>
             <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-              <dt className="text-[11px] text-slate-500">
+              <dt className="text-xs text-slate-500">
                 {tr ? 'Gizlilik seviyeniz' : 'Your clearance'}
               </dt>
               <dd>
@@ -87,8 +87,8 @@ export const AccessSummary: React.FC<{ authority: Authority | null | undefined }
               </dd>
             </div>
             <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-              <dt className="text-[11px] text-slate-500">{tr ? 'Konumunuz' : 'Standing'}</dt>
-              <dd className="text-xs font-semibold text-slate-900">
+              <dt className="text-xs text-slate-500">{tr ? 'Konumunuz' : 'Standing'}</dt>
+              <dd className="text-sm font-semibold text-slate-900">
                 {authority.isInternal
                   ? tr
                     ? 'Kurum içi'
@@ -102,7 +102,7 @@ export const AccessSummary: React.FC<{ authority: Authority | null | undefined }
 
           {lent.length > 0 && (
             <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5">
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-900">
+              <div className="flex items-center gap-1.5 text-sm font-semibold text-amber-900">
                 <UserCog className="h-3.5 w-3.5" aria-hidden="true" />
                 <span>
                   {tr
@@ -110,7 +110,7 @@ export const AccessSummary: React.FC<{ authority: Authority | null | undefined }
                     : 'You are acting on a delegation'}
                 </span>
               </div>
-              <ul className="mt-1.5 space-y-1 text-[11px] text-amber-900/90">
+              <ul className="mt-1.5 space-y-1 text-xs text-amber-900/90">
                 {lent.map((d) => (
                   <li key={d.lenderId}>
                     {tr
@@ -119,7 +119,7 @@ export const AccessSummary: React.FC<{ authority: Authority | null | undefined }
                   </li>
                 ))}
               </ul>
-              <p className="mt-1.5 text-[11px] text-amber-900/70">
+              <p className="mt-1.5 text-xs text-amber-900/70">
                 {tr
                   ? 'Yaptığınız her işlem denetim kaydına kendi adınızla yazılır.'
                   : 'Everything you do is written to the audit trail under your own name.'}
@@ -170,16 +170,16 @@ const ScopeList: React.FC<{
   items: { key: string; label: string; note?: string }[];
 }> = ({ icon: Icon, title, empty, items }) => (
   <div className="rounded-lg border border-slate-200 px-3 py-2.5">
-    <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-700">
+    <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
       <Icon className="h-3.5 w-3.5 text-slate-500" aria-hidden="true" />
       <span>{title}</span>
     </div>
     {items.length === 0 ? (
-      <p className="mt-1.5 text-[11px] text-slate-500">{empty}</p>
+      <p className="mt-1.5 text-xs text-slate-500">{empty}</p>
     ) : (
       <ul className="mt-1.5 space-y-1">
         {items.map((item) => (
-          <li key={item.key} className="flex items-baseline justify-between gap-2 text-[11px]">
+          <li key={item.key} className="flex items-baseline justify-between gap-2 text-xs">
             <span className="min-w-0 truncate text-slate-700">{item.label}</span>
             {item.note && <span className="shrink-0 text-slate-400">{item.note}</span>}
           </li>

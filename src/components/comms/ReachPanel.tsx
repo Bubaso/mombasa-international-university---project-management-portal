@@ -48,10 +48,10 @@ export const ReachPanel: React.FC = () => {
       <header className="mb-3 flex items-start gap-2.5">
         <Eye className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" aria-hidden="true" />
         <div>
-          <h2 className="text-sm font-bold text-slate-900">
+          <h2 className="text-base font-bold text-slate-900">
             {tr ? 'Duyuru ulaştı mı, kim nerede' : 'Reach and membership'}
           </h2>
-          <p className="max-w-2xl text-[11px] text-slate-500">
+          <p className="max-w-2xl text-xs text-slate-500">
             {tr
               ? 'Payda, duyuruyu görebilecek kişilerdir — hesabı olan herkes değil. Yanlış paydayla hesaplanan bir yüzde, yarısı okunmuş bir duyuruyu iyi okunmuş gösterir.'
               : 'The denominator is the people who could see it, not everybody with an account. A percentage against the wrong denominator makes a half-read notice look well read.'}
@@ -68,7 +68,7 @@ export const ReachPanel: React.FC = () => {
             return (
               <li key={a.threadId} className="rounded-lg border border-slate-200 bg-slate-50 p-2">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="min-w-0 flex-1 truncate text-xs font-medium text-slate-900">
+                  <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-900">
                     {a.title}
                   </span>
                   {a.urgent && (
@@ -87,12 +87,12 @@ export const ReachPanel: React.FC = () => {
                     {share != null && ` · ${share}%`}
                   </Pill>
                 </div>
-                <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
+                <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-slate-500">
                   <span>{channelName(a.channel, tr)}</span>
                   <span className="font-mono">{formatDate(a.createdAt, language)}</span>
                 </div>
                 {a.seenBy.length > 0 && (
-                  <p className="mt-0.5 text-[11px] text-slate-600">
+                  <p className="mt-0.5 text-xs text-slate-600">
                     {tr ? 'gören: ' : 'seen by: '}
                     {a.seenBy.join(', ')}
                   </p>
@@ -104,7 +104,7 @@ export const ReachPanel: React.FC = () => {
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="flex items-center gap-1.5 text-[11px] font-semibold tracking-wider text-slate-500 uppercase">
+        <h3 className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-slate-500 uppercase">
           <Users className="h-3.5 w-3.5" aria-hidden="true" />
           {tr ? 'Adıyla eklenenler' : 'Added by name'}
         </h3>
@@ -166,7 +166,7 @@ export const ReachPanel: React.FC = () => {
           <button
             type="button"
             onClick={() => setAdding(false)}
-            className="cursor-pointer pb-1 text-[11px] text-slate-500 underline"
+            className="cursor-pointer pb-1 text-xs text-slate-500 underline"
           >
             {tr ? 'vazgeç' : 'cancel'}
           </button>
@@ -177,7 +177,7 @@ export const ReachPanel: React.FC = () => {
       )}
 
       {rows.length === 0 ? (
-        <p className="mt-2 text-[11px] text-slate-500">
+        <p className="mt-2 text-xs text-slate-500">
           {tr
             ? 'Kimse adıyla eklenmemiş — herkes kanallarda rolü üzerinden duruyor, ki olağan olan budur.'
             : 'Nobody has been added by name; everybody is in their channels by role, which is the ordinary case.'}
@@ -192,11 +192,11 @@ export const ReachPanel: React.FC = () => {
               <Pill className="border-indigo-300 bg-indigo-50 text-indigo-900">
                 {channelName(m.channel, tr)}
               </Pill>
-              <span className="text-xs text-slate-900">
+              <span className="text-sm text-slate-900">
                 {m.fullName ?? m.profileId.slice(0, 8)}
               </span>
-              {m.note && <span className="text-[11px] text-slate-500">{m.note}</span>}
-              <span className="ml-auto font-mono text-[10px] text-slate-400">
+              {m.note && <span className="text-xs text-slate-500">{m.note}</span>}
+              <span className="ml-auto font-mono text-xs text-slate-400">
                 {formatDate(m.addedAt, language)}
               </span>
             </li>

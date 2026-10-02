@@ -32,10 +32,10 @@ export const RoadmapPanel: React.FC = () => {
       <header className="mb-3 flex items-start gap-2.5">
         <Flag className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" aria-hidden="true" />
         <div>
-          <h2 className="text-sm font-bold text-slate-900">
+          <h2 className="text-base font-bold text-slate-900">
             {tr ? 'Berat yol haritası' : 'Charter road map'}
           </h2>
-          <p className="text-[11px] text-slate-500">
+          <p className="text-xs text-slate-500">
             {tr
               ? 'Aşamalar, bağımlılıkları ve hedef tarihleri. “Tıkandı” hesaplanıyor, saklanmıyor: öncesi bitince kendiliğinden açılıyor.'
               : 'The stages, their dependencies and their targets. “Blocked” is computed rather than stored, so it clears itself the moment the stage before it finishes.'}
@@ -46,7 +46,7 @@ export const RoadmapPanel: React.FC = () => {
       <QueryStatus queries={[roadmap]} />
 
       {rows.length === 0 ? (
-        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] text-slate-600">
+        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
           {tr
             ? 'Yol haritası boş. Aşamalar girilene kadar beratın ne kadar yakın olduğu söylenemez.'
             : 'The road map is empty. Until the stages are entered, nothing can be said about how close the charter is.'}
@@ -68,8 +68,8 @@ export const RoadmapPanel: React.FC = () => {
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="font-mono text-[11px] text-slate-400">{stage.sequence}</span>
-                      <span className="text-xs font-medium text-slate-900">
+                      <span className="font-mono text-xs text-slate-400">{stage.sequence}</span>
+                      <span className="text-sm font-medium text-slate-900">
                         <Bilingual
                           table="charter_stages"
                           id={stage.id}
@@ -95,11 +95,11 @@ export const RoadmapPanel: React.FC = () => {
                       )}
                     </div>
                     {(tr ? stage.detailTr : stage.detailEn) && (
-                      <p className="mt-0.5 text-[11px] text-slate-600">
+                      <p className="mt-0.5 text-xs text-slate-600">
                         {tr ? stage.detailTr : stage.detailEn}
                       </p>
                     )}
-                    <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-500">
+                    <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
                       {stage.targetOn && (
                         <span>
                           {tr ? 'hedef ' : 'target '}

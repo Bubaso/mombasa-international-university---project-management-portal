@@ -167,7 +167,7 @@ export const GlobalSearchModal: React.FC = () => {
                 : 'Case number, minute, obligation, stakeholder, payment — one box'
             }
             aria-label={tr ? 'Kayıtlarda ara' : 'Search the records'}
-            className="w-full bg-transparent text-sm text-slate-900 placeholder-slate-400 focus:outline-none"
+            className="w-full bg-transparent text-base text-slate-900 placeholder-slate-400 focus:outline-none"
           />
           {searchQuery && (
             <button
@@ -179,7 +179,7 @@ export const GlobalSearchModal: React.FC = () => {
               <X className="h-4 w-4" />
             </button>
           )}
-          <kbd className="hidden rounded border border-slate-200 bg-white px-1.5 py-0.5 font-mono text-[10px] text-slate-500 shadow-xs sm:inline-block">
+          <kbd className="hidden rounded border border-slate-200 bg-white px-1.5 py-0.5 font-mono text-xs text-slate-500 shadow-xs sm:inline-block">
             ESC
           </kbd>
         </div>
@@ -197,7 +197,7 @@ export const GlobalSearchModal: React.FC = () => {
                   type="button"
                   onClick={() => toggleKind(kind)}
                   aria-pressed={on}
-                  className={`cursor-pointer rounded-md border px-2 py-0.5 text-[11px] transition-colors ${
+                  className={`cursor-pointer rounded-md border px-2 py-0.5 text-xs transition-colors ${
                     on
                       ? 'border-amber-300 bg-amber-100 text-amber-900'
                       : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
@@ -211,7 +211,7 @@ export const GlobalSearchModal: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setKinds([])}
-                className="cursor-pointer px-2 py-0.5 text-[11px] text-slate-500 underline hover:text-slate-800"
+                className="cursor-pointer px-2 py-0.5 text-xs text-slate-500 underline hover:text-slate-800"
               >
                 {tr ? 'tümü' : 'all'}
               </button>
@@ -224,12 +224,12 @@ export const GlobalSearchModal: React.FC = () => {
 
           {typed.length === 0 && (
             <div className="space-y-4 py-6 text-center">
-              <p className="text-xs text-slate-500">
+              <p className="text-sm text-slate-500">
                 {tr
                   ? 'On dokuz kütüğün tamamında arar: davalar, kararlar, tutanaklar, belgeler, paydaşlar, yükümlülükler, riskler, saha işleri, ödemeler.'
                   : 'Searches all nineteen registers: cases, orders, minutes, documents, stakeholders, obligations, risks, site work, payments.'}
               </p>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-xs text-slate-400">
                 {tr
                   ? 'Türkçe sorgu İngilizce kaydı bulur, çünkü kayıtlar iki dilli tutuluyor. Dava numarası yazarsanız harfi harfine eşleşir.'
                   : 'A Turkish query finds an English record, because the records are kept in both. Type a case number and it matches literally.'}
@@ -239,7 +239,7 @@ export const GlobalSearchModal: React.FC = () => {
                   suggestions this box has any business showing (M13-11). */}
               {(saved.data ?? []).length > 0 && (
                 <div className="mx-auto max-w-md space-y-1.5 text-left">
-                  <p className="text-[11px] font-semibold tracking-wider text-slate-600 uppercase">
+                  <p className="text-xs font-semibold tracking-wider text-slate-600 uppercase">
                     {tr ? 'Kayıtlı aramalarınız' : 'Your saved searches'}
                   </p>
                   {(saved.data ?? []).map((item) => (
@@ -255,10 +255,8 @@ export const GlobalSearchModal: React.FC = () => {
                         }}
                         className="min-w-0 flex-1 cursor-pointer text-left"
                       >
-                        <span className="text-xs font-medium text-slate-900">{item.name}</span>
-                        <span className="ml-2 font-mono text-[11px] text-slate-500">
-                          {item.query}
-                        </span>
+                        <span className="text-sm font-medium text-slate-900">{item.name}</span>
+                        <span className="ml-2 font-mono text-xs text-slate-500">{item.query}</span>
                       </button>
                       <button
                         type="button"
@@ -276,7 +274,7 @@ export const GlobalSearchModal: React.FC = () => {
           )}
 
           {tooShort && (
-            <p className="py-6 text-center text-xs text-slate-500">
+            <p className="py-6 text-center text-sm text-slate-500">
               {tr
                 ? 'En az iki harf yazın — tek harf bütün arşivle eşleşirdi.'
                 : 'Two characters at least — one would match the whole archive.'}
@@ -284,7 +282,7 @@ export const GlobalSearchModal: React.FC = () => {
           )}
 
           {!tooShort && typed.length >= MIN_QUERY && results.isSuccess && rows.length === 0 && (
-            <p className="py-6 text-center text-xs text-slate-500">
+            <p className="py-6 text-center text-sm text-slate-500">
               {tr
                 ? 'Görmeye yetkili olduğunuz kayıtlar arasında eşleşme yok. Başka bir kayıt olabilir ama o zaman görmeye yetkiniz yok demektir.'
                 : 'Nothing you are cleared to see matches. There may be a record; if so, you are not cleared for it.'}
@@ -294,7 +292,7 @@ export const GlobalSearchModal: React.FC = () => {
           {rows.length > 0 && (
             <>
               <div className="flex items-center justify-between">
-                <p className="text-[11px] text-slate-500">
+                <p className="text-xs text-slate-500">
                   {tr ? `${rows.length} sonuç` : `${rows.length} results`}
                 </p>
                 {!naming ? (
@@ -304,7 +302,7 @@ export const GlobalSearchModal: React.FC = () => {
                       setName(typed);
                       setNaming(true);
                     }}
-                    className="flex cursor-pointer items-center gap-1 text-[11px] text-slate-500 hover:text-slate-900"
+                    className="flex cursor-pointer items-center gap-1 text-xs text-slate-500 hover:text-slate-900"
                   >
                     <BookmarkPlus className="h-3.5 w-3.5" />
                     {tr ? 'Bu aramayı kaydet' : 'Save this search'}
@@ -326,19 +324,19 @@ export const GlobalSearchModal: React.FC = () => {
                       onChange={(e) => setName(e.target.value)}
                       placeholder={tr ? 'Arama adı' : 'Name this search'}
                       aria-label={tr ? 'Arama adı' : 'Name this search'}
-                      className="w-36 rounded border border-slate-300 px-1.5 py-0.5 text-[11px]"
+                      className="w-36 rounded border border-slate-300 px-1.5 py-0.5 text-xs"
                     />
                     <button
                       type="submit"
                       disabled={keep.isPending}
-                      className="cursor-pointer rounded border border-amber-300 bg-amber-100 px-1.5 py-0.5 text-[11px] text-amber-900 disabled:opacity-50"
+                      className="cursor-pointer rounded border border-amber-300 bg-amber-100 px-1.5 py-0.5 text-xs text-amber-900 disabled:opacity-50"
                     >
                       {tr ? 'kaydet' : 'save'}
                     </button>
                     <button
                       type="button"
                       onClick={() => setNaming(false)}
-                      className="cursor-pointer px-1 text-[11px] text-slate-500"
+                      className="cursor-pointer px-1 text-xs text-slate-500"
                     >
                       {tr ? 'vazgeç' : 'cancel'}
                     </button>
@@ -363,7 +361,7 @@ export const GlobalSearchModal: React.FC = () => {
                         />
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-1.5">
-                            <span className="text-xs font-medium text-slate-900">
+                            <span className="text-sm font-medium text-slate-900">
                               {title ?? (tr ? '(başlıksız)' : '(untitled)')}
                             </span>
                             <Pill>{kindLabel(hit.kind, language)}</Pill>
@@ -376,7 +374,7 @@ export const GlobalSearchModal: React.FC = () => {
                                 : TIER_LABEL[hit.confidentiality].en}
                             </Pill>
                             {hit.occurredOn && (
-                              <span className="font-mono text-[11px] text-slate-500">
+                              <span className="font-mono text-xs text-slate-500">
                                 {formatDate(hit.occurredOn, language)}
                               </span>
                             )}
@@ -384,7 +382,7 @@ export const GlobalSearchModal: React.FC = () => {
                                 record, and saying how many places it matched
                                 in is more useful than four identical rows. */}
                             {alsoMatched > 0 && (
-                              <span className="text-[11px] text-slate-400">
+                              <span className="text-xs text-slate-400">
                                 {tr
                                   ? `+${alsoMatched} yerde daha geçiyor`
                                   : `+${alsoMatched} more ${alsoMatched === 1 ? 'match' : 'matches'} here`}
@@ -392,12 +390,10 @@ export const GlobalSearchModal: React.FC = () => {
                             )}
                           </div>
                           {hit.subtitle && (
-                            <p className="mt-0.5 truncate text-[11px] text-slate-500">
-                              {hit.subtitle}
-                            </p>
+                            <p className="mt-0.5 truncate text-xs text-slate-500">{hit.subtitle}</p>
                           )}
                           {hit.snippet && (
-                            <p className="mt-0.5 line-clamp-2 text-[11px] text-slate-600">
+                            <p className="mt-0.5 line-clamp-2 text-xs text-slate-600">
                               <Snippet text={hit.snippet} />
                             </p>
                           )}

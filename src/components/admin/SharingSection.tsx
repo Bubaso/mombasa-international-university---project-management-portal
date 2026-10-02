@@ -124,7 +124,7 @@ export const SharingSection: React.FC<{ canManage: boolean }> = ({ canManage }) 
       canUse={canManage}
     >
       {rows.length === 0 ? (
-        <p className="text-[11px] text-slate-500">
+        <p className="text-xs text-slate-500">
           {tr ? 'Kayda özel açılmış erişim yok.' : 'Nothing has been shared record by record.'}
         </p>
       ) : (
@@ -147,7 +147,7 @@ export const SharingSection: React.FC<{ canManage: boolean }> = ({ canManage }) 
                 <Td className="font-medium text-slate-900">{grant.userName ?? grant.userId}</Td>
                 <Td>
                   <div>{describe(grant.entityType, grant.entityId)}</div>
-                  <div className="text-[11px] text-slate-400">
+                  <div className="text-xs text-slate-400">
                     {ENTITY_TYPES.includes(grant.entityType as EntityType)
                       ? ENTITY_LABELS[grant.entityType as EntityType][language]
                       : grant.entityType}
@@ -292,7 +292,7 @@ export const SharingSection: React.FC<{ canManage: boolean }> = ({ canManage }) 
             </Field>
           </div>
 
-          <p className="mt-2 text-[11px] leading-relaxed text-slate-500">
+          <p className="mt-2 text-xs leading-relaxed text-slate-500">
             {tr
               ? 'Kısıtlı sınıftaki bir kayıt dış paydaşa bu yolla açılamaz — bunun için kaydın sınıfının bilinçli olarak düşürülmesi gerekir. Bir bitiş tarihi vermek, unutulan erişimin en yaygın kaynağını kapatır.'
               : 'A restricted record cannot be handed to an external party this way; that needs a deliberate reclassification instead. Setting an end date closes off the commonest source of access nobody remembers granting.'}

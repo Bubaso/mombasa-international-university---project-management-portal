@@ -158,11 +158,11 @@ export const PeopleSection: React.FC<{ canAdminister: boolean }> = ({ canAdminis
         { label: tr ? 'Dış paydaşlar' : 'External stakeholders', rows: external },
       ].map((group) => (
         <div key={group.label} className="mb-4 last:mb-0">
-          <h3 className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+          <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
             {group.label}
           </h3>
           {group.rows.length === 0 ? (
-            <p className="text-[11px] text-slate-500">{tr ? 'Kayıt yok.' : 'Nobody yet.'}</p>
+            <p className="text-xs text-slate-500">{tr ? 'Kayıt yok.' : 'Nobody yet.'}</p>
           ) : (
             <TableFrame
               head={
@@ -183,9 +183,9 @@ export const PeopleSection: React.FC<{ canAdminister: boolean }> = ({ canAdminis
                     <tr className={editing ? 'bg-amber-50/50' : undefined}>
                       <Td>
                         <div className="font-medium text-slate-900">{person.fullName}</div>
-                        <div className="text-[11px] text-slate-500">{person.email}</div>
+                        <div className="text-xs text-slate-500">{person.email}</div>
                         {person.organization && (
-                          <div className="text-[11px] text-slate-400">{person.organization}</div>
+                          <div className="text-xs text-slate-400">{person.organization}</div>
                         )}
                       </Td>
                       <Td>{roleLabel(person.role, language)}</Td>
@@ -279,7 +279,7 @@ export const PeopleSection: React.FC<{ canAdminister: boolean }> = ({ canAdminis
                             </Field>
                           </div>
                           <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2">
-                            <label className="flex cursor-pointer items-center gap-1.5 text-[11px] text-slate-700">
+                            <label className="flex cursor-pointer items-center gap-1.5 text-xs text-slate-700">
                               <input
                                 type="checkbox"
                                 checked={draft.isActive}
@@ -311,7 +311,7 @@ export const PeopleSection: React.FC<{ canAdminister: boolean }> = ({ canAdminis
                             </div>
                           </div>
                           <WriteError error={updateProfile.error} />
-                          <p className="mt-2 text-[11px] text-slate-500">
+                          <p className="mt-2 text-xs text-slate-500">
                             {tr
                               ? 'Kişi silinmez; hesap kapatılır. Böylece bu kişinin geçmişteki işlemleri denetim kaydında kime ait olduğunu göstermeye devam eder.'
                               : 'Nobody is deleted, only deactivated — so that what they did in the past still has a name against it in the audit trail.'}
@@ -425,7 +425,7 @@ const InviteForm: React.FC<{
         </Field>
       </div>
 
-      <p className="mt-2 text-[11px] leading-relaxed text-slate-500">
+      <p className="mt-2 text-xs leading-relaxed text-slate-500">
         {external
           ? tr
             ? 'Dış paydaşlar yalnızca kendilerine atanan dava ve bloklara ulaşır. Davet gönderdikten sonra kapsamı aşağıdaki "Kapsam" bölümünden verin — kapsam verilmeden bu kişi neredeyse hiçbir şey göremez. Süreli erişim vermeniz önerilir.'

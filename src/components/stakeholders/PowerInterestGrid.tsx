@@ -51,13 +51,13 @@ export const PowerInterestGrid: React.FC<{
         return (
           <div key={quadrant} className={`rounded-xl border p-3 ${quadrantStyle(quadrant)}`}>
             <div className="mb-2 flex items-baseline justify-between gap-2">
-              <h3 className="text-xs font-semibold text-slate-900">
+              <h3 className="text-sm font-semibold text-slate-900">
                 {quadrantLabel(quadrant, language)}
               </h3>
-              <span className="text-[10px] text-slate-500">{hint[language]}</span>
+              <span className="text-xs text-slate-500">{hint[language]}</span>
             </div>
             {members.length === 0 ? (
-              <p className="text-[11px] text-slate-500">{tr ? 'Kimse yok.' : 'Nobody here.'}</p>
+              <p className="text-xs text-slate-500">{tr ? 'Kimse yok.' : 'Nobody here.'}</p>
             ) : (
               <ul className="space-y-1">
                 {members.map((s) => (
@@ -65,7 +65,7 @@ export const PowerInterestGrid: React.FC<{
                     <button
                       type="button"
                       onClick={() => onOpen(s.id)}
-                      className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-lg bg-white/70 px-2 py-1.5 text-left text-[11px] hover:bg-white"
+                      className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-lg bg-white/70 px-2 py-1.5 text-left text-xs hover:bg-white"
                     >
                       <span className="min-w-0 truncate">
                         <span className="font-medium text-slate-900">{s.fullName}</span>

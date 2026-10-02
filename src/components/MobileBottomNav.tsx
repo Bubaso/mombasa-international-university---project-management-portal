@@ -81,13 +81,13 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenMore, is
                 className={`w-5 h-5 transition-transform ${isActive ? 'scale-110 text-amber-700' : ''}`}
               />
               {item.badge && (
-                <span className="absolute -top-1.5 -right-3 text-[9px] font-mono px-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 font-bold leading-none py-0.5">
+                <span className="absolute -top-1.5 -right-3 text-xs font-mono px-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 font-bold leading-none py-0.5">
                   {item.badge}
                 </span>
               )}
             </div>
 
-            <span className="text-[10px] mt-1 tracking-tight">
+            <span className="text-xs mt-1 tracking-tight">
               {language === 'tr' ? item.labelTr : item.labelEn}
             </span>
           </button>
@@ -118,9 +118,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenMore, is
           <LayoutGrid className="w-5 h-5" />
           <span className="w-1.5 h-1.5 rounded-full bg-amber-600 absolute -top-0.5 -right-0.5" />
         </div>
-        <span className="text-[10px] mt-1 tracking-tight">
-          {language === 'tr' ? 'Menü' : 'More'}
-        </span>
+        <span className="text-xs mt-1 tracking-tight">{language === 'tr' ? 'Menü' : 'More'}</span>
       </button>
     </nav>
   );

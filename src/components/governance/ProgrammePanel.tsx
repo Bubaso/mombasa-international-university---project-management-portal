@@ -37,10 +37,10 @@ export const ProgrammePanel: React.FC = () => {
         <div className="flex items-start gap-2.5">
           <BookOpenCheck className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" aria-hidden="true" />
           <div>
-            <h2 className="text-sm font-bold text-slate-900">
+            <h2 className="text-base font-bold text-slate-900">
               {tr ? 'Akademik program kütüğü' : 'Academic programmes'}
             </h2>
-            <p className="text-[11px] text-slate-500">
+            <p className="text-xs text-slate-500">
               {tr
                 ? 'Projenin amacı bir üniversite; inşaat aracı. Onaylı bir programın müfredatı kasada olmak zorunda.'
                 : 'The point of the project is a university; the construction is the means. An approved programme must have its curriculum in the vault.'}
@@ -59,7 +59,7 @@ export const ProgrammePanel: React.FC = () => {
       <QueryStatus queries={[programmes]} />
 
       {rows.length === 0 ? (
-        <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-900">
+        <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
           {tr
             ? 'Kütükte hiç program yok. Bir üniversite projesinde en çok eksikliği hissedilen kayıt bu: hangi dereceyi vereceği yazılmadan akreditasyon da kadro da hesaplanamaz.'
             : 'No programme is on the register. For a university project this is the omission that matters most: until the degrees are written down, neither accreditation nor staffing can be reckoned.'}
@@ -80,25 +80,25 @@ export const ProgrammePanel: React.FC = () => {
           {rows.map((p) => (
             <tr key={p.id} className="hover:bg-slate-50">
               <Td>
-                <span className="text-xs font-medium text-slate-900">
+                <span className="text-sm font-medium text-slate-900">
                   {(tr ? p.nameTr : p.nameEn) ?? p.nameEn}
                 </span>
-                {p.faculty && <span className="block text-[11px] text-slate-500">{p.faculty}</span>}
+                {p.faculty && <span className="block text-xs text-slate-500">{p.faculty}</span>}
               </Td>
               <Td>
-                <span className="font-mono text-[11px] text-slate-600">{p.degree}</span>
+                <span className="font-mono text-xs text-slate-600">{p.degree}</span>
               </Td>
               <Td>
                 <Pill>{programmeLabel(p.state, language)}</Pill>
               </Td>
               <Td className="text-right">
                 {p.requiredAcademicStaff == null ? (
-                  <span className="flex items-center justify-end gap-1 text-[11px] text-amber-800">
+                  <span className="flex items-center justify-end gap-1 text-xs text-amber-800">
                     <CircleHelp className="h-3 w-3" aria-hidden="true" />
                     {tr ? 'belirlenmemiş' : 'not established'}
                   </span>
                 ) : (
-                  <span className="font-mono text-[11px] text-slate-700">
+                  <span className="font-mono text-xs text-slate-700">
                     <Users className="mr-1 inline h-3 w-3 text-slate-400" aria-hidden="true" />
                     {p.appointedAcademicStaff}/{p.requiredAcademicStaff}
                     {p.staffGap != null && p.staffGap > 0 && (
@@ -112,17 +112,17 @@ export const ProgrammePanel: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => navigate('/documents')}
-                    className="flex cursor-pointer items-center gap-1 text-[11px] text-indigo-700 hover:underline"
+                    className="flex cursor-pointer items-center gap-1 text-xs text-indigo-700 hover:underline"
                   >
                     <FileCheck2 className="h-3.5 w-3.5" aria-hidden="true" />
                     {tr ? 'kasada' : 'in the vault'}
                   </button>
                 ) : (
-                  <span className="text-[11px] text-slate-500">{tr ? 'yok' : 'none'}</span>
+                  <span className="text-xs text-slate-500">{tr ? 'yok' : 'none'}</span>
                 )}
               </Td>
               <Td className="text-right">
-                <span className="font-mono text-[11px] text-slate-600">
+                <span className="font-mono text-xs text-slate-600">
                   {p.targetIntakeYear ?? (tr ? '—' : '—')}
                 </span>
               </Td>

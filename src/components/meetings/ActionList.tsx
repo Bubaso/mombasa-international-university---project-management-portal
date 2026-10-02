@@ -59,7 +59,7 @@ export const ActionList: React.FC<{
   return (
     <section className="rounded-xl border border-slate-200 bg-white shadow-xs">
       <header className="flex items-center justify-between gap-2 border-b border-slate-200 px-4 py-3">
-        <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+        <h2 className="flex items-center gap-2 text-base font-semibold text-slate-900">
           <CircleAlert className="h-4 w-4 text-amber-600" aria-hidden="true" />
           {tr ? 'Aksiyonlar' : 'Actions'}
           <Pill>{rows.filter((a) => a.status !== 'done' && a.status !== 'cancelled').length}</Pill>
@@ -83,24 +83,22 @@ export const ActionList: React.FC<{
 
         {needsTriage && (
           <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5">
-            <p className="text-[11px] font-semibold text-amber-900">
+            <p className="text-xs font-semibold text-amber-900">
               {tr
                 ? 'Bu toplantının aksiyonları metin olarak duruyor'
                 : 'This meeting’s actions are still only text'}
             </p>
-            <p className="mt-1 text-[11px] leading-relaxed text-amber-900/80">
+            <p className="mt-1 text-xs leading-relaxed text-amber-900/80">
               {tr
                 ? 'Tutanağın “Aksiyonlar” başlığında yazılılar, ama hiçbiri sorumlusu ve tarihi olan bir kayda dönüşmemiş — dolayısıyla hiçbiri gündeme düşmüyor ve hiçbiri gecikemiyor. Her biri için bir sorumlu ve bir tarih verin.'
                 : 'They are written under the “Actions” heading, but none has become a record with an owner and a date — so none reaches the agenda and none can be late. Each needs one of each.'}
             </p>
-            <p className="mt-1.5 whitespace-pre-wrap text-[11px] text-amber-950">
-              {actionText.body}
-            </p>
+            <p className="mt-1.5 whitespace-pre-wrap text-xs text-amber-950">{actionText.body}</p>
           </div>
         )}
 
         {rows.length === 0 && !adding && !needsTriage ? (
-          <p className="text-[11px] text-slate-500">
+          <p className="text-xs text-slate-500">
             {tr
               ? 'Bu toplantıdan aksiyon çıkmamış. Çıkması gerekiyorsa şimdi eklemek, sonra hatırlamaktan kolaydır.'
               : 'Nothing came out of this meeting. If something should have, adding it now beats remembering later.'}
@@ -154,7 +152,7 @@ const ActionRow: React.FC<{
       }`}
     >
       <div className="flex flex-wrap items-start justify-between gap-2">
-        <p className="min-w-0 flex-1 text-xs text-slate-900">
+        <p className="min-w-0 flex-1 text-sm text-slate-900">
           {bilingual(action.textEn, action.textTr, language)}
           {machineWritten && <MachineBadge className="ml-1.5" />}
         </p>
@@ -170,7 +168,7 @@ const ActionRow: React.FC<{
         </div>
       </div>
 
-      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
+      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
         <span>
           {tr ? 'sorumlu: ' : 'owner: '}
           <span className="font-medium text-slate-700">
@@ -200,7 +198,7 @@ const ActionRow: React.FC<{
       </div>
 
       {action.completionNote && (
-        <p className="mt-1 text-[11px] italic text-slate-600">{action.completionNote}</p>
+        <p className="mt-1 text-xs italic text-slate-600">{action.completionNote}</p>
       )}
 
       {/* The owner reports; whoever keeps the record can also move the date.
@@ -239,7 +237,7 @@ const ActionRow: React.FC<{
             </Field>
           )}
           {mine && !canKeep && (
-            <p className="pb-1.5 text-[10px] text-slate-400">
+            <p className="pb-1.5 text-xs text-slate-400">
               {tr
                 ? 'Tarihi ve tanımı yalnızca toplantıyı tutan değiştirebilir.'
                 : 'Only whoever keeps the record can change the date or the wording.'}
@@ -324,7 +322,7 @@ const NewActionForm: React.FC<{
         </Field>
       </div>
 
-      <p className="mt-2 text-[10px] leading-relaxed text-slate-500">
+      <p className="mt-2 text-xs leading-relaxed text-slate-500">
         {tr
           ? 'Sorumlu ve tarih zorunludur. Paylaşılan sorumluluk, işin kimseye ait olmamasının yoludur; tarihi olmayan bir iş de hiçbir zaman gecikmez, dolayısıyla hiç sorulmaz.'
           : 'Both are required. Shared ownership is how a task ends up belonging to nobody, and an action with no date can never be late, so it is never chased.'}

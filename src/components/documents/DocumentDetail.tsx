@@ -51,7 +51,7 @@ export const DocumentDetail: React.FC<{
     <aside className="rounded-xl border border-slate-200 bg-white shadow-xs">
       <header className="flex items-start justify-between gap-3 border-b border-slate-200 px-4 py-3">
         <div className="min-w-0">
-          <h2 className="truncate text-sm font-bold text-slate-900">{doc.title}</h2>
+          <h2 className="truncate text-base font-bold text-slate-900">{doc.title}</h2>
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
             <Pill>{categoryLabel(doc.category, language)}</Pill>
             <Pill className={clearanceStyle(doc.confidentiality)}>
@@ -71,7 +71,7 @@ export const DocumentDetail: React.FC<{
 
       <div className="space-y-4 p-4">
         {(doc.descriptionEn ?? doc.descriptionTr) && (
-          <p className="text-xs leading-relaxed text-slate-700">
+          <p className="text-sm leading-relaxed text-slate-700">
             {(tr ? doc.descriptionTr : doc.descriptionEn) ?? doc.descriptionEn ?? doc.descriptionTr}
           </p>
         )}
@@ -88,7 +88,7 @@ export const DocumentDetail: React.FC<{
 
         {/* ---- versions -------------------------------------------------- */}
         <section>
-          <h3 className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-slate-700">
+          <h3 className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-700">
             <History className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
             {tr ? 'Sürümler' : 'Versions'}
             <span className="font-normal text-slate-400">
@@ -97,7 +97,7 @@ export const DocumentDetail: React.FC<{
           </h3>
 
           {rows.length === 0 ? (
-            <p className="text-[11px] text-slate-500">
+            <p className="text-xs text-slate-500">
               {tr ? 'Henüz dosya yüklenmemiş.' : 'No file uploaded yet.'}
             </p>
           ) : (
@@ -114,7 +114,7 @@ export const DocumentDetail: React.FC<{
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-1.5">
-                          <span className="font-mono text-[11px] font-semibold text-slate-900">
+                          <span className="font-mono text-xs font-semibold text-slate-900">
                             v{version.versionNo}
                           </span>
                           {current && (
@@ -122,11 +122,11 @@ export const DocumentDetail: React.FC<{
                               {tr ? 'geçerli sürüm' : 'in force'}
                             </Pill>
                           )}
-                          <span className="truncate text-[11px] text-slate-700">
+                          <span className="truncate text-xs text-slate-700">
                             {version.fileName}
                           </span>
                         </div>
-                        <div className="mt-0.5 flex flex-wrap gap-x-2 text-[10px] text-slate-500">
+                        <div className="mt-0.5 flex flex-wrap gap-x-2 text-xs text-slate-500">
                           <span>{fileSize(version.byteSize)}</span>
                           <span className="font-mono">{version.uploadedAt.slice(0, 10)}</span>
                           {version.uploadedByName && <span>{version.uploadedByName}</span>}
@@ -150,7 +150,7 @@ export const DocumentDetail: React.FC<{
                           void navigator.clipboard?.writeText(version.sha256 as string);
                           setCopied(version.id);
                         }}
-                        className="mt-1 flex w-full cursor-pointer items-center gap-1.5 rounded border border-emerald-200 bg-emerald-50 px-1.5 py-1 text-left text-[10px] text-emerald-900 hover:bg-emerald-100"
+                        className="mt-1 flex w-full cursor-pointer items-center gap-1.5 rounded border border-emerald-200 bg-emerald-50 px-1.5 py-1 text-left text-xs text-emerald-900 hover:bg-emerald-100"
                       >
                         <FileCheck2 className="h-3 w-3 shrink-0" aria-hidden="true" />
                         <span className="font-mono">{shortDigest(version.sha256)}</span>
@@ -158,7 +158,7 @@ export const DocumentDetail: React.FC<{
                         {copied === version.id && <span>{tr ? 'kopyalandı' : 'copied'}</span>}
                       </button>
                     ) : (
-                      <p className="mt-1 flex items-start gap-1.5 rounded border border-amber-200 bg-amber-50 px-1.5 py-1 text-[10px] leading-relaxed text-amber-900">
+                      <p className="mt-1 flex items-start gap-1.5 rounded border border-amber-200 bg-amber-50 px-1.5 py-1 text-xs leading-relaxed text-amber-900">
                         <FileX2 className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
                         <span>
                           {tr
@@ -178,18 +178,18 @@ export const DocumentDetail: React.FC<{
         {/* ---- who read it ----------------------------------------------- */}
         {canReadLog && (
           <section>
-            <h3 className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-slate-700">
+            <h3 className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-700">
               <Users className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
               {tr ? 'Kim okudu' : 'Who has read it'}
             </h3>
             {(access.data ?? []).length === 0 ? (
-              <p className="text-[11px] text-slate-500">
+              <p className="text-xs text-slate-500">
                 {tr ? 'Henüz kimse açmamış.' : 'Nobody has opened it yet.'}
               </p>
             ) : (
               <ul className="space-y-0.5">
                 {(access.data ?? []).map((entry) => (
-                  <li key={entry.id} className="flex items-baseline gap-2 text-[11px]">
+                  <li key={entry.id} className="flex items-baseline gap-2 text-xs">
                     <span className="shrink-0 font-mono text-slate-400">
                       {entry.at.slice(0, 16).replace('T', ' ')}
                     </span>
@@ -255,14 +255,14 @@ const UploadForm: React.FC<{ documentId: string; onDone: () => void }> = ({
           type="file"
           required
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-          className="w-full cursor-pointer rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs text-slate-900 file:mr-3 file:cursor-pointer file:rounded file:border-0 file:bg-slate-100 file:px-2.5 file:py-1 file:text-xs file:font-medium file:text-slate-700"
+          className="w-full cursor-pointer rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-900 file:mr-3 file:cursor-pointer file:rounded file:border-0 file:bg-slate-100 file:px-2.5 file:py-1 file:text-sm file:font-medium file:text-slate-700"
         />
       </Field>
       <Field label={tr ? 'Bu sürümde ne değişti' : 'What changed in this version'}>
         <TextInput value={note} onChange={(e) => setNote(e.target.value)} />
       </Field>
 
-      <p className="text-[10px] leading-relaxed text-slate-500">
+      <p className="text-xs leading-relaxed text-slate-500">
         {tr
           ? 'Yeni sürüm geçerli hâle gelir; öncekiler kalır ve silinemez.'
           : 'The new version becomes the one in force. The earlier ones stay and cannot be removed.'}
@@ -270,7 +270,7 @@ const UploadForm: React.FC<{ documentId: string; onDone: () => void }> = ({
 
       <WriteError error={upload.error} />
       {notice && (
-        <p className="rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-[11px] text-amber-900">
+        <p className="rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs text-amber-900">
           {tr
             ? `Yüklendi ama özeti hesaplanamadı: ${notice}`
             : `Stored, but the digest could not be computed: ${notice}`}

@@ -38,27 +38,27 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     return (
       <div
         role="alert"
-        className="m-4 space-y-3 rounded-xl border border-rose-300 bg-rose-50 p-6 text-sm"
+        className="m-4 space-y-3 rounded-xl border border-rose-300 bg-rose-50 p-6 text-base"
       >
         <div className="space-y-1">
           <h2 className="font-bold text-rose-900">
             {this.props.label ?? 'Bu bölüm açılamadı · This section failed to load'}
           </h2>
-          <p className="text-xs leading-relaxed text-rose-900/80">
+          <p className="text-sm leading-relaxed text-rose-900/80">
             Beklenmeyen bir hata oluştu. Portalın geri kalanı çalışmaya devam ediyor.
             <br />
             An unexpected error occurred. The rest of the portal is still usable.
           </p>
         </div>
 
-        <pre className="overflow-x-auto rounded-lg border border-rose-200 bg-white p-3 font-mono text-[11px] text-rose-800">
+        <pre className="overflow-x-auto rounded-lg border border-rose-200 bg-white p-3 font-mono text-xs text-rose-800">
           {error.message}
         </pre>
 
         <button
           type="button"
           onClick={this.reset}
-          className="cursor-pointer rounded-lg bg-rose-700 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-rose-800"
+          className="cursor-pointer rounded-lg bg-rose-700 px-3.5 py-1.5 text-sm font-semibold text-white hover:bg-rose-800"
         >
           Yeniden dene · Try again
         </button>

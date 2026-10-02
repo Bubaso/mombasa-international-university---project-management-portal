@@ -179,7 +179,7 @@ export const CalendarView: React.FC = () => {
             <h1 className="text-lg font-bold text-slate-900">
               {tr ? 'Takvim ve Geri Sayım' : 'Calendar & Countdown'}
             </h1>
-            <p className="max-w-2xl text-xs text-slate-500">
+            <p className="max-w-2xl text-sm text-slate-500">
               {tr
                 ? 'Duruşma, usul süresi, yükümlülük, aksiyon ve cevaplanmamış soru — tarihi olan her şey tek listede. Haftasını planlamak için beş ekran açan kimse yok.'
                 : 'Hearings, procedural deadlines, obligations, actions and unanswered questions — everything with a date, in one list. Nobody plans a week by opening five screens.'}
@@ -245,13 +245,13 @@ export const CalendarView: React.FC = () => {
                 }`}
               >
                 <h2
-                  className={`text-xs font-semibold ${
+                  className={`text-sm font-semibold ${
                     group.key === 'overdue' ? 'text-rose-900' : 'text-slate-900'
                   }`}
                 >
                   {group.label[language]}
                 </h2>
-                <span className="text-[11px] text-slate-400">{group.rows.length}</span>
+                <span className="text-xs text-slate-400">{group.rows.length}</span>
               </header>
               <ul className="divide-y divide-slate-100">
                 {group.rows.map((entry) => {
@@ -271,12 +271,12 @@ export const CalendarView: React.FC = () => {
                             aria-hidden="true"
                           />
                           <div className="min-w-0">
-                            <p className="text-xs text-slate-900">
+                            <p className="text-sm text-slate-900">
                               {bilingual(entry.titleEn, entry.titleTr, language) ||
                                 (tr ? '(başlıksız)' : '(untitled)')}
                               {machineWritten(entry) && <MachineBadge className="ml-1.5" />}
                             </p>
-                            <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] text-slate-500">
+                            <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-slate-500">
                               <span>{KINDS[entry.kind][language]}</span>
                               {entry.detail && <span>· {entry.detail.replace(/_/g, ' ')}</span>}
                               {entry.state && entry.state !== entry.detail && (
@@ -287,7 +287,7 @@ export const CalendarView: React.FC = () => {
                         </div>
                         <div className="flex shrink-0 items-center gap-2">
                           <span
-                            className={`font-mono text-[11px] ${
+                            className={`font-mono text-xs ${
                               entry.needsAttention
                                 ? 'font-semibold text-rose-700'
                                 : 'text-slate-500'
@@ -295,7 +295,7 @@ export const CalendarView: React.FC = () => {
                           >
                             {daysFrom(entry.dueOn, language)}
                           </span>
-                          <span className="hidden font-mono text-[11px] text-slate-400 sm:inline">
+                          <span className="hidden font-mono text-xs text-slate-400 sm:inline">
                             {entry.dueOn}
                           </span>
                         </div>
@@ -320,7 +320,7 @@ const FilterChip: React.FC<{
   <button
     type="button"
     onClick={onClick}
-    className={`flex cursor-pointer items-center gap-1 rounded-lg border px-2.5 py-1 text-[11px] font-medium transition-colors ${
+    className={`flex cursor-pointer items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors ${
       active
         ? 'border-amber-400 bg-amber-50 text-amber-900'
         : 'border-slate-300 bg-white text-slate-600 hover:bg-slate-50'

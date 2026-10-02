@@ -125,7 +125,7 @@ export const DashboardView: React.FC = () => {
                   ? 'Gösterge paneli'
                   : 'Dashboard'}
             </h1>
-            <p className="max-w-2xl text-xs text-slate-500">
+            <p className="max-w-2xl text-sm text-slate-500">
               {/* Saying which role's screen this is, because under a
                   delegation it may not be the one they expect. */}
               {roles.length > 0

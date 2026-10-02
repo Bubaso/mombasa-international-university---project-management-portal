@@ -92,7 +92,7 @@ export const ObligationsView: React.FC = () => {
             <h1 className="text-lg font-bold text-slate-900">
               {tr ? 'Yükümlülük ve Taahhüt Kütüğü' : 'Obligations & Commitments'}
             </h1>
-            <p className="max-w-2xl text-xs text-slate-500">
+            <p className="max-w-2xl text-sm text-slate-500">
               {tr
                 ? 'Kira sözleşmesinin, mahkeme kararlarının, vakıf senedinin ve mutabakatların yüklediği her şey — ve insanların verdiği sözler. Hepsi aynı şey: bir tarafın üstlendiği, tarihi olan, delili olması gereken bir iş.'
                 : 'Everything the lease, the courts, the trust deed and the memoranda require — and the promises people made. They are the same kind of thing: something a party undertook, with a date, that ought to have evidence.'}
@@ -114,7 +114,7 @@ export const ObligationsView: React.FC = () => {
       {unverified > 0 && (
         <div className="flex items-start gap-2.5 rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5">
           <FileX2 className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" aria-hidden="true" />
-          <p className="text-[11px] leading-relaxed text-amber-900">
+          <p className="text-xs leading-relaxed text-amber-900">
             <span className="font-semibold">
               {tr
                 ? `${unverified} yükümlülüğün arkasında belge yok.`
@@ -155,7 +155,7 @@ export const ObligationsView: React.FC = () => {
             ))}
           </Select>
         </Field>
-        <span className="pb-1.5 text-[11px] text-slate-500">
+        <span className="pb-1.5 text-xs text-slate-500">
           {tr ? `${shown.length} kayıt` : `${shown.length} of them`}
         </span>
       </div>
@@ -183,10 +183,10 @@ export const ObligationsView: React.FC = () => {
                 className="rounded-xl border border-slate-200 bg-white shadow-xs"
               >
                 <header className="flex items-center justify-between gap-2 border-b border-slate-200 px-4 py-2.5">
-                  <h2 className="flex items-center gap-2 text-xs font-semibold text-slate-900">
+                  <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
                     <Pill className={SOURCE_STYLES[group]}>{sourceLabel(group, language)}</Pill>
                   </h2>
-                  <span className="text-[11px] text-slate-400">{items.length}</span>
+                  <span className="text-xs text-slate-400">{items.length}</span>
                 </header>
                 <ul className="divide-y divide-slate-100">
                   {items.map((o) => {
@@ -208,7 +208,7 @@ export const ObligationsView: React.FC = () => {
                                   aria-label={tr ? 'yasak' : 'a prohibition'}
                                 />
                               )}
-                              <span className="text-xs font-medium text-slate-900">
+                              <span className="text-sm font-medium text-slate-900">
                                 <Bilingual
                                   table="obligations"
                                   id={o.id}
@@ -218,7 +218,7 @@ export const ObligationsView: React.FC = () => {
                                 />
                               </span>
                             </div>
-                            <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-slate-500">
+                            <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-slate-500">
                               <span>
                                 {tr ? 'yükümlü: ' : 'owed by: '}
                                 <span className="font-medium text-slate-700">{o.obligorName}</span>
@@ -418,7 +418,7 @@ const NewObligationForm: React.FC<{ canMinuteOnly: boolean; onDone: () => void }
         </Field>
       </div>
 
-      <label className="mt-2.5 flex cursor-pointer items-start gap-1.5 text-[11px] text-slate-700">
+      <label className="mt-2.5 flex cursor-pointer items-start gap-1.5 text-xs text-slate-700">
         <input
           type="checkbox"
           checked={prohibits}
@@ -432,7 +432,7 @@ const NewObligationForm: React.FC<{ canMinuteOnly: boolean; onDone: () => void }
         </span>
       </label>
 
-      <p className="mt-2 text-[11px] leading-relaxed text-slate-500">
+      <p className="mt-2 text-xs leading-relaxed text-slate-500">
         {tr
           ? 'Kaynak belge sonradan eklenir; eklenene kadar kayıt "doğrulanmamış" görünür ve bu işaret elle kaldırılamaz. "Yerine getirildi" demek için de önce delil eklemek gerekir.'
           : 'The source document is attached later; until it is, the record reads as unverified and that mark cannot be cleared by hand. Marking it fulfilled needs evidence first.'}

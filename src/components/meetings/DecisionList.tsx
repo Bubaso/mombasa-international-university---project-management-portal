@@ -51,7 +51,7 @@ export const DecisionList: React.FC<{
   return (
     <section className="rounded-xl border border-slate-200 bg-white shadow-xs">
       <header className="flex items-center justify-between gap-2 border-b border-slate-200 px-4 py-3">
-        <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+        <h2 className="flex items-center gap-2 text-base font-semibold text-slate-900">
           <Gavel className="h-4 w-4 text-amber-600" aria-hidden="true" />
           {tr ? 'Kararlar' : 'Decisions'}
           <Pill>{rows.length}</Pill>
@@ -74,7 +74,7 @@ export const DecisionList: React.FC<{
         )}
 
         {rows.length === 0 && !adding ? (
-          <p className="text-[11px] text-slate-500">
+          <p className="text-xs text-slate-500">
             {tr ? 'Bu toplantıda karar alınmamış.' : 'No decision was taken here.'}
           </p>
         ) : (
@@ -83,11 +83,11 @@ export const DecisionList: React.FC<{
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
                   {decision.referenceNo && (
-                    <span className="mr-1.5 font-mono text-[10px] text-slate-400">
+                    <span className="mr-1.5 font-mono text-xs text-slate-400">
                       {decision.referenceNo}
                     </span>
                   )}
-                  <span className="text-xs text-slate-900">
+                  <span className="text-sm text-slate-900">
                     {bilingual(decision.textEn, decision.textTr, language)}
                   </span>
                   {marks.is(
@@ -101,14 +101,14 @@ export const DecisionList: React.FC<{
                 </Pill>
               </div>
 
-              <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-slate-500">
+              <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-slate-500">
                 {decision.organ && <span>{decision.organ}</span>}
                 {decision.vote && <span>{voteOutcomeLabel(decision.vote, language)}</span>}
                 <span className="font-mono">{decision.decidedOn}</span>
               </div>
 
               {bilingual(decision.rationaleEn, decision.rationaleTr, language) && (
-                <p className="mt-1 text-[11px] italic leading-relaxed text-slate-600">
+                <p className="mt-1 text-xs italic leading-relaxed text-slate-600">
                   {bilingual(decision.rationaleEn, decision.rationaleTr, language)}
                   {marks.is(
                     decision.id,
@@ -119,7 +119,7 @@ export const DecisionList: React.FC<{
               )}
 
               {decision.dissenters.length > 0 && (
-                <p className="mt-1 flex flex-wrap items-center gap-1 text-[11px] text-rose-800">
+                <p className="mt-1 flex flex-wrap items-center gap-1 text-xs text-rose-800">
                   <UserMinus className="h-3 w-3 shrink-0" aria-hidden="true" />
                   <span className="font-medium">{tr ? 'Karşı oy:' : 'Against:'}</span>
                   <span>{decision.dissenters.map((d) => d.name ?? '—').join(', ')}</span>

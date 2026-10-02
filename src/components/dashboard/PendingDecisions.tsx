@@ -105,10 +105,10 @@ export const PendingDecisions: React.FC<{ limit?: number }> = ({ limit }) => {
         <div className="flex items-start gap-2.5">
           <ScaleIcon className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" aria-hidden="true" />
           <div>
-            <h2 className="text-sm font-bold text-slate-900">
+            <h2 className="text-base font-bold text-slate-900">
               {tr ? 'Karar bekleyenler' : 'Waiting on a decision'}
             </h2>
-            <p className="text-[11px] text-slate-500">
+            <p className="text-xs text-slate-500">
               {tr
                 ? 'Altı kütüğün tamamından. Kimse reddetmiyor — bunlar kimsenin ekranının üstüne çıkmadığı için bekliyor.'
                 : 'From all six registers. Nobody refuses these; they wait because they never reach the top of anybody’s screen.'}
@@ -125,7 +125,7 @@ export const PendingDecisions: React.FC<{ limit?: number }> = ({ limit }) => {
       <QueryStatus queries={[decisions]} />
 
       {rows.length === 0 ? (
-        <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-[11px] text-emerald-900">
+        <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900">
           {tr
             ? 'Hiçbir şey karar beklemiyor. Bu, kütüklerin boş olması da olabilir — dolduktan sonra burası asıl işini yapar.'
             : 'Nothing is waiting on a ruling. That may also mean the registers are empty — this panel earns its place once they are not.'}
@@ -154,7 +154,7 @@ export const PendingDecisions: React.FC<{ limit?: number }> = ({ limit }) => {
                     />
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="text-xs font-medium text-slate-900">
+                        <span className="text-sm font-medium text-slate-900">
                           {tr ? (decision.titleTr ?? decision.titleEn) : decision.titleEn}
                         </span>
                         <Pill>{tr ? shape.tr : shape.en}</Pill>
@@ -164,7 +164,7 @@ export const PendingDecisions: React.FC<{ limit?: number }> = ({ limit }) => {
                           </Pill>
                         )}
                       </div>
-                      <div className="mt-0.5 flex flex-wrap items-center gap-x-2.5 text-[11px] text-slate-500">
+                      <div className="mt-0.5 flex flex-wrap items-center gap-x-2.5 text-xs text-slate-500">
                         {decision.detail && <span className="truncate">{decision.detail}</span>}
                         {/* Whose it is, named. This is the column that turns a
                             list of worries into a list somebody answers for. */}
@@ -186,7 +186,7 @@ export const PendingDecisions: React.FC<{ limit?: number }> = ({ limit }) => {
                   <div className="flex shrink-0 items-center gap-2">
                     {days != null && (
                       <span
-                        className={`font-mono text-[11px] ${
+                        className={`font-mono text-xs ${
                           days >= 14 ? 'font-semibold text-rose-700' : 'text-slate-500'
                         }`}
                       >
@@ -203,7 +203,7 @@ export const PendingDecisions: React.FC<{ limit?: number }> = ({ limit }) => {
       )}
 
       {limit != null && rows.length > limit && (
-        <p className="mt-2 text-[11px] text-slate-500">
+        <p className="mt-2 text-xs text-slate-500">
           {tr
             ? `${rows.length - limit} tanesi daha bekliyor.`
             : `${rows.length - limit} more are waiting.`}

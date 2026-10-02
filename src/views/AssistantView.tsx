@@ -137,7 +137,7 @@ const Answer: React.FC<{
   const parts = (answer.text ?? '').split(CITATION);
 
   return (
-    <p className="text-xs leading-relaxed whitespace-pre-wrap text-slate-800">
+    <p className="text-sm leading-relaxed whitespace-pre-wrap text-slate-800">
       {parts.map((part, i) => {
         const source = byMarker.get(part);
         if (!source) return <span key={i}>{part}</span>;
@@ -147,7 +147,7 @@ const Answer: React.FC<{
             type="button"
             onClick={() => onOpen(source.kind, source.id)}
             title={source.titleEn ?? source.titleTr ?? undefined}
-            className="mx-0.5 cursor-pointer rounded border border-indigo-200 bg-indigo-50 px-1 align-baseline font-mono text-[10px] text-indigo-800 hover:bg-indigo-100"
+            className="mx-0.5 cursor-pointer rounded border border-indigo-200 bg-indigo-50 px-1 align-baseline font-mono text-xs text-indigo-800 hover:bg-indigo-100"
           >
             {answer.sources.indexOf(source) + 1}
           </button>
@@ -213,7 +213,7 @@ export const AssistantView: React.FC = () => {
         <Bot className="mt-0.5 h-5 w-5 shrink-0 text-indigo-600" aria-hidden="true" />
         <div>
           <h1 className="text-lg font-bold text-slate-900">{tr ? 'Asistan' : 'Assistant'}</h1>
-          <p className="max-w-2xl text-xs text-slate-500">
+          <p className="max-w-2xl text-sm text-slate-500">
             {tr
               ? 'Beş tanımlı iş, fazlası yok. Her cevap dayandığı kayıtları gösterir ve taslak olarak çıkar. Kısıtlı kayıtlar hiçbir koşulda modele gitmez.'
               : 'Five defined jobs and no more. Every answer shows the records it rests on and comes out as a draft. Restricted records never reach the model, under any circumstances.'}
@@ -222,7 +222,7 @@ export const AssistantView: React.FC = () => {
       </header>
 
       {!assistantConfigured && (
-        <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+        <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
           <CircleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
           <p>
             {tr
@@ -258,11 +258,11 @@ export const AssistantView: React.FC = () => {
                   className={`h-4 w-4 shrink-0 ${on ? 'text-indigo-600' : 'text-slate-400'}`}
                   aria-hidden="true"
                 />
-                <span className="text-xs font-semibold text-slate-900">
+                <span className="text-sm font-semibold text-slate-900">
                   {tr ? option.titleTr : option.titleEn}
                 </span>
               </div>
-              <p className="mt-1 text-[11px] text-slate-500">{tr ? option.whyTr : option.whyEn}</p>
+              <p className="mt-1 text-xs text-slate-500">{tr ? option.whyTr : option.whyEn}</p>
             </button>
           );
         })}
@@ -275,7 +275,7 @@ export const AssistantView: React.FC = () => {
             onChange={(e) => setQuestion(e.target.value)}
             placeholder={tr ? shape.placeholderTr : shape.placeholderEn}
             aria-label={tr ? 'Soru' : 'Question'}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
           />
         )}
 
@@ -286,40 +286,40 @@ export const AssistantView: React.FC = () => {
             rows={8}
             placeholder={tr ? shape.placeholderTr : shape.placeholderEn}
             aria-label={tr ? 'Metin' : 'Text'}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-xs"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-sm"
           />
         )}
 
         {shape.needs === 'window' && (
           <div className="flex flex-wrap items-end gap-3">
-            <label className="text-[11px] text-slate-600">
+            <label className="text-xs text-slate-600">
               {tr ? 'Başlangıç' : 'From'}
               <input
                 type="date"
                 value={from}
                 max={to}
                 onChange={(e) => setFrom(e.target.value)}
-                className="mt-0.5 block rounded border border-slate-300 px-2 py-1 text-xs"
+                className="mt-0.5 block rounded border border-slate-300 px-2 py-1 text-sm"
               />
             </label>
-            <label className="text-[11px] text-slate-600">
+            <label className="text-xs text-slate-600">
               {tr ? 'Bitiş' : 'To'}
               <input
                 type="date"
                 value={to}
                 min={from}
                 onChange={(e) => setTo(e.target.value)}
-                className="mt-0.5 block rounded border border-slate-300 px-2 py-1 text-xs"
+                className="mt-0.5 block rounded border border-slate-300 px-2 py-1 text-sm"
               />
             </label>
-            <p className="text-[11px] text-slate-400">
+            <p className="text-xs text-slate-400">
               {tr ? `bugün ${formatDate(today, language)}` : `today ${formatDate(today, language)}`}
             </p>
           </div>
         )}
 
         <div className="flex items-center justify-between gap-2">
-          <p className="text-[11px] text-slate-400">
+          <p className="text-xs text-slate-400">
             {tr
               ? 'Sorduğunuz kaydedilir: kim ne sordu, kaç kayda dayandı (M13-10).'
               : 'What you ask is logged: who asked what, and how many records it rested on (M13-10).'}
@@ -327,7 +327,7 @@ export const AssistantView: React.FC = () => {
           <button
             type="submit"
             disabled={!ready || askIt.isPending || !assistantConfigured}
-            className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-indigo-300 bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-indigo-300 bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {askIt.isPending ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
@@ -347,7 +347,7 @@ export const AssistantView: React.FC = () => {
           <div className="flex items-start gap-2">
             <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" aria-hidden="true" />
             <div className="min-w-0">
-              <h2 className="text-sm font-bold text-amber-900">
+              <h2 className="text-base font-bold text-amber-900">
                 {answer.refused === 'legal_advice'
                   ? tr
                     ? 'Bu soruyu asistan cevaplamaz'
@@ -360,7 +360,7 @@ export const AssistantView: React.FC = () => {
                       ? 'Kaynaksız cevap atıldı'
                       : 'An uncited answer was discarded'}
               </h2>
-              <p className="mt-1 text-xs text-amber-900">
+              <p className="mt-1 text-sm text-amber-900">
                 {(tr ? answer.messageTr : answer.messageEn) ?? ''}
               </p>
             </div>
@@ -377,7 +377,7 @@ export const AssistantView: React.FC = () => {
                     }
                     className="flex w-full cursor-pointer flex-wrap items-center gap-1.5 rounded-lg border border-amber-200 bg-white px-2.5 py-1.5 text-left hover:bg-amber-50"
                   >
-                    <span className="text-xs font-medium text-slate-900">
+                    <span className="text-sm font-medium text-slate-900">
                       {(tr ? source.titleTr : source.titleEn) ?? source.titleEn ?? source.titleTr}
                     </span>
                     <Pill>{kindLabel(source.kind, language)}</Pill>
@@ -396,7 +396,7 @@ export const AssistantView: React.FC = () => {
               repeated here as a banner because a banner is what somebody
               about to paste it into an email will actually see. */}
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2">
-            <p className="text-xs font-semibold text-rose-900">
+            <p className="text-sm font-semibold text-rose-900">
               {tr
                 ? 'TASLAK — insan onayı gerekir. Bu metin hiçbir kayda yazılmadı.'
                 : 'DRAFT — needs human approval. This text has not been written to any record.'}
@@ -404,7 +404,7 @@ export const AssistantView: React.FC = () => {
             <button
               type="button"
               onClick={copy}
-              className="flex shrink-0 cursor-pointer items-center gap-1 rounded border border-slate-300 bg-white px-2 py-1 text-[11px] text-slate-700 hover:bg-slate-50"
+              className="flex shrink-0 cursor-pointer items-center gap-1 rounded border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700 hover:bg-slate-50"
             >
               {copied ? (
                 <Check className="h-3.5 w-3.5 text-emerald-600" aria-hidden="true" />
@@ -422,13 +422,13 @@ export const AssistantView: React.FC = () => {
 
           {answer.sources.length > 0 && (
             <div className="mt-4 border-t border-slate-100 pt-3">
-              <p className="mb-1.5 text-[11px] font-semibold tracking-wider text-slate-600 uppercase">
+              <p className="mb-1.5 text-xs font-semibold tracking-wider text-slate-600 uppercase">
                 {tr ? 'Dayandığı kayıtlar' : 'What it rests on'}
               </p>
               <ol className="space-y-1">
                 {answer.sources.map((source, i) => (
                   <li key={source.marker} className="flex items-start gap-2">
-                    <span className="mt-0.5 font-mono text-[10px] text-slate-400">{i + 1}</span>
+                    <span className="mt-0.5 font-mono text-xs text-slate-400">{i + 1}</span>
                     <button
                       type="button"
                       onClick={() =>
@@ -436,7 +436,7 @@ export const AssistantView: React.FC = () => {
                       }
                       className="min-w-0 flex-1 cursor-pointer text-left"
                     >
-                      <span className="text-xs text-slate-900 hover:underline">
+                      <span className="text-sm text-slate-900 hover:underline">
                         {(tr ? source.titleTr : source.titleEn) ??
                           source.titleEn ??
                           source.titleTr ??
@@ -449,7 +449,7 @@ export const AssistantView: React.FC = () => {
                         </Pill>
                       </span>
                       {source.subtitle && (
-                        <span className="block truncate text-[11px] text-slate-500">
+                        <span className="block truncate text-xs text-slate-500">
                           {source.subtitle}
                         </span>
                       )}
@@ -460,7 +460,7 @@ export const AssistantView: React.FC = () => {
             </div>
           )}
 
-          <p className="mt-3 text-[11px] text-slate-400">
+          <p className="mt-3 text-xs text-slate-400">
             {tr
               ? 'Kaydetme düğmesi yok. Bu metni bir kayda eklemek isteyen kişi ilgili ekranda kendi adıyla ekler (M13-09).'
               : 'There is no save button. Putting this into a record is done on that record’s own screen, under the name of whoever does it (M13-09).'}
@@ -476,17 +476,17 @@ export const AssistantView: React.FC = () => {
 
       {/* M13-10, shown rather than merely stored. */}
       <section className="rounded-xl border border-slate-200 bg-white p-4">
-        <h2 className="text-sm font-bold text-slate-900">
+        <h2 className="text-base font-bold text-slate-900">
           {tr ? 'Son sorulanlar' : 'Recently asked'}
         </h2>
-        <p className="mb-2 text-[11px] text-slate-500">
+        <p className="mb-2 text-xs text-slate-500">
           {tr
             ? 'Kendi sorularınız. Yönetici ve denetçiler herkesin sorularını görür — kayıt zaten bunun için var.'
             : 'Your own questions. An administrator and the auditors see everybody’s — that is what the log is for.'}
         </p>
         <QueryStatus queries={[log]} />
         {(log.data ?? []).length === 0 ? (
-          <p className="text-[11px] text-slate-500">
+          <p className="text-xs text-slate-500">
             {tr ? 'Henüz bir şey sorulmadı.' : 'Nothing has been asked yet.'}
           </p>
         ) : (
@@ -494,8 +494,8 @@ export const AssistantView: React.FC = () => {
             {(log.data ?? []).map((row) => (
               <li key={row.id} className="flex flex-wrap items-start justify-between gap-2 py-1.5">
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-xs text-slate-900">{row.question}</p>
-                  <p className="text-[11px] text-slate-500">
+                  <p className="truncate text-sm text-slate-900">{row.question}</p>
+                  <p className="text-xs text-slate-500">
                     {[
                       row.askerName,
                       tr ? TASKS[row.task]?.titleTr : TASKS[row.task]?.titleEn,
@@ -511,7 +511,7 @@ export const AssistantView: React.FC = () => {
                       .join(' · ')}
                   </p>
                 </div>
-                <span className="shrink-0 font-mono text-[11px] text-slate-400">
+                <span className="shrink-0 font-mono text-xs text-slate-400">
                   {formatDate(row.askedAt, language)}
                 </span>
               </li>

@@ -57,7 +57,7 @@ function kindWords(kind: string, tr: boolean): string {
 function Row({ row, tr }: { row: SimilarRecord; tr: boolean }): React.ReactElement {
   const title = bilingual(row.titleEn, row.titleTr, tr ? 'tr' : 'en');
   return (
-    <li className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 py-1 text-[11px]">
+    <li className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 py-1 text-xs">
       <span className="text-slate-900">{title || '—'}</span>
       <span className="text-slate-500">({kindWords(row.kind, tr)})</span>
       {row.basis === 'recorded_link' ? (
@@ -89,12 +89,12 @@ export const SimilarRecords: React.FC<{ kind: SearchKind; id: string }> = ({ kin
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-3">
-      <h3 className="text-xs font-semibold text-slate-900">
+      <h3 className="text-sm font-semibold text-slate-900">
         {tr ? 'Bundan sonra bakılacaklar' : 'What to look at next'}
       </h3>
 
       {rows.length === 0 ? (
-        <p className="mt-1 text-[11px] text-slate-500">
+        <p className="mt-1 text-xs text-slate-500">
           {tr
             ? 'Kayıtlı bir bağ yok, ve arşivin her yerinde olmayan ortak bir terim de bulunamadı. Bu, ilgisiz olduğu anlamına gelmez — portalda kontrol edilebilir bir bağ bulunmadığı anlamına gelir.'
             : 'No recorded link, and no shared term that is not in the whole archive. That does not mean nothing is related — it means the portal holds no link a reader could check.'}
@@ -103,7 +103,7 @@ export const SimilarRecords: React.FC<{ kind: SearchKind; id: string }> = ({ kin
         <div className="mt-1.5 space-y-2">
           {linked.length > 0 && (
             <div>
-              <p className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-700">
+              <p className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
                 <Link2 className="h-3 w-3 shrink-0 text-indigo-600" aria-hidden="true" />
                 {tr ? 'Kayıtlı bağ' : 'Recorded link'}
               </p>
@@ -120,11 +120,11 @@ export const SimilarRecords: React.FC<{ kind: SearchKind; id: string }> = ({ kin
 
           {guessed.length > 0 && (
             <div>
-              <p className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-700">
+              <p className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
                 <Sparkles className="h-3 w-3 shrink-0 text-amber-600" aria-hidden="true" />
                 {tr ? 'Tahmin — paylaşılan terime dayanıyor' : 'A guess — based on shared terms'}
               </p>
-              <p className="text-[11px] text-slate-500">
+              <p className="text-xs text-slate-500">
                 {tr
                   ? 'Bunlar bir bulgu değil. Hangi terimlere dayandığı yazılı, böylece bir bakışta eleyebilirsiniz. Arşivin onda birinden fazlasında geçen terimler hiç sayılmaz.'
                   : 'These are not a finding. The terms each rests on are written out so you can dismiss it at a glance. A term in more than a tenth of the archive is not counted at all.'}

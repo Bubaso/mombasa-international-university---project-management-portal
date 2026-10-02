@@ -115,12 +115,12 @@ const ScopeTable: React.FC<{
 
   return (
     <div>
-      <h3 className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+      <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
         {heading}
       </h3>
 
       {assignments.length === 0 ? (
-        <p className="text-[11px] text-slate-500">
+        <p className="text-xs text-slate-500">
           {tr ? 'Henüz atama yok.' : 'Nothing assigned yet.'}
         </p>
       ) : (
@@ -206,7 +206,7 @@ const ScopeTable: React.FC<{
       )}
 
       {canManage && candidates.length === 0 && (
-        <p className="mt-1.5 text-[11px] text-slate-500">
+        <p className="mt-1.5 text-xs text-slate-500">
           {tr
             ? 'Bu listede yalnızca kapsamla sınırlanan görevler yer alır. Kurum içi ekip zaten gizlilik seviyesiyle erişir; onlara atama yapmak bir şeyi değiştirmez.'
             : 'Only the roles that scope actually narrows appear here. Internal people reach records by clearance already, so assigning them would change nothing.'}

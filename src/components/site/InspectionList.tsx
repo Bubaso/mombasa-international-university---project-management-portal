@@ -122,7 +122,7 @@ const InspectionRow: React.FC<{
       >
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-xs font-medium text-slate-900">
+            <span className="text-sm font-medium text-slate-900">
               {formatDate(inspection.inspectedOn, language)}
             </span>
             {signed ? (
@@ -148,12 +148,12 @@ const InspectionRow: React.FC<{
               </Pill>
             )}
           </div>
-          <div className="mt-0.5 text-[11px] text-slate-500">
+          <div className="mt-0.5 text-xs text-slate-500">
             {inspection.inspectorName ?? '—'}
             {inspection.summaryEn && ` · ${inspection.summaryEn}`}
           </div>
         </div>
-        <span className="shrink-0 text-[11px] text-slate-400">
+        <span className="shrink-0 text-xs text-slate-400">
           {tr ? `${inspection.findingCount} bulgu` : `${inspection.findingCount} findings`}
         </span>
       </button>
@@ -163,7 +163,7 @@ const InspectionRow: React.FC<{
           <QueryStatus queries={[findings]} />
 
           {(findings.data ?? []).length === 0 ? (
-            <p className="text-[11px] text-slate-500">
+            <p className="text-xs text-slate-500">
               {tr ? 'Bulgu kaydedilmemiş.' : 'No findings recorded.'}
             </p>
           ) : (
@@ -171,7 +171,7 @@ const InspectionRow: React.FC<{
               {(findings.data ?? []).map((finding) => (
                 <li
                   key={finding.id}
-                  className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px]"
+                  className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs"
                 >
                   <div className="flex flex-wrap items-center gap-1.5">
                     {finding.isNonconformity && (
@@ -273,7 +273,7 @@ const InspectionRow: React.FC<{
                   </Select>
                 </Field>
               </div>
-              <label className="flex items-center gap-1.5 text-[11px] text-slate-700">
+              <label className="flex items-center gap-1.5 text-xs text-slate-700">
                 <input
                   type="checkbox"
                   checked={isNonconformity}
@@ -306,7 +306,7 @@ const InspectionRow: React.FC<{
           )}
 
           {signed && (
-            <p className="text-[11px] text-slate-500">
+            <p className="text-xs text-slate-500">
               {tr ? 'İmzalayan: ' : 'Signed by '}
               {inspection.signedOffByName ?? '—'} · {formatDate(inspection.signedOffAt, language)}
             </p>

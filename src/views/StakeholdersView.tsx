@@ -83,7 +83,7 @@ export const StakeholdersView: React.FC = () => {
             <h1 className="text-lg font-bold text-slate-900">
               {tr ? 'Paydaşlar ve İlişkiler' : 'Stakeholders & Relationships'}
             </h1>
-            <p className="text-xs text-slate-500">
+            <p className="text-sm text-slate-500">
               {tr
                 ? 'Kim bizden yana, kimi etkiliyor, en son ne zaman konuştuk, sorumlusu kim.'
                 : 'Who is with us, who they reach, when we last spoke, and whose job they are.'}
@@ -210,7 +210,7 @@ export const StakeholdersView: React.FC = () => {
                   >
                     <Td>
                       <div className="font-medium text-slate-900">{s.fullName}</div>
-                      <div className="text-[11px] text-slate-500">
+                      <div className="text-xs text-slate-500">
                         {[s.title, s.organizationName].filter(Boolean).join(' · ') ||
                           categoryLabel(s.category, language)}
                       </div>
@@ -221,10 +221,10 @@ export const StakeholdersView: React.FC = () => {
                       </Pill>
                     </Td>
                     <Td>
-                      <span className="font-mono text-[11px]">
+                      <span className="font-mono text-xs">
                         {s.influence} · {s.interest}
                       </span>
-                      <div className="text-[10px] text-slate-400">
+                      <div className="text-xs text-slate-400">
                         {quadrantLabel(quadrantOf(s), language)}
                       </div>
                     </Td>
@@ -379,7 +379,7 @@ const AddStakeholderForm: React.FC<{
         </Field>
       </div>
 
-      <p className="mt-2 text-[11px] leading-relaxed text-slate-500">
+      <p className="mt-2 text-xs leading-relaxed text-slate-500">
         {tr
           ? 'Sorumlusu olmayan paydaş, dikkat listesinde uyarı olarak görünür. Nüfuz puanı aynı zamanda ne kadar sessizlikten sonra hatırlatma çıkacağını belirler.'
           : 'A stakeholder with nobody keeping them shows up on the attention list. The influence score also sets how long a silence has to run before the portal says something.'}

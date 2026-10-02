@@ -137,10 +137,10 @@ export const GanttPanel: React.FC = () => {
             aria-hidden="true"
           />
           <div>
-            <h2 className="text-sm font-bold text-slate-900">
+            <h2 className="text-base font-bold text-slate-900">
               {tr ? 'Zaman çizgisi' : 'The plan on one timeline'}
             </h2>
-            <p className="max-w-2xl text-[11px] text-slate-500">
+            <p className="max-w-2xl text-xs text-slate-500">
               {tr
                 ? 'Fazlar çubuk, çünkü bir fazın başlangıcı ve bitişi kayıtlı. Kilometre taşları hedef tarihine konmuş birer işaret — bir kilometre taşı bir nokta, bir süre değil, ve kayıtta süresi yok. Ulaşılmış olanın hedefiyle arasındaki çizgi gecikmenin kendisi; ölçülmüş, göze hoş gelsin diye çizilmemiş.'
                 : 'Phases are bars, because a phase has a start and an end on the record. A milestone is a mark at its target date — it is a point, not a span, and the register holds no duration for it. The line to an achieved date is the slip itself, measured rather than drawn to look right.'}
@@ -176,7 +176,7 @@ export const GanttPanel: React.FC = () => {
       <QueryStatus queries={[phases, milestones]} />
 
       {!drawable ? (
-        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] text-slate-600">
+        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
           {tr
             ? 'Çizilecek bir şey yok: hiçbir fazın başlangıç ve bitişi, hiçbir kilometre taşının hedef tarihi kayıtlı değil. Zaman çizgisi tarih ister; tarihi olmayan bir planı çizmek, planın söylemediği bir şeyi söylemek olur.'
             : 'There is nothing to draw: no phase has both a start and an end, and no milestone has a target date. A timeline needs dates, and drawing a plan that has none would say something the plan does not.'}
@@ -352,7 +352,7 @@ export const GanttPanel: React.FC = () => {
       {/* What could not be drawn, and why. */}
       {(undatedPhases.length > 0 || undatedMilestones.length > 0) && (
         <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
-          <p className="flex items-start gap-1.5 text-[11px] text-amber-900">
+          <p className="flex items-start gap-1.5 text-xs text-amber-900">
             <Info className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
             {tr
               ? 'Çizilemeyenler. Bunlara bir tarih atamak, planın söylemediği bir şeyi söylemek olurdu.'
@@ -360,7 +360,7 @@ export const GanttPanel: React.FC = () => {
           </p>
           <ul className="mt-1 space-y-0.5">
             {undatedPhases.map((p) => (
-              <li key={p.phaseId} className="text-[11px] text-amber-900">
+              <li key={p.phaseId} className="text-xs text-amber-900">
                 {(tr ? p.nameTr : p.nameEn) ?? p.nameEn}
                 {' — '}
                 {!p.startsOn && !p.endsOn
@@ -377,7 +377,7 @@ export const GanttPanel: React.FC = () => {
               </li>
             ))}
             {undatedMilestones.map((m) => (
-              <li key={m.id} className="text-[11px] text-amber-900">
+              <li key={m.id} className="text-xs text-amber-900">
                 {(tr ? m.titleTr : m.titleEn) ?? m.titleEn}
                 {' — '}
                 {tr ? 'hedef tarihi yok' : 'no target date'}

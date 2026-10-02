@@ -57,7 +57,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     >
       {children}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-white border border-emerald-300 text-emerald-800 px-4 py-3 rounded-xl shadow-lg text-xs font-semibold animate-fade-in">
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-white border border-emerald-300 text-emerald-800 px-4 py-3 rounded-xl shadow-lg text-sm font-semibold animate-fade-in">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
           <span className="text-slate-800">{toastMessage}</span>
         </div>

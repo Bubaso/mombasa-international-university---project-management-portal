@@ -50,9 +50,9 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
     >
       <Icon className={`w-8 h-8 mx-auto ${styles.icon}`} aria-hidden="true" />
       <div className="space-y-1.5 max-w-md mx-auto">
-        <h3 className="text-sm font-bold text-slate-800">{title}</h3>
+        <h3 className="text-base font-bold text-slate-800">{title}</h3>
         {description && (
-          <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">
+          <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">
             {description}
           </p>
         )}

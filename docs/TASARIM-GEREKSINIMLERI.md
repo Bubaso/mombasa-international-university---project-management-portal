@@ -219,13 +219,63 @@ T6-01…T6-04 (açıklamaların demote edilmesi), T5-02, T5-03, T10-08.
 **4. Dalga — sistemleştirme**
 T11-01…T11-03, T9-*, T10-01…T10-07.
 
-İlk dalga tek başına ölçülebilir bir fark yaratır: telefonda 44px altı hedef
-455'ten 0'a, 12px altı metin 2449'dan ~0'a, yatay taşma 19 rotadan 0'a.
+## 1. Dalga — ölçülen sonuç
+
+Dalga uygulandı. Aşağıdaki iki sütun aynı aletin aynı 19 rotada, canlı
+projeye bağlı ve giriş yapmış hâlde aldığı ölçüm; biri değişiklikten önce,
+biri sonra. Sayılar `tests/design.mjs`'ten geliyor, gözden değil.
+
+| Ölçüm                            | Önce              | Sonra | Kriter |
+| -------------------------------- | ----------------- | ----- | ------ |
+| 44px altı dokunma hedefi (390px) | 454               | 0     | T4-01  |
+| 12px altı metin (390px)          | 2635              | 0     | T3-01  |
+| 12px altı metin (1440px)         | 2658              | 0     | T3-01  |
+| Yatay taşan rota                 | 19/19             | 0/19  | T2-01  |
+| Ekranın sağından çıkan öge       | 57                | 0     | T2-01  |
+| Telefonda kart olan register     | 0 (hepsi kayardı) | 3/3   | T5-01  |
+
+Masaüstünde 44px altı 815 kontrol **kasıtlı olarak** kaldı: `md:min-h-8`.
+Fare hassas bir alettir; 44px'i her yere zorlamak yoğun bir register'ı
+kimsenin faydasına olmadan uzatır. Bu yüzden test o sayıyı raporlar, üzerine
+düşmez.
+
+Dalga sırasında ölçüm üç kusur daha buldu — hiçbiri gereksinim listesinde
+yoktu, üçü de taşma ölçümü sıkılaştırılınca ortaya çıktı:
+
+- **`main` taşmayı yutuyordu.** `overflow-y-auto`, CSS gereği `overflow-x`'i
+  de `auto` yapar. İçerik alanı kimsenin istemediği bir yatay kaydırıcıya
+  dönüşmüş, taşmayı emmiş ve `document` büyümediği için ölçüm 0 veriyordu.
+  Aletin ilk hâli "kaydırıcı içindekini sayma" dediği için bunu atlıyordu:
+  /legal 8px, /readiness 28px taşarken rapor temiz görünüyordu. Alet
+  düzeltildi — `main` artık sayfanın kendisi sayılıyor, affordance değil.
+- **Dosya seçicisi (CaseStrip) kayıyordu.** Kullanıcının işaret ettiği
+  sekme şeridinin bir üstündeki "Dosyalar" kutusu da yatay kayıyordu;
+  `shrink-0` kaydırmalı sürümün kalıntısıydı ve sarma düzeninde kartı
+  satırın dışına taşırıyordu.
+- **"Yeniden dene" düğmesi ekranı terk ediyordu.** `QueryStatus`'ün hata
+  şeridi sarmayan bir flex satırıydı: 390px'de mesaj ve düğme sığmıyor,
+  düğme alta inmek yerine 28px dışarı çıkıyordu. Bir sorgu başarısız olan
+  her rotada görünen bir kusur.
+
+Geriye bilinçli tek bir yatay kaydırıcı kaldı: /communication'daki konu ×
+mecra tercih matrisi (6 kolon). Bir register değil, bir ızgara olduğu için
+kart şekli ona oturmuyor; 2. dalgada ele alınacak.
 
 ## Nasıl test edilir
 
-Bu dosyadaki kriterlerin çoğu bir tarayıcıda ölçülebilir, yani smoke
-suite'ine eklenebilir. Önerilen: `tests/design.mjs` — her rotayı iki genişlikte
-gezip T2-01, T3-01, T3-02, T4-01, T4-02, T4-03, T5-01, T9-01 ve T1-08'i
-sayısal olarak ölçen bir suite. Böylece bu gereksinimler, bu depodaki diğer
-kurallar gibi, bozulduğunda düşen bir testle korunur.
+`npm run test:design`. Bu dosyadaki kriterler bir tarayıcıda ölçülebilir
+olduğu için ölçülüyor: suite 19 rotayı 390px ve 1440px'te geziyor ve
+T2-01, T3-01, T4-01 ve T5-01'i sayısal olarak sınıyor; bozulduğunda düşüyor.
+
+`npm run verify`'ın parçası **değil**: üzerinde kayıt olan ekranları ölçtüğü
+için canlı projeye ve gerçek bir parolaya ihtiyaç duyar, kapı bunlara sahip
+olamaz. Kimlik verilmezse test geçmiş gibi yapmaz — sıfır olmayan kodla çıkar.
+
+```
+npm run build
+DESIGN_EMAIL=… DESIGN_PASSWORD=… npm run test:design
+```
+
+Henüz ölçülmeyenler: T3-02/T3-03 (satır yüksekliği ve ölçü) sayı olarak
+okunuyor ama üzerine düşülmüyor, T9-* (erişilebilirlik), T10-* (grafikler),
+T12-* (algılanan hız). Bunlar ait oldukları dalgada eklenecek.

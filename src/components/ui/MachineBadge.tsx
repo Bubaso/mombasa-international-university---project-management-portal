@@ -26,7 +26,7 @@ export const MachineBadge: React.FC<{ className?: string }> = ({ className = '' 
           ? 'Bu metni bir dil modeli çevirdi ve henüz kimse onaylamadı. Asistan ekranındaki kuyrukta onaylanabilir ya da düzeltilebilir.'
           : 'A language model translated this and nobody has approved it yet. It can be approved or rewritten in the queue on the assistant screen.'
       }
-      className={`inline-flex shrink-0 items-center gap-0.5 rounded border border-amber-300 bg-amber-50 px-1 py-px align-middle text-[10px] font-medium text-amber-900 ${className}`}
+      className={`inline-flex shrink-0 items-center gap-0.5 rounded border border-amber-300 bg-amber-50 px-1 py-px align-middle text-xs font-medium text-amber-900 ${className}`}
     >
       <Languages className="h-2.5 w-2.5" aria-hidden="true" />
       {tr ? 'makine çevirisi — onaylanmadı' : 'machine translation, not approved'}

@@ -38,10 +38,10 @@ export const ConflictPanel: React.FC = () => {
         <div className="flex items-start gap-2.5">
           <ShieldQuestion className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" aria-hidden="true" />
           <div>
-            <h2 className="text-sm font-bold text-slate-900">
+            <h2 className="text-base font-bold text-slate-900">
               {tr ? 'Çıkar çatışması beyanları' : 'Declared interests'}
             </h2>
-            <p className="text-[11px] text-slate-500">
+            <p className="text-xs text-slate-500">
               {tr
                 ? 'Herkes kendi beyanını yapar; kütüğü okuyanlar heyet, yönetim ve denetim komitesi. Beyanlar varsayılan olarak gizli.'
                 : 'Everybody makes their own; the board, the management and the audit committee read the register. Declarations are confidential by default.'}
@@ -113,7 +113,7 @@ export const ConflictPanel: React.FC = () => {
             <button
               type="button"
               onClick={() => setDeclaring(false)}
-              className="cursor-pointer text-[11px] text-slate-500 underline"
+              className="cursor-pointer text-xs text-slate-500 underline"
             >
               {tr ? 'vazgeç' : 'cancel'}
             </button>
@@ -125,7 +125,7 @@ export const ConflictPanel: React.FC = () => {
       <QueryStatus queries={[conflicts]} />
 
       {rows.length === 0 ? (
-        <p className="text-[11px] text-slate-500">
+        <p className="text-xs text-slate-500">
           {tr
             ? 'Görmeye yetkili olduğunuz beyan yok. Kendi beyanlarınızı her zaman görürsünüz, dolayısıyla bu liste boşsa siz de beyan vermemişsiniz.'
             : 'No declaration you are cleared to read. Your own are always visible to you, so an empty list means you have not made one either.'}
@@ -136,10 +136,10 @@ export const ConflictPanel: React.FC = () => {
             <li key={row.id} className="py-2">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs text-slate-900">
+                  <p className="text-sm text-slate-900">
                     {(tr ? row.interestTr : row.interestEn) ?? row.interestEn}
                   </p>
-                  <p className="mt-0.5 text-[11px] text-slate-500">
+                  <p className="mt-0.5 text-xs text-slate-500">
                     {[
                       row.personName,
                       `${tr ? 'beyan ' : 'declared '}${formatDate(row.declaredOn, language)}`,

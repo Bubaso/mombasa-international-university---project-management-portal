@@ -96,7 +96,7 @@ export const MeetingDetailView: React.FC = () => {
                 bilingualFrom(meeting.title, meeting.titleTr, language).side,
               ) && <MachineBadge className="ml-2" />}
             </h1>
-            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
               <span className="font-mono">{meeting.heldAt.slice(0, 16).replace('T', ' ')}</span>
               {meeting.location && (
                 <span className="flex items-center gap-1">
@@ -156,7 +156,7 @@ export const MeetingDetailView: React.FC = () => {
             </Field>
 
             {locked ? (
-              <p className="flex items-center gap-1.5 pb-1.5 text-[11px] text-slate-500">
+              <p className="flex items-center gap-1.5 pb-1.5 text-xs text-slate-500">
                 <Lock className="h-3 w-3 shrink-0" aria-hidden="true" />
                 {tr
                   ? 'Tutanak kesinleşti. Düzeltme, yeni bir zeyilnamedir; bu kayıt artık değişmez.'
@@ -164,7 +164,7 @@ export const MeetingDetailView: React.FC = () => {
               </p>
             ) : confirmingFinal ? (
               <div className="flex flex-wrap items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-2">
-                <p className="text-[11px] text-amber-900">
+                <p className="text-xs text-amber-900">
                   {tr
                     ? 'Kesinleştirince tutanak bir daha düzenlenemez ve taslağa geri alınamaz.'
                     : 'Once final, the minutes cannot be edited or put back into draft.'}
@@ -248,7 +248,7 @@ const BackLink: React.FC<{ onClick: () => void }> = ({ onClick }) => {
     <button
       type="button"
       onClick={onClick}
-      className="flex cursor-pointer items-center gap-1.5 text-xs font-medium text-slate-600 hover:text-slate-900"
+      className="flex cursor-pointer items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-slate-900"
     >
       <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
       {language === 'tr' ? 'Toplantılar' : 'All meetings'}

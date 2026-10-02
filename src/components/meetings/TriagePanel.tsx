@@ -104,10 +104,10 @@ export const TriagePanel: React.FC = () => {
         <div className="flex items-start gap-2.5">
           <Inbox className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" aria-hidden="true" />
           <div>
-            <h2 className="text-sm font-bold text-slate-900">
+            <h2 className="text-base font-bold text-slate-900">
               {tr ? 'Aksiyon adayları' : 'Action candidates'}
             </h2>
-            <p className="max-w-2xl text-[11px] text-slate-500">
+            <p className="max-w-2xl text-xs text-slate-500">
               {tr
                 ? 'Tutanaklardan gelen aksiyon cümleleri. Bir aksiyonun bir sorumlusu ve bir tarihi olmak zorunda; bu ikisi yazılmadan bunlar aksiyon değil ve aksiyon sayılmıyor. Uydurulmuş bir tarih, tarihi olmayan bir aksiyondan kötüdür — takip edildiğini sandırır.'
                 : 'Action sentences from the minutes. An action must have one owner and one date; until those are given these are not actions and are not counted as any. A made-up date is worse than no action at all, because it looks tracked.'}
@@ -132,7 +132,7 @@ export const TriagePanel: React.FC = () => {
           <button
             type="button"
             onClick={() => setFilter(filter === 'pending' ? 'settled' : 'pending')}
-            className="cursor-pointer text-[11px] text-slate-500 underline"
+            className="cursor-pointer text-xs text-slate-500 underline"
           >
             {filter === 'pending'
               ? tr
@@ -148,7 +148,7 @@ export const TriagePanel: React.FC = () => {
       <QueryStatus queries={[candidates]} />
 
       {shown.length === 0 ? (
-        <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-[11px] text-emerald-900">
+        <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900">
           {filter === 'pending'
             ? tr
               ? 'Kuyruk boş — tutanaklardaki her aksiyon cümlesi ya bir aksiyona dönüştü ya da gerekçesiyle elendi.'
@@ -161,7 +161,7 @@ export const TriagePanel: React.FC = () => {
         <div className="space-y-3">
           {byMeeting.map((group) => (
             <div key={group.title + group.heldAt}>
-              <h3 className="mb-1 flex items-baseline gap-2 text-[11px] font-semibold text-slate-700">
+              <h3 className="mb-1 flex items-baseline gap-2 text-xs font-semibold text-slate-700">
                 {group.title}
                 <span className="font-mono font-normal text-slate-400">
                   {formatDate(group.heldAt, language)}
@@ -174,8 +174,8 @@ export const TriagePanel: React.FC = () => {
                 {group.rows.map((c) => (
                   <li key={c.id} className="rounded-lg border border-slate-200 bg-slate-50 p-2">
                     <div className="flex flex-wrap items-start gap-2">
-                      <span className="font-mono text-[10px] text-slate-400">{c.sequence}</span>
-                      <p className="min-w-0 flex-1 text-xs text-slate-900">
+                      <span className="font-mono text-xs text-slate-400">{c.sequence}</span>
+                      <p className="min-w-0 flex-1 text-sm text-slate-900">
                         {(tr ? c.textTr : c.textEn) ?? c.textEn}
                       </p>
                       {c.state === 'pending' ? (
@@ -205,7 +205,7 @@ export const TriagePanel: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => start(c, 'adopt')}
-                            className="flex cursor-pointer items-center gap-1 text-[11px] text-emerald-800 hover:underline"
+                            className="flex cursor-pointer items-center gap-1 text-xs text-emerald-800 hover:underline"
                           >
                             <CircleCheck className="h-3.5 w-3.5" aria-hidden="true" />
                             {tr ? 'aksiyona çevir' : 'make it an action'}
@@ -213,7 +213,7 @@ export const TriagePanel: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => start(c, 'dismiss')}
-                            className="flex cursor-pointer items-center gap-1 text-[11px] text-slate-500 hover:underline"
+                            className="flex cursor-pointer items-center gap-1 text-xs text-slate-500 hover:underline"
                           >
                             <CircleSlash className="h-3.5 w-3.5" aria-hidden="true" />
                             {tr ? 'ele' : 'drop it'}
@@ -231,7 +231,7 @@ export const TriagePanel: React.FC = () => {
                     </div>
 
                     {c.dismissedReason && (
-                      <p className="mt-1 text-[11px] text-slate-600">
+                      <p className="mt-1 text-xs text-slate-600">
                         {tr ? 'Gerekçe: ' : 'Reason: '}
                         {c.dismissedReason}
                       </p>
@@ -291,12 +291,12 @@ export const TriagePanel: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => setOpenId(null)}
-                          className="cursor-pointer pb-1 text-[11px] text-slate-500 underline"
+                          className="cursor-pointer pb-1 text-xs text-slate-500 underline"
                         >
                           {tr ? 'vazgeç' : 'cancel'}
                         </button>
                         {!c.namesADate && (
-                          <p className="w-full text-[11px] text-amber-800">
+                          <p className="w-full text-xs text-amber-800">
                             {tr
                               ? 'Tutanakta tarih yok. Tarihi siz koyuyorsunuz — bu bir alan doldurmak değil, bir karar vermek.'
                               : 'The minute gives no date. You are setting one, which is a decision rather than a field.'}
@@ -339,7 +339,7 @@ export const TriagePanel: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => setOpenId(null)}
-                          className="cursor-pointer pb-1 text-[11px] text-slate-500 underline"
+                          className="cursor-pointer pb-1 text-xs text-slate-500 underline"
                         >
                           {tr ? 'vazgeç' : 'cancel'}
                         </button>

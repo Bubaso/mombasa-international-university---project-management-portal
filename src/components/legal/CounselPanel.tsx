@@ -60,7 +60,7 @@ export const CounselPanel: React.FC<{ caseId: string; canManage: boolean }> = ({
     <div className="space-y-4">
       <section className="rounded-xl border border-slate-200 bg-white shadow-xs">
         <header className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-4 py-3">
-          <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+          <h2 className="flex items-center gap-2 text-base font-semibold text-slate-900">
             <UserCheck className="h-4 w-4 text-amber-600" aria-hidden="true" />
             {tr ? 'Avukat portföyü' : 'Counsel'}
             <Pill>{rows.length}</Pill>
@@ -91,10 +91,10 @@ export const CounselPanel: React.FC<{ caseId: string; canManage: boolean }> = ({
               <article key={entry.id} className="rounded-lg border border-slate-200 px-3 py-2">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <span className="text-xs font-medium text-slate-900">
+                    <span className="text-sm font-medium text-slate-900">
                       {entry.counselName ?? entry.stakeholderId}
                     </span>
-                    <div className="mt-0.5 flex flex-wrap gap-x-3 text-[11px] text-slate-500">
+                    <div className="mt-0.5 flex flex-wrap gap-x-3 text-xs text-slate-500">
                       {entry.instructedOn && (
                         <span>
                           {tr ? 'vekâlet ' : 'instructed '}
@@ -147,7 +147,7 @@ export const CounselPanel: React.FC<{ caseId: string; canManage: boolean }> = ({
                         ))}
                       </Select>
                     </Field>
-                    <label className="flex cursor-pointer items-center gap-1.5 pb-1.5 text-[11px] text-slate-700">
+                    <label className="flex cursor-pointer items-center gap-1.5 pb-1.5 text-xs text-slate-700">
                       <input
                         type="checkbox"
                         checked={entry.powerOfAttorneyFiled}
@@ -170,7 +170,7 @@ export const CounselPanel: React.FC<{ caseId: string; canManage: boolean }> = ({
 
       <section className="rounded-xl border border-slate-200 bg-white shadow-xs">
         <header className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-4 py-3">
-          <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+          <h2 className="flex items-center gap-2 text-base font-semibold text-slate-900">
             <MessageSquareQuote className="h-4 w-4 text-amber-600" aria-hidden="true" />
             {tr ? 'Hukukî görüşler' : 'Opinions'}
             <Pill>{(opinions.data ?? []).length}</Pill>
@@ -187,7 +187,7 @@ export const CounselPanel: React.FC<{ caseId: string; canManage: boolean }> = ({
           {recording && <OpinionForm caseId={caseId} onDone={() => setRecording(false)} />}
 
           {byQuestion.length === 0 && !recording ? (
-            <p className="text-[11px] leading-relaxed text-slate-500">
+            <p className="text-xs leading-relaxed text-slate-500">
               {tr
                 ? 'Aynı soruya birden fazla avukattan alınan görüşler burada yan yana okunur. Tek tek okununca yazışma, yan yana okununca karşılaştırmadır.'
                 : 'Opinions from different advisers on the same question are read side by side here. One at a time they are correspondence; together they are a comparison.'}
@@ -198,20 +198,20 @@ export const CounselPanel: React.FC<{ caseId: string; canManage: boolean }> = ({
                 key={group.question}
                 className="rounded-lg border border-slate-200 px-3 py-2"
               >
-                <p className="text-xs font-medium text-slate-900">{group.question}</p>
+                <p className="text-sm font-medium text-slate-900">{group.question}</p>
                 <ul className="mt-1.5 space-y-1.5">
                   {(group.rows ?? []).map((opinion) => (
                     <li key={opinion.id} className="border-l-2 border-slate-200 pl-2.5">
-                      <p className="text-[11px] font-medium text-slate-700">
+                      <p className="text-xs font-medium text-slate-700">
                         {opinion.givenByName ?? (tr ? 'kim olduğu kayıtlı değil' : 'unattributed')}
                         {opinion.givenOn && (
-                          <span className="ml-1.5 font-mono text-[10px] text-slate-400">
+                          <span className="ml-1.5 font-mono text-xs text-slate-400">
                             {opinion.givenOn}
                           </span>
                         )}
                       </p>
                       {opinion.conclusion && (
-                        <p className="text-[11px] leading-relaxed text-slate-600">
+                        <p className="text-xs leading-relaxed text-slate-600">
                           {opinion.conclusion}
                         </p>
                       )}
@@ -272,7 +272,7 @@ const AssignForm: React.FC<{ caseId: string; onDone: () => void }> = ({ caseId, 
       </div>
 
       {advocates.length === 0 && (
-        <p className="mt-2 text-[11px] text-slate-500">
+        <p className="mt-2 text-xs text-slate-500">
           {tr
             ? 'Paydaş kütüğünde "Hukuk" kategorisinde kimse yok. Avukatı önce kütüğe ekleyin.'
             : 'Nobody in the register is categorised as legal. Add the advocate there first.'}
@@ -327,7 +327,7 @@ const OpinionForm: React.FC<{ caseId: string; onDone: () => void }> = ({ caseId,
       <Field label={tr ? 'Hangi soruya' : 'The question it answers'}>
         <TextInput value={question} onChange={(e) => setQuestion(e.target.value)} required />
       </Field>
-      <p className="mt-1 text-[10px] text-slate-500">
+      <p className="mt-1 text-xs text-slate-500">
         {tr
           ? 'Aynı soruyu aynı sözlerle yazın: görüşler soruya göre gruplanıyor, farklı yazılan soru ayrı bir soru sayılır.'
           : 'Word the same question the same way: opinions are grouped by it, so a different wording reads as a different question.'}

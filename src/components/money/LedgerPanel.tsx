@@ -146,7 +146,7 @@ export const LedgerPanel: React.FC<Props> = ({ canSpend, canAudit }) => {
       {unverified > 0 && (
         <div className="mb-3 flex items-start gap-2.5 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2">
           <FileWarning className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" aria-hidden="true" />
-          <p className="text-[11px] leading-relaxed text-amber-900">
+          <p className="text-xs leading-relaxed text-amber-900">
             <span className="font-semibold">
               {tr
                 ? `${unverified} işlemin belgesi yok.`
@@ -308,21 +308,21 @@ export const LedgerPanel: React.FC<Props> = ({ canSpend, canAudit }) => {
           {rows.map((transaction) => (
             <tr key={transaction.id} className="border-t border-slate-100">
               <Td>
-                <span className="font-mono text-[11px]">{transaction.referenceNo}</span>
-                <span className="block text-[11px] text-slate-400">
+                <span className="font-mono text-xs">{transaction.referenceNo}</span>
+                <span className="block text-xs text-slate-400">
                   {formatDate(transaction.date, language)}
                 </span>
               </Td>
               <Td>
                 {transaction.description}
-                <span className="block text-[11px] text-slate-500">
+                <span className="block text-xs text-slate-500">
                   {transaction.payee} · {transactionCategoryLabel(transaction.category, language)}
                 </span>
               </Td>
               <Td className="text-right font-mono">
                 {fmt(transaction.amount, transaction.currency)}
                 {transaction.currency !== 'KES' && (
-                  <span className="block text-[11px] text-slate-400">
+                  <span className="block text-xs text-slate-400">
                     {fmt(transaction.amountKes, 'KES')}
                   </span>
                 )}

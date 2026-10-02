@@ -50,10 +50,10 @@ export const IcsExport: React.FC<{ entries: CalendarEntry[] }> = ({ entries }) =
             aria-hidden="true"
           />
           <div>
-            <h2 className="text-sm font-bold text-slate-900">
+            <h2 className="text-base font-bold text-slate-900">
               {tr ? 'Takvimi dosya olarak al' : 'Take the calendar as a file'}
             </h2>
-            <p className="max-w-2xl text-[11px] text-slate-500">
+            <p className="max-w-2xl text-xs text-slate-500">
               {tr
                 ? 'Google Takvim, Outlook ve telefonunuzun takvimi bu dosyayı okur. İçe aktarmak bir kopya alır: tarih sonra değişirse dosya eskir, yeniden almanız gerekir. Canlı bir bağlantı değil — canlı bağlantı, takvim programının giriş yapmadan okuyabileceği bir adres ister, yani bağlantıyı elinde tutan takvimi elinde tutar. İsterseniz onu ayrıca konuşalım.'
                 : 'Google Calendar, Outlook and your phone will read this file. Importing takes a copy: if a date moves afterwards the file is stale and you take it again. It is not a live feed — a feed needs an address a calendar program can read without signing in, which means whoever holds the link holds the calendar. Worth deciding deliberately rather than by default.'}
@@ -63,7 +63,7 @@ export const IcsExport: React.FC<{ entries: CalendarEntry[] }> = ({ entries }) =
       </header>
 
       <div className="flex flex-wrap items-center gap-3">
-        <label className="flex cursor-pointer items-center gap-1.5 text-[11px] text-slate-700">
+        <label className="flex cursor-pointer items-center gap-1.5 text-xs text-slate-700">
           <input
             type="checkbox"
             checked={includeClosed}
@@ -77,7 +77,7 @@ export const IcsExport: React.FC<{ entries: CalendarEntry[] }> = ({ entries }) =
           {tr ? 'İndir (.ics)' : 'Download (.ics)'}
         </ActionButton>
         {last && (
-          <span className="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-600">
+          <span className="flex flex-wrap items-center gap-1.5 text-xs text-slate-600">
             <Pill className="border-emerald-300 bg-emerald-50 text-emerald-900">
               {tr ? `${last.events} kayıt` : `${last.events} events`}
             </Pill>
@@ -99,7 +99,7 @@ export const IcsExport: React.FC<{ entries: CalendarEntry[] }> = ({ entries }) =
         )}
       </div>
 
-      <p className="mt-2 flex items-start gap-1.5 text-[11px] leading-relaxed text-amber-800">
+      <p className="mt-2 flex items-start gap-1.5 text-xs leading-relaxed text-amber-800">
         <Info className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
         {tr
           ? 'Bu dosya portalın erişim denetimini geride bırakır. Portalda bir kaydı kimin görebileceğine veritabanı karar veriyor; bir .ics dosyasına ise dizüstünü eline alan herkes bakar.'

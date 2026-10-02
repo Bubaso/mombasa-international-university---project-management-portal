@@ -48,10 +48,10 @@ export const CompliancePanel: React.FC = () => {
         <div className="flex items-start gap-2.5">
           <Scale className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" aria-hidden="true" />
           <div>
-            <h2 className="text-sm font-bold text-slate-900">
+            <h2 className="text-base font-bold text-slate-900">
               {tr ? 'Mevzuat uyum takvimi' : 'Statutory compliance calendar'}
             </h2>
-            <p className="text-[11px] text-slate-500">
+            <p className="text-xs text-slate-500">
               {tr
                 ? 'Fasıl 164, KRA, CUE, valilik. Her biri yükümlülük olarak M2’de yaşıyor; takvim kuralı tutuyor, yükümlülük o dönemin örneğini.'
                 : 'Cap 164, KRA, CUE, the county. Each lives as an obligation in M2: the calendar holds the rule, the obligation holds this period’s instance.'}
@@ -69,7 +69,7 @@ export const CompliancePanel: React.FC = () => {
       <WriteError error={raise.error} />
 
       {rows.length === 0 ? (
-        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] text-slate-600">
+        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
           {tr
             ? 'Takvimde kayıtlı mevzuat yükümlülüğü yok. Bu, yükümlülük olmadığı anlamına gelmiyor — Fasıl 164 beyanı ve KRA muafiyeti kimse yazmasa da vadesi geliyor.'
             : 'No statutory duty is on the calendar. That does not mean there are none: the Cap 164 return and the KRA exemption fall due whether or not anybody wrote them down.'}
@@ -85,7 +85,7 @@ export const CompliancePanel: React.FC = () => {
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-1.5">
                     <Pill>{regimeLabel(row.regime, language)}</Pill>
-                    <span className="text-xs font-medium text-slate-900">
+                    <span className="text-sm font-medium text-slate-900">
                       <Bilingual
                         table="compliance_requirements"
                         id={row.requirementId}
@@ -95,10 +95,10 @@ export const CompliancePanel: React.FC = () => {
                       />
                     </span>
                     {row.reference && (
-                      <span className="font-mono text-[11px] text-slate-500">{row.reference}</span>
+                      <span className="font-mono text-xs text-slate-500">{row.reference}</span>
                     )}
                   </div>
-                  <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-500">
+                  <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
                     {row.nextDueOn && (
                       <span
                         className={
@@ -144,7 +144,7 @@ export const CompliancePanel: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => navigate('/obligations')}
-                      className="cursor-pointer text-[11px] text-indigo-700 hover:underline"
+                      className="cursor-pointer text-xs text-indigo-700 hover:underline"
                     >
                       {tr ? 'yükümlülüğe git' : 'open the obligation'}
                     </button>

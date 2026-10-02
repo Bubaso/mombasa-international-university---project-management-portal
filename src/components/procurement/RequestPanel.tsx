@@ -108,10 +108,10 @@ export const RequestPanel: React.FC = () => {
         <div className="flex items-start gap-2.5">
           <Gavel className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" aria-hidden="true" />
           <div>
-            <h2 className="text-sm font-bold text-slate-900">
+            <h2 className="text-base font-bold text-slate-900">
               {tr ? 'Tedarik talepleri ve aday karşılaştırması' : 'Requests and candidates'}
             </h2>
-            <p className="text-[11px] text-slate-500">
+            <p className="text-xs text-slate-500">
               {tr
                 ? 'Onay, ödemelerdeki aynı tutar bandından geçiyor; talep eden kendi talebini onaylayamıyor. Eleme gerekçesi zorunlu — kaybolan tam olarak o.'
                 : 'Approval goes through the same money bands as a payment, and the requester cannot approve their own. A rejection needs its reason: that is the part that gets lost.'}
@@ -224,11 +224,11 @@ export const RequestPanel: React.FC = () => {
             <button
               type="button"
               onClick={() => setRaising(false)}
-              className="cursor-pointer text-[11px] text-slate-500 underline"
+              className="cursor-pointer text-xs text-slate-500 underline"
             >
               {tr ? 'vazgeç' : 'cancel'}
             </button>
-            <p className="text-[11px] text-slate-400">
+            <p className="text-xs text-slate-400">
               {tr
                 ? 'Tahmin, kimin onaylayabileceğini belirleyen bandı seçiyor.'
                 : 'The estimate decides which approval band applies.'}
@@ -244,7 +244,7 @@ export const RequestPanel: React.FC = () => {
       <WriteError error={approve.error} />
 
       {rows.length === 0 ? (
-        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] text-slate-600">
+        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
           {tr
             ? 'Kayıtlı tedarik talebi yok. Dört avukat adayı, müteahhit seçimi ve denetçi arayışı bu kütükte durur.'
             : 'No procurement is on the register. The four counsel candidates, the contractor selection and the search for an auditor belong here.'}
@@ -264,11 +264,11 @@ export const RequestPanel: React.FC = () => {
                   >
                     <div className="flex flex-wrap items-center gap-1.5">
                       {request.referenceNo && (
-                        <span className="font-mono text-[11px] font-semibold text-indigo-800">
+                        <span className="font-mono text-xs font-semibold text-indigo-800">
                           {request.referenceNo}
                         </span>
                       )}
-                      <span className="text-xs font-medium text-slate-900">
+                      <span className="text-sm font-medium text-slate-900">
                         {(tr ? request.needTr : request.needEn) ?? request.needEn}
                       </span>
                       <Pill>{kindLabel(request.kind, language)}</Pill>
@@ -276,11 +276,11 @@ export const RequestPanel: React.FC = () => {
                         {requestStateLabel(request.state, language)}
                       </Pill>
                     </div>
-                    <p className="mt-0.5 text-[11px] text-slate-600">
+                    <p className="mt-0.5 text-xs text-slate-600">
                       {(tr ? request.justificationTr : request.justificationEn) ??
                         request.justificationEn}
                     </p>
-                    <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-500">
+                    <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
                       <span className="font-mono">
                         {money(request.estimatedAmount, request.estimatedCurrency)}
                       </span>
@@ -323,7 +323,7 @@ export const RequestPanel: React.FC = () => {
                 {open && (
                   <div className="mt-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
                     <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                      <p className="text-[11px] font-semibold tracking-wider text-slate-600 uppercase">
+                      <p className="text-xs font-semibold tracking-wider text-slate-600 uppercase">
                         {tr ? 'Adaylar' : 'Candidates'}
                       </p>
                       {!adding && request.state !== 'awarded' && (
@@ -421,7 +421,7 @@ export const RequestPanel: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => setAdding(false)}
-                            className="cursor-pointer text-[11px] text-slate-500 underline"
+                            className="cursor-pointer text-xs text-slate-500 underline"
                           >
                             {tr ? 'vazgeç' : 'cancel'}
                           </button>
@@ -437,7 +437,7 @@ export const RequestPanel: React.FC = () => {
                     <WriteError error={reject.error} />
 
                     {(candidates.data ?? []).length === 0 ? (
-                      <p className="text-[11px] text-slate-500">
+                      <p className="text-xs text-slate-500">
                         {tr ? 'Henüz aday girilmemiş.' : 'No candidate has been entered yet.'}
                       </p>
                     ) : (
@@ -456,34 +456,32 @@ export const RequestPanel: React.FC = () => {
                           <React.Fragment key={c.id}>
                             <tr className="hover:bg-white">
                               <Td>
-                                <span className="text-xs font-medium text-slate-900">{c.name}</span>
+                                <span className="text-sm font-medium text-slate-900">{c.name}</span>
                                 {c.scopeEn && (
-                                  <span className="block text-[11px] text-slate-500">
-                                    {c.scopeEn}
-                                  </span>
+                                  <span className="block text-xs text-slate-500">{c.scopeEn}</span>
                                 )}
                               </Td>
                               <Td className="text-right">
-                                <span className="font-mono text-[11px] text-slate-700">
+                                <span className="font-mono text-xs text-slate-700">
                                   {money(c.feeAmount, c.feeCurrency)}
                                 </span>
-                                <span className="block text-[11px] text-slate-400">
+                                <span className="block text-xs text-slate-400">
                                   {feeBasisLabel(c.feeBasis, language)}
                                 </span>
                               </Td>
                               <Td className="text-right">
-                                <span className="font-mono text-[11px] text-slate-700">
+                                <span className="font-mono text-xs text-slate-700">
                                   {c.score ?? '—'}
                                 </span>
                               </Td>
                               <Td>
                                 {c.strengthsEn && (
-                                  <span className="block text-[11px] text-emerald-800">
+                                  <span className="block text-xs text-emerald-800">
                                     + {c.strengthsEn}
                                   </span>
                                 )}
                                 {c.weaknessesEn && (
-                                  <span className="block text-[11px] text-rose-800">
+                                  <span className="block text-xs text-rose-800">
                                     − {c.weaknessesEn}
                                   </span>
                                 )}
@@ -493,7 +491,7 @@ export const RequestPanel: React.FC = () => {
                                   {outcomeLabel(c.outcome, language)}
                                 </Pill>
                                 {c.decisionNoteEn && (
-                                  <span className="mt-0.5 block text-[11px] text-slate-600">
+                                  <span className="mt-0.5 block text-xs text-slate-600">
                                     {c.decisionNoteEn}
                                   </span>
                                 )}
@@ -507,7 +505,7 @@ export const RequestPanel: React.FC = () => {
                                           setDeciding({ id: c.id, how: 'award' });
                                           setReason('');
                                         }}
-                                        className="flex cursor-pointer items-center gap-1 text-[11px] text-emerald-800 hover:underline"
+                                        className="flex cursor-pointer items-center gap-1 text-xs text-emerald-800 hover:underline"
                                       >
                                         <Trophy className="h-3 w-3" aria-hidden="true" />
                                         {tr ? 'seç' : 'select'}
@@ -518,7 +516,7 @@ export const RequestPanel: React.FC = () => {
                                           setDeciding({ id: c.id, how: 'reject' });
                                           setReason('');
                                         }}
-                                        className="flex cursor-pointer items-center gap-1 text-[11px] text-slate-500 hover:underline"
+                                        className="flex cursor-pointer items-center gap-1 text-xs text-slate-500 hover:underline"
                                       >
                                         <CircleX className="h-3 w-3" aria-hidden="true" />
                                         {tr ? 'ele' : 'reject'}
@@ -579,7 +577,7 @@ export const RequestPanel: React.FC = () => {
                                     <button
                                       type="button"
                                       onClick={() => setDeciding(null)}
-                                      className="cursor-pointer pb-1 text-[11px] text-slate-500 underline"
+                                      className="cursor-pointer pb-1 text-xs text-slate-500 underline"
                                     >
                                       {tr ? 'vazgeç' : 'cancel'}
                                     </button>

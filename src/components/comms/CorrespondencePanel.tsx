@@ -81,10 +81,10 @@ export const CorrespondencePanel: React.FC = () => {
         <div className="flex items-start gap-2.5">
           <Mail className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" aria-hidden="true" />
           <div>
-            <h2 className="text-sm font-bold text-slate-900">
+            <h2 className="text-base font-bold text-slate-900">
               {tr ? 'Resmî yazışma kütüğü' : 'Official correspondence'}
             </h2>
-            <p className="max-w-2xl text-[11px] text-slate-500">
+            <p className="max-w-2xl text-xs text-slate-500">
               {tr
                 ? 'Ne gönderildi, ne zaman, hangi yolla, eki ne ve ulaştığı teyit edildi mi. Postaya verilip cevapsız kalan bir yazı ile alındığı teyit edilen bir yazı farklı iki olgudur.'
                 : 'What was sent, when, by what route, with what attached, and whether delivery was ever confirmed. A letter posted and unanswered is a different fact from one acknowledged.'}
@@ -200,7 +200,7 @@ export const CorrespondencePanel: React.FC = () => {
             <button
               type="button"
               onClick={() => setAdding(false)}
-              className="cursor-pointer text-[11px] text-slate-500 underline"
+              className="cursor-pointer text-xs text-slate-500 underline"
             >
               {tr ? 'vazgeç' : 'cancel'}
             </button>
@@ -209,7 +209,7 @@ export const CorrespondencePanel: React.FC = () => {
             </div>
           </div>
           {form.direction === 'outgoing' && (
-            <p className="text-[11px] text-amber-800 sm:col-span-3">
+            <p className="text-xs text-amber-800 sm:col-span-3">
               {tr
                 ? 'Giden yazı, yazının kendisiyle birlikte kaydedilir. Eki olmayan bir yazışma kütüğü, iddialar listesidir.'
                 : 'An outgoing letter is filed with the letter. A register of letters whose letters are missing is a list of assertions.'}
@@ -221,7 +221,7 @@ export const CorrespondencePanel: React.FC = () => {
       <QueryStatus queries={[letters]} />
 
       {rows.length === 0 ? (
-        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] text-slate-600">
+        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
           {tr
             ? 'Kayıtlı resmî yazı yok. Bakanlığa gönderilen bir yazının ne zaman gittiği ve ulaşıp ulaşmadığı, altı ay sonra yalnızca buradan bilinebilir.'
             : 'No official letter is recorded. When a letter went to the Ministry, and whether it ever arrived, is knowable six months later only from here.'}
@@ -242,11 +242,9 @@ export const CorrespondencePanel: React.FC = () => {
             <tr key={row.id} className="hover:bg-slate-50">
               <Td>
                 {row.referenceNo && (
-                  <span className="mr-1.5 font-mono text-[11px] text-slate-500">
-                    {row.referenceNo}
-                  </span>
+                  <span className="mr-1.5 font-mono text-xs text-slate-500">{row.referenceNo}</span>
                 )}
-                <span className="text-xs text-slate-900">
+                <span className="text-sm text-slate-900">
                   {(tr ? row.subjectTr : row.subjectEn) ?? row.subjectEn}
                 </span>
                 {row.documentId ? (
@@ -261,21 +259,21 @@ export const CorrespondencePanel: React.FC = () => {
                 )}
               </Td>
               <Td>
-                <span className="text-[11px] text-slate-700">
+                <span className="text-xs text-slate-700">
                   {row.counterparty ?? (tr ? '(adsız)' : '(unnamed)')}
                 </span>
               </Td>
               <Td>
-                <span className="text-[11px] text-slate-600">{routeName(row.route, tr)}</span>
+                <span className="text-xs text-slate-600">{routeName(row.route, tr)}</span>
               </Td>
               <Td>
-                <span className="font-mono text-[11px] text-slate-600">
+                <span className="font-mono text-xs text-slate-600">
                   {formatDate(row.sentOn, language)}
                 </span>
               </Td>
               <Td>
                 {row.deliveryConfirmedOn ? (
-                  <span className="text-[11px] text-emerald-800">
+                  <span className="text-xs text-emerald-800">
                     {tr ? 'teyitli ' : 'confirmed '}
                     {formatDate(row.deliveryConfirmedOn, language)}
                   </span>
@@ -319,7 +317,7 @@ export const CorrespondencePanel: React.FC = () => {
                     </ActionButton>
                   </form>
                 ) : (
-                  <span className="flex items-center gap-1 text-[11px] text-amber-800">
+                  <span className="flex items-center gap-1 text-xs text-amber-800">
                     <MailQuestion className="h-3 w-3" aria-hidden="true" />
                     {tr ? 'teyit edilmedi' : 'not confirmed'}
                     {mayKeep && (

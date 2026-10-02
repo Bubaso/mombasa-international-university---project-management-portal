@@ -30,8 +30,8 @@ export const PhasePanel: React.FC = () => {
       <header className="mb-3 flex items-start gap-2.5">
         <Layers className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" aria-hidden="true" />
         <div>
-          <h2 className="text-sm font-bold text-slate-900">{tr ? 'Faz yapısı' : 'Phases'}</h2>
-          <p className="text-[11px] text-slate-500">
+          <h2 className="text-base font-bold text-slate-900">{tr ? 'Faz yapısı' : 'Phases'}</h2>
+          <p className="text-xs text-slate-500">
             {tr
               ? 'Kapsam yazıyla, içerik sayımla. Kapsamı “A1 ve B2 blokları” diyen ama tek blok sayan bir faz, artık güncellenmeyen bir fazdır.'
               : 'The scope in prose, the contents by count. A phase whose scope says “blocks A1 and B2” and whose count says one is a phase nobody is maintaining.'}
@@ -42,7 +42,7 @@ export const PhasePanel: React.FC = () => {
       <QueryStatus queries={[phases]} />
 
       {rows.length === 0 ? (
-        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] text-slate-600">
+        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
           {tr
             ? 'Faz girilmemiş. Bloklar ve bütçe satırları faza bağlanabiliyor ama bağlanacak bir faz yok.'
             : 'No phase is recorded. Blocks and budget lines can belong to one, but there is none to belong to.'}
@@ -62,13 +62,13 @@ export const PhasePanel: React.FC = () => {
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="font-mono text-[11px] text-slate-400">{phase.sequence}</span>
+                      <span className="font-mono text-xs text-slate-400">{phase.sequence}</span>
                       {phase.code && (
-                        <span className="font-mono text-[11px] font-semibold text-indigo-800">
+                        <span className="font-mono text-xs font-semibold text-indigo-800">
                           {phase.code}
                         </span>
                       )}
-                      <span className="text-xs font-semibold text-slate-900">
+                      <span className="text-sm font-semibold text-slate-900">
                         {(tr ? phase.nameTr : phase.nameEn) ?? phase.nameEn}
                       </span>
                       {phase.overran && (
@@ -79,22 +79,22 @@ export const PhasePanel: React.FC = () => {
                       )}
                     </div>
                     {(tr ? phase.scopeTr : phase.scopeEn) ? (
-                      <p className="mt-0.5 text-[11px] text-slate-700">
+                      <p className="mt-0.5 text-xs text-slate-700">
                         {tr ? phase.scopeTr : phase.scopeEn}
                       </p>
                     ) : (
-                      <p className="mt-0.5 text-[11px] text-amber-800">
+                      <p className="mt-0.5 text-xs text-amber-800">
                         {tr
                           ? 'Kapsam yazılmamış — bu fazın neyi kapsadığı kayıtlı değil.'
                           : 'No scope recorded — what this phase covers is not written down.'}
                       </p>
                     )}
                     {(tr ? phase.objectiveTr : phase.objectiveEn) && (
-                      <p className="mt-0.5 text-[11px] text-slate-500 italic">
+                      <p className="mt-0.5 text-xs text-slate-500 italic">
                         {tr ? phase.objectiveTr : phase.objectiveEn}
                       </p>
                     )}
-                    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
+                    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
                       {phase.startsOn && phase.endsOn && (
                         <span className="font-mono">
                           {formatDate(phase.startsOn, language)} →{' '}
@@ -114,21 +114,21 @@ export const PhasePanel: React.FC = () => {
                   </div>
 
                   <div className="shrink-0 space-y-1 text-right">
-                    <p className="text-[11px] text-slate-500">
+                    <p className="text-xs text-slate-500">
                       {tr ? 'bloklar' : 'blocks'}{' '}
                       <span className="font-mono text-slate-800">
                         {phase.blocksComplete}/{phase.blocks}
                         {blockShare != null && ` · ${blockShare}%`}
                       </span>
                     </p>
-                    <p className="text-[11px] text-slate-500">
+                    <p className="text-xs text-slate-500">
                       {tr ? 'taşlar' : 'milestones'}{' '}
                       <span className="font-mono text-slate-800">
                         {phase.milestonesAchieved}/{phase.milestones}
                       </span>
                     </p>
                     {phase.milestonesMissed > 0 && (
-                      <p className="text-[11px] font-semibold text-rose-700">
+                      <p className="text-xs font-semibold text-rose-700">
                         {tr
                           ? `${phase.milestonesMissed} kaçırıldı`
                           : `${phase.milestonesMissed} missed`}

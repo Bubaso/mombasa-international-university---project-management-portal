@@ -1,6 +1,7 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
 import { type ActiveTab } from '../types';
 import {
   GraduationCap,
@@ -13,6 +14,7 @@ import {
   ScrollText,
   CalendarClock,
   Globe,
+  LogOut,
   Search,
   X,
   ChevronRight,
@@ -25,6 +27,7 @@ interface MobileMoreSheetProps {
 
 export const MobileMoreSheet: React.FC<MobileMoreSheetProps> = ({ isOpen, onClose }) => {
   const { language, setLanguage, setIsSearchOpen } = useApp();
+  const { user, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -153,14 +156,14 @@ export const MobileMoreSheet: React.FC<MobileMoreSheetProps> = ({ isOpen, onClos
         {/* Sheet Header */}
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-800 font-bold text-xs">
+            <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-800 font-bold text-sm">
               MIU
             </div>
             <div>
-              <h3 className="font-bold text-slate-900 text-sm">
+              <h3 className="font-bold text-slate-900 text-base">
                 {language === 'tr' ? 'Diğer Modüller & Ayarlar' : 'More Modules & Settings'}
               </h3>
-              <p className="text-[11px] text-slate-500">
+              <p className="text-xs text-slate-500">
                 {language === 'tr'
                   ? 'Mombasa Uluslararası Üniversitesi'
                   : 'Mombasa International University'}
@@ -181,7 +184,7 @@ export const MobileMoreSheet: React.FC<MobileMoreSheetProps> = ({ isOpen, onClos
             onClose();
             setIsSearchOpen(true);
           }}
-          className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 hover:bg-slate-100 transition-colors"
+          className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-600 hover:bg-slate-100 transition-colors"
         >
           <span className="flex items-center gap-2">
             <Search className="w-4 h-4 text-amber-600" />
@@ -189,14 +192,14 @@ export const MobileMoreSheet: React.FC<MobileMoreSheetProps> = ({ isOpen, onClos
               {language === 'tr' ? 'Tüm modüllerde ara...' : 'Search across all records...'}
             </span>
           </span>
-          <span className="font-mono text-[10px] bg-white px-2 py-0.5 rounded border border-slate-200 text-slate-500">
+          <span className="font-mono text-xs bg-white px-2 py-0.5 rounded border border-slate-200 text-slate-500">
             {language === 'tr' ? 'Bul' : 'Find'}
           </span>
         </button>
 
         {/* Quick Module Destinations */}
         <div className="space-y-2">
-          <div className="text-[11px] font-bold uppercase text-slate-500 tracking-wider">
+          <div className="text-xs font-bold uppercase text-slate-500 tracking-wider">
             {language === 'tr' ? 'Önemli Bölümler' : 'Dedicated Sections'}
           </div>
           <div className="space-y-2">
@@ -220,10 +223,10 @@ export const MobileMoreSheet: React.FC<MobileMoreSheetProps> = ({ isOpen, onClos
                       <Icon className="w-4 h-4" />
                     </div>
                     <div>
-                      <div className="font-bold text-xs text-slate-900">
+                      <div className="font-bold text-sm text-slate-900">
                         {language === 'tr' ? item.labelTr : item.labelEn}
                       </div>
-                      <div className="text-[11px] text-slate-500 line-clamp-1">
+                      <div className="text-xs text-slate-500 line-clamp-1">
                         {language === 'tr' ? item.descTr : item.descEn}
                       </div>
                     </div>
@@ -237,12 +240,12 @@ export const MobileMoreSheet: React.FC<MobileMoreSheetProps> = ({ isOpen, onClos
 
         {/* Language & Role Switchers */}
         <div className="pt-2 border-t border-slate-100 space-y-3">
-          <div className="text-[11px] font-bold uppercase text-slate-500 tracking-wider">
+          <div className="text-xs font-bold uppercase text-slate-500 tracking-wider">
             {language === 'tr' ? 'Kullanıcı Rolü & Dil' : 'User Role & Language'}
           </div>
 
           {/* Language Switcher Bar */}
-          <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+          <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm">
             <span className="flex items-center gap-2 text-slate-700 font-medium">
               <Globe className="w-4 h-4 text-amber-600" />
               <span>{language === 'tr' ? 'Arayüz Dili:' : 'Interface Language:'}</span>
@@ -250,7 +253,7 @@ export const MobileMoreSheet: React.FC<MobileMoreSheetProps> = ({ isOpen, onClos
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setLanguage('tr')}
-                className={`px-3 py-1 rounded-lg font-bold text-xs transition-colors cursor-pointer ${
+                className={`px-3 py-1 rounded-lg font-bold text-sm transition-colors cursor-pointer ${
                   language === 'tr'
                     ? 'bg-amber-600 text-white shadow-xs'
                     : 'bg-white text-slate-700 border border-slate-200'
@@ -260,7 +263,7 @@ export const MobileMoreSheet: React.FC<MobileMoreSheetProps> = ({ isOpen, onClos
               </button>
               <button
                 onClick={() => setLanguage('en')}
-                className={`px-3 py-1 rounded-lg font-bold text-xs transition-colors cursor-pointer ${
+                className={`px-3 py-1 rounded-lg font-bold text-sm transition-colors cursor-pointer ${
                   language === 'en'
                     ? 'bg-amber-600 text-white shadow-xs'
                     : 'bg-white text-slate-700 border border-slate-200'
@@ -272,8 +275,34 @@ export const MobileMoreSheet: React.FC<MobileMoreSheetProps> = ({ isOpen, onClos
           </div>
         </div>
 
+        {/* Signing out lives here on a phone, not in the top bar.
+            The bar's right-hand cluster did not fit at 390px — the sign-out
+            icon ended 8px past the viewport, which is where the horizontal
+            rock on all nineteen routes came from. This is also simply where
+            people look for it. */}
+        {user && (
+          <div className="border-t border-slate-100 pt-3">
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                void signOut();
+              }}
+              className="flex w-full cursor-pointer items-center justify-between rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm font-semibold text-rose-800 hover:bg-rose-100"
+            >
+              <span className="flex items-center gap-2">
+                <LogOut className="h-4 w-4" />
+                {language === 'tr' ? 'Çıkış yap' : 'Sign out'}
+              </span>
+              <span className="max-w-[160px] truncate text-xs font-normal text-rose-700">
+                {user.name}
+              </span>
+            </button>
+          </div>
+        )}
+
         {/* Footer info */}
-        <div className="pt-2 text-center text-[10px] text-slate-400">
+        <div className="pt-2 text-center text-xs text-slate-400">
           Mombasa International University · AUTK Cap 164 · Plot MN/I/5141
         </div>
       </div>

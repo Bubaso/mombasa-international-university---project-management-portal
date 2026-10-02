@@ -131,7 +131,7 @@ export const LegalAffairsView: React.FC = () => {
           out of step with the project's own meeting minutes. Until each claim
           hangs off a document, say plainly that it is unverified. */}
       <div
-        className="flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-xs"
+        className="flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm"
         role="note"
       >
         <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" aria-hidden="true" />
@@ -150,7 +150,7 @@ export const LegalAffairsView: React.FC = () => {
       {/* Top Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-slate-200 p-5 rounded-xl shadow-xs">
         <div>
-          <div className="flex items-center gap-2 text-xs font-semibold text-amber-700 uppercase tracking-wider">
+          <div className="flex items-center gap-2 text-sm font-semibold text-amber-700 uppercase tracking-wider">
             <Scale className="w-4 h-4" />
             <span>
               {language === 'tr'
@@ -166,7 +166,7 @@ export const LegalAffairsView: React.FC = () => {
         <div className="flex items-center gap-2.5">
           <button
             onClick={() => setShowNewMotionModal(true)}
-            className="inline-flex items-center gap-1.5 bg-amber-600 hover:bg-amber-500 text-white px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer shadow-xs"
+            className="inline-flex items-center gap-1.5 bg-amber-600 hover:bg-amber-500 text-white px-3.5 py-2 rounded-lg text-sm font-semibold transition-colors cursor-pointer shadow-xs"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>
@@ -179,7 +179,7 @@ export const LegalAffairsView: React.FC = () => {
       {/* Status Quo Official Ruling Box (9 Feb 2026) */}
       <div className="bg-white border-2 border-emerald-500/50 rounded-xl p-5 shadow-xs space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
-          <div className="flex items-center gap-2 text-emerald-800 font-bold text-xs uppercase tracking-wider">
+          <div className="flex items-center gap-2 text-emerald-800 font-bold text-sm uppercase tracking-wider">
             <ShieldCheck className="w-5 h-5 text-emerald-600" />
             <span>
               {language === 'tr'
@@ -187,19 +187,19 @@ export const LegalAffairsView: React.FC = () => {
                 : 'Court of Appeal Injunction — Status Quo Order (9 February 2026)'}
             </span>
           </div>
-          <span className="text-[11px] font-mono text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+          <span className="text-xs font-mono text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
             {language === 'tr'
               ? 'Heyet: Mohammed · Laibuta · Ngenye-Macharia'
               : 'Judges: Mohammed · Laibuta · Ngenye-Macharia'}
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
           <div className="bg-emerald-50/40 p-3 rounded-lg border border-emerald-100 space-y-1">
             <div className="font-semibold text-slate-900">
               {language === 'tr' ? '1. Sınırların Korunması' : '1. Boundary Protection'}
             </div>
-            <p className="text-slate-600 text-[11px] leading-relaxed">
+            <p className="text-slate-600 text-xs leading-relaxed">
               {language === 'tr'
                 ? 'Moli ailesi (1.–7. davalılar) sadece fiilen işgal ettikleri 20 dönümlük (5 acre) alanda kalmaya devam edecektir.'
                 : 'Claimants strictly confined to the 5-acre enclave they actually occupied during site survey.'}
@@ -210,7 +210,7 @@ export const LegalAffairsView: React.FC = () => {
             <div className="font-semibold text-slate-900">
               {language === 'tr' ? '2. Satış ve Devir Yasağı' : '2. Prohibition of Sale'}
             </div>
-            <p className="text-slate-600 text-[11px] leading-relaxed">
+            <p className="text-slate-600 text-xs leading-relaxed">
               {language === 'tr'
                 ? 'Temyiz sonuçlanıncaya kadar arazinin hiçbir kısmı üçüncü kişilere devredilemez, satılamaz veya bölünemez.'
                 : 'No party may sell, subdivide or transfer any portion of the 84-acre parcel to third parties.'}
@@ -221,7 +221,7 @@ export const LegalAffairsView: React.FC = () => {
             <div className="font-semibold text-slate-900">
               {language === 'tr' ? '3. Öncelikli Yargılama' : '3. Priority Hearing'}
             </div>
-            <p className="text-slate-600 text-[11px] leading-relaxed">
+            <p className="text-slate-600 text-xs leading-relaxed">
               {language === 'tr'
                 ? 'Adaletin gecikmemesi amacıyla temyiz davasının sıradan dosyaların önüne alınarak öncelikli görülmesine karar verildi.'
                 : 'Expedited calendar granted ahead of standard queue due to magnitude of university investment.'}
@@ -232,7 +232,7 @@ export const LegalAffairsView: React.FC = () => {
             <div className="font-semibold text-slate-900">
               {language === 'tr' ? '4. İnşaatların Durdurulması' : '4. Suspension of Works'}
             </div>
-            <p className="text-slate-600 text-[11px] leading-relaxed">
+            <p className="text-slate-600 text-xs leading-relaxed">
               {language === 'tr'
                 ? 'Yeni inşaat ve çevre duvarı geçici olarak durdurulmuştur (Acil koruma başvurusu hariç).'
                 : 'New construction suspended; urgent weatherproofing allowed via variation application.'}
@@ -303,7 +303,7 @@ export const LegalAffairsView: React.FC = () => {
           <button
             key={tab.id}
             onClick={() => setActiveSubTab(tab.id as typeof activeSubTab)}
-            className={`flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors ${
+            className={`flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors ${
               activeSubTab === tab.id
                 ? 'bg-amber-600 text-white font-semibold shadow-xs'
                 : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
@@ -312,7 +312,7 @@ export const LegalAffairsView: React.FC = () => {
             <span>{language === 'tr' ? tab.labelTr : tab.labelEn}</span>
             {tab.badge && (
               <span
-                className={`text-[10px] font-mono px-1.5 py-0.2 rounded ${
+                className={`text-xs font-mono px-1.5 py-0.2 rounded ${
                   tab.badge === 'LIVE' || tab.badge === 'CANLI'
                     ? 'bg-rose-500 text-white animate-pulse font-bold'
                     : 'bg-slate-100 text-amber-700 border border-slate-200'
@@ -349,7 +349,7 @@ export const LegalAffairsView: React.FC = () => {
 
       {!activeCase &&
         ['hearings', 'filings', 'orders', 'evidence', 'counsel'].includes(activeSubTab) && (
-          <div className="rounded-xl border border-slate-200 bg-white px-4 py-6 text-center text-xs text-slate-500">
+          <div className="rounded-xl border border-slate-200 bg-white px-4 py-6 text-center text-sm text-slate-500">
             {language === 'tr'
               ? 'Henüz kayıtlı dava dosyası yok. Duruşma, layiha ve karar kayıtları bir dosyaya bağlıdır.'
               : 'No case file is recorded yet. Hearings, filings and orders all hang off one.'}
@@ -364,10 +364,10 @@ export const LegalAffairsView: React.FC = () => {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-mono font-bold uppercase text-rose-800 bg-rose-100 border border-rose-300 px-2 py-0.5 rounded">
+                  <span className="text-xs font-mono font-bold uppercase text-rose-800 bg-rose-100 border border-rose-300 px-2 py-0.5 rounded">
                     {language === 'tr' ? 'RESMİ DURUŞMA BRİFİNGİ' : 'PRIVILEGED HEARING BRIEF'}
                   </span>
-                  <span className="text-xs text-slate-500 font-mono">
+                  <span className="text-sm text-slate-500 font-mono">
                     {language === 'tr' ? 'Heyet: ' : 'Coram: '}
                     {hearingBrief?.bench ?? (language === 'tr' ? 'kayıtlı değil' : 'not recorded')}
                   </span>
@@ -378,7 +378,7 @@ export const LegalAffairsView: React.FC = () => {
                       ? 'Sisteme kayıtlı duruşma brifingi yok'
                       : 'No hearing brief on record')}
                 </h2>
-                <div className="text-xs text-amber-800 font-medium mt-0.5">
+                <div className="text-sm text-amber-800 font-medium mt-0.5">
                   {language === 'tr' ? 'Savunma Avukatları: ' : 'Counsel on record: '}
                   {hearingBrief?.counselOnRecord ??
                     (language === 'tr' ? 'kayıtlı değil' : 'not recorded')}
@@ -388,7 +388,7 @@ export const LegalAffairsView: React.FC = () => {
               <div className="flex items-center gap-2 self-start sm:self-center">
                 <button
                   onClick={() => navigate('/documents')}
-                  className="inline-flex items-center gap-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1.5 text-sm bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
                 >
                   <FileText className="w-3.5 h-3.5 text-amber-600" />
                   <span>
@@ -399,20 +399,20 @@ export const LegalAffairsView: React.FC = () => {
             </div>
 
             {/* Two Motions at Play */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div className="bg-emerald-50/40 p-4 rounded-xl border border-emerald-200 space-y-2">
-                <span className="text-[10px] font-mono text-emerald-800 font-bold uppercase">
+                <span className="text-xs font-mono text-emerald-800 font-bold uppercase">
                   {language === 'tr'
                     ? '1. Başvuru: Yürütmeyi Durdurma (23 Temmuz 2025)'
                     : 'Motion 1: Stay Application (23 July 2025)'}
                 </span>
                 <h3 className="font-bold text-slate-900">Notice of Motion under Rule 5(2)(b)</h3>
-                <p className="text-slate-700 leading-relaxed text-[11px]">
+                <p className="text-slate-700 leading-relaxed text-xs">
                   {language === 'tr'
                     ? 'Pozisyonumuz: Destekliyoruz; ancak bu başvuru 9 Şubat 2026 tarihli mutabakat emri (consent order) ile zaten nihayete erdirilmiştir (compromised). Heyetten bunu kayda geçirmesini ve E218/2025 numaralı asıl temyize öncelikli duruşma günü verilmesini talep ediyoruz.'
                     : 'Our Position: In support, but the motion was already compromised by consent on 9th February 2026 on terms running until hearing and determination of appeal. Nothing remains to be determined on this motion.'}
                 </p>
-                <div className="text-[10px] text-emerald-800 font-semibold pt-1">
+                <div className="text-xs text-emerald-800 font-semibold pt-1">
                   {language === 'tr'
                     ? 'Durum: Mutabakat Kararı ile Sonuçlandı'
                     : 'Status: Compromised by Consent Order'}
@@ -420,7 +420,7 @@ export const LegalAffairsView: React.FC = () => {
               </div>
 
               <div className="bg-rose-50/40 p-4 rounded-xl border border-rose-200 space-y-2">
-                <span className="text-[10px] font-mono text-rose-800 font-bold uppercase">
+                <span className="text-xs font-mono text-rose-800 font-bold uppercase">
                   {language === 'tr'
                     ? '2. Başvuru: İtaatsizlik Talebi (19 Haziran 2026)'
                     : 'Motion 2: Contempt Application (19 June 2026)'}
@@ -430,12 +430,12 @@ export const LegalAffairsView: React.FC = () => {
                     ? 'Chogo Ailesinin Başvurusu (Sherman Nyongesa & Mutubia)'
                     : 'Filed by Chogos (Sherman Nyongesa & Mutubia)'}
                 </h3>
-                <p className="text-slate-700 leading-relaxed text-[11px]">
+                <p className="text-slate-700 leading-relaxed text-xs">
                   {language === 'tr'
                     ? 'Pozisyonumuz: Şiddetle Karşı Çıkıyoruz (Opposing). AUTK hiçbir inşaat yapmamıştır. Küçük çevre duvarı onarımı solely Zayed Vakfı tarafından Yazı İşleri’ne önceden yazılı bildirimle yapılmıştır ve mevcut duvarı onarmak 1(b) ihlali değildir.'
                     : 'Our Position: Opposing. AUTK undertook NO works. The wall repair was announced and carried out solely by the Foundation. Order 1(b) restrains only walls not already in place; repairing an existing standing wall is no breach.'}
                 </p>
-                <div className="text-[10px] text-rose-800 font-semibold pt-1">
+                <div className="text-xs text-rose-800 font-semibold pt-1">
                   {language === 'tr'
                     ? 'Durum: Kusurlu Delil · Masraflarla Reddi Talep Edildi'
                     : 'Status: Defective Evidence · To Be Dismissed With Costs'}
@@ -446,7 +446,7 @@ export const LegalAffairsView: React.FC = () => {
 
           {/* 4 Pillars of Defense Against Contempt */}
           <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-4">
-            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-emerald-600" />
               <span>
                 {language === 'tr'
@@ -456,16 +456,16 @@ export const LegalAffairsView: React.FC = () => {
             </h3>
 
             {hearingBrief && hearingBrief.contemptDefencePillars.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 {hearingBrief.contemptDefencePillars.map((pillar) => (
                   <div
                     key={pillar.id}
                     className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2"
                   >
-                    <h4 className="font-bold text-amber-800 text-xs">
+                    <h4 className="font-bold text-amber-800 text-sm">
                       {language === 'tr' ? pillar.titleTr : pillar.titleEn}
                     </h4>
-                    <p className="text-slate-700 text-[11px] leading-relaxed">
+                    <p className="text-slate-700 text-xs leading-relaxed">
                       {language === 'tr' ? pillar.detailTr : pillar.detailEn}
                     </p>
                   </div>
@@ -491,7 +491,7 @@ export const LegalAffairsView: React.FC = () => {
 
           {/* Fallback Positions & Tactical Scripts */}
           <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-3">
-            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
               <Gavel className="w-4 h-4 text-purple-600" />
               <span>
                 {language === 'tr'
@@ -499,12 +499,12 @@ export const LegalAffairsView: React.FC = () => {
                   : 'Part D: Tactical Fallback Positions'}
               </span>
             </h3>
-            <p className="text-xs text-slate-500">
+            <p className="text-sm text-slate-500">
               {language === 'tr'
                 ? 'Müvekkillerimiz hiçbir ihlali kabul etmemektedir (no undertaking). Heyet duvar tamiratı konusunda tereddüt ederse:'
                 : 'Clients stand on strict compliance. If the bench appears troubled by the wall repair, counsel follows these sequential fallback positions:'}
             </p>
-            <div className="space-y-2 text-xs">
+            <div className="space-y-2 text-sm">
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
                 <span className="font-semibold text-slate-900">
                   {language === 'tr'
@@ -571,7 +571,7 @@ export const LegalAffairsView: React.FC = () => {
                     : 'Part E: Anticipated Questions from the Bench & Tactical Answers'}
                 </span>
               </h2>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-sm text-slate-500 mt-1">
                 {language === 'tr'
                   ? '28 Eylül 2026 Pazartesi Duruşması İçin Avukatlarca Hazırlanan Taktik Rehber'
                   : 'Prepared by Nzamsa Sankale & Co for Monday, 28th September 2026 Hearing'}
@@ -587,7 +587,7 @@ export const LegalAffairsView: React.FC = () => {
                 placeholder={
                   language === 'tr' ? 'Soru veya cevap ara...' : 'Search question or response...'
                 }
-                className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-amber-500 w-48 sm:w-60"
+                className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-amber-500 w-48 sm:w-60"
               />
             </div>
           </div>
@@ -627,28 +627,28 @@ export const LegalAffairsView: React.FC = () => {
                   className="p-4 rounded-xl bg-slate-50 border border-slate-200 hover:border-slate-300 transition-colors space-y-2.5"
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-bold text-amber-800 font-mono flex items-center gap-1.5">
-                      <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center text-[10px]">
+                    <span className="text-sm font-bold text-amber-800 font-mono flex items-center gap-1.5">
+                      <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center text-xs">
                         {idx + 1}
                       </span>
                       <span>{language === 'tr' ? 'Hâkim Sorusu:' : 'Bench Question:'}</span>
                     </span>
-                    <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-white text-slate-600 border border-slate-200">
+                    <span className="text-xs font-mono uppercase px-2 py-0.5 rounded bg-white text-slate-600 border border-slate-200">
                       {qa.category.replace('_', ' ')}
                     </span>
                   </div>
 
-                  <h4 className="text-xs font-semibold text-slate-900">
+                  <h4 className="text-sm font-semibold text-slate-900">
                     "{language === 'tr' ? qa.questionTr : qa.question}"
                   </h4>
 
                   <div className="bg-white p-3 rounded-lg border border-slate-200 space-y-1 shadow-xs">
-                    <div className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">
+                    <div className="text-xs font-bold uppercase tracking-wider text-emerald-700">
                       {language === 'tr'
                         ? 'Önerilen Cevap & Hukuki Not:'
                         : 'Suggested Answer / Note:'}
                     </div>
-                    <p className="text-xs text-slate-700 leading-relaxed font-sans">
+                    <p className="text-sm text-slate-700 leading-relaxed font-sans">
                       {language === 'tr' ? qa.answerTr : qa.answer}
                     </p>
                   </div>
@@ -670,7 +670,7 @@ export const LegalAffairsView: React.FC = () => {
                   : 'Part F: Legal Authorities, Case Law & Judicial Precedents'}
               </span>
             </h2>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-sm text-slate-500 mt-1">
               {language === 'tr'
                 ? 'İtaatsizlik, Yürütmeyi Durdurma ve Olumsuz Zilyetlik Konusundaki Bağlayıcı Yargıtay İçtihatları'
                 : 'Binding Court of Appeal Precedents on Contempt, Stay of Execution, and Adverse Possession'}
@@ -694,7 +694,7 @@ export const LegalAffairsView: React.FC = () => {
             />
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             {authorities.map((auth, idx) => (
               <div
                 key={idx}
@@ -705,9 +705,9 @@ export const LegalAffairsView: React.FC = () => {
                 }`}
               >
                 <div className="space-y-1.5">
-                  <div className="flex items-center justify-between text-[11px]">
+                  <div className="flex items-center justify-between text-xs">
                     <span
-                      className={`px-2 py-0.5 rounded text-[10px] uppercase font-mono font-bold ${
+                      className={`px-2 py-0.5 rounded text-xs uppercase font-mono font-bold ${
                         auth.party === 'ours'
                           ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
                           : 'bg-rose-100 text-rose-800 border border-rose-200'
@@ -722,9 +722,9 @@ export const LegalAffairsView: React.FC = () => {
                           : 'Their Authority (Distinguishable)'}
                     </span>
                   </div>
-                  <h4 className="font-bold text-slate-900 text-xs">{auth.citation}</h4>
-                  <div className="text-[11px] text-amber-800 font-mono font-medium">{auth.use}</div>
-                  <p className="text-[11px] text-slate-700 leading-relaxed pt-1">
+                  <h4 className="font-bold text-slate-900 text-sm">{auth.citation}</h4>
+                  <div className="text-xs text-amber-800 font-mono font-medium">{auth.use}</div>
+                  <p className="text-xs text-slate-700 leading-relaxed pt-1">
                     {language === 'tr' ? auth.principleTr : auth.principleEn}
                   </p>
                 </div>
@@ -733,13 +733,13 @@ export const LegalAffairsView: React.FC = () => {
           </div>
 
           {/* Jurisdictional Note */}
-          <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600 space-y-1">
-            <span className="font-bold text-amber-800 text-[11px] uppercase tracking-wider">
+          <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-600 space-y-1">
+            <span className="font-bold text-amber-800 text-xs uppercase tracking-wider">
               {language === 'tr'
                 ? 'Yargı Yetkisi Notu (Jurisdiction Note):'
                 : 'Court Jurisdiction Note:'}
             </span>
-            <p className="text-[11px] leading-relaxed">
+            <p className="text-xs leading-relaxed">
               {language === 'tr'
                 ? "Karşı tarafın itaatsizlik başvurusu sehven Yargıtay Yasası'nın mülga 35. maddesine dayanmaktadır. Mukuha davasında (paragraf 13) belirtildiği üzere 35. madde 2016 yılında yürürlükten kaldırılmıştır; itaatsizlik yetkisi Yargı Teşkilatı Yasası s.5 maddesinden kaynaklanmaktadır. Avukatlarımız bunu usuli bir itiraz olarak öne sürmeyecek, doğrudan esasa ve hiçbir ihlalin bulunmadığı gerçeğine dayanacaktır."
                 : 'The contempt motion mistakenly cites s.35 of the Court of Appeal (Organization and Administration) Act. As noted in Mukuha (para 13), s.35 was deleted in 2016; contempt jurisdiction stems from s.5 of the Judicature Act. Counsel will not take this as a technical objection, standing rather on substantive innocence and complete lack of breach.'}
@@ -761,7 +761,7 @@ export const LegalAffairsView: React.FC = () => {
           action={
             <button
               onClick={() => setShowNewMotionModal(true)}
-              className="inline-flex items-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold cursor-pointer shadow-xs"
+              className="inline-flex items-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white px-3.5 py-1.5 rounded-lg text-sm font-semibold cursor-pointer shadow-xs"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>{language === 'tr' ? 'İlk Dosyayı Kaydet' : 'Log First Filing'}</span>
@@ -776,25 +776,25 @@ export const LegalAffairsView: React.FC = () => {
             <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-4">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div>
-                  <span className="text-[11px] font-mono text-amber-800 font-bold uppercase">
+                  <span className="text-xs font-mono text-amber-800 font-bold uppercase">
                     {activeCase.caseNumber}
                   </span>
                   <h2 className="text-base font-bold text-slate-900 mt-0.5">{activeCase.title}</h2>
                 </div>
-                <span className="text-xs font-semibold px-2.5 py-1 rounded bg-amber-50 border border-amber-300 text-amber-800 font-mono">
+                <span className="text-sm font-semibold px-2.5 py-1 rounded bg-amber-50 border border-amber-300 text-amber-800 font-mono">
                   {language === 'tr' ? 'ÖNCELİKLİ DOSYA' : 'PRIORITY LISTING'}
                 </span>
               </div>
 
-              <div className="text-xs text-slate-700 space-y-2">
+              <div className="text-sm text-slate-700 space-y-2">
                 <p className="leading-relaxed">
                   {language === 'tr' ? activeCase.descriptionTr : activeCase.descriptionEn}
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs pt-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm pt-2">
                 <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                  <div className="text-slate-500 text-[11px] font-semibold uppercase">
+                  <div className="text-slate-500 text-xs font-semibold uppercase">
                     {language === 'tr' ? 'Temyiz Edenler (Appellants)' : 'Appellants'}
                   </div>
                   <div className="text-slate-800 mt-1 font-medium">
@@ -804,7 +804,7 @@ export const LegalAffairsView: React.FC = () => {
                 </div>
 
                 <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                  <div className="text-slate-500 text-[11px] font-semibold uppercase">
+                  <div className="text-slate-500 text-xs font-semibold uppercase">
                     {language === 'tr' ? 'Karşı Taraf (Respondents)' : 'Respondents'}
                   </div>
                   <div className="text-slate-800 mt-1 font-medium">
@@ -815,7 +815,7 @@ export const LegalAffairsView: React.FC = () => {
 
               {/* Five Core Case Files Reference */}
               <div className="border-t border-slate-100 pt-4 space-y-3">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
                   <FolderOpen className="w-4 h-4 text-amber-600" />
                   <span>
                     {language === 'tr'
@@ -823,7 +823,7 @@ export const LegalAffairsView: React.FC = () => {
                       : '5 Followed Dispute Files Overview'}
                   </span>
                 </h3>
-                <div className="space-y-2 text-xs">
+                <div className="space-y-2 text-sm">
                   <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between">
                     <div>
                       <span className="font-semibold text-amber-800">
@@ -834,7 +834,7 @@ export const LegalAffairsView: React.FC = () => {
                         {language === 'tr' ? 'ASIL DAVA / Derdest' : 'MAIN APPEAL / Ongoing'}
                       </span>
                     </div>
-                    <span className="text-[11px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 font-mono">
+                    <span className="text-xs text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 font-mono">
                       Status Quo Active
                     </span>
                   </div>
@@ -848,7 +848,7 @@ export const LegalAffairsView: React.FC = () => {
                           : 'Adverse Possession & Title Cancellation'}
                       </span>
                     </div>
-                    <span className="text-[11px] text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 font-mono">
+                    <span className="text-xs text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 font-mono">
                       {language === 'tr' ? 'Temyiz Edilen Karar' : 'Challenged Ruling'}
                     </span>
                   </div>
@@ -861,7 +861,7 @@ export const LegalAffairsView: React.FC = () => {
                           : 'Judicial Review vs NLC Chairman'}
                       </span>
                     </div>
-                    <span className="text-[11px] text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200 font-mono">
+                    <span className="text-xs text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200 font-mono">
                       {language === 'tr'
                         ? '134/2013 ile Birleştirildi'
                         : 'Consolidated into 134/2013'}
@@ -875,7 +875,7 @@ export const LegalAffairsView: React.FC = () => {
                         {language === 'tr' ? 'Tahliye Tebligatları' : 'Eviction Notices'}
                       </span>
                     </div>
-                    <span className="text-[11px] text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200 font-mono">
+                    <span className="text-xs text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200 font-mono">
                       {language === 'tr'
                         ? 'Delil Gizleme İspatı'
                         : 'Material Non-Disclosure Weapon'}
@@ -890,7 +890,7 @@ export const LegalAffairsView: React.FC = () => {
                           : 'National Land Commission Historical Injustice Claim'}
                       </span>
                     </div>
-                    <span className="text-[11px] text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200 font-mono">
+                    <span className="text-xs text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200 font-mono">
                       {language === 'tr' ? '2019 Raporu Dava Konusu' : 'Challenged 2019 Finding'}
                     </span>
                   </div>
@@ -902,12 +902,12 @@ export const LegalAffairsView: React.FC = () => {
           {/* Right Column: Case Orders & Actions */}
           <div className="lg:col-span-4 space-y-5">
             <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-4">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700">
                 {language === 'tr' ? 'Duruşma ve Karar Geçmişi' : 'Key Orders & Decrees'}
               </h3>
-              <div className="space-y-3 text-xs">
+              <div className="space-y-3 text-sm">
                 {caseOrders.length === 0 ? (
-                  <p className="text-[11px] text-slate-500">
+                  <p className="text-xs text-slate-500">
                     {language === 'tr'
                       ? 'Bu dosya için kayıtlı mahkeme kararı yok.'
                       : 'No court order recorded on this file.'}
@@ -918,10 +918,10 @@ export const LegalAffairsView: React.FC = () => {
                       key={ord.id}
                       className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-1"
                     >
-                      <div className="flex items-center justify-between text-[11px]">
+                      <div className="flex items-center justify-between text-xs">
                         <span className="font-mono text-amber-800 font-bold">{ord.madeOn}</span>
                         <span
-                          className={`px-1.5 py-0.5 rounded text-[10px] uppercase font-mono ${
+                          className={`px-1.5 py-0.5 rounded text-xs uppercase font-mono ${
                             ord.state === 'in_force'
                               ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
                               : 'bg-slate-200 text-slate-700'
@@ -933,10 +933,10 @@ export const LegalAffairsView: React.FC = () => {
                       {ord.referenceNo && (
                         <div className="font-semibold text-slate-900">{ord.referenceNo}</div>
                       )}
-                      <p className="text-slate-600 text-[11px] leading-relaxed">
+                      <p className="text-slate-600 text-xs leading-relaxed">
                         {(language === 'tr' ? ord.textTr : ord.textEn) ?? ord.textEn ?? ord.textTr}
                       </p>
-                      {ord.madeBy && <p className="text-slate-400 text-[10px]">{ord.madeBy}</p>}
+                      {ord.madeBy && <p className="text-slate-400 text-xs">{ord.madeBy}</p>}
                     </div>
                   ))
                 )}
@@ -945,20 +945,20 @@ export const LegalAffairsView: React.FC = () => {
 
             {/* Quick Link to Documents */}
             <div className="bg-amber-50/80 border border-amber-200 p-4 rounded-xl space-y-2">
-              <div className="text-xs font-bold text-amber-800 flex items-center gap-1.5">
+              <div className="text-sm font-bold text-amber-800 flex items-center gap-1.5">
                 <FileCheck className="w-4 h-4 text-amber-600" />
                 <span>
                   {language === 'tr' ? 'Dava Layihaları ve Evrakları' : 'Case Trial Bundle Files'}
                 </span>
               </div>
-              <p className="text-[11px] text-slate-700">
+              <p className="text-xs text-slate-700">
                 {language === 'tr'
                   ? 'Kadzitu Moli 2012 tahliye makbuzu, 60 yıllık kira senedi ve onaylı tapu itirazlarını inceleyin.'
                   : 'Examine Kadzitu Moli 2012 payment receipt, 60-year lease and title certificates in vault.'}
               </p>
               <button
                 onClick={() => navigate('/documents')}
-                className="text-xs text-amber-800 font-semibold underline hover:text-amber-950 cursor-pointer"
+                className="text-sm text-amber-800 font-semibold underline hover:text-amber-950 cursor-pointer"
               >
                 {language === 'tr' ? 'Belge Kasasını Aç' : 'Access Vault'}
               </button>
@@ -979,13 +979,13 @@ export const LegalAffairsView: React.FC = () => {
                   : 'Memorandum of Appeal: 9 Grounds of Law & Fact (4 December 2025)'}
               </span>
             </h2>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-sm text-slate-500 mt-1">
               Khatib & Company Advocates & Simon Karina Advocates on behalf of Zayed Foundation &
               AUTK
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
             {[
               {
                 num: '1',
@@ -1074,17 +1074,17 @@ export const LegalAffairsView: React.FC = () => {
                 className="p-4 rounded-xl bg-slate-50 border border-slate-200 hover:border-amber-400 transition-colors space-y-2 shadow-2xs"
               >
                 <div className="flex items-center justify-between">
-                  <span className="w-6 h-6 rounded-full bg-amber-100 text-amber-800 font-bold text-xs flex items-center justify-center font-mono border border-amber-300">
+                  <span className="w-6 h-6 rounded-full bg-amber-100 text-amber-800 font-bold text-sm flex items-center justify-center font-mono border border-amber-300">
                     {ground.num}
                   </span>
-                  <span className="text-[10px] uppercase font-mono text-slate-500 font-semibold">
+                  <span className="text-xs uppercase font-mono text-slate-500 font-semibold">
                     {language === 'tr' ? 'Hukuki ve Maddi Hata' : 'Error in Law & Fact'}
                   </span>
                 </div>
                 <div className="font-semibold text-slate-900">
                   {language === 'tr' ? ground.titleTr : ground.titleEn}
                 </div>
-                <p className="text-slate-600 leading-relaxed text-[11px]">
+                <p className="text-slate-600 leading-relaxed text-xs">
                   {language === 'tr' ? ground.descTr : ground.descEn}
                 </p>
               </div>
@@ -1105,20 +1105,20 @@ export const LegalAffairsView: React.FC = () => {
                   : 'Kenya Delegation Strategic Action Plan'}
               </span>
             </h2>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-sm text-slate-500 mt-1">
               Converting 9 February 2026 Status Quo & Priority Order into Complete Appellate Victory
             </p>
           </div>
 
-          <div className="space-y-4 text-xs">
+          <div className="space-y-4 text-sm">
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="font-bold text-amber-800 uppercase tracking-wider text-[11px]">
+                <span className="font-bold text-amber-800 uppercase tracking-wider text-xs">
                   {language === 'tr'
                     ? '1. Mevcut Durum Emrinin İnfazı ve Denetimi'
                     : '1. Enforcement of Status Quo Order'}
                 </span>
-                <span className="text-[10px] font-mono text-emerald-800 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded font-semibold">
+                <span className="text-xs font-mono text-emerald-800 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded font-semibold">
                   {language === 'tr' ? 'Aktif Devriye' : 'Active Patrol'}
                 </span>
               </div>
@@ -1131,12 +1131,12 @@ export const LegalAffairsView: React.FC = () => {
 
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="font-bold text-rose-700 uppercase tracking-wider text-[11px]">
+                <span className="font-bold text-rose-700 uppercase tracking-wider text-xs">
                   {language === 'tr'
                     ? '2. Mevcut Durum Emrinin Esnetilmesi (Çatı & Hava Koşulları)'
                     : '2. Variation of Status Quo (Weatherproofing Urgency)'}
                 </span>
-                <span className="text-[10px] font-mono text-rose-800 bg-rose-100 border border-rose-300 px-2 py-0.5 rounded font-semibold">
+                <span className="text-xs font-mono text-rose-800 bg-rose-100 border border-rose-300 px-2 py-0.5 rounded font-semibold">
                   {language === 'tr' ? '8 Gün İçinde Başvuru' : 'Filing in 8 Days'}
                 </span>
               </div>
@@ -1149,12 +1149,12 @@ export const LegalAffairsView: React.FC = () => {
 
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="font-bold text-blue-700 uppercase tracking-wider text-[11px]">
+                <span className="font-bold text-blue-700 uppercase tracking-wider text-xs">
                   {language === 'tr'
                     ? '3. 807M KShs Delil Denetimi (Trial Bundle Audit)'
                     : '3. KShs 807M Trial Bundle Audit'}
                 </span>
-                <span className="text-[10px] font-mono text-blue-800 bg-blue-100 border border-blue-300 px-2 py-0.5 rounded font-semibold">
+                <span className="text-xs font-mono text-blue-800 bg-blue-100 border border-blue-300 px-2 py-0.5 rounded font-semibold">
                   {language === 'tr' ? 'Denetlendi & Hazır' : 'Audited'}
                 </span>
               </div>
@@ -1167,12 +1167,12 @@ export const LegalAffairsView: React.FC = () => {
 
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="font-bold text-purple-700 uppercase tracking-wider text-[11px]">
+                <span className="font-bold text-purple-700 uppercase tracking-wider text-xs">
                   {language === 'tr'
                     ? '4. Kıdemli Temyiz Avukatı (Senior Counsel - SC) Takviyesi'
                     : '4. Senior Counsel (SC) Appellate Representation'}
                 </span>
-                <span className="text-[10px] font-mono text-purple-800 bg-purple-100 border border-purple-300 px-2 py-0.5 rounded font-semibold">
+                <span className="text-xs font-mono text-purple-800 bg-purple-100 border border-purple-300 px-2 py-0.5 rounded font-semibold">
                   {language === 'tr' ? 'Görüşmeler Sürüyor' : 'Scouting Underway'}
                 </span>
               </div>
@@ -1198,24 +1198,24 @@ export const LegalAffairsView: React.FC = () => {
                   : 'Who is Who: Parties, Witnesses, Counsel & Judges'}
               </span>
             </h2>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-sm text-slate-500 mt-1">
               {language === 'tr'
                 ? 'Mombasa ELC ve Temyiz Mahkemesi Resmi Dava Kayıtlarından Çıkarılmıştır'
                 : 'Extracted from Mombasa ELC & Court of Appeal Judicial Records'}
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
             {/* Legal Counsel */}
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800">
+              <span className="text-xs font-bold uppercase tracking-wider text-amber-800">
                 {language === 'tr'
                   ? 'Hukuk Müşaviri (Savunma - Defense)'
                   : 'Legal Counsel (Defense)'}
               </span>
-              <div className="font-bold text-slate-900 text-sm">Mr. Simon Karina</div>
-              <div className="text-slate-500 text-[11px]">Ndegwa Sitonik Karina Advocates</div>
-              <p className="text-slate-600 text-[11px]">
+              <div className="font-bold text-slate-900 text-base">Mr. Simon Karina</div>
+              <div className="text-slate-500 text-xs">Ndegwa Sitonik Karina Advocates</div>
+              <p className="text-slate-600 text-xs">
                 {language === 'tr'
                   ? 'Afrika Üniversitesi Vakfı ve mütevellilerini savunan baş avukat.'
                   : 'Lead advocate defending African University Trust and registered trustees.'}
@@ -1223,14 +1223,14 @@ export const LegalAffairsView: React.FC = () => {
             </div>
 
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800">
+              <span className="text-xs font-bold uppercase tracking-wider text-amber-800">
                 {language === 'tr'
                   ? 'Hukuk Müşaviri (Temyiz Eden - Appellant)'
                   : 'Legal Counsel (Appellant)'}
               </span>
-              <div className="font-bold text-slate-900 text-sm">Mr. Mohamed Faki Khatib</div>
-              <div className="text-slate-500 text-[11px]">Khatib & Company Advocates</div>
-              <p className="text-slate-600 text-[11px]">
+              <div className="font-bold text-slate-900 text-base">Mr. Mohamed Faki Khatib</div>
+              <div className="text-slate-500 text-xs">Khatib & Company Advocates</div>
+              <p className="text-slate-600 text-xs">
                 {language === 'tr'
                   ? 'Tapu sahibi Zayed Vakfı’nı (7. Davalı / Temyiz Eden) temsil eden baş avukat.'
                   : 'Lead advocate representing original title holder Zayed Foundation in appeal.'}
@@ -1238,16 +1238,14 @@ export const LegalAffairsView: React.FC = () => {
             </div>
 
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-purple-700">
+              <span className="text-xs font-bold uppercase tracking-wider text-purple-700">
                 {language === 'tr'
                   ? 'Mütevelli & Baş Tanık (DW-1)'
                   : 'Trustee & Key Witness (DW-1)'}
               </span>
-              <div className="font-bold text-slate-900 text-sm">Lucas Cosmas Fondo</div>
-              <div className="text-slate-500 text-[11px]">
-                Universal Education Foundation / AUTK
-              </div>
-              <p className="text-slate-600 text-[11px]">
+              <div className="font-bold text-slate-900 text-base">Lucas Cosmas Fondo</div>
+              <div className="text-slate-500 text-xs">Universal Education Foundation / AUTK</div>
+              <p className="text-slate-600 text-xs">
                 {language === 'tr'
                   ? 'Duruşmada arazideki 20 dönüm işgal / 320 dönüm üniversite durumunu kararlılıkla savunan baş tanık.'
                   : 'Main defense witness who confirmed physical 5-acre vs 79-acre campus demarcation.'}
@@ -1255,16 +1253,14 @@ export const LegalAffairsView: React.FC = () => {
             </div>
 
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-purple-700">
+              <span className="text-xs font-bold uppercase tracking-wider text-purple-700">
                 {language === 'tr'
                   ? 'Zayed Vakfı Direktörü (DW-2)'
                   : 'Zayed Foundation Director (DW-2)'}
               </span>
-              <div className="font-bold text-slate-900 text-sm">Abubakar Hassan Dindia</div>
-              <div className="text-slate-500 text-[11px]">
-                Zayed Bin Sultan Al Nahyan Foundation
-              </div>
-              <p className="text-slate-600 text-[11px]">
+              <div className="font-bold text-slate-900 text-base">Abubakar Hassan Dindia</div>
+              <div className="text-slate-500 text-xs">Zayed Bin Sultan Al Nahyan Foundation</div>
+              <p className="text-slate-600 text-xs">
                 {language === 'tr'
                   ? '2002 satın alımını ve 2012 60 yıllık kira devrini mahkemeye tevsik eden direktör.'
                   : 'Foundation director familiar with land purchase and leasehold agreements.'}
@@ -1272,14 +1268,14 @@ export const LegalAffairsView: React.FC = () => {
             </div>
 
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-rose-700">
+              <span className="text-xs font-bold uppercase tracking-wider text-rose-700">
                 {language === 'tr'
                   ? 'Kritik Davacı (5. Davacı)'
                   : 'Critical Claimant (5th Claimant)'}
               </span>
-              <div className="font-bold text-slate-900 text-sm">Kadzitu Moli Chogo</div>
-              <div className="text-slate-500 text-[11px]">5th Claimant (Moli Family)</div>
-              <p className="text-slate-600 text-[11px]">
+              <div className="font-bold text-slate-900 text-base">Kadzitu Moli Chogo</div>
+              <div className="text-slate-500 text-xs">5th Claimant (Moli Family)</div>
+              <p className="text-slate-600 text-xs">
                 {language === 'tr'
                   ? '29 Şubat 2012’de üniversiteden 779.980 KShs tahliye tazminatı alıp sözleşme imzalayan kritik isim.'
                   : 'Signed the 2012 vacation agreement accepting KShs 779,980 compensation concealed from court.'}
@@ -1287,14 +1283,16 @@ export const LegalAffairsView: React.FC = () => {
             </div>
 
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-blue-700">
+              <span className="text-xs font-bold uppercase tracking-wider text-blue-700">
                 {language === 'tr'
                   ? 'Yargıtay Hâkimler Heyeti (Coram)'
                   : 'Court of Appeal Panel (Coram)'}
               </span>
-              <div className="font-bold text-slate-900 text-sm">JJ. Mohammed, Laibuta, Ngenye</div>
-              <div className="text-slate-500 text-[11px]">Mombasa Court of Appeal (Yargıtay)</div>
-              <p className="text-slate-600 text-[11px]">
+              <div className="font-bold text-slate-900 text-base">
+                JJ. Mohammed, Laibuta, Ngenye
+              </div>
+              <div className="text-slate-500 text-xs">Mombasa Court of Appeal (Yargıtay)</div>
+              <p className="text-slate-600 text-xs">
                 {language === 'tr'
                   ? '9 Şubat 2026’da Status Quo emrini veren ve öncelikli yargılama kararı alan kıdemli heyet.'
                   : 'Issued 9 Feb 2026 Status Quo order halting land sales and directing priority hearing.'}
@@ -1316,12 +1314,12 @@ export const LegalAffairsView: React.FC = () => {
                   : '30-Year Property & Legal Chronicle'}
               </span>
             </h2>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-sm text-slate-500 mt-1">
               Plot No. MN/I/5141 (84 Acres / Dönüm) Utange/Majaoni, Mombasa
             </p>
           </div>
 
-          <div className="relative border-l border-slate-200 ml-4 space-y-6 pl-6 text-xs">
+          <div className="relative border-l border-slate-200 ml-4 space-y-6 pl-6 text-sm">
             {[
               {
                 year: '1993',
@@ -1405,14 +1403,14 @@ export const LegalAffairsView: React.FC = () => {
               },
             ].map((step, idx) => (
               <div key={idx} className="relative">
-                <span className="absolute -left-9 top-0.5 w-5 h-5 rounded-full bg-white border-2 border-amber-500 flex items-center justify-center text-[10px] text-amber-600 font-mono shadow-xs">
+                <span className="absolute -left-9 top-0.5 w-5 h-5 rounded-full bg-white border-2 border-amber-500 flex items-center justify-center text-xs text-amber-600 font-mono shadow-xs">
                   •
                 </span>
-                <span className="font-mono text-amber-800 font-bold text-[11px]">{step.year}</span>
-                <h4 className="font-bold text-slate-900 text-xs mt-0.5">
+                <span className="font-mono text-amber-800 font-bold text-xs">{step.year}</span>
+                <h4 className="font-bold text-slate-900 text-sm mt-0.5">
                   {language === 'tr' ? step.titleTr : step.titleEn}
                 </h4>
-                <p className="text-slate-600 text-[11px] mt-1 leading-relaxed">
+                <p className="text-slate-600 text-xs mt-1 leading-relaxed">
                   {language === 'tr' ? step.detailTr : step.detailEn}
                 </p>
               </div>
@@ -1426,7 +1424,7 @@ export const LegalAffairsView: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-fade-in">
           <div className="w-full max-w-lg bg-white border border-slate-200 rounded-2xl p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+              <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
                 <Plus className="w-4 h-4 text-amber-600" />
                 <span>
                   {language === 'tr'
@@ -1436,13 +1434,13 @@ export const LegalAffairsView: React.FC = () => {
               </h3>
               <button
                 onClick={() => setShowNewMotionModal(false)}
-                className="text-slate-400 hover:text-slate-700 text-sm cursor-pointer p-1"
+                className="text-slate-400 hover:text-slate-700 text-base cursor-pointer p-1"
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleCreateMotion} className="space-y-4 text-xs">
+            <form onSubmit={handleCreateMotion} className="space-y-4 text-sm">
               <div>
                 <label className="block text-slate-700 font-semibold mb-1">
                   {language === 'tr' ? 'Dilekçe / Başvuru Başlığı:' : 'Motion / Pleading Title:'}
@@ -1504,13 +1502,13 @@ export const LegalAffairsView: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowNewMotionModal(false)}
-                  className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs cursor-pointer font-medium"
+                  className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm cursor-pointer font-medium"
                 >
                   {language === 'tr' ? 'İptal' : 'Cancel'}
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs transition-colors cursor-pointer shadow-xs"
+                  className="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold text-sm transition-colors cursor-pointer shadow-xs"
                 >
                   {language === 'tr' ? 'Kaydet ve Dosyaya Ekle' : 'Save & Bind to File'}
                 </button>

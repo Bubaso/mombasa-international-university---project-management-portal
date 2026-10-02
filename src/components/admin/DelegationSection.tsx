@@ -110,7 +110,7 @@ export const DelegationSection: React.FC<{ authority: Authority | null | undefin
       canUse={mayRaise}
     >
       {rows.length === 0 ? (
-        <p className="text-[11px] text-slate-500">
+        <p className="text-xs text-slate-500">
           {tr ? 'Hiç yetki devri talebi açılmamış.' : 'No delegation has ever been raised.'}
         </p>
       ) : (
@@ -142,7 +142,7 @@ export const DelegationSection: React.FC<{ authority: Authority | null | undefin
                   <div className="font-medium text-slate-900">
                     {d.fromUserName ?? d.fromUserId} → {d.toUserName ?? d.toUserId}
                   </div>
-                  <div className="text-[11px] text-slate-500">
+                  <div className="text-xs text-slate-500">
                     {tr ? 'Bitiş' : 'Until'} {d.expiresAt.slice(0, 16).replace('T', ' ')}
                     {' · '}
                     {tr ? 'talep' : 'raised by'} {d.requestedByName ?? '—'}
@@ -150,9 +150,9 @@ export const DelegationSection: React.FC<{ authority: Authority | null | undefin
                 </Td>
                 <Td className="max-w-[240px] text-slate-600">{d.reason}</Td>
                 <Td>
-                  <div className="font-mono text-[11px]">{d.approvals.length} / 2</div>
+                  <div className="font-mono text-xs">{d.approvals.length} / 2</div>
                   {d.approvals.length > 0 && (
-                    <div className="text-[11px] text-slate-500">
+                    <div className="text-xs text-slate-500">
                       {d.approvals.map((a) => a.approverName ?? '—').join(', ')}
                     </div>
                   )}
@@ -160,7 +160,7 @@ export const DelegationSection: React.FC<{ authority: Authority | null | undefin
                 <Td>
                   <Pill className={STATE_STYLES[state]}>{STATE_LABELS[state][language]}</Pill>
                   {state === 'revoked' && d.revokedByName && (
-                    <div className="mt-0.5 text-[11px] text-slate-400">{d.revokedByName}</div>
+                    <div className="mt-0.5 text-xs text-slate-400">{d.revokedByName}</div>
                   )}
                 </Td>
                 <Td className="text-right">
@@ -188,12 +188,12 @@ export const DelegationSection: React.FC<{ authority: Authority | null | undefin
                       </ActionButton>
                     )}
                     {mayApprove && alreadyApproved && state === 'awaiting' && (
-                      <span className="self-center text-[11px] text-slate-400">
+                      <span className="self-center text-xs text-slate-400">
                         {tr ? 'Onayınız kayıtlı' : 'Your approval is in'}
                       </span>
                     )}
                     {d.toUserId === user?.id && state === 'awaiting' && (
-                      <span className="self-center text-[11px] text-slate-400">
+                      <span className="self-center text-xs text-slate-400">
                         {tr ? 'Kendi devrinizi onaylayamazsınız' : 'You cannot approve your own'}
                       </span>
                     )}
@@ -275,7 +275,7 @@ export const DelegationSection: React.FC<{ authority: Authority | null | undefin
             </Field>
           </div>
 
-          <p className="mt-2 text-[11px] leading-relaxed text-slate-500">
+          <p className="mt-2 text-xs leading-relaxed text-slate-500">
             {tr
               ? 'Devir, kişinin kendi yetkisini ortadan kaldırmaz; üzerine ekler. Yürürlüğe girmesi için iki ayrı mütevellinin onayı gerekir ve yetkiyi alan kişi kendi devrini onaylayamaz. Devralınan yetkiyle yeni bir devir açılamaz.'
               : 'A delegation adds to what someone already holds, it never replaces it. Two separate trustees must approve, and the recipient cannot approve their own. Borrowed authority cannot raise a further delegation.'}

@@ -119,7 +119,7 @@ const MainLayout: React.FC = () => {
           </ErrorBoundary>
 
           {/* Footer note */}
-          <footer className="mt-12 pt-6 border-t border-slate-200 text-[11px] text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <footer className="mt-12 pt-6 border-t border-slate-200 text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-3">
             <div>
               <span className="font-semibold text-slate-700">
                 {language === 'tr'

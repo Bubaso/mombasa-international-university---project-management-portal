@@ -93,10 +93,10 @@ export const BaselinePanel: React.FC = () => {
         <div className="flex items-start gap-2.5">
           <History className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" aria-hidden="true" />
           <div>
-            <h2 className="text-sm font-bold text-slate-900">
+            <h2 className="text-base font-bold text-slate-900">
               {tr ? 'Temel plan ve sapma' : 'Baseline and variance'}
             </h2>
-            <p className="text-[11px] text-slate-500">
+            <p className="text-xs text-slate-500">
               {tr
                 ? '“Altı ay önce ne demiştik?” — tarihin ne kadar ertelendiği ile işin ne kadar geciktiği iki ayrı kolon. Hedefini dört kez erteleyip “zamanında” diyen bir proje tam olarak bu ikisinin karıştırılmasından yararlanıyor.'
                 : '“What did we say six months ago?” How far the date was pushed and how late the thing was are separate columns. A project that moves its target four times and reports on time is exploiting the conflation of the two.'}
@@ -105,7 +105,7 @@ export const BaselinePanel: React.FC = () => {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {list.length === 1 && against && (
-            <span className="text-[11px] text-slate-600">
+            <span className="text-xs text-slate-600">
               {tr ? 'karşılaştırılan: ' : 'measured against '}
               <span className="font-semibold text-slate-800">{against.name}</span>
               {' · '}
@@ -170,11 +170,11 @@ export const BaselinePanel: React.FC = () => {
           <button
             type="button"
             onClick={() => setTaking(false)}
-            className="cursor-pointer pb-1 text-[11px] text-slate-500 underline"
+            className="cursor-pointer pb-1 text-xs text-slate-500 underline"
           >
             {tr ? 'vazgeç' : 'cancel'}
           </button>
-          <p className="flex w-full items-center gap-1 text-[11px] text-amber-800">
+          <p className="flex w-full items-center gap-1 text-xs text-amber-800">
             <CameraOff className="h-3 w-3" aria-hidden="true" />
             {tr
               ? 'Alındıktan sonra değiştirilemez — düzeltilebilen bir temel plan, eski tarih takmış güncel plandır.'
@@ -189,19 +189,19 @@ export const BaselinePanel: React.FC = () => {
       <QueryStatus queries={[baselines, variance]} />
 
       {list.length === 0 ? (
-        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] text-slate-600">
+        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
           {tr
             ? 'Henüz temel plan alınmamış. “Altı ay önce ne demiştik” sorusunun cevabı, altı ay önce birinin bunu kaydetmiş olmasına bağlı — bugün alınan bir plan, altı ay sonra o cevabı verir.'
             : 'No baseline has been taken. The answer to “what did we say six months ago” depends on somebody having written it down six months ago — one taken today answers it six months from now.'}
         </p>
       ) : rows.length === 0 ? (
-        <p className="text-[11px] text-slate-500">
+        <p className="text-xs text-slate-500">
           {tr ? 'Bu temel planda kayıt yok.' : 'This baseline holds no milestones.'}
         </p>
       ) : (
         <>
           {totalPush > 0 && (
-            <p className="mb-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-900">
+            <p className="mb-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
               {tr
                 ? `Bu temel plandan bu yana ${pushed.length} tarih toplam ${totalPush} gün ertelendi.`
                 : `Since this baseline, ${pushed.length} ${pushed.length === 1 ? 'date has' : 'dates have'} been pushed out by ${totalPush} days in total.`}
@@ -224,11 +224,9 @@ export const BaselinePanel: React.FC = () => {
                 <tr key={row.milestoneId} className="hover:bg-slate-50">
                   <Td>
                     {row.code && (
-                      <span className="mr-1.5 font-mono text-[11px] text-slate-500">
-                        {row.code}
-                      </span>
+                      <span className="mr-1.5 font-mono text-xs text-slate-500">{row.code}</span>
                     )}
-                    <span className="text-xs text-slate-900">
+                    <span className="text-sm text-slate-900">
                       <Bilingual
                         table="milestones"
                         id={row.milestoneId}
@@ -244,22 +242,22 @@ export const BaselinePanel: React.FC = () => {
                     )}
                   </Td>
                   <Td>
-                    <span className="font-mono text-[11px] text-slate-600">
+                    <span className="font-mono text-xs text-slate-600">
                       {row.baselineTarget ? formatDate(row.baselineTarget, language) : '—'}
                     </span>
                   </Td>
                   <Td>
-                    <span className="font-mono text-[11px] text-slate-600">
+                    <span className="font-mono text-xs text-slate-600">
                       {row.currentTarget ? formatDate(row.currentTarget, language) : '—'}
                     </span>
                   </Td>
                   <Td>
-                    <span className={`text-[11px] ${moved.tone}`}>{moved.text}</span>
+                    <span className={`text-xs ${moved.tone}`}>{moved.text}</span>
                   </Td>
                   <Td>
                     {/* The second number, and null is not nought: a milestone
                         that has not been delivered has no delivery slip. */}
-                    <span className="text-[11px] text-slate-600">
+                    <span className="text-xs text-slate-600">
                       {row.deliverySlipDays == null
                         ? tr
                           ? 'teslim edilmedi'

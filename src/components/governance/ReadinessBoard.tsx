@@ -45,10 +45,10 @@ export const ReadinessBoard: React.FC = () => {
         <div className="flex items-start gap-2.5">
           <GraduationCap className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" aria-hidden="true" />
           <div>
-            <h2 className="text-sm font-bold text-slate-900">
+            <h2 className="text-base font-bold text-slate-900">
               {tr ? 'İlk öğrenci alımı hazırlığı' : 'First intake readiness'}
             </h2>
-            <p className="text-[11px] text-slate-500">
+            <p className="text-xs text-slate-500">
               {tr
                 ? 'Her şerit gerçek bir kütükten sayılıyor. Tanıtım şeridi yok, çünkü onu tutan bir kütük yok — sıfır çizmek “yapılmadı” diye okunur, oysa doğrusu “takip edilmiyor”.'
                 : 'Each strand is counted from a real register. Outreach is missing because no register holds it — drawing a zero would read as “not done”, when the truth is “not tracked”.'}
@@ -58,7 +58,7 @@ export const ReadinessBoard: React.FC = () => {
         {daysToIntake != null ? (
           <div className="text-right">
             <p className="font-mono text-lg font-bold text-indigo-900">{daysToIntake}</p>
-            <p className="text-[11px] text-slate-500">
+            <p className="text-xs text-slate-500">
               {tr ? `gün — ${intakeYear} alımına` : `days to the ${intakeYear} intake`}
             </p>
           </div>
@@ -79,22 +79,20 @@ export const ReadinessBoard: React.FC = () => {
           const share = strand.total > 0 ? Math.round((100 * strand.ready) / strand.total) : null;
           return (
             <div key={strand.strand} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-              <p className="text-[11px] font-semibold tracking-wider text-slate-600 uppercase">
+              <p className="text-xs font-semibold tracking-wider text-slate-600 uppercase">
                 {strandLabel(strand.strand, language)}
               </p>
               {strand.total === 0 ? (
-                <p className="mt-1 text-[11px] text-slate-500">
+                <p className="mt-1 text-xs text-slate-500">
                   {tr ? 'kütükte kayıt yok' : 'nothing on the register'}
                 </p>
               ) : (
                 <>
-                  <p className="mt-1 font-mono text-sm font-bold text-slate-900">
+                  <p className="mt-1 font-mono text-base font-bold text-slate-900">
                     {strand.ready}
                     <span className="text-slate-400">/{strand.total}</span>
                     {share != null && (
-                      <span className="ml-1.5 text-[11px] font-normal text-slate-500">
-                        {share}%
-                      </span>
+                      <span className="ml-1.5 text-xs font-normal text-slate-500">{share}%</span>
                     )}
                   </p>
                   <div
@@ -114,7 +112,7 @@ export const ReadinessBoard: React.FC = () => {
                 </>
               )}
               {strand.impeded > 0 && (
-                <p className="mt-1.5 flex items-center gap-1 text-[11px] font-semibold text-amber-800">
+                <p className="mt-1.5 flex items-center gap-1 text-xs font-semibold text-amber-800">
                   <TriangleAlert className="h-3 w-3" aria-hidden="true" />
                   {tr ? `${strand.impeded} engelli` : `${strand.impeded} impeded`}
                 </p>

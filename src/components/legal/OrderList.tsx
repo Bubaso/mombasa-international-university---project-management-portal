@@ -42,7 +42,7 @@ export const OrderList: React.FC<{ caseId: string; canWrite: boolean; canOblige:
   return (
     <section className="rounded-xl border border-slate-200 bg-white shadow-xs">
       <header className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-4 py-3">
-        <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+        <h2 className="flex items-center gap-2 text-base font-semibold text-slate-900">
           <ShieldCheck className="h-4 w-4 text-amber-600" aria-hidden="true" />
           {tr ? 'Mahkeme kararları' : 'Court orders'}
           <Pill>{rows.length}</Pill>
@@ -76,15 +76,15 @@ export const OrderList: React.FC<{ caseId: string; canWrite: boolean; canOblige:
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="font-mono text-xs font-semibold text-slate-900">
+                      <span className="font-mono text-sm font-semibold text-slate-900">
                         {order.madeOn}
                       </span>
                       {order.referenceNo && <Pill>{order.referenceNo}</Pill>}
                       {order.madeBy && (
-                        <span className="text-[11px] text-slate-500">{order.madeBy}</span>
+                        <span className="text-xs text-slate-500">{order.madeBy}</span>
                       )}
                     </div>
-                    <p className="mt-1 text-xs leading-relaxed text-slate-700">
+                    <p className="mt-1 text-sm leading-relaxed text-slate-700">
                       <Bilingual
                         table="legal_orders"
                         id={order.id}
@@ -156,7 +156,7 @@ const DerivedObligations: React.FC<{ orderId: string; count: number }> = ({ coun
     <button
       type="button"
       onClick={() => navigate('/obligations')}
-      className="mt-1.5 flex cursor-pointer items-center gap-1.5 text-[11px] font-medium text-amber-700 hover:text-amber-900"
+      className="mt-1.5 flex cursor-pointer items-center gap-1.5 text-xs font-medium text-amber-700 hover:text-amber-900"
     >
       <ScrollText className="h-3 w-3" aria-hidden="true" />
       {tr ? `Bu karardan doğan ${count} yükümlülük` : `${count} obligations created by this order`}
@@ -211,7 +211,7 @@ const ConvertForm: React.FC<{ order: LegalOrder; onDone: () => void }> = ({ orde
         );
       }}
     >
-      <p className="text-[11px] leading-relaxed text-amber-900">
+      <p className="text-xs leading-relaxed text-amber-900">
         {tr
           ? 'Kararın her maddesini ayrı ayrı girin: biri bir şeyi yasaklıyor, diğeri bir şeyi emrediyor olabilir ve tarihleri farklıdır. Yasak olarak işaretlenenler, çakışan bir saha işi açılmadan önce uyarı üretir.'
           : 'Enter each clause on its own: one may forbid something and another require something, on different dates. Anything marked as a prohibition warns before conflicting site work is opened.'}
@@ -240,7 +240,7 @@ const ConvertForm: React.FC<{ order: LegalOrder; onDone: () => void }> = ({ orde
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <label className="flex cursor-pointer items-center gap-1.5 text-[11px] text-amber-900">
+        <label className="flex cursor-pointer items-center gap-1.5 text-xs text-amber-900">
           <input
             type="radio"
             checked={prohibits}
@@ -249,7 +249,7 @@ const ConvertForm: React.FC<{ order: LegalOrder; onDone: () => void }> = ({ orde
           />
           {tr ? 'Yasaklıyor' : 'It forbids something'}
         </label>
-        <label className="flex cursor-pointer items-center gap-1.5 text-[11px] text-amber-900">
+        <label className="flex cursor-pointer items-center gap-1.5 text-xs text-amber-900">
           <input
             type="radio"
             checked={!prohibits}

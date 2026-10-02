@@ -33,7 +33,7 @@ export const NoteEditor: React.FC<{
   return (
     <section className="rounded-xl border border-slate-200 bg-white shadow-xs">
       <header className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-4 py-3">
-        <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+        <h2 className="flex items-center gap-2 text-base font-semibold text-slate-900">
           <FileText className="h-4 w-4 text-amber-600" aria-hidden="true" />
           {tr ? 'Tutanak' : 'The note'}
         </h2>
@@ -52,7 +52,7 @@ export const NoteEditor: React.FC<{
                 key={code}
                 type="button"
                 onClick={() => setNoteLanguage(code)}
-                className={`cursor-pointer px-2.5 py-1 text-[11px] font-semibold uppercase ${
+                className={`cursor-pointer px-2.5 py-1 text-xs font-semibold uppercase ${
                   noteLanguage === code
                     ? 'bg-amber-600 text-white'
                     : 'bg-white text-slate-600 hover:bg-slate-50'
@@ -122,7 +122,7 @@ const NoteSectionRow: React.FC<{
   return (
     <div className="px-4 py-3">
       <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
           {noteSectionLabel(section, language)}
         </h3>
         <div className="flex items-center gap-1.5">
@@ -135,7 +135,7 @@ const NoteSectionRow: React.FC<{
             </Pill>
           )}
           {!body && hasOtherLanguage && (
-            <span className="text-[10px] text-slate-400">
+            <span className="text-xs text-slate-400">
               {tr ? 'diğer dilde yazılmış' : 'written in the other language'}
             </span>
           )}
@@ -163,7 +163,7 @@ const NoteSectionRow: React.FC<{
             onChange={(e) => setDraft(e.target.value)}
             rows={5}
             autoFocus
-            className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs leading-relaxed text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+            className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-sm leading-relaxed text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
           />
           <WriteError error={save.error} />
           <div className="mt-2 flex justify-end gap-2">
@@ -177,9 +177,9 @@ const NoteSectionRow: React.FC<{
           </div>
         </form>
       ) : body ? (
-        <p className="whitespace-pre-wrap text-xs leading-relaxed text-slate-800">{body}</p>
+        <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-800">{body}</p>
       ) : (
-        <p className="text-[11px] text-slate-400">
+        <p className="text-xs text-slate-400">
           {locked
             ? tr
               ? 'Bu başlık boş bırakılmış ve tutanak kesinleşti.'

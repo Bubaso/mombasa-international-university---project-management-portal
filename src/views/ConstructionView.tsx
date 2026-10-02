@@ -92,7 +92,7 @@ export const ConstructionView: React.FC = () => {
           <h1 className="text-lg font-bold text-slate-900">
             {tr ? 'İnşaat ve Saha' : 'Construction and Site'}
           </h1>
-          <p className="max-w-2xl text-xs text-slate-500">
+          <p className="max-w-2xl text-sm text-slate-500">
             {tr
               ? 'İlerleme, dayandığı kanıttan hesaplanır. Hiç rapor edilmemiş bir blok "raporlanmadı" der — sıfır demez, çünkü ikisi aynı şey değil.'
               : 'Progress is computed from the evidence behind it. A block nobody has reported on says "not reported" — not zero, because those are not the same thing.'}
@@ -142,10 +142,10 @@ export const ConstructionView: React.FC = () => {
                     }`}
                   >
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="font-mono text-[11px] font-semibold text-slate-500">
+                      <span className="font-mono text-xs font-semibold text-slate-500">
                         {block.code}
                       </span>
-                      <span className="text-xs font-medium text-slate-900">{block.name}</span>
+                      <span className="text-sm font-medium text-slate-900">{block.name}</span>
                       <Pill className={workStateStyle(block.state)}>
                         {workStateLabel(block.state, language)}
                       </Pill>
@@ -156,7 +156,7 @@ export const ConstructionView: React.FC = () => {
                       )}
                     </div>
 
-                    <div className="mt-2 flex items-center justify-between text-[11px]">
+                    <div className="mt-2 flex items-center justify-between text-xs">
                       <span className="text-slate-500">{tr ? 'İlerleme' : 'Progress'}</span>
                       <span
                         className={`font-mono font-semibold ${
@@ -177,7 +177,7 @@ export const ConstructionView: React.FC = () => {
                       </div>
                     )}
 
-                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-slate-500">
+                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-slate-500">
                       {stats && (
                         <span className="flex items-center gap-1">
                           <Layers className="h-3 w-3" aria-hidden="true" />
@@ -207,10 +207,10 @@ export const ConstructionView: React.FC = () => {
             <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
               <header className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 pb-3">
                 <div>
-                  <h2 className="text-sm font-bold text-slate-900">
+                  <h2 className="text-base font-bold text-slate-900">
                     {selected.code} · {selected.name}
                   </h2>
-                  <p className="mt-0.5 text-[11px] text-slate-500">
+                  <p className="mt-0.5 text-xs text-slate-500">
                     {[
                       selected.phaseName,
                       selected.contractorName,
@@ -226,7 +226,7 @@ export const ConstructionView: React.FC = () => {
                       .join(' · ') || (tr ? 'Ayrıntı girilmemiş' : 'No details recorded')}
                   </p>
                   {(selected.purposeEn ?? selected.purposeTr) && (
-                    <p className="mt-1 max-w-2xl text-[11px] text-slate-600">
+                    <p className="mt-1 max-w-2xl text-xs text-slate-600">
                       {tr ? (selected.purposeTr ?? selected.purposeEn) : selected.purposeEn}
                     </p>
                   )}
@@ -283,7 +283,7 @@ const TabButton: React.FC<{
   <button
     type="button"
     onClick={onClick}
-    className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
+    className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors ${
       active
         ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
         : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'

@@ -68,10 +68,10 @@ export const ReviewPanel: React.FC = () => {
         <div className="flex items-start gap-2.5">
           <Star className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" aria-hidden="true" />
           <div>
-            <h2 className="text-sm font-bold text-slate-900">
+            <h2 className="text-base font-bold text-slate-900">
               {tr ? 'Tedarikçi performansı' : 'Supplier performance'}
             </h2>
-            <p className="text-[11px] text-slate-500">
+            <p className="text-xs text-slate-500">
               {tr
                 ? 'Tarihli, puanlı ve sonradan değiştirilemez. Düzeltme, yeni bir değerlendirme yazmakla yapılıyor — ikisi de dosyada kalıyor.'
                 : 'Dated, scored, and not editable afterwards. A correction is a new review, and both stay on the file.'}
@@ -172,7 +172,7 @@ export const ReviewPanel: React.FC = () => {
             </Field>
           </div>
 
-          <p className="flex items-center gap-1 text-[11px] text-amber-800">
+          <p className="flex items-center gap-1 text-xs text-amber-800">
             <Lock className="h-3 w-3" aria-hidden="true" />
             {tr ? 'Kaydedildikten sonra düzeltilemez.' : 'Once recorded this cannot be edited.'}
           </p>
@@ -184,7 +184,7 @@ export const ReviewPanel: React.FC = () => {
             <button
               type="button"
               onClick={() => setWriting(false)}
-              className="cursor-pointer text-[11px] text-slate-500 underline"
+              className="cursor-pointer text-xs text-slate-500 underline"
             >
               {tr ? 'vazgeç' : 'cancel'}
             </button>
@@ -196,7 +196,7 @@ export const ReviewPanel: React.FC = () => {
       <QueryStatus queries={[reviews]} />
 
       {rows.length === 0 ? (
-        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] text-slate-600">
+        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
           {tr
             ? 'Değerlendirme yok. Bir tedarikçinin nasıl çalıştığı, sözleşme yenilenirken sorulacak ilk soru — ve kayıt yoksa cevabı hatırada kalıyor.'
             : 'No review yet. How a supplier performed is the first question asked when a contract comes up for renewal, and without a record the answer lives in somebody’s memory.'}
@@ -208,7 +208,7 @@ export const ReviewPanel: React.FC = () => {
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="text-xs font-medium text-slate-900">
+                    <span className="text-sm font-medium text-slate-900">
                       {review.partyName ?? (tr ? '(taraf adı yok)' : '(party unnamed)')}
                     </span>
                     <Pill
@@ -223,21 +223,21 @@ export const ReviewPanel: React.FC = () => {
                       {review.overall.toFixed(2)} / 5
                     </Pill>
                   </div>
-                  <p className="mt-0.5 text-[11px] text-slate-700">
+                  <p className="mt-0.5 text-xs text-slate-700">
                     {(tr ? review.noteTr : review.noteEn) ?? review.noteEn}
                   </p>
                   <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
                     {AXES.map((axis) => (
                       <span
                         key={axis.key}
-                        className="flex items-center gap-1 text-[11px] text-slate-500"
+                        className="flex items-center gap-1 text-xs text-slate-500"
                       >
                         {tr ? axis.tr : axis.en}
                         <Score value={review[axis.key]} />
                       </span>
                     ))}
                   </div>
-                  <p className="mt-0.5 text-[11px] text-slate-400">
+                  <p className="mt-0.5 text-xs text-slate-400">
                     {[
                       review.reviewedByName,
                       formatDate(review.reviewedAt, language),

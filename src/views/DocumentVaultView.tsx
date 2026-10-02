@@ -93,7 +93,7 @@ export const DocumentVaultView: React.FC = () => {
             <h1 className="text-lg font-bold text-slate-900">
               {tr ? 'Belge Kasası' : 'Document Vault'}
             </h1>
-            <p className="max-w-2xl text-xs text-slate-500">
+            <p className="max-w-2xl text-sm text-slate-500">
               {tr
                 ? 'Mahkemeye sunulacak evrak, tasdikli suretler, senet, sözleşmeler ve çizimler. Hangi sürümün geçerli olduğu ve kimin ne zaman gördüğü burada hukukî sonuç doğurur.'
                 : 'Court filings, certified copies, the deed, contracts and drawings. Which version is the operative one, and who saw it when, have legal consequences here.'}
@@ -113,7 +113,7 @@ export const DocumentVaultView: React.FC = () => {
       {unverified > 0 && (
         <div className="flex items-start gap-2.5 rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5">
           <FileX2 className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" aria-hidden="true" />
-          <p className="text-[11px] leading-relaxed text-amber-900">
+          <p className="text-xs leading-relaxed text-amber-900">
             <span className="font-semibold">
               {tr
                 ? `${unverified} belgenin geçerli sürümü doğrulanmamış.`
@@ -156,7 +156,7 @@ export const DocumentVaultView: React.FC = () => {
             ))}
           </Select>
         </Field>
-        <span className="pb-1.5 text-[11px] text-slate-500">
+        <span className="pb-1.5 text-xs text-slate-500">
           {tr ? `${shown.length} belge` : `${shown.length} documents`}
         </span>
       </div>
@@ -193,7 +193,7 @@ export const DocumentVaultView: React.FC = () => {
                       >
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-1.5">
-                            <span className="text-xs font-medium text-slate-900">{doc.title}</span>
+                            <span className="text-sm font-medium text-slate-900">{doc.title}</span>
                             <Pill>{categoryLabel(doc.category, language)}</Pill>
                             {doc.confidentiality !== 'internal' && (
                               <Pill className={clearanceStyle(doc.confidentiality)}>
@@ -201,7 +201,7 @@ export const DocumentVaultView: React.FC = () => {
                               </Pill>
                             )}
                           </div>
-                          <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-slate-500">
+                          <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-slate-500">
                             {version ? (
                               <>
                                 <span className="font-mono">{version.fileName}</span>
@@ -231,7 +231,7 @@ export const DocumentVaultView: React.FC = () => {
                           {version &&
                             (version.sha256 ? (
                               <span
-                                className="flex items-center gap-1 text-[11px] text-emerald-700"
+                                className="flex items-center gap-1 text-xs text-emerald-700"
                                 title={version.sha256}
                               >
                                 <FileCheck2 className="h-3.5 w-3.5" aria-hidden="true" />
@@ -241,7 +241,7 @@ export const DocumentVaultView: React.FC = () => {
                               </span>
                             ) : (
                               <span
-                                className="flex items-center gap-1 text-[11px] text-amber-700"
+                                className="flex items-center gap-1 text-xs text-amber-700"
                                 title={
                                   tr
                                     ? 'Sunucu henüz baytları okuyup özetini kaydetmedi'
@@ -273,7 +273,7 @@ export const DocumentVaultView: React.FC = () => {
         )}
       </div>
 
-      <p className="flex items-start gap-1.5 text-[11px] leading-relaxed text-slate-500">
+      <p className="flex items-start gap-1.5 text-xs leading-relaxed text-slate-500">
         <Eye className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
         <span>
           {tr
@@ -371,12 +371,12 @@ const NewDocumentForm: React.FC<{ onDone: () => void }> = ({ onDone }) => {
             type="file"
             required
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-            className="w-full cursor-pointer rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs text-slate-900 file:mr-3 file:cursor-pointer file:rounded file:border-0 file:bg-slate-100 file:px-2.5 file:py-1 file:text-xs file:font-medium file:text-slate-700"
+            className="w-full cursor-pointer rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-900 file:mr-3 file:cursor-pointer file:rounded file:border-0 file:bg-slate-100 file:px-2.5 file:py-1 file:text-sm file:font-medium file:text-slate-700"
           />
         </Field>
       </div>
 
-      <p className="mt-2 text-[11px] leading-relaxed text-slate-500">
+      <p className="mt-2 text-xs leading-relaxed text-slate-500">
         {tr
           ? 'Dosya yüklendikten sonra sunucu depodaki baytları okuyup SHA-256 özetini kaydeder. Bu kaydedilene kadar belge "doğrulanmadı" görünür — ve bu işaret hiçbir kullanıcı tarafından konulamaz ya da kaldırılamaz.'
           : 'After the upload the server reads the stored bytes and records their SHA-256. Until it has, the document reads as unverified — and that mark is not something any user can set or clear.'}
@@ -384,7 +384,7 @@ const NewDocumentForm: React.FC<{ onDone: () => void }> = ({ onDone }) => {
 
       <WriteError error={create.error ?? upload.error} />
       {notice && (
-        <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-[11px] text-amber-900">
+        <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs text-amber-900">
           {tr
             ? `Dosya yüklendi ama özeti hesaplanamadı: ${notice}`
             : `The file was stored but its digest could not be computed: ${notice}`}

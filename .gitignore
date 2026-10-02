@@ -11,3 +11,6 @@ coverage/
 !.env.example
 supabase/.temp/
 dist-smoke/
+
+# Written by tests/design.mjs: a measurement, not a source file.
+design-measurement.json

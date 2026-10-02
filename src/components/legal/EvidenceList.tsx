@@ -33,7 +33,7 @@ export const EvidenceList: React.FC<{ caseId: string; canWrite: boolean }> = ({
   return (
     <section className="rounded-xl border border-slate-200 bg-white shadow-xs">
       <header className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-4 py-3">
-        <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+        <h2 className="flex items-center gap-2 text-base font-semibold text-slate-900">
           <FolderOpen className="h-4 w-4 text-amber-600" aria-hidden="true" />
           {tr ? 'Deliller ve zincir' : 'Evidence & custody'}
           <Pill>{rows.length}</Pill>
@@ -70,11 +70,11 @@ export const EvidenceList: React.FC<{ caseId: string; canWrite: boolean }> = ({
                       <Pill className="border-slate-400 bg-slate-800 font-mono text-white">
                         {exhibit.mark}
                       </Pill>
-                      <span className="text-xs font-medium text-slate-900">
+                      <span className="text-sm font-medium text-slate-900">
                         {exhibit.description}
                       </span>
                     </div>
-                    <div className="mt-0.5 flex flex-wrap gap-x-3 text-[11px] text-slate-500">
+                    <div className="mt-0.5 flex flex-wrap gap-x-3 text-xs text-slate-500">
                       {exhibit.source && (
                         <span>
                           {tr ? 'kaynak: ' : 'from: '}
@@ -107,13 +107,13 @@ export const EvidenceList: React.FC<{ caseId: string; canWrite: boolean }> = ({
 
                 {chain.length > 0 && (
                   <div className="mt-2 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2">
-                    <p className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                    <p className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
                       <Lock className="h-2.5 w-2.5" aria-hidden="true" />
                       {tr ? 'Teslim zinciri' : 'Chain of custody'}
                     </p>
                     <ol className="mt-1 space-y-0.5">
                       {chain.map((link) => (
-                        <li key={link.id} className="text-[11px] text-slate-700">
+                        <li key={link.id} className="text-xs text-slate-700">
                           <span className="font-mono text-slate-400">
                             {link.handedOverAt.slice(0, 10)}
                           </span>{' '}
@@ -184,7 +184,7 @@ const HandoverForm: React.FC<{
         <TextInput value={note} onChange={(e) => setNote(e.target.value)} />
       </Field>
 
-      <p className="text-[10px] leading-relaxed text-slate-500">
+      <p className="text-xs leading-relaxed text-slate-500">
         {tr
           ? 'Bu kayıt eklendikten sonra düzeltilemez ve silinemez — ne sizin ne de bir başkasının. Sonradan düzeltilebilen bir zincir hiçbir şey kanıtlamaz.'
           : 'Once entered this cannot be corrected or deleted, by you or anyone else. A chain that can be tidied afterwards proves nothing.'}

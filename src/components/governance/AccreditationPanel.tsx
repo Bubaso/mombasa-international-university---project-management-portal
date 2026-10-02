@@ -37,10 +37,10 @@ export const AccreditationPanel: React.FC = () => {
         <div className="flex items-start gap-2.5">
           <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" aria-hidden="true" />
           <div>
-            <h2 className="text-sm font-bold text-slate-900">
+            <h2 className="text-base font-bold text-slate-900">
               {tr ? 'CUE akreditasyon kontrol listesi' : 'CUE accreditation checklist'}
             </h2>
-            <p className="text-[11px] text-slate-500">
+            <p className="text-xs text-slate-500">
               {tr
                 ? 'Hiçbir şart, arkasında kasada bir belge olmadan “karşılandı” olamıyor — bu kuralı veritabanı uyguluyor, ekran değil.'
                 : 'No requirement reaches “met” without a document in the vault behind it — the database enforces that, not this screen.'}
@@ -62,7 +62,7 @@ export const AccreditationPanel: React.FC = () => {
       <QueryStatus queries={[checklist]} />
 
       {rows.length === 0 ? (
-        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] text-slate-600">
+        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
           {tr
             ? 'Kontrol listesi boş. CUE şartları girilmeden akreditasyon hazırlığının nerede olduğu söylenemez — bu ekranın hiçbir şey uydurmaması da bu yüzden.'
             : 'The checklist is empty. Until the CUE standards are entered, nothing can be said about where accreditation stands — which is why this screen says nothing instead.'}
@@ -77,9 +77,9 @@ export const AccreditationPanel: React.FC = () => {
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-1.5">
                     {row.code && (
-                      <span className="font-mono text-[11px] text-slate-500">{row.code}</span>
+                      <span className="font-mono text-xs text-slate-500">{row.code}</span>
                     )}
-                    <span className="text-xs font-medium text-slate-900">
+                    <span className="text-sm font-medium text-slate-900">
                       <Bilingual
                         table="accreditation_requirements"
                         id={row.id}
@@ -95,11 +95,11 @@ export const AccreditationPanel: React.FC = () => {
                   {/* "mevcut durum": what is true today, in words, which the
                       state machine above cannot carry. */}
                   {(tr ? row.positionTr : row.positionEn) && (
-                    <p className="mt-0.5 text-[11px] text-slate-600">
+                    <p className="mt-0.5 text-xs text-slate-600">
                       {tr ? row.positionTr : row.positionEn}
                     </p>
                   )}
-                  <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-500">
+                  <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
                     {row.responsibleName && <span>{row.responsibleName}</span>}
                     {row.targetOn && (
                       <span className={late ? 'font-semibold text-rose-700' : undefined}>
@@ -121,13 +121,13 @@ export const AccreditationPanel: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => navigate('/documents')}
-                      className="flex cursor-pointer items-center gap-1 text-[11px] text-indigo-700 hover:underline"
+                      className="flex cursor-pointer items-center gap-1 text-xs text-indigo-700 hover:underline"
                     >
                       <FileCheck2 className="h-3.5 w-3.5" aria-hidden="true" />
                       {tr ? 'kanıt' : 'evidence'}
                     </button>
                   ) : (
-                    <span className="flex items-center gap-1 text-[11px] text-amber-800">
+                    <span className="flex items-center gap-1 text-xs text-amber-800">
                       <TriangleAlert className="h-3.5 w-3.5" aria-hidden="true" />
                       {tr ? 'kanıt yok' : 'no evidence'}
                     </span>

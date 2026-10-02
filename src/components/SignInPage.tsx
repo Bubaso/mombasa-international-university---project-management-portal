@@ -86,21 +86,21 @@ export const SignInPage: React.FC = () => {
         <div className="flex items-center gap-3">
           <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 p-0.5 shadow-sm shrink-0">
             <div className="w-full h-full bg-slate-900 rounded-[10px] flex items-center justify-center">
-              <span className="font-extrabold text-xs tracking-wider text-amber-400">MIU</span>
+              <span className="font-extrabold text-sm tracking-wider text-amber-400">MIU</span>
             </div>
           </div>
           <div>
             <h1 className="font-bold text-slate-900 leading-tight">
               {tr ? 'Mombasa Uluslararası Üniv.' : 'Mombasa Int. University'}
             </h1>
-            <p className="text-[11px] text-slate-500 leading-none mt-0.5">
+            <p className="text-xs text-slate-500 leading-none mt-0.5">
               {tr ? 'Kenya Afrika Üniversitesi Vakfı' : 'African University Trust (AUTK)'}
             </p>
           </div>
         </div>
 
         {status === 'unconfigured' && (
-          <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-xs" role="status">
+          <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm" role="status">
             <div className="flex items-start gap-2.5">
               <PlugZap className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" aria-hidden="true" />
               <div className="space-y-1">
@@ -118,7 +118,7 @@ export const SignInPage: React.FC = () => {
         )}
 
         {status === 'no_profile' && (
-          <div className="rounded-xl border border-rose-300 bg-rose-50 p-4 text-xs" role="alert">
+          <div className="rounded-xl border border-rose-300 bg-rose-50 p-4 text-sm" role="alert">
             <div className="flex items-start gap-2.5">
               <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-rose-600" aria-hidden="true" />
               <div className="min-w-0 space-y-2">
@@ -129,7 +129,7 @@ export const SignInPage: React.FC = () => {
                 <p className="leading-relaxed text-rose-900/80">{denialText(denial, tr)}</p>
 
                 {denial?.kind === 'error' && (
-                  <p className="rounded-md bg-white/70 px-2 py-1 font-mono text-[10px] leading-relaxed break-words text-rose-900">
+                  <p className="rounded-md bg-white/70 px-2 py-1 font-mono text-xs leading-relaxed break-words text-rose-900">
                     {denial.message}
                   </p>
                 )}
@@ -141,7 +141,7 @@ export const SignInPage: React.FC = () => {
                     which is what people compare by eye and which is not what
                     the profile is keyed on. */}
                 {denial && (
-                  <dl className="space-y-0.5 rounded-md bg-white/70 px-2 py-1.5 text-[10px] text-rose-900">
+                  <dl className="space-y-0.5 rounded-md bg-white/70 px-2 py-1.5 text-xs text-rose-900">
                     <div className="flex flex-wrap gap-x-1.5">
                       <dt className="font-semibold">{tr ? 'Hesap' : 'Account'}</dt>
                       <dd className="font-mono break-all">{denial.email ?? '—'}</dd>
@@ -174,7 +174,7 @@ export const SignInPage: React.FC = () => {
             className="space-y-3 rounded-xl border border-slate-200 bg-white p-5 shadow-xs"
           >
             <div className="space-y-1">
-              <label htmlFor="email" className="block text-xs font-semibold text-slate-700">
+              <label htmlFor="email" className="block text-sm font-semibold text-slate-700">
                 {tr ? 'E-posta' : 'Email'}
               </label>
               <input
@@ -185,12 +185,12 @@ export const SignInPage: React.FC = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={status === 'unconfigured'}
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm text-slate-900 focus:border-amber-500 focus:bg-white focus:outline-none disabled:opacity-60"
+                className="w-full rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-base text-slate-900 focus:border-amber-500 focus:bg-white focus:outline-none disabled:opacity-60"
               />
             </div>
 
             <div className="space-y-1">
-              <label htmlFor="password" className="block text-xs font-semibold text-slate-700">
+              <label htmlFor="password" className="block text-sm font-semibold text-slate-700">
                 {tr ? 'Parola' : 'Password'}
               </label>
               <input
@@ -201,18 +201,18 @@ export const SignInPage: React.FC = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={status === 'unconfigured'}
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm text-slate-900 focus:border-amber-500 focus:bg-white focus:outline-none disabled:opacity-60"
+                className="w-full rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-base text-slate-900 focus:border-amber-500 focus:bg-white focus:outline-none disabled:opacity-60"
               />
             </div>
 
             {error && (
-              <p className="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-800" role="alert">
+              <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-800" role="alert">
                 {error}
               </p>
             )}
             {notice && (
               <p
-                className="rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-800"
+                className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800"
                 role="status"
               >
                 {notice}
@@ -222,7 +222,7 @@ export const SignInPage: React.FC = () => {
             <button
               type="submit"
               disabled={busy || status === 'unconfigured'}
-              className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-amber-600 px-4 py-2.5 text-base font-semibold text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {busy ? (
                 <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
@@ -236,14 +236,14 @@ export const SignInPage: React.FC = () => {
               type="button"
               onClick={() => void handleReset()}
               disabled={busy || status === 'unconfigured'}
-              className="w-full cursor-pointer text-center text-xs text-slate-500 hover:text-slate-800 disabled:opacity-60"
+              className="w-full cursor-pointer text-center text-sm text-slate-500 hover:text-slate-800 disabled:opacity-60"
             >
               {tr ? 'Parolamı unuttum' : 'Forgot my password'}
             </button>
           </form>
         )}
 
-        <div className="flex items-center justify-between text-[11px] text-slate-400">
+        <div className="flex items-center justify-between text-xs text-slate-400">
           <span>{tr ? 'Erişim davetle verilir.' : 'Access is granted by invitation.'}</span>
           <button
             onClick={() => setLanguage(tr ? 'en' : 'tr')}

@@ -29,7 +29,7 @@ export const QueryStatus: React.FC<QueryStatusProps> = ({ queries, className = '
   if (!isSupabaseConfigured) {
     return (
       <div
-        className={`flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-xs ${className}`}
+        className={`flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm ${className}`}
         role="status"
       >
         <PlugZap className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" aria-hidden="true" />
@@ -53,7 +53,7 @@ export const QueryStatus: React.FC<QueryStatusProps> = ({ queries, className = '
   if (isPending) {
     return (
       <div
-        className={`flex items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs text-slate-600 ${className}`}
+        className={`flex items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 ${className}`}
         role="status"
         aria-live="polite"
       >
@@ -69,11 +69,14 @@ export const QueryStatus: React.FC<QueryStatusProps> = ({ queries, className = '
 
     return (
       <div
-        className={`flex items-start gap-3 rounded-xl border border-rose-300 bg-rose-50 px-4 py-3 text-xs ${className}`}
+        // Wraps: the message and the retry button did not fit one 390px line,
+        // and the button being `shrink-0` meant it left the screen instead of
+        // dropping below — 28px of sideways rock on whichever route failed.
+        className={`flex flex-wrap items-start gap-3 rounded-xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm ${className}`}
         role="alert"
       >
         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-rose-600" aria-hidden="true" />
-        <div className="flex-1 space-y-1">
+        <div className="min-w-0 flex-1 space-y-1">
           <div className="font-semibold text-rose-900">
             {tr ? 'Veriler yüklenemedi' : 'Could not load records'}
           </div>
@@ -82,7 +85,9 @@ export const QueryStatus: React.FC<QueryStatusProps> = ({ queries, className = '
               ? 'Aşağıda eksik veya boş görünen her şey bu hatadan kaynaklanıyor olabilir.'
               : 'Anything missing or empty below may be a result of this failure.'}
           </p>
-          {detail && <p className="pt-0.5 font-mono text-[11px] text-rose-800/70">{detail}</p>}
+          {detail && (
+            <p className="pt-0.5 font-mono text-xs break-words text-rose-800/70">{detail}</p>
+          )}
         </div>
         <button
           type="button"

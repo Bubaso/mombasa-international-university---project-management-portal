@@ -108,10 +108,10 @@ export const ChronologyPanel: React.FC = () => {
         <div className="flex items-start gap-2.5">
           <BookMarked className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" aria-hidden="true" />
           <div>
-            <h2 className="text-sm font-bold text-slate-900">
+            <h2 className="text-base font-bold text-slate-900">
               {tr ? 'Proje kronolojisi' : 'Project chronology'}
             </h2>
-            <p className="text-[11px] text-slate-500">
+            <p className="text-xs text-slate-500">
               {tr
                 ? 'Tek zaman çizelgesi: kütüklerin görmediği yıllar elle, gerisi kütüklerden. Her olay kaynağına bağlı — bu hem kurumsal hafıza hem hukukî delil olduğu için.'
                 : 'One time line: the years the registers never saw are hand-recorded, the rest come from the registers. Every event names its source, because this is legal evidence as well as memory.'}
@@ -262,7 +262,7 @@ export const ChronologyPanel: React.FC = () => {
             <button
               type="button"
               onClick={() => setAdding(false)}
-              className="cursor-pointer text-[11px] text-slate-500 underline"
+              className="cursor-pointer text-xs text-slate-500 underline"
             >
               {tr ? 'vazgeç' : 'cancel'}
             </button>
@@ -276,7 +276,7 @@ export const ChronologyPanel: React.FC = () => {
       <QueryStatus queries={[chronology]} />
 
       {rows.length === 0 ? (
-        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] text-slate-600">
+        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
           {tr
             ? 'Kronoloji boş. Kütükler 2024’te başlıyor; 1993’ten o tarihe kadarki otuz yıl yalnızca belgelerde duruyor ve buraya elle girilmesi gerekiyor.'
             : 'The chronology is empty. The registers begin in 2024; the thirty years before that exist only in documents and have to be entered here by hand.'}
@@ -292,7 +292,7 @@ export const ChronologyPanel: React.FC = () => {
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="font-mono text-[11px] font-semibold text-slate-700">
+                    <span className="font-mono text-xs font-semibold text-slate-700">
                       {whenText(event, language)}
                     </span>
                     <Pill className={CATEGORY_TONE[event.category] ?? CATEGORY_TONE.other}>
@@ -309,7 +309,7 @@ export const ChronologyPanel: React.FC = () => {
                         : event.source}
                     </Pill>
                   </div>
-                  <p className="mt-0.5 text-xs text-slate-900">
+                  <p className="mt-0.5 text-sm text-slate-900">
                     <Bilingual
                       table="chronology_entries"
                       id={event.id}
@@ -319,13 +319,11 @@ export const ChronologyPanel: React.FC = () => {
                     />
                   </p>
                   {event.detailEn && (
-                    <p className="mt-0.5 line-clamp-2 text-[11px] text-slate-600">
-                      {event.detailEn}
-                    </p>
+                    <p className="mt-0.5 line-clamp-2 text-xs text-slate-600">{event.detailEn}</p>
                   )}
                   {/* The source, named. Without it this is an account rather
                       than evidence. */}
-                  <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[11px]">
+                  <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs">
                     {event.documentId ? (
                       <button
                         type="button"

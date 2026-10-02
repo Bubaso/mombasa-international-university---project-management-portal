@@ -44,7 +44,7 @@ export const FilingList: React.FC<{ caseId: string; canWrite: boolean }> = ({
   return (
     <section className="rounded-xl border border-slate-200 bg-white shadow-xs">
       <header className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-4 py-3">
-        <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+        <h2 className="flex items-center gap-2 text-base font-semibold text-slate-900">
           <FileText className="h-4 w-4 text-amber-600" aria-hidden="true" />
           {tr ? 'Layiha ve süreler' : 'Filings & deadlines'}
           {late > 0 && (
@@ -95,10 +95,10 @@ export const FilingList: React.FC<{ caseId: string; canWrite: boolean }> = ({
                           aria-hidden="true"
                         />
                       )}
-                      <span className="text-xs font-medium text-slate-900">{filing.title}</span>
+                      <span className="text-sm font-medium text-slate-900">{filing.title}</span>
                       <Pill>{filingKindLabel(filing.kind, language)}</Pill>
                     </div>
-                    <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px]">
+                    <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs">
                       {filing.dueOn && (
                         <span
                           className={overdue ? 'font-semibold text-rose-700' : 'text-slate-500'}

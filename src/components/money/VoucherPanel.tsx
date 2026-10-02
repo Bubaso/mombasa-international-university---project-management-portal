@@ -66,11 +66,11 @@ export const VoucherPanel: React.FC<{ canRule: boolean }> = ({ canRule }) => {
 
       {(thresholds.data ?? []).length > 0 && (
         <div className="mb-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-          <p className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold text-slate-700">
+          <p className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-slate-700">
             <Scale className="h-3.5 w-3.5" aria-hidden="true" />
             {tr ? 'Onay eşikleri' : 'Who has to sign'}
           </p>
-          <ul className="space-y-0.5 text-[11px] text-slate-600">
+          <ul className="space-y-0.5 text-xs text-slate-600">
             {(thresholds.data ?? []).map((threshold) => (
               <li key={threshold.id}>
                 <span className="font-mono">{fmt(threshold.minAmountKes, 'KES')}+</span>
@@ -227,21 +227,21 @@ const VoucherRow: React.FC<{
       >
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="font-mono text-[11px] font-semibold text-slate-500">
+            <span className="font-mono text-xs font-semibold text-slate-500">
               {voucher.referenceNo}
             </span>
-            <span className="text-xs font-medium text-slate-900">{voucher.payee}</span>
+            <span className="text-sm font-medium text-slate-900">{voucher.payee}</span>
             <Pill className={voucherStateStyle(voucher.state)}>
               {voucherStateLabel(voucher.state, language)}
             </Pill>
           </div>
-          <div className="mt-0.5 text-[11px] text-slate-500">
+          <div className="mt-0.5 text-xs text-slate-500">
             {voucher.purpose}
             {voucher.budgetLineTitle && ` · ${voucher.budgetLineTitle}`}
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <span className="font-mono text-xs font-semibold text-slate-900">
+          <span className="font-mono text-sm font-semibold text-slate-900">
             {fmt(voucher.amount, voucher.currency)}
           </span>
           {open ? (
@@ -253,7 +253,7 @@ const VoucherRow: React.FC<{
       </button>
 
       {open && (
-        <div className="space-y-2 border-t border-slate-100 bg-slate-50/60 px-3 py-3 text-[11px]">
+        <div className="space-y-2 border-t border-slate-100 bg-slate-50/60 px-3 py-3 text-xs">
           {voucher.currency !== 'KES' && (
             <p className="text-slate-600">
               {tr ? 'Taban karşılığı: ' : 'In base currency: '}

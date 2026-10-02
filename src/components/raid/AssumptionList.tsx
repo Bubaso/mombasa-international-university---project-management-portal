@@ -58,7 +58,7 @@ export const AssumptionList: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
       <QueryStatus queries={[assumptions]} />
 
       {unchecked > 0 && (
-        <p className="mb-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] text-slate-700">
+        <p className="mb-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700">
           {tr
             ? `${unchecked} varsayımı kimse doğrulamamış. Doğrulanmamış bir varsayım yanlış demek değil — sadece kimsenin bakmadığı anlamına gelir.`
             : `${unchecked} have not been checked by anybody. Unverified does not mean wrong; it means nobody has looked.`}
@@ -141,12 +141,12 @@ export const AssumptionList: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
           {rows.map((assumption) => (
             <li
               key={assumption.id}
-              className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-[11px]"
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs"
             >
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="text-xs text-slate-900">
+                    <span className="text-sm text-slate-900">
                       {tr
                         ? (assumption.statementTr ?? assumption.statementEn)
                         : assumption.statementEn}

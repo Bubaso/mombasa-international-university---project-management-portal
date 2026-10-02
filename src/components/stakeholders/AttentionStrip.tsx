@@ -26,7 +26,7 @@ export const AttentionStrip: React.FC<{ onOpen: (id: string) => void }> = ({ onO
 
   if (attention.isPending || flagged.length === 0) {
     return rows.length > 0 ? (
-      <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-xs text-emerald-900">
+      <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm text-emerald-900">
         {tr
           ? 'Her paydaşın bir sorumlusu var ve hiçbiri nüfuzuna göre beklenenden uzun süredir sessiz değil.'
           : 'Every stakeholder has somebody keeping them, and none has been quiet longer than their influence warrants.'}
@@ -43,7 +43,7 @@ export const AttentionStrip: React.FC<{ onOpen: (id: string) => void }> = ({ onO
       >
         <div className="flex min-w-0 items-center gap-2.5">
           <AlertTriangle className="h-4 w-4 shrink-0 text-amber-700" aria-hidden="true" />
-          <div className="min-w-0 text-xs text-amber-900">
+          <div className="min-w-0 text-sm text-amber-900">
             <span className="font-semibold">
               {tr
                 ? `${flagged.length} ilişki ilgi bekliyor`
@@ -73,18 +73,18 @@ export const AttentionStrip: React.FC<{ onOpen: (id: string) => void }> = ({ onO
                 <button
                   type="button"
                   onClick={() => onOpen(row.id)}
-                  className="flex w-full cursor-pointer flex-wrap items-center justify-between gap-2 px-4 py-2 text-left text-xs hover:bg-amber-100/60"
+                  className="flex w-full cursor-pointer flex-wrap items-center justify-between gap-2 px-4 py-2 text-left text-sm hover:bg-amber-100/60"
                 >
                   <span className="flex min-w-0 items-center gap-2">
                     <span className="truncate font-medium text-amber-950">{row.fullName}</span>
                     <Pill className={stanceStyle(row.stance)}>
                       {stanceLabel(row.stance, language)}
                     </Pill>
-                    <span className="shrink-0 font-mono text-[10px] text-amber-900/60">
+                    <span className="shrink-0 font-mono text-xs text-amber-900/60">
                       {tr ? 'nüfuz' : 'influence'} {row.influence}
                     </span>
                   </span>
-                  <span className="flex shrink-0 items-center gap-3 text-[11px] text-amber-900/80">
+                  <span className="flex shrink-0 items-center gap-3 text-xs text-amber-900/80">
                     {row.needsAnOwner && (
                       <span className="flex items-center gap-1">
                         <UserX className="h-3 w-3" aria-hidden="true" />

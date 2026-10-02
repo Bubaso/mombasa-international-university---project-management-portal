@@ -42,7 +42,7 @@ export const ProcurementView: React.FC = () => {
             <h1 className="text-lg font-bold text-slate-900">
               {tr ? 'Tedarik ve sözleşmeler' : 'Procurement and contracts'}
             </h1>
-            <p className="max-w-2xl text-xs text-slate-500">
+            <p className="max-w-2xl text-sm text-slate-500">
               {tr
                 ? 'Ne alındı ve neden, ne imzalandı, nasıl çalıştılar. Bir vakıfta bu verimlilik değil hesap verebilirlik meselesi — bu yüzden gerekçe her üç adımda da karar anında isteniyor.'
                 : 'What was bought and why, what was signed, and how they performed. In a trust this is accountability rather than efficiency, which is why the reasoning is required at the moment of the decision in all three.'}

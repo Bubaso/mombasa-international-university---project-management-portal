@@ -117,10 +117,10 @@ export const CapturePanel: React.FC = () => {
             aria-hidden="true"
           />
           <div>
-            <h2 className="text-sm font-bold text-slate-900">
+            <h2 className="text-base font-bold text-slate-900">
               {tr ? 'Bağlantısız toplantı kaydı' : 'Capturing a meeting with no connection'}
             </h2>
-            <p className="max-w-2xl text-[11px] text-slate-500">
+            <p className="max-w-2xl text-xs text-slate-500">
               {tr
                 ? 'Sahada, valilikte, yolda — bağlantı olmadığı yerde toplantı yazılabilsin diye. Yazdığınız şey bağlantı gelene kadar yalnızca bu cihazdadır; kayda geçtiği an bunu açıkça söyler. Aksiyon cümleleri aksiyon olmaz, aday kuyruğuna düşer: sahada tarih ve sorumlu uydurmak zorunda kalmazsınız.'
                 : 'For the rooms the network does not reach. What you write stays on this device until the connection returns, and the panel says so plainly until it has gone. Action sentences become candidates rather than actions, so nobody has to invent an owner and a date in a room with no signal.'}
@@ -167,7 +167,7 @@ export const CapturePanel: React.FC = () => {
       </header>
 
       {!supported && (
-        <p className="mb-2 flex items-start gap-1.5 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-[11px] text-rose-900">
+        <p className="mb-2 flex items-start gap-1.5 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-900">
           <TriangleAlert className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
           {tr
             ? 'Bu tarayıcı çevrimdışı saklama yapamıyor (gizli pencere ya da site verisi engelli olabilir). Burada toplantı yazmayın — tuşa bastığınızda hiçbir yere gitmez. Bağlantı varken normal toplantı kaydını kullanın.'
@@ -176,7 +176,7 @@ export const CapturePanel: React.FC = () => {
       )}
 
       {refused && (
-        <p className="mb-2 text-[11px] text-slate-600">
+        <p className="mb-2 text-xs text-slate-600">
           {tr
             ? 'Tutanak tutma yetkiniz yok, bu yüzden yazdığınız bir toplantı sunucuda reddedilirdi. Bu kutu size kayıt göstermekle sınırlı.'
             : 'You do not keep minutes, so a meeting written here would be refused by the server. This panel is read-only for you.'}
@@ -185,7 +185,7 @@ export const CapturePanel: React.FC = () => {
 
       {summary && (
         <p
-          className={`mb-2 rounded-lg px-3 py-2 text-[11px] ${
+          className={`mb-2 rounded-lg px-3 py-2 text-xs ${
             summary.failed > 0
               ? 'border border-amber-200 bg-amber-50 text-amber-900'
               : 'border border-emerald-200 bg-emerald-50 text-emerald-900'
@@ -275,7 +275,7 @@ export const CapturePanel: React.FC = () => {
 
           <div className="mt-2.5">
             <div className="mb-1 flex items-center justify-between gap-2">
-              <label className="text-[11px] font-semibold text-slate-600">
+              <label className="text-xs font-semibold text-slate-600">
                 {tr ? 'Görüşülenler' : 'What was discussed'}
               </label>
               <Select
@@ -292,12 +292,12 @@ export const CapturePanel: React.FC = () => {
               value={minute}
               onChange={(e) => setMinute(e.target.value)}
               rows={5}
-              className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs leading-relaxed text-slate-900 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
+              className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-sm leading-relaxed text-slate-900 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
             />
           </div>
 
           <div className="mt-2.5">
-            <label className="text-[11px] font-semibold text-slate-600">
+            <label className="text-xs font-semibold text-slate-600">
               {tr ? 'Aksiyon cümleleri — her satıra bir tane' : 'Action sentences, one per line'}
             </label>
             <textarea
@@ -309,9 +309,9 @@ export const CapturePanel: React.FC = () => {
                   ? 'Mühendislik raporu Cumartesiye kadar teslim edilecek'
                   : 'Engineering report to be delivered by Saturday'
               }
-              className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs leading-relaxed text-slate-900 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
+              className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-sm leading-relaxed text-slate-900 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
             />
-            <p className="mt-1 text-[11px] text-slate-500">
+            <p className="mt-1 text-xs text-slate-500">
               {tr
                 ? 'Bunlar aksiyon olmayacak. Kayda geçtiklerinde aday kuyruğuna düşer; sorumlu ve tarihi orada, bağlantı varken siz koyarsınız.'
                 : 'These do not become actions. They land in the triage queue, where you set the owner and the date once you have a connection.'}
@@ -320,7 +320,7 @@ export const CapturePanel: React.FC = () => {
 
           <div className="mt-2.5 flex flex-wrap items-center justify-end gap-2">
             {!authorityKnown && (
-              <span className="mr-auto text-[11px] text-amber-800">
+              <span className="mr-auto text-xs text-amber-800">
                 {tr
                   ? 'Yetkiniz şu an doğrulanamıyor — sunucuya ulaşılamıyor. Reddedilirse bunu ancak bağlantı gelince öğrenirsiniz.'
                   : 'Your authority cannot be checked while the server is unreachable. If it refuses, you will learn that when the connection returns.'}
@@ -346,7 +346,7 @@ export const CapturePanel: React.FC = () => {
           {held.map((c) => (
             <li
               key={c.id}
-              className="rounded-lg border border-amber-200 bg-amber-50/60 p-2 text-[11px]"
+              className="rounded-lg border border-amber-200 bg-amber-50/60 p-2 text-xs"
             >
               <div className="flex flex-wrap items-baseline gap-2">
                 <CloudOff className="h-3.5 w-3.5 shrink-0 text-amber-700" aria-hidden="true" />

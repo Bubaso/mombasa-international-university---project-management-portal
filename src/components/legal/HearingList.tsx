@@ -37,7 +37,7 @@ export const HearingList: React.FC<{ caseId: string; canWrite: boolean }> = ({
   return (
     <section className="rounded-xl border border-slate-200 bg-white shadow-xs">
       <header className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-4 py-3">
-        <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+        <h2 className="flex items-center gap-2 text-base font-semibold text-slate-900">
           <Gavel className="h-4 w-4 text-amber-600" aria-hidden="true" />
           {tr ? 'Duruşmalar' : 'Hearings'}
           {upcoming.length > 0 && (
@@ -80,13 +80,13 @@ export const HearingList: React.FC<{ caseId: string; canWrite: boolean }> = ({
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="font-mono text-xs font-semibold text-slate-900">
+                      <span className="font-mono text-sm font-semibold text-slate-900">
                         {hearing.scheduledFor.slice(0, 16).replace('T', ' ')}
                       </span>
                       <Pill>{hearingKindLabel(hearing.kind, language)}</Pill>
                       {future && days != null && (
                         <span
-                          className={`text-[11px] ${
+                          className={`text-xs ${
                             days <= 7 ? 'font-semibold text-rose-700' : 'text-slate-500'
                           }`}
                         >
@@ -95,7 +95,7 @@ export const HearingList: React.FC<{ caseId: string; canWrite: boolean }> = ({
                       )}
                     </div>
                     {hearing.bench && (
-                      <p className="mt-0.5 text-[11px] text-slate-500">
+                      <p className="mt-0.5 text-xs text-slate-500">
                         {tr ? 'Heyet: ' : 'Bench: '}
                         {hearing.bench}
                       </p>
@@ -108,12 +108,12 @@ export const HearingList: React.FC<{ caseId: string; canWrite: boolean }> = ({
 
                 {hearing.requiredDocuments.length > 0 && (
                   <div className="mt-1.5">
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                       {tr ? 'O gün elde olması gerekenler' : 'What has to be in hand'}
                     </p>
                     <ul className="mt-0.5 space-y-0.5">
                       {hearing.requiredDocuments.map((doc, i) => (
-                        <li key={i} className="flex items-start gap-1.5 text-[11px] text-slate-700">
+                        <li key={i} className="flex items-start gap-1.5 text-xs text-slate-700">
                           <CircleAlert
                             className="mt-0.5 h-2.5 w-2.5 shrink-0 text-slate-400"
                             aria-hidden="true"
@@ -126,7 +126,7 @@ export const HearingList: React.FC<{ caseId: string; canWrite: boolean }> = ({
                 )}
 
                 {(hearing.outcomeEn || hearing.outcomeTr) && (
-                  <p className="mt-1.5 text-[11px] leading-relaxed text-slate-700">
+                  <p className="mt-1.5 text-xs leading-relaxed text-slate-700">
                     <span className="font-medium">{tr ? 'Sonuç: ' : 'Outcome: '}</span>
                     {(tr ? hearing.outcomeTr : hearing.outcomeEn) ??
                       hearing.outcomeEn ??
@@ -232,11 +232,11 @@ const NewHearingForm: React.FC<{ caseId: string; onDone: () => void }> = ({ case
           value={required}
           onChange={(e) => setRequired(e.target.value)}
           rows={3}
-          className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+          className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-sm text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
         />
       </Field>
 
-      <p className="mt-2 text-[10px] leading-relaxed text-slate-500">
+      <p className="mt-2 text-xs leading-relaxed text-slate-500">
         {tr
           ? 'Bunlar serbest metin, belge bağı değil — çünkü yarısı henüz kimsede olmayan evraklar. Listeyi görmek, o evrakı aramaya başlamanın kendisidir.'
           : 'Free text rather than document links, because half of these are papers nobody has yet. Seeing the list is how the search for them starts.'}

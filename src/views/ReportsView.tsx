@@ -120,7 +120,7 @@ export const ReportsView: React.FC = () => {
             <h1 className="text-lg font-bold text-slate-900">
               {tr ? 'Derlenen raporlar' : 'Compiled reports'}
             </h1>
-            <p className="max-w-2xl text-xs text-slate-500">
+            <p className="max-w-2xl text-sm text-slate-500">
               {tr
                 ? 'Rapor yazılmaz, derlenir. Her satır hangi kütükten geldiğini taşır — çünkü elle aktarılan her rakam yanlış olabilecek bir rakamdır. Onay, rakamları dondurur: yayımlanan şey, birinin imzaladığı şeydir.'
                 : 'A report is compiled, not written. Each row names the register it came from, because every retyped figure is one that can be wrong. Approval freezes the figures: what is published is what somebody signed.'}
@@ -217,9 +217,7 @@ export const ReportsView: React.FC = () => {
               {tr ? 'Derle' : 'Compile it'}
             </ActionButton>
             {shape && (
-              <p className="flex-1 text-[11px] text-slate-500">
-                {tr ? shape.why.tr : shape.why.en}
-              </p>
+              <p className="flex-1 text-xs text-slate-500">{tr ? shape.why.tr : shape.why.en}</p>
             )}
           </div>
           <div className="sm:col-span-4">
@@ -236,7 +234,7 @@ export const ReportsView: React.FC = () => {
       <CurvePanel />
 
       {list.length === 0 ? (
-        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] text-slate-600 print:hidden">
+        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600 print:hidden">
           {tr
             ? 'Henüz derlenmiş rapor yok. Mütevelli dosyasının hazırlanması bugün saatler sürüyor; bu ekranın ölçütü on dakikanın altı.'
             : 'Nothing compiled yet. Preparing a board pack takes hours today; the measure for this screen is under ten minutes.'}
@@ -256,14 +254,14 @@ export const ReportsView: React.FC = () => {
                   }`}
                 >
                   <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="min-w-0 flex-1 truncate text-xs font-medium text-slate-900">
+                    <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-900">
                       {run.title}
                     </span>
                     <Pill className={STATE_LABEL[run.state].tone}>
                       {tr ? STATE_LABEL[run.state].tr : STATE_LABEL[run.state].en}
                     </Pill>
                   </div>
-                  <p className="mt-0.5 text-[11px] text-slate-500">
+                  <p className="mt-0.5 text-xs text-slate-500">
                     {kindName(run.kind, tr)} · {formatDate(run.preparedAt, language)} ·{' '}
                     {run.rows.length} {tr ? 'satır' : 'rows'}
                   </p>
@@ -278,7 +276,7 @@ export const ReportsView: React.FC = () => {
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div className="min-w-0">
                     <h2 className="text-base font-bold text-slate-900">{active.title}</h2>
-                    <p className="mt-0.5 text-[11px] text-slate-500">
+                    <p className="mt-0.5 text-xs text-slate-500">
                       {kindName(active.kind, tr)}
                       {active.periodFrom && active.periodTo && (
                         <>
@@ -290,7 +288,7 @@ export const ReportsView: React.FC = () => {
                       {active.meetingTitle && ` · ${active.meetingTitle}`}
                       {active.stakeholderName && ` · ${active.stakeholderName}`}
                     </p>
-                    <p className="mt-0.5 text-[11px] text-slate-500">
+                    <p className="mt-0.5 text-xs text-slate-500">
                       {tr ? 'Derleyen: ' : 'Compiled by '}
                       {active.preparedByName ?? '—'} · {formatDate(active.preparedAt, language)}
                       {active.approvedByName && (
@@ -309,7 +307,7 @@ export const ReportsView: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => window.print()}
-                      className="flex cursor-pointer items-center gap-1 text-[11px] text-slate-600 underline"
+                      className="flex cursor-pointer items-center gap-1 text-xs text-slate-600 underline"
                     >
                       <Printer className="h-3.5 w-3.5" aria-hidden="true" />
                       {tr ? 'Yazdır / PDF' : 'Print / PDF'}
@@ -317,7 +315,7 @@ export const ReportsView: React.FC = () => {
                     <button
                       type="button"
                       onClick={download}
-                      className="flex cursor-pointer items-center gap-1 text-[11px] text-slate-600 underline"
+                      className="flex cursor-pointer items-center gap-1 text-xs text-slate-600 underline"
                     >
                       <Download className="h-3.5 w-3.5" aria-hidden="true" />
                       {tr ? 'Markdown indir' : 'Download Markdown'}
@@ -326,7 +324,7 @@ export const ReportsView: React.FC = () => {
                 </div>
 
                 {/* The two limits, said rather than implied. */}
-                <p className="mt-2 text-[10px] text-slate-400 print:hidden">
+                <p className="mt-2 text-xs text-slate-400 print:hidden">
                   {tr
                     ? 'PDF tarayıcının yazdırma penceresinden çıkar — portalda PDF üreten bir şey yok. İndirme Markdown’dır; Word onu açar, ama bu bir .docx değil.'
                     : 'The PDF comes from the browser’s print dialogue — nothing here generates one. The download is Markdown, which Word opens; it is not a .docx.'}
@@ -341,7 +339,7 @@ export const ReportsView: React.FC = () => {
                       <FileCheck2 className="h-3.5 w-3.5" aria-hidden="true" />
                       {tr ? 'Onayla' : 'Approve'}
                     </ActionButton>
-                    <span className="text-[11px] text-slate-500">
+                    <span className="text-xs text-slate-500">
                       {tr
                         ? 'Onaydan sonra rakamlar değiştirilemez — yeniden derlemek gerekir.'
                         : 'After approval the figures cannot be changed; it has to be recompiled.'}
@@ -358,7 +356,7 @@ export const ReportsView: React.FC = () => {
                       {tr ? 'Yayımla' : 'Publish'}
                     </ActionButton>
                     {active.kind === 'donor_report' && (
-                      <span className="text-[11px] text-amber-800">
+                      <span className="text-xs text-amber-800">
                         {tr
                           ? 'Yayımlamak bu raporu bağışçının okuyabileceği hâle getirir — gizlilik seviyesi “public”e düşer.'
                           : 'Publishing makes this readable by the donor: its tier drops to public.'}
@@ -399,7 +397,7 @@ export const ReportsView: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setWithdrawing(true)}
-                        className="flex cursor-pointer items-center gap-1 text-[11px] text-slate-500 underline"
+                        className="flex cursor-pointer items-center gap-1 text-xs text-slate-500 underline"
                       >
                         <Undo2 className="h-3.5 w-3.5" aria-hidden="true" />
                         {tr ? 'geri çek' : 'withdraw it'}
@@ -411,7 +409,7 @@ export const ReportsView: React.FC = () => {
                 <WriteError error={approve.error} />
                 <WriteError error={publish.error} />
                 {active.withdrawnReason && (
-                  <p className="mt-2 text-[11px] text-rose-800">
+                  <p className="mt-2 text-xs text-rose-800">
                     {tr ? 'Geri çekildi: ' : 'Withdrawn: '}
                     {active.withdrawnReason}
                   </p>
@@ -420,7 +418,7 @@ export const ReportsView: React.FC = () => {
 
               {sectionsOf(active.rows).map((section) => (
                 <section key={section} className="mb-4">
-                  <h3 className="mb-1.5 text-[11px] font-semibold tracking-wider text-slate-500 uppercase">
+                  <h3 className="mb-1.5 text-xs font-semibold tracking-wider text-slate-500 uppercase">
                     {sectionName(section, tr)}
                   </h3>
                   <TableFrame
@@ -437,12 +435,12 @@ export const ReportsView: React.FC = () => {
                       .map((row, i) => (
                         <tr key={`${section}-${i}`}>
                           <Td>
-                            <span className="text-xs text-slate-900">
+                            <span className="text-sm text-slate-900">
                               {(tr ? row.labelTr : row.labelEn) ?? row.labelEn ?? '—'}
                             </span>
                           </Td>
                           <Td>
-                            <span className="font-mono text-[11px] text-slate-700">
+                            <span className="font-mono text-xs text-slate-700">
                               {formatValue(row, tr) || '—'}
                             </span>
                           </Td>
@@ -450,7 +448,7 @@ export const ReportsView: React.FC = () => {
                             {/* The measure: no material figure without its
                                 source. It travels with the row, including
                                 into the print and the download. */}
-                            <span className="font-mono text-[10px] text-slate-400">
+                            <span className="font-mono text-xs text-slate-400">
                               {row.sourceNote ?? '—'}
                             </span>
                           </Td>

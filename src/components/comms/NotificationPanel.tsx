@@ -68,10 +68,10 @@ export const NotificationPanel: React.FC = () => {
         <div className="flex items-start gap-2.5">
           <Bell className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" aria-hidden="true" />
           <div>
-            <h2 className="text-sm font-bold text-slate-900">
+            <h2 className="text-base font-bold text-slate-900">
               {tr ? 'Bildirimler' : 'Notifications'}
             </h2>
-            <p className="max-w-2xl text-[11px] text-slate-500">
+            <p className="max-w-2xl text-xs text-slate-500">
               {tr
                 ? 'Ekip Türkiye, Mombasa ve Nairobi arasında dağılmış; bir duruşma tarihinin kimsenin gözünden kaçmaması bu modülün var olma sebebi. Bu yüzden duruşma ve son tarih bildirimi portal içinde kapatılamaz.'
                 : 'The team is spread across Türkiye, Mombasa and Nairobi, and the stated reason this module exists is that a hearing date must not slip past anybody. So a hearing and a deadline cannot be switched off in the portal itself.'}
@@ -102,14 +102,14 @@ export const NotificationPanel: React.FC = () => {
           whether or not there is anything in the list. */}
       <div className="mb-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
         {health.data == null ? (
-          <p className="flex items-start gap-1.5 text-[11px] text-amber-900">
+          <p className="flex items-start gap-1.5 text-xs text-amber-900">
             <TriangleAlert className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
             {tr
               ? 'Bildirim taraması hiç çalışmamış. Gelen kutusu bu yüzden boş olabilir — bir şeyin olmaması değil, kimsenin bakmamış olması.'
               : 'The sweep has never run. That, rather than an absence of deadlines, may be why the inbox is empty.'}
           </p>
         ) : (
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px]">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
             <span className={health.data.looksStopped ? 'text-rose-800' : 'text-slate-600'}>
               {health.data.looksStopped ? (
                 <TriangleAlert className="mr-1 inline h-3 w-3" aria-hidden="true" />
@@ -156,12 +156,12 @@ export const NotificationPanel: React.FC = () => {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div>
-          <h3 className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold tracking-wider text-slate-500 uppercase">
+          <h3 className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold tracking-wider text-slate-500 uppercase">
             <Inbox className="h-3.5 w-3.5" aria-hidden="true" />
             {tr ? 'Gelen kutusu' : 'Inbox'}
           </h3>
           {rows.length === 0 ? (
-            <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] text-slate-600">
+            <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
               {tr
                 ? 'Bildirim yok. Bildirimler elle yazılmaz; tarama kütüklere bakar ve tarihlerin söylediğini bildirime çevirir. Yukarıdaki satır taramanın ne zaman çalıştığını söylüyor — boşluğun sebebi o.'
                 : 'No notifications. They are not typed by hand: one is raised when a hearing, a deadline or an announcement is recorded.'}
@@ -186,27 +186,27 @@ export const NotificationPanel: React.FC = () => {
                         {tr ? 'acil' : 'urgent'}
                       </Pill>
                     )}
-                    <span className="min-w-0 flex-1 text-xs text-slate-900">
+                    <span className="min-w-0 flex-1 text-sm text-slate-900">
                       {(tr ? n.titleTr : n.titleEn) ?? n.titleEn}
                     </span>
                     {n.readAt == null && (
                       <button
                         type="button"
                         onClick={() => markRead.mutate(n.deliveryId)}
-                        className="shrink-0 cursor-pointer text-[11px] text-indigo-700 underline"
+                        className="shrink-0 cursor-pointer text-xs text-indigo-700 underline"
                       >
                         {tr ? 'okundu' : 'mark read'}
                       </button>
                     )}
                   </div>
-                  {n.body && <p className="mt-0.5 text-[11px] text-slate-600">{n.body}</p>}
-                  <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[10px] text-slate-400">
+                  {n.body && <p className="mt-0.5 text-xs text-slate-600">{n.body}</p>}
+                  <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-slate-400">
                     <span className="font-mono">{formatDate(n.raisedAt, language)}</span>
                     {n.raisedBy && <span>{n.raisedBy}</span>}
                   </div>
                   {/* The column that keeps this honest. */}
                   {n.awaitingAProvider.length > 0 && (
-                    <p className="mt-1 flex items-start gap-1 text-[10px] text-amber-800">
+                    <p className="mt-1 flex items-start gap-1 text-xs text-amber-800">
                       <TriangleAlert className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
                       {tr
                         ? `${n.awaitingAProvider.map((m) => mediumName(m, tr)).join(', ')} ile gönderilmedi — bu proje için sağlayıcı bağlı değil.`
@@ -221,7 +221,7 @@ export const NotificationPanel: React.FC = () => {
         </div>
 
         <div>
-          <h3 className="mb-1.5 text-[11px] font-semibold tracking-wider text-slate-500 uppercase">
+          <h3 className="mb-1.5 text-xs font-semibold tracking-wider text-slate-500 uppercase">
             {tr ? 'Nasıl ulaşılsın' : 'How you are reached'}
           </h3>
           <div className="overflow-x-auto rounded-lg border border-slate-200">
@@ -231,25 +231,25 @@ export const NotificationPanel: React.FC = () => {
             >
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-2 py-1.5 text-[10px] font-semibold tracking-wider text-slate-500 uppercase">
+                  <th className="px-2 py-1.5 text-xs font-semibold tracking-wider text-slate-500 uppercase">
                     {tr ? 'Konu' : 'Topic'}
                   </th>
                   {MEDIA.map((m) => (
                     <th
                       key={m.key}
-                      className="px-2 py-1.5 text-[10px] font-semibold tracking-wider text-slate-500 uppercase"
+                      className="px-2 py-1.5 text-xs font-semibold tracking-wider text-slate-500 uppercase"
                     >
                       {tr ? m.tr : m.en}
                       {/* Three states, not two. An unread list must not
                           render as "everything delivers": that is the same
                           silent reassurance this column exists to remove. */}
                       {media.data == null ? (
-                        <span className="block text-[9px] font-normal text-slate-500 normal-case">
+                        <span className="block text-xs font-normal text-slate-500 normal-case">
                           {tr ? 'sağlayıcı bilinmiyor' : 'provider unknown'}
                         </span>
                       ) : (
                         !media.data.withAProvider.includes(m.key) && (
-                          <span className="block text-[9px] font-normal text-amber-700 normal-case">
+                          <span className="block text-xs font-normal text-amber-700 normal-case">
                             {tr ? 'sağlayıcı yok' : 'no provider'}
                           </span>
                         )
@@ -261,10 +261,10 @@ export const NotificationPanel: React.FC = () => {
               <tbody className="divide-y divide-slate-100">
                 {TOPICS.map((t) => (
                   <tr key={t.key}>
-                    <td className="px-2 py-1.5 text-[11px] text-slate-800">
+                    <td className="px-2 py-1.5 text-xs text-slate-800">
                       {tr ? t.tr : t.en}
                       {t.critical && (
-                        <span className="ml-1 text-[10px] text-rose-700">
+                        <span className="ml-1 text-xs text-rose-700">
                           {tr ? '(kapatılamaz)' : '(cannot be off)'}
                         </span>
                       )}
@@ -281,7 +281,7 @@ export const NotificationPanel: React.FC = () => {
                               setPreference.mutate({ topic: t.key, medium: m.key, enabled: !on })
                             }
                             aria-label={`${topicName(t.key, tr)} — ${mediumName(m.key, tr)}`}
-                            className={`cursor-pointer rounded border px-1.5 py-0.5 text-[10px] disabled:cursor-not-allowed ${
+                            className={`cursor-pointer rounded border px-1.5 py-0.5 text-xs disabled:cursor-not-allowed ${
                               on
                                 ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
                                 : 'border-slate-200 bg-white text-slate-400'
@@ -302,7 +302,7 @@ export const NotificationPanel: React.FC = () => {
             </table>
           </div>
           <WriteError error={setPreference.error} />
-          <p className="mt-1 text-[10px] text-slate-500">
+          <p className="mt-1 text-xs text-slate-500">
             {tr
               ? 'Bu tercihler yalnızca sizindir — yönetici dahil kimse okuyamaz. Kritik olanların açık kalmasını denetim değil, veritabanı garanti ediyor.'
               : 'These preferences are yours alone; nobody, an administrator included, can read them. What keeps the critical ones on is the database, not supervision.'}

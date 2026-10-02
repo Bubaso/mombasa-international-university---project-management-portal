@@ -64,7 +64,7 @@ export const MeetingsView: React.FC = () => {
             <h1 className="text-lg font-bold text-slate-900">
               {tr ? 'Toplantılar ve Kararlar' : 'Meetings & Decisions'}
             </h1>
-            <p className="text-xs text-slate-500">
+            <p className="text-sm text-slate-500">
               {tr
                 ? 'Toplantı notunu arşiv olmaktan çıkarıp taahhüt üreten bir mekanizmaya çevirmek için.'
                 : 'To stop a meeting note being an archive and make it something that produces commitments.'}
@@ -110,7 +110,7 @@ export const MeetingsView: React.FC = () => {
 
       <section className="rounded-xl border border-slate-200 bg-white shadow-xs">
         <header className="border-b border-slate-200 px-4 py-3">
-          <h2 className="text-sm font-semibold text-slate-900">
+          <h2 className="text-base font-semibold text-slate-900">
             {tr ? 'Kayıtlı toplantılar' : 'Recorded meetings'}
           </h2>
         </header>
@@ -136,7 +136,7 @@ export const MeetingsView: React.FC = () => {
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="text-xs font-semibold text-slate-900">
+                        <span className="text-sm font-semibold text-slate-900">
                           {/* The record is bilingual where the migration
                               found both minutes; the reader's own language
                               wins, and the English title is the fallback
@@ -158,7 +158,7 @@ export const MeetingsView: React.FC = () => {
                           </Pill>
                         )}
                       </div>
-                      <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-slate-500">
+                      <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-slate-500">
                         <span className="font-mono">
                           {meeting.heldAt.slice(0, 16).replace('T', ' ')}
                         </span>
@@ -176,7 +176,7 @@ export const MeetingsView: React.FC = () => {
                         )}
                       </div>
                     </div>
-                    <span className="shrink-0 text-[11px] text-slate-400">
+                    <span className="shrink-0 text-xs text-slate-400">
                       {meetingStatusLabel(meeting.status, language)}
                     </span>
                   </button>
@@ -294,7 +294,7 @@ const NewMeetingForm: React.FC<{
         </Field>
       </div>
 
-      <p className="mt-2 flex items-start gap-1.5 text-[11px] leading-relaxed text-slate-500">
+      <p className="mt-2 flex items-start gap-1.5 text-xs leading-relaxed text-slate-500">
         <Lock className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
         <span>
           {tr

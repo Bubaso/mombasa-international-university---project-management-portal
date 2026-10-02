@@ -134,10 +134,10 @@ export const MatchingPanel: React.FC = () => {
         <div className="flex min-w-0 items-start gap-2.5">
           <ArrowLeftRight className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" aria-hidden="true" />
           <div className="min-w-0">
-            <h2 className="text-sm font-semibold text-slate-900">
+            <h2 className="text-base font-semibold text-slate-900">
               {tr ? 'Ödeme planı ↔ hakediş eşleştirmesi' : 'Payment schedule ↔ valuation match'}
             </h2>
-            <p className="max-w-2xl text-[11px] leading-relaxed text-slate-500">
+            <p className="max-w-2xl text-xs leading-relaxed text-slate-500">
               {tr
                 ? 'Hiçbiri engellenmiyor — tadil de ortak girişim de gerçek şeyler, ve kaydı reddetmek doğru rakamı birinin tablosuna taşır. Engellenmeyen şey, iki kaydın sessizce ayrı şey söylemesi.'
                 : 'None of this is blocked — a variation is a real thing and so is a joint venture, and refusing the entry only moves the true figure into a spreadsheet. What is not allowed is the two registers disagreeing quietly.'}
@@ -150,24 +150,24 @@ export const MatchingPanel: React.FC = () => {
         <QueryStatus queries={[matching, unscheduled, health]} />
 
         {nothingToMatch ? (
-          <p className="text-[11px] text-slate-500">
+          <p className="text-xs text-slate-500">
             {tr
               ? 'Eşleştirilecek bir şey yok: ne ödeme planı taksiti ne de ölçülmüş bir hakediş kayıtlı. Bu "her şey yerinde" demek değil — henüz karşılaştırılacak iki kayıt yok.'
               : 'There is nothing to match: no schedule instalment and no measured valuation is recorded. That is not "all in order" — there are not yet two registers to compare.'}
           </p>
         ) : lines.length === 0 ? (
-          <p className="text-[11px] text-slate-500">
+          <p className="text-xs text-slate-500">
             {tr
               ? 'İki kayıt arasında ölçülebilir bir uyuşmazlık yok. Bu, her taksitin ölçülmüş bir işe bağlı olduğu anlamına gelmez — planlanmış bir taksitin arkasında henüz hakediş olmaması normaldir.'
               : 'No measurable disagreement between the two registers. That does not mean every instalment cites measured work — a planned instalment with no valuation yet is the normal state of a payment plan.'}
           </p>
         ) : (
           <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
-            <p className="flex items-center gap-1.5 text-xs font-semibold text-amber-900">
+            <p className="flex items-center gap-1.5 text-sm font-semibold text-amber-900">
               <ScaleIcon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
               {tr ? 'İki kaydın ayrıldığı yerler' : 'Where the two registers part company'}
             </p>
-            <ul className="mt-1.5 space-y-0.5 text-[11px] text-amber-900">
+            <ul className="mt-1.5 space-y-0.5 text-xs text-amber-900">
               {lines.map((line) => (
                 <li key={line}>· {line}</li>
               ))}
@@ -177,11 +177,11 @@ export const MatchingPanel: React.FC = () => {
 
         {/* Measured work with no instalment: the half that was missing. */}
         <div>
-          <p className="mb-1.5 text-[11px] font-semibold tracking-wider text-slate-600 uppercase">
+          <p className="mb-1.5 text-xs font-semibold tracking-wider text-slate-600 uppercase">
             {tr ? 'Ödemesi planlanmamış hakediş' : 'Measured work with no instalment'}
           </p>
           {owed.length === 0 ? (
-            <p className="text-[11px] text-slate-500">
+            <p className="text-xs text-slate-500">
               {nothingToMatch
                 ? tr
                   ? 'Kayıtlı hakediş yok.'
@@ -198,13 +198,13 @@ export const MatchingPanel: React.FC = () => {
               {owed.map((row) => (
                 <li key={row.valuationId} className="flex flex-wrap items-baseline gap-2 py-1.5">
                   <span className="min-w-0 flex-1">
-                    <span className="text-xs text-slate-900">
+                    <span className="text-sm text-slate-900">
                       {row.contractorName ?? (tr ? 'firma kayıtlı değil' : 'no firm recorded')}
                       {row.blockCode != null && (
                         <span className="text-slate-500"> · {row.blockCode}</span>
                       )}
                     </span>
-                    <span className="block text-[11px] text-slate-500">
+                    <span className="block text-xs text-slate-500">
                       {formatDate(row.periodStart, language)} –{' '}
                       {formatDate(row.periodEnd, language)}
                       {row.certified ? (
@@ -222,14 +222,14 @@ export const MatchingPanel: React.FC = () => {
                       )}
                     </span>
                     {row.theOnlyLiveContractForThatFirm == null && (
-                      <span className="block text-[11px] text-slate-500">
+                      <span className="block text-xs text-slate-500">
                         {tr
                           ? 'Hangi sözleşmeye ait olduğu söylenemiyor — o firmanın tek bir yürürlükteki sözleşmesi yok.'
                           : 'Which contract this belongs to cannot be said — that firm has no single live contract.'}
                       </span>
                     )}
                   </span>
-                  <span className="shrink-0 font-mono text-[11px] text-slate-700">
+                  <span className="shrink-0 font-mono text-xs text-slate-700">
                     {money(row.amount, row.currency)}
                   </span>
                 </li>
@@ -240,11 +240,11 @@ export const MatchingPanel: React.FC = () => {
 
         {/* Instalments something is wrong with. */}
         <div className="border-t border-slate-200 pt-2">
-          <p className="mb-1.5 text-[11px] font-semibold tracking-wider text-slate-600 uppercase">
+          <p className="mb-1.5 text-xs font-semibold tracking-wider text-slate-600 uppercase">
             {tr ? 'Hakedişiyle ayrışan taksitler' : 'Instalments that part from their valuation'}
           </p>
           {flagged.length === 0 ? (
-            <p className="flex items-center gap-1.5 text-[11px] text-slate-500">
+            <p className="flex items-center gap-1.5 text-xs text-slate-500">
               <SearchX className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
               {nothingToMatch
                 ? tr
@@ -266,9 +266,9 @@ export const MatchingPanel: React.FC = () => {
                 return (
                   <li key={row.contractMilestoneId} className="py-1.5">
                     <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                      <span className="font-mono text-[11px] text-slate-400">{row.sequence}</span>
-                      <span className="text-xs text-slate-900">{row.titleEn}</span>
-                      <span className="text-[11px] text-slate-500">
+                      <span className="font-mono text-xs text-slate-400">{row.sequence}</span>
+                      <span className="text-sm text-slate-900">{row.titleEn}</span>
+                      <span className="text-xs text-slate-500">
                         {row.referenceNo ?? row.counterpartyName}
                       </span>
                       {row.claimsACertificationTheWorksDoNot && (
@@ -285,7 +285,7 @@ export const MatchingPanel: React.FC = () => {
                       )}
                     </div>
                     <p
-                      className={`text-[11px] ${verdict.grave ? 'font-medium text-rose-700' : 'text-slate-500'}`}
+                      className={`text-xs ${verdict.grave ? 'font-medium text-rose-700' : 'text-slate-500'}`}
                     >
                       {money(row.amount, row.currency)}
                       {row.valuationAmount != null && (

@@ -141,8 +141,8 @@ const TaskGroup: React.FC<{
   return (
     <div>
       <div className="mb-1.5 flex flex-wrap items-baseline gap-2">
-        <h3 className="text-xs font-semibold text-slate-800">{heading}</h3>
-        {note && <p className="text-[11px] text-slate-500">{note}</p>}
+        <h3 className="text-sm font-semibold text-slate-800">{heading}</h3>
+        {note && <p className="text-xs text-slate-500">{note}</p>}
       </div>
       <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white">
         {tasks.map((task) => (
@@ -154,7 +154,7 @@ const TaskGroup: React.FC<{
             >
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="text-xs font-medium text-slate-900">
+                  <span className="text-sm font-medium text-slate-900">
                     <Bilingual
                       table="site_tasks"
                       id={task.id}
@@ -170,7 +170,7 @@ const TaskGroup: React.FC<{
                     <Pill>{workKindLabel(task.kind, language)}</Pill>
                   )}
                 </div>
-                <div className="mt-0.5 flex flex-wrap items-center gap-x-3 text-[11px] text-slate-500">
+                <div className="mt-0.5 flex flex-wrap items-center gap-x-3 text-xs text-slate-500">
                   {task.workPackageTitle && <span>{task.workPackageTitle}</span>}
                   {task.plannedEnd && <span>{formatDate(task.plannedEnd, language)}</span>}
                   {task.ownerName && <span>{task.ownerName}</span>}
@@ -178,7 +178,7 @@ const TaskGroup: React.FC<{
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 <span
-                  className={`font-mono text-xs ${
+                  className={`font-mono text-sm ${
                     task.percentComplete == null ? 'text-amber-700' : 'text-slate-800'
                   }`}
                 >
@@ -209,7 +209,7 @@ const TaskDetail: React.FC<{ task: SiteTask; canReport: boolean }> = ({ task, ca
   return (
     <div className="space-y-3 border-t border-slate-100 bg-slate-50/60 px-3 py-3">
       {task.kind === 'preservation' && (task.legalBasisEn ?? task.legalBasisTr) && (
-        <p className="rounded-lg border border-orange-200 bg-orange-50 px-2.5 py-1.5 text-[11px] leading-relaxed text-orange-900">
+        <p className="rounded-lg border border-orange-200 bg-orange-50 px-2.5 py-1.5 text-xs leading-relaxed text-orange-900">
           <span className="font-semibold">{tr ? 'Hukukî dayanak: ' : 'Legal basis: '}</span>
           {tr ? (task.legalBasisTr ?? task.legalBasisEn) : task.legalBasisEn}
         </p>
@@ -218,7 +218,7 @@ const TaskDetail: React.FC<{ task: SiteTask; canReport: boolean }> = ({ task, ca
       <QueryStatus queries={[reports]} />
 
       {(reports.data ?? []).length === 0 ? (
-        <p className="text-[11px] text-amber-800">
+        <p className="text-xs text-amber-800">
           {tr
             ? 'Hiç rapor yok. Bu görev hakkında kimse bir şey söylememiş — sıfırda olduğu söylenmemiş.'
             : 'No reports. Nobody has said anything about this task — not that it is at nought.'}
@@ -230,7 +230,7 @@ const TaskDetail: React.FC<{ task: SiteTask; canReport: boolean }> = ({ task, ca
             return (
               <li
                 key={report.id}
-                className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px]"
+                className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs"
               >
                 <div className="flex flex-wrap items-center gap-x-2.5">
                   <span className="font-mono font-semibold text-slate-900">
@@ -329,7 +329,7 @@ const ReportForm: React.FC<{ taskId: string; onDone: () => void }> = ({ taskId, 
       </Field>
 
       {(documents.data ?? []).length === 0 && (
-        <p className="text-[11px] text-amber-800">
+        <p className="text-xs text-amber-800">
           {tr
             ? 'Kasada belge yok. Fotoğrafı veya raporu önce Belge Kasası’na yükleyin — kanıt oraya, özetiyle birlikte konur.'
             : 'The vault is empty. Upload the photograph or the report there first — evidence belongs in the vault, with a digest against it.'}
@@ -407,7 +407,7 @@ const NewTaskForm: React.FC<{
         }}
         className="space-y-2 rounded-lg border border-slate-200 bg-white p-2.5"
       >
-        <p className="text-[11px] text-slate-600">
+        <p className="text-xs text-slate-600">
           {tr
             ? 'Bu blokta iş paketi yok; önce bir tane açın.'
             : 'This block has no work package yet; open one first.'}

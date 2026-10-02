@@ -94,7 +94,7 @@ export const ScenarioList: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
       {/* Why there is no combined figure. Said once, at the top, because a
           missing number nobody explains reads as an oversight. */}
       <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-        <p className="flex items-start gap-2 text-[11px] leading-relaxed text-slate-600">
+        <p className="flex items-start gap-2 text-xs leading-relaxed text-slate-600">
           <ShieldQuestion className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
           <span>
             {tr
@@ -155,7 +155,7 @@ export const ScenarioList: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
             />
           </Field>
           <div className="sm:col-span-3">
-            <p className="mb-1 text-[11px] text-slate-500">
+            <p className="mb-1 text-xs text-slate-500">
               {tr
                 ? 'Birlikte gerçekleşebileceğini düşündüğünüz riskleri seçin. İki riskten azı senaryo değildir — kayıt bunu söyler, engellemez.'
                 : 'Pick the risks you think could land together. Fewer than two is not a scenario — the register says so rather than refusing it.'}
@@ -172,7 +172,7 @@ export const ScenarioList: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
                         : [...current, risk.id],
                     )
                   }
-                  className={`cursor-pointer rounded-lg border px-2 py-1 text-[11px] ${
+                  className={`cursor-pointer rounded-lg border px-2 py-1 text-xs ${
                     picked.includes(risk.id)
                       ? 'border-amber-300 bg-amber-50 text-amber-900'
                       : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
@@ -195,7 +195,7 @@ export const ScenarioList: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
       <QueryStatus queries={[scenarios, overlaps]} />
 
       {rows.length === 0 ? (
-        <p className="text-[11px] text-slate-500">
+        <p className="text-xs text-slate-500">
           {tr
             ? 'Kayıtlı senaryo yok. Bu, risklerin birlikte gerçekleşmeyeceği anlamına gelmez — kimsenin hangilerinin birlikte geldiğini yazmadığı anlamına gelir.'
             : 'No scenario is recorded. That does not mean the risks will not land together — it means nobody has written down which ones do.'}
@@ -212,7 +212,7 @@ export const ScenarioList: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
               >
                 <div className="flex flex-wrap items-center gap-2">
                   <Layers className="h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />
-                  <span className="text-xs font-semibold text-slate-900">
+                  <span className="text-sm font-semibold text-slate-900">
                     <Bilingual
                       table="risk_scenarios"
                       id={scenario.scenarioId}
@@ -234,13 +234,13 @@ export const ScenarioList: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
                     </Pill>
                   )}
                   {scenario.horizonOn != null && (
-                    <span className="text-[11px] text-slate-500">
+                    <span className="text-xs text-slate-500">
                       {formatDate(scenario.horizonOn, language)}
                     </span>
                   )}
                 </div>
 
-                <p className="mt-1 text-[11px] leading-relaxed text-slate-600">
+                <p className="mt-1 text-xs leading-relaxed text-slate-600">
                   <Bilingual
                     table="risk_scenarios"
                     id={scenario.scenarioId}
@@ -250,7 +250,7 @@ export const ScenarioList: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
                   />
                 </p>
 
-                <p className="mt-1.5 font-mono text-[11px] text-slate-700">
+                <p className="mt-1.5 font-mono text-xs text-slate-700">
                   {tr ? 'kümedeki en yüksek gerçek skor ' : 'highest real score in the set '}
                   {scenario.worstRecordedScore ?? '—'}
                   {scenario.recordedScores.length > 0 && (
@@ -259,7 +259,7 @@ export const ScenarioList: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
                 </p>
 
                 {scenario.membersRescoredUpwardLately > 0 && (
-                  <p className="mt-0.5 flex items-center gap-1.5 text-[11px] text-amber-800">
+                  <p className="mt-0.5 flex items-center gap-1.5 text-xs text-amber-800">
                     <TrendingUp className="h-3 w-3 shrink-0" aria-hidden="true" />
                     {tr
                       ? `${scenario.membersRescoredUpwardLately} risk son 180 günde yukarı yeniden puanlandı — duyarlılığın ölçülebilir yarısı bu`
@@ -269,11 +269,11 @@ export const ScenarioList: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
 
                 {/* The analysis. */}
                 <div className="mt-2 border-t border-slate-200 pt-2">
-                  <p className="mb-1 text-[11px] font-semibold tracking-wider text-slate-600 uppercase">
+                  <p className="mb-1 text-xs font-semibold tracking-wider text-slate-600 uppercase">
                     {tr ? 'Bu riskleri birlikte getiren şeyler' : 'What brings these together'}
                   </p>
                   {list.length === 0 ? (
-                    <p className="text-[11px] text-slate-500">
+                    <p className="text-xs text-slate-500">
                       {tr
                         ? 'Kayıtlı bir ortak bağ yok. Bu, bağımsız oldukları anlamına gelmez — portalda kayıtlı bir ortak bağ bulunmadığı anlamına gelir.'
                         : 'No shared link is recorded. That does not mean they are independent — it means no shared link is recorded in the portal.'}
@@ -283,7 +283,7 @@ export const ScenarioList: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
                       {list.map((overlap) => (
                         <li
                           key={`${overlap.kind}-${overlap.targetId ?? overlap.targetLabel ?? ''}`}
-                          className="flex items-start gap-1.5 text-[11px] text-slate-700"
+                          className="flex items-start gap-1.5 text-xs text-slate-700"
                         >
                           <Link2
                             className="mt-0.5 h-3 w-3 shrink-0 text-indigo-600"
@@ -306,12 +306,12 @@ export const ScenarioList: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
 
                 {gaps.length > 0 && (
                   <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5">
-                    <p className="text-[11px] font-semibold text-amber-900">
+                    <p className="text-xs font-semibold text-amber-900">
                       {tr
                         ? 'Bu kümenin kendisi hakkında bilmedikleri'
                         : 'What the set does not know about itself'}
                     </p>
-                    <ul className="mt-0.5 space-y-0.5 text-[11px] text-amber-900">
+                    <ul className="mt-0.5 space-y-0.5 text-xs text-amber-900">
                       {gaps.map((line) => (
                         <li key={line}>· {line}</li>
                       ))}

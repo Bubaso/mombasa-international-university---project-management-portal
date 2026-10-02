@@ -109,10 +109,10 @@ export const CommentsAndVersions: React.FC<{ documentId: string }> = ({ document
         <header className="mb-1.5 flex items-start gap-2">
           <FileDiff className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" aria-hidden="true" />
           <div className="min-w-0">
-            <h4 className="text-xs font-semibold text-slate-900">
+            <h4 className="text-sm font-semibold text-slate-900">
               {tr ? 'Sürümler arasındaki adım' : 'The step from one version to the next'}
             </h4>
-            <p className="text-[11px] leading-relaxed text-slate-500">
+            <p className="text-xs leading-relaxed text-slate-500">
               {tr
                 ? 'Portal çizimin içini okumuyor, bu yüzden "değişen alanlar" diye bir katman yok — olsa uydurma olurdu. Burada duran şey kayıtlı olan: revizyonu çıkaranın yazdığı değişiklik notu, ve sunucunun kendi hesapladığı iki digest.'
                 : 'The portal does not read inside a drawing, so there is no "changed areas" overlay — it would be invented. What is here is what was recorded: the change note whoever issued the revision wrote, and the two digests the server computed itself.'}
@@ -120,7 +120,7 @@ export const CommentsAndVersions: React.FC<{ documentId: string }> = ({ document
           </div>
         </header>
         {stepRows.length === 0 ? (
-          <p className="text-[11px] text-slate-500">
+          <p className="text-xs text-slate-500">
             {tr
               ? 'Karşılaştırılacak ikinci bir sürüm yok.'
               : 'There is no second version to compare against.'}
@@ -134,7 +134,7 @@ export const CommentsAndVersions: React.FC<{ documentId: string }> = ({ document
                   key={step.laterVersionId}
                   className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2"
                 >
-                  <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                  <div className="flex flex-wrap items-center gap-1.5 text-xs">
                     <span className="font-mono text-slate-700">
                       v{step.earlierVersionNo}
                       {step.earlierRevisionLabel != null && ` ${step.earlierRevisionLabel}`} → v
@@ -147,11 +147,11 @@ export const CommentsAndVersions: React.FC<{ documentId: string }> = ({ document
                     )}
                   </div>
                   <p
-                    className={`text-[11px] ${bytes.grave ? 'font-medium text-amber-800' : 'text-slate-500'}`}
+                    className={`text-xs ${bytes.grave ? 'font-medium text-amber-800' : 'text-slate-500'}`}
                   >
                     {bytes.text}
                   </p>
-                  <p className="text-[11px] text-slate-700">
+                  <p className="text-xs text-slate-700">
                     {step.changeNotDescribed ? (
                       <span className="text-amber-800">
                         {tr ? 'Neyin değiştiği kayıtlı değil' : 'Nobody wrote down what changed'}
@@ -174,10 +174,10 @@ export const CommentsAndVersions: React.FC<{ documentId: string }> = ({ document
         <header className="mb-1.5 flex items-start gap-2">
           <MessageSquare className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" aria-hidden="true" />
           <div className="min-w-0">
-            <h4 className="text-xs font-semibold text-slate-900">
+            <h4 className="text-sm font-semibold text-slate-900">
               {tr ? 'Belge üzerine yorumlar' : 'Comments on the document'}
             </h4>
-            <p className="text-[11px] leading-relaxed text-slate-500">
+            <p className="text-xs leading-relaxed text-slate-500">
               {tr
                 ? 'Yorum bir sürüme ve bir sayfaya bağlanır; metin içinde vurgulama yok, çünkü portal metnin nerede olduğunu bilmiyor ve çizilecek dikdörtgen görüntüleyici değişince yerinden kayar. Alıntı, yorumu yazanın kendi aktardığı metindir — portal bunu belgede doğrulamıyor.'
                 : 'A comment is anchored to a version and a page. There is no highlight inside the text, because the portal does not know where the text is and a rectangle would move with the viewer. The excerpt is the commenter’s own transcription — the portal does not verify it against the document.'}
@@ -216,7 +216,7 @@ export const CommentsAndVersions: React.FC<{ documentId: string }> = ({ document
               <select
                 value={versionId === '' ? (versionRows[0]?.id ?? '') : versionId}
                 onChange={(event) => setVersionId(event.target.value)}
-                className="w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs text-slate-900"
+                className="w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900"
               >
                 {versionRows.map((version) => (
                   <option key={version.id} value={version.id}>
@@ -249,7 +249,7 @@ export const CommentsAndVersions: React.FC<{ documentId: string }> = ({ document
         )}
 
         {commentRows.length === 0 ? (
-          <p className="text-[11px] text-slate-500">
+          <p className="text-xs text-slate-500">
             {tr ? 'Bu belgeye yorum yazılmamış.' : 'No comment has been written on this document.'}
           </p>
         ) : (
@@ -259,7 +259,7 @@ export const CommentsAndVersions: React.FC<{ documentId: string }> = ({ document
                 key={comment.commentId}
                 className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2"
               >
-                <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                <div className="flex flex-wrap items-center gap-1.5 text-xs">
                   <span className="font-mono text-slate-600">{anchorWords(comment, tr)}</span>
                   <span className="text-slate-500">{when(comment.createdAt)}</span>
                   {comment.resolvedAt != null && (
@@ -270,7 +270,7 @@ export const CommentsAndVersions: React.FC<{ documentId: string }> = ({ document
                 </div>
 
                 {comment.quotedExcerpt != null && (
-                  <p className="mt-1 flex items-start gap-1.5 border-l-2 border-slate-300 pl-2 text-[11px] text-slate-700">
+                  <p className="mt-1 flex items-start gap-1.5 border-l-2 border-slate-300 pl-2 text-xs text-slate-700">
                     <Quote className="mt-0.5 h-3 w-3 shrink-0 text-slate-400" aria-hidden="true" />
                     <span>
                       {comment.quotedExcerpt}
@@ -283,12 +283,12 @@ export const CommentsAndVersions: React.FC<{ documentId: string }> = ({ document
                   </p>
                 )}
 
-                <p className="mt-0.5 text-xs text-slate-800">
+                <p className="mt-0.5 text-sm text-slate-800">
                   {(tr ? comment.bodyTr : comment.bodyEn) ?? comment.bodyEn ?? ''}
                 </p>
 
                 {comment.writtenAgainstASupersededVersion && (
-                  <p className="mt-0.5 flex items-start gap-1.5 text-[11px] text-amber-900">
+                  <p className="mt-0.5 flex items-start gap-1.5 text-xs text-amber-900">
                     <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
                     <span>
                       {tr
@@ -299,7 +299,7 @@ export const CommentsAndVersions: React.FC<{ documentId: string }> = ({ document
                 )}
 
                 {comment.portalHasNotReadTheFile && (
-                  <p className="mt-0.5 text-[11px] text-slate-500">
+                  <p className="mt-0.5 text-xs text-slate-500">
                     {tr
                       ? 'Sunucu bu sürümün dosyasını hiç okumadı, bu yüzden yorumun hangi baytlar hakkında olduğu teyit edilemiyor.'
                       : 'The server has never read this version’s file, so which bytes the comment is about cannot be confirmed.'}
@@ -307,7 +307,7 @@ export const CommentsAndVersions: React.FC<{ documentId: string }> = ({ document
                 )}
 
                 {comment.resolutionNote != null && (
-                  <p className="mt-0.5 text-[11px] text-slate-600">
+                  <p className="mt-0.5 text-xs text-slate-600">
                     {tr ? 'Kapatma gerekçesi: ' : 'Closed because: '}
                     {comment.resolutionNote}
                   </p>

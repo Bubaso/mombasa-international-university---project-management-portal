@@ -35,7 +35,7 @@ export const AttendeeList: React.FC<{ meetingId: string; canKeep: boolean }> = (
   return (
     <section className="rounded-xl border border-slate-200 bg-white shadow-xs">
       <header className="flex items-center justify-between gap-2 border-b border-slate-200 px-4 py-3">
-        <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+        <h2 className="flex items-center gap-2 text-base font-semibold text-slate-900">
           <Users className="h-4 w-4 text-amber-600" aria-hidden="true" />
           {tr ? 'Katılımcılar' : 'Who was there'}
           <Pill>{rows.length}</Pill>
@@ -98,7 +98,7 @@ export const AttendeeList: React.FC<{ meetingId: string; canKeep: boolean }> = (
         )}
 
         {rows.length === 0 ? (
-          <p className="text-[11px] text-slate-500">
+          <p className="text-xs text-slate-500">
             {tr ? 'Katılımcı kaydedilmemiş.' : 'Nobody recorded.'}
           </p>
         ) : (
@@ -108,14 +108,14 @@ export const AttendeeList: React.FC<{ meetingId: string; canKeep: boolean }> = (
                 key={attendee.id}
                 className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 py-1 pl-2.5 pr-1"
               >
-                <span className="text-[11px] text-slate-800">
+                <span className="text-xs text-slate-800">
                   {attendee.name ?? (tr ? 'bilinmiyor' : 'unknown')}
                 </span>
-                <span className="text-[10px] text-slate-400">
+                <span className="text-xs text-slate-400">
                   {attendanceRoleLabel(attendee.roleAtMeeting, language)}
                 </span>
                 {attendee.stakeholderId && (
-                  <span className="text-[10px] text-teal-700">{tr ? 'dış' : 'external'}</span>
+                  <span className="text-xs text-teal-700">{tr ? 'dış' : 'external'}</span>
                 )}
                 {canKeep && (
                   <button

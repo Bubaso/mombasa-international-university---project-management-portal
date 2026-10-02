@@ -52,7 +52,7 @@ export const DataFreshness: React.FC<{ queries: Freshenable[]; className?: strin
   const fetching = queries.some((q) => q.isFetching);
 
   return (
-    <div className={`flex items-center gap-1.5 text-[11px] text-slate-500 ${className}`}>
+    <div className={`flex items-center gap-1.5 text-xs text-slate-500 ${className}`}>
       <Clock className="h-3 w-3 shrink-0" aria-hidden="true" />
       <span>
         {tr ? 'Son güncelleme: ' : 'Last updated '}

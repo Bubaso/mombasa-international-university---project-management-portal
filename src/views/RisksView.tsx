@@ -74,7 +74,7 @@ export const RisksView: React.FC = () => {
           <h1 className="text-lg font-bold text-slate-900">
             {tr ? 'Risk, Sorun, Varsayım, Bağımlılık' : 'Risk, Issue, Assumption, Dependency'}
           </h1>
-          <p className="max-w-2xl text-xs text-slate-500">
+          <p className="max-w-2xl text-sm text-slate-500">
             {tr
               ? 'Kafadaki risk, yönetilen risk değildir. Skor iki sayıdan hesaplanır, her hareketi kayda geçer, ve eşiği geçtiğinde bu bir olay olarak yazılır.'
               : 'A risk in somebody’s head is not a managed risk. The score is computed from two numbers, every movement is recorded, and crossing the line is written down as an event.'}
@@ -92,7 +92,7 @@ export const RisksView: React.FC = () => {
             key={key}
             type="button"
             onClick={() => setTab(key)}
-            className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
+            className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors ${
               tab === key
                 ? 'border-amber-300 bg-amber-50 text-amber-900'
                 : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'

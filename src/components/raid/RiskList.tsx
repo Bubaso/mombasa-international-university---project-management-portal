@@ -75,7 +75,7 @@ export const RiskList: React.FC<Props> = ({ canKeep, canAcknowledge }) => {
 
       {withoutTrigger > 0 && (
         <div className="mb-3 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2">
-          <p className="text-[11px] leading-relaxed text-amber-900">
+          <p className="text-xs leading-relaxed text-amber-900">
             <span className="font-semibold">
               {tr
                 ? `${withoutTrigger} riskin tetikleyicisi yazılmamış.`
@@ -235,7 +235,7 @@ const RiskRow: React.FC<{
       >
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-xs font-medium text-slate-900">
+            <span className="text-sm font-medium text-slate-900">
               <Bilingual
                 table="risks"
                 id={risk.id}
@@ -260,7 +260,7 @@ const RiskRow: React.FC<{
               </Pill>
             )}
           </div>
-          <div className="mt-0.5 flex flex-wrap items-center gap-x-3 text-[11px] text-slate-500">
+          <div className="mt-0.5 flex flex-wrap items-center gap-x-3 text-xs text-slate-500">
             {risk.ownerName ? (
               <span>{risk.ownerName}</span>
             ) : (
@@ -274,7 +274,7 @@ const RiskRow: React.FC<{
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <span
-            className={`rounded px-1.5 py-0.5 font-mono text-xs font-bold ${band.className}`}
+            className={`rounded px-1.5 py-0.5 font-mono text-sm font-bold ${band.className}`}
             title={
               tr ? `${risk.likelihood} × ${risk.impact}` : `${risk.likelihood} × ${risk.impact}`
             }
@@ -290,7 +290,7 @@ const RiskRow: React.FC<{
       </button>
 
       {open && (
-        <div className="space-y-3 border-t border-slate-100 bg-slate-50/60 px-3 py-3 text-[11px]">
+        <div className="space-y-3 border-t border-slate-100 bg-slate-50/60 px-3 py-3 text-xs">
           {risk.triggerEn && (
             <p className="rounded-md border border-slate-200 bg-white px-2 py-1.5">
               <span className="font-semibold">{tr ? 'Tetikleyici: ' : 'Trigger: '}</span>
