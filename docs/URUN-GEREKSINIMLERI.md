@@ -558,6 +558,12 @@ Toplam **240 numaralandırılmış gereksinim**, 15 modül ve fonksiyonel olmaya
 | M13-10 | P2  | AI kullanım kaydı: kim ne sordu (denetim ve maliyet takibi)                                                                                                                                        |
 | M13-11 | P2  | Kaydedilmiş arama / filtre                                                                                                                                                                         |
 | M13-12 | P3  | Benzer kayıt önerisi ("bu toplantı şu konuyla ilgili")                                                                                                                                             |
+| M13-13 | P1  | **Belge alımı:** yüklenen belge analiz edilmeden önce kasaya girer; analiz kasadaki sürüme referansla çalışır                                                                                      |
+| M13-14 | P0  | Alımdan çıkan her şey **teklif**tir. Kayda dönüşmesi kullanıcı onayı ister ve yazma, kullanıcının kendi yetkisiyle normal kurallardan geçer (M13-09'un alım tarafı)                                |
+| M13-15 | P0  | Teklif edilen her alan, belgede hangi cümleden geldiğini taşır. **Alıntısı olmayan değer teklif edilemez**                                                                                         |
+| M13-16 | P0  | Belirsiz bir değer uydurulmaz: `null` kalır ve neden belirsiz olduğu yazılır                                                                                                                       |
+| M13-17 | P1  | Modül her yazılabilir kayıt türüne teklif verebilir; kapsamı veritabanındaki kayıttan gelir, koddan değil                                                                                          |
+| M13-18 | P1  | Reddedilen teklif silinmez, gerekçesiyle kalır                                                                                                                                                     |
 
 ---
 

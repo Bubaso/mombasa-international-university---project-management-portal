@@ -51,6 +51,14 @@ export default tseslint.config(
     },
   },
   {
+    // The edge functions' shared modules. They run in Deno and in Node (the
+    // tests import the same files), and they use web platform globals —
+    // TextDecoder, Blob, DecompressionStream — which both runtimes have and
+    // the default config knows about in neither.
+    files: ['supabase/functions/**/*.{js,mjs}'],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
+  },
+  {
     files: ['vite.config.ts', 'scripts/**/*.{js,mjs}', 'tests/**/*.{js,mjs}', 'eslint.config.js'],
     // Test files are Node, but browser-context callbacks (Playwright's
     // addInitScript and friends) are inlined in them, so both apply.

@@ -60,14 +60,24 @@ indirdiği baytlardan), ve baytlara tek çıkış yolu okumayı kaydeden
 
 ---
 
-## 3. Bilinçli olarak değişmesi gereken tek şey
+## 3. Gereksinim seviyesinde değişmesi gereken şey — yok
 
-`ai-assistant/index.ts` şu anda şunu söylüyor:
+> **Bu bölüm düzeltildi.** İlk hâli "M13-09 bilinçli olarak değiştirilmek
+> zorunda" diyordu. Gereksinim satırının kendisini okuyunca yanlış olduğu
+> görüldü.
+
+Gereksinim dokümanındaki satır şöyle:
+
+> **M13-09** · P1 · AI çıktısı doğrudan kayda yazılmaz; **kullanıcı onaylar**
+
+Yani gereksinim tam olarak bu modülün yaptığı şeyi söylüyor. Çatışma
+gereksinimle değil, `ai-assistant/index.ts`'in kendine koyduğu daha katı
+yorumla:
 
 > Nothing here writes to a register (M13-09). The only row it writes is its
 > own usage log (M13-10).
 
-Senin fikri bunu gerektiriyor. **Ama gerektirdiği şey "asistan yazsın" değil.**
+Ve o yorum da **geçerli kalıyor.**
 Seçtiğin özerklik seviyesi tam olarak doğru yolu açıyor:
 
 > Modül yalnızca teklif üretir. Onaylayınca kayıt **senin kimliğinle, normal
@@ -83,19 +93,23 @@ yoktur. Model "şu yükümlülüğü yerine getirildi say" diye teklif etse bile
 yazma anında kanıt isteyen trigger onu reddeder — çünkü yazan, ayrıcalıklı
 bir servis anahtarı değil, senin kendi token'ın.
 
-**Gereksinim dokümanına eklenmesi gereken satırlar** (M13-14 … M13-18
-önerisi):
+**Gereksinim dokümanına eklenen satırlar:** M13-13 … M13-18 (yazıldı).
 
-- **M13-14** Yüklenen belge, analiz edilmeden önce kasaya girer; analiz
-  kasadaki belgeye referansla çalışır.
-- **M13-15** Asistan hiçbir kütüğe yazmaz; yalnızca teklif üretir. Teklifin
-  kayda dönüşmesi, onaylayan kullanıcının normal yazma yolundan geçer.
-- **M13-16** Teklif edilen her alan, belgedeki hangi cümleden geldiğini
-  taşır. Alıntısı olmayan değer teklif edilemez.
-- **M13-17** Belirsiz bir değer uydurulmaz; `null` kalır ve neden
-  belirsiz olduğu yazılır.
-- **M13-18** Bir tekliften oluşan kayıt, kalıcı olarak makine önerisinden
-  geldiğini söyler.
+### Reddedilen bir öneri: görünür makine işareti
+
+İlk hâlinde bir madde daha vardı: "bir tekliften oluşan kayıt, kalıcı olarak
+makine önerisinden geldiğini söyler." **Kullanıcı bunu reddetti:** kayıt, o
+anda oturum açmış olan kimse onun adına, başka her kayıt gibi oluşur.
+
+Gerekçe makul: kaydı onaylayan insandır, kayıt onundur, ve kendi onayladığı
+işin üstünde kalıcı bir "makine" rozeti hem gürültüdür hem kaydın
+otoritesini zayıflatır. Denetim kaydı kimin ne zaman yazdığını zaten
+tutuyor.
+
+Kaybedilmeyen şey: `intake_proposals.created_record_id` bağı kalıyor — ki
+aynı teklifin iki kez onaylanmasını engelleyen kısıt onu zorunlu kılıyor.
+Ekranda hiçbir rozet görünmez; altı ay sonra "bu kayıt nereden geldi" diye
+soran biri için iz vardır. Bu bir işaretleme değil, bir bağ.
 
 ---
 

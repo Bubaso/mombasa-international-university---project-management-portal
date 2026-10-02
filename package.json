@@ -14,7 +14,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test:smoke": "npm run build:smoke && node tests/smoke.mjs",
-    "verify": "npm run typecheck && npm run lint && npm run format:check && npm run build && npm run test:smoke && npm run test:policies && npm run test:assistant && npm run test:translate && npm run test:exports && npm run test:push && npm run test:push:sw && npm run test:nav && npm run test:palette",
+    "verify": "npm run typecheck && npm run lint && npm run format:check && npm run build && npm run test:smoke && npm run test:policies && npm run test:assistant && npm run test:translate && npm run test:exports && npm run test:push && npm run test:push:sw && npm run test:nav && npm run test:palette && npm run test:intake",
     "test:policies": "bash tests/db/run.sh",
     "test:assistant": "node tests/assistant.mjs",
     "sql:bundle": "node scripts/bundle-migrations.mjs",
@@ -27,6 +27,7 @@
     "check:dist": "node scripts/check-dist.mjs",
     "test:nav": "node tests/nav.mjs",
     "test:palette": "node tests/palette.mjs",
+    "test:intake": "node tests/intake.mjs",
     "test:design": "node tests/design.mjs",
     "deploy": "npm run build && npm run check:dist && firebase deploy --only hosting --project miu-kenya"
   },

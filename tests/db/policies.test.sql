@@ -8809,6 +8809,153 @@ begin
 end;
 $$;
 
+-- ===========================================================================
+-- Belge alımı (M13-13, M13-14)
+-- ===========================================================================
+--
+-- Bir belgenin okunması bir kayıt değildir, ama bir olaydır: kim hangi
+-- belgeyi modele okuttu. Burada sınanan üç şey, üçü de bu tablonun var olma
+-- sebebine dokunuyor — alımı görmek belgeyi görmektir, alım bitmiş doğmaz,
+-- ve kimse başkasının adına analiz istemez.
+
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- project director
+
+insert into document_intake (id, document_version_id, document_id, requested_by)
+values ('1d000000-0000-0000-0000-000000000001',
+        '1c000000-0000-0000-0000-000000000001',
+        '1b000000-0000-0000-0000-000000000001',
+        '22222222-2222-2222-2222-222222222222');
+
+select pg_temp.check('a director starts an intake on a document they may write',
+  (select count(*) from document_intake
+    where id = '1d000000-0000-0000-0000-000000000001'), 1::bigint);
+select pg_temp.check('and it starts as analysing, with no verdict yet',
+  (select state::text || coalesce(classified_as, '-') from document_intake
+    where id = '1d000000-0000-0000-0000-000000000001'), 'analysing-');
+
+-- The hole this closes: revoking update was not enough. A client allowed to
+-- insert could have inserted `ready` with a classification of its own
+-- invention, which would make the verdict the browser's claim rather than the
+-- model's reading.
+do $$
+begin
+  begin
+    insert into document_intake
+      (document_version_id, document_id, requested_by, state, classified_as, classification_why,
+       finished_at)
+    values ('1c000000-0000-0000-0000-000000000001', '1b000000-0000-0000-0000-000000000001',
+            '22222222-2222-2222-2222-222222222222', 'ready', 'a trust deed',
+            'because the browser said so', now());
+    raise exception 'FAIL a client declared its own classification';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   an intake cannot be born already decided';
+  end;
+end;
+$$;
+
+-- Nor on somebody else's behalf: the audit answer to "who had this read" has
+-- to be the person who asked.
+do $$
+begin
+  begin
+    insert into document_intake (document_version_id, document_id, requested_by)
+    values ('1c000000-0000-0000-0000-000000000001', '1b000000-0000-0000-0000-000000000001',
+            '11111111-1111-1111-1111-111111111111');
+    raise exception 'FAIL an intake was recorded in another name';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   nobody asks for an analysis in somebody else''s name';
+  end;
+end;
+$$;
+
+-- A version that belongs to a different document is refused by the trigger:
+-- the two columns exist so the policy needs no subquery, and the trigger is
+-- what keeps them agreeing.
+do $$
+begin
+  begin
+    insert into document_intake (document_version_id, document_id, requested_by)
+    values ('1c000000-0000-0000-0000-000000000001', '1b000000-0000-0000-0000-000000000002',
+            '22222222-2222-2222-2222-222222222222');
+    raise exception 'FAIL a version was attached to the wrong document';
+  exception
+    when check_violation or insufficient_privilege then
+      raise notice 'ok   a version cannot be filed under another document';
+  end;
+end;
+$$;
+
+-- The one that matters most: the intake has no confidentiality of its own, so
+-- the document's decides. The field team can read an `internal` document and
+-- therefore its intake; it cannot read a `restricted` one, and must not reach
+-- the reading of it either.
+select pg_temp.act_as('44444444-4444-4444-4444-444444444444');  -- field team
+select pg_temp.check('the field team sees the intake of a document it may read',
+  (select count(*) from document_intake
+    where document_id = '1b000000-0000-0000-0000-000000000001'), 1::bigint);
+
+-- Seeded as the owner, because only the service role writes a verdict. The
+-- `set role authenticated` afterwards is not decoration: `act_as` sets the JWT
+-- claim and nothing else, so leaving the session as postgres would bypass row
+-- level security altogether and the two assertions below would both pass
+-- while measuring nothing. They did, the first time this was written.
+set role postgres;
+insert into document_versions (id, document_id, storage_path, file_name)
+values ('1c000000-0000-0000-0000-00000000000f', '1b000000-0000-0000-0000-000000000002',
+        '1b000000-0000-0000-0000-000000000002/1c000000-0000-0000-0000-00000000000f',
+        'restricted-pack.pdf');
+insert into document_intake (id, document_version_id, document_id, requested_by, state,
+                             classified_as, classification_why, finished_at)
+values ('1d000000-0000-0000-0000-00000000000f',
+        '1c000000-0000-0000-0000-00000000000f',
+        '1b000000-0000-0000-0000-000000000002',
+        '11111111-1111-1111-1111-111111111111', 'ready',
+        'an assessment pack', 'it reads as an assessment of people', now());
+set role authenticated;
+
+select pg_temp.act_as('44444444-4444-4444-4444-444444444444');  -- field team
+select pg_temp.check('but not the intake of a restricted one',
+  (select count(*) from document_intake
+    where id = '1d000000-0000-0000-0000-00000000000f'), 0::bigint);
+select pg_temp.check('nor its classification by any route',
+  (select count(*) from document_intake
+    where classified_as = 'an assessment pack'), 0::bigint);
+
+-- An advocate is outside the organisation: reading a case document is one
+-- thing, having the vault read documents for them is another.
+select pg_temp.act_as('55555555-5555-5555-5555-555555555555');  -- advocate
+do $$
+begin
+  begin
+    insert into document_intake (document_version_id, document_id, requested_by)
+    values ('1c000000-0000-0000-0000-000000000001', '1b000000-0000-0000-0000-000000000001',
+            '55555555-5555-5555-5555-555555555555');
+    raise exception 'FAIL an external party started an intake';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   somebody outside the organisation starts no analysis';
+  end;
+end;
+$$;
+
+-- And nobody edits an intake after the fact, whatever their role: the only
+-- thing that moves it to `ready` is the function that did the reading.
+select pg_temp.act_as('11111111-1111-1111-1111-111111111111');  -- admin
+do $$
+begin
+  begin
+    update document_intake set classified_as = 'something else'
+     where id = '1d000000-0000-0000-0000-000000000001';
+    raise exception 'FAIL an intake was edited from the browser';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   not even an administrator rewrites a reading';
+  end;
+end;
+$$;
+
 reset role;
 
 \echo ''

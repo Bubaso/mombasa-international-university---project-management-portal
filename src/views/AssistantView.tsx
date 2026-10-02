@@ -40,6 +40,8 @@ import { useAsk, useAiQueries } from '../api/assistantHooks';
 import { assistantConfigured } from '../api/assistant';
 import { QueryStatus } from '../components/QueryStatus';
 import { TranslationPanel } from '../components/assistant/TranslationPanel';
+import { IntakePanel } from '../components/assistant/IntakePanel';
+import { useAuthority } from '../api/adminHooks';
 import { Pill, WriteError } from '../components/ui/Controls';
 import { kindLabel, routeFor } from '../lib/search';
 import { formatDate } from '../lib/site';
@@ -159,6 +161,7 @@ const Answer: React.FC<{
 
 export const AssistantView: React.FC = () => {
   const { language } = useApp();
+  const authority = useAuthority();
   const tr = language === 'tr';
   const navigate = useNavigate();
 
@@ -207,6 +210,15 @@ export const AssistantView: React.FC = () => {
     }
   };
 
+  // Reading a document files it in the vault, so it needs the same permission
+  // writing to the vault does. Same four roles as DocumentVaultView, because
+  // it is the same act.
+  const canWriteVault =
+    authority.data != null &&
+    ['admin', 'project_director', 'field_team', 'board_director'].some((role) =>
+      authority.data?.roles.includes(role as never),
+    );
+
   return (
     <div className="space-y-4">
       <header className="flex items-start gap-2.5">
@@ -231,6 +243,10 @@ export const AssistantView: React.FC = () => {
           </p>
         </div>
       )}
+
+      {/* Reading a document comes first, because it is the one thing here you
+          arrive with in your hand. The five below are things you ask. */}
+      <IntakePanel canWrite={canWriteVault} />
 
       {/* The five, as a choice rather than a prompt. */}
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">

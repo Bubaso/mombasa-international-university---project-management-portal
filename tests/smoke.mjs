@@ -4496,6 +4496,21 @@ try {
       /Uzun belge özeti|Long document summary/.test(assistant),
     'the assistant offers the five defined uses and no chat box',
   );
+
+  // Belge alımı, birinci faz (M13-13). Panelin tek iddiası "hiçbir şey
+  // yazmıyorum" ve ekranda bunu söylüyor; bir sonraki faz onu değiştirecek,
+  // ve bu assertion o fazın bunu bilinçli yapmasını sağlıyor.
+  check(/Belge oku|Read a document/.test(assistant), 'the intake panel is on the assistant screen');
+  check(
+    /yazma yok|writes nothing/.test(assistant),
+    'and says it writes nothing, because in this phase it does not',
+  );
+  // Boş durum, sebebini söyleyen cümleyle: "henüz okunmamış" ile
+  // "okudum, bir şey yok" farklı şeylerdir (T5-05).
+  check(
+    /Henüz okunmuş belge yok|No document has been read yet/.test(assistant),
+    'with an empty state that says why it is empty',
+  );
   check(
     /Kısıtlı kayıtlar hiçbir koşulda|Restricted records never reach the model/.test(assistant),
     'and says plainly that restricted material never reaches the model',
