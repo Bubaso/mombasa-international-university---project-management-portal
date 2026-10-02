@@ -115,11 +115,26 @@ Bir kütüphane yerine RFC 8291/8292'nin elle yazılmasının sebebi bu: yanlı�
 türetme, anlık bildirim servisinden 201 alır ve bildirimi sessizce düşürür.
 Gidiş-dönüş çözme, bunu yakalayan tek sınamadır.
 
-**Doğrulanamadı.** Gerçek bir uçtan uca gönderim — gerçek tarayıcı, gerçek
-anlık bildirim servisi — bu kaptan sınanamaz. Sınanmış olan kripto ve durum
-makinesidir; servisin kabul ettiği baytların bir cihazda görünüp görünmediği
-portalın bilebileceği bir şey değil. `settle_push_delivery` bu yüzden
-`delivered` durumunu **reddeder**; push yalnızca `sent` olabilir.
+**Service worker da doğrulandı.** `tests/push-sw.mjs`, Chrome DevTools
+protokolüyle worker'a **gerçek push olayları** gönderir (21 kontrol):
+bildirimin göründüğünü, Türkçe metnin bozulmadığını, konuya göre
+katlandığını, beş varlık türünün her birinin uygulamanın gerçek rotasına
+gittiğini, bilinmeyen bir türün tahmin edilmek yerine gelen kutusuna
+yönlendiğini, ve okunamayan bir yükün sessizce düşmek yerine bunu söyleyen
+bir bildirim gösterdiğini sınar. Dört mutasyon denendi, dördü de isimli bir
+assertion'ı öldürdü.
+
+Bu test, okunamayan yük ile **gövdesiz** yük arasındaki farkı yazarken bir
+kusur yakaladı: handler'ın ilk hâli, sorunsuz okunmuş ama gövdesi olmayan bir
+yükün üzerine "bu cihaz metnini okuyamadı" yazıyordu — yükü kusursuz okumuş
+bir cihaz hakkında yanlış bir cümle. İkisi artık ayrı.
+
+**Doğrulanamayan tek halka.** Kenar fonksiyonundan gerçek bir anlık bildirim
+servisine (FCM, Mozilla) ve oradan gerçek bir cihaza giden ağ adımı. Bunun
+için gerçek bir tarayıcı aboneliği gerekir; yani portalda birinin "Bu cihazda
+aç" demesi. Servisin kabul ettiği baytların bir cihazda görünüp görünmediği
+ise hiçbir zaman portalın bilebileceği bir şey değil — `settle_push_delivery`
+bu yüzden `delivered` durumunu **reddeder**; push yalnızca `sent` olabilir.
 
 ## 0045'te bulunan üç sessiz kusur
 

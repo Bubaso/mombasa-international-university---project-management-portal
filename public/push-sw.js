@@ -55,22 +55,38 @@ function routeFor(data) {
   return INBOX;
 }
 
+/** Shown when this device has no text for a notification it was sent. */
+const UNREADABLE =
+  'Portalda bir bildirim var; bu cihaz metnini okuyamadı. / A notification is waiting; this device could not read its text.';
+
 self.addEventListener('push', (event) => {
+  // Two different facts, and the first draft of this handler conflated them.
+  //
+  //   * There is no payload, or it will not parse. This device has no text,
+  //     and saying so is the honest notification — a blank bar is noise the
+  //     reader learns to dismiss, and a silent drop looks, from the device,
+  //     exactly like a notification that was never sent.
+  //   * The payload parsed and simply carries no body. The device read it
+  //     perfectly; there is just nothing beyond the title. Printing "could
+  //     not read its text" over that is a false statement about this device,
+  //     which is the kind this portal exists to refuse.
+  //
+  // tests/push-sw.mjs delivers both and asserts they read differently.
   let data = null;
+  let readable = false;
   try {
-    data = event.data ? event.data.json() : null;
+    if (event.data) {
+      data = event.data.json();
+      readable = data !== null && typeof data === 'object';
+    }
   } catch {
-    data = null;
+    readable = false;
   }
 
-  // Not "MIU" with an empty body: a notification whose text could not be read
-  // says so, because the alternative is a blank bar the reader reads as noise
-  // and learns to dismiss.
-  const title = (data && data.title) || 'Mombasa International University';
-  const body =
-    data && typeof data.body === 'string'
-      ? data.body
-      : 'Portalda bir bildirim var; bu cihaz metnini okuyamadı. / A notification is waiting; this device could not read its text.';
+  const title =
+    (readable && typeof data.title === 'string' && data.title) ||
+    'Mombasa International University';
+  const body = readable ? (typeof data.body === 'string' ? data.body : '') : UNREADABLE;
 
   event.waitUntil(
     self.registration.showNotification(title, {
@@ -82,7 +98,7 @@ self.addEventListener('push', (event) => {
       // does not stack four bars on a phone.
       tag: (data && data.topic) || 'miu',
       renotify: true,
-      data: { ...(data || {}), route: routeFor(data) },
+      data: { ...(readable ? data : {}), route: routeFor(readable ? data : null) },
     }),
   );
 });
