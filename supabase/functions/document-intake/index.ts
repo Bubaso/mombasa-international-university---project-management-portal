@@ -388,6 +388,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   // Teklifleri servis anahtarı yazıyor: 0048'de `authenticated`'ın insert
   // yetkisi yok, çünkü teklifin modelden geldiği satırın nasıl oluştuğuyla
   // belli olmalı. Onayı veren ve kaydı açan taraf kullanıcıdır.
+  let storageFailure: string | null = null;
   if (read.value.proposals.length > 0) {
     const { error: proposalError } = await admin.from('intake_proposals').insert(
       read.value.proposals.map((proposal) => ({
@@ -405,6 +406,13 @@ Deno.serve(async (req: Request): Promise<Response> => {
     );
     if (proposalError) {
       console.error('Proposals could not be stored', proposalError.message);
+      // Sessiz kalmak, teklif çıkmamış gibi görünmek demek — ve "baktım, bir
+      // şey yok" ile "buldum, saklayamadım" farklı şeyler. Alım `ready`
+      // kaldığı için satıra sebep yazılamıyor (kısıt gereği), o yüzden
+      // cevapta söyleniyor ve ekran onu olduğu gibi gösteriyor.
+      storageFailure =
+        `${read.value.proposals.length} record proposal(s) were found but could not be stored: ` +
+        proposalError.message;
     }
   }
 
@@ -416,6 +424,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     touches,
     proposals: read.value.proposals.length,
     rejected: read.value.rejected,
+    error: storageFailure,
     extractedChars: extracted.text.length,
     pageCount: extracted.pages,
     truncated,
