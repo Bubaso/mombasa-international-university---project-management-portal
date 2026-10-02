@@ -32,7 +32,15 @@ const BASE = `http://127.0.0.1:${PORT}`;
 const EMAIL = process.env.DESIGN_EMAIL ?? process.env.MEASURE_EMAIL;
 const PASSWORD = process.env.DESIGN_PASSWORD ?? process.env.MEASURE_PASSWORD;
 
-const ROUTES = [
+/**
+ * Every route, or the few you are iterating on.
+ *
+ * A full sweep is 38 page loads against the live project and takes minutes.
+ * While chasing one offender that is waste: `DESIGN_ROUTES=/legal,/readiness`
+ * measures those two in seconds. The full list is what runs before a commit,
+ * because a fix on one route is routinely a regression on another.
+ */
+const ALL_ROUTES = [
   '/',
   '/project_info',
   '/legal',
@@ -53,6 +61,11 @@ const ROUTES = [
   '/assistant',
   '/admin',
 ];
+
+const ROUTES = process.env.DESIGN_ROUTES
+  ? process.env.DESIGN_ROUTES.split(',').map((r) => r.trim())
+  : ALL_ROUTES;
+const PARTIAL = ROUTES.length !== ALL_ROUTES.length;
 
 const WIDTHS = [
   { name: 'phone', width: 390, height: 844, mobile: true },
@@ -465,12 +478,12 @@ if (desktop.registers > 0) {
 
 console.log(
   `\nphone:   text<12px ${phone.smallText} | targets<44px ${phone.smallTargets} | ` +
-    `routes overflowing ${phone.overflowing.length}/19 | past the edge ${phone.past} | ` +
+    `routes overflowing ${phone.overflowing.length}/${ROUTES.length} | past the edge ${phone.past} | ` +
     `scrollers somebody chose ${phone.scrollers} | registers ${phone.registers} (${phone.registerRows} rows)`,
 );
 console.log(
   `desktop: text<12px ${desktop.smallText} | targets<44px ${desktop.smallTargets} (by design) | ` +
-    `routes overflowing ${desktop.overflowing.length}/19 | registers ${desktop.registers}`,
+    `routes overflowing ${desktop.overflowing.length}/${ROUTES.length} | registers ${desktop.registers}`,
 );
 
 console.log(`\ndetail: ${out.pathname}`);
@@ -478,4 +491,11 @@ if (failures > 0) {
   console.error(`\n${failures} design check(s) failed.`);
   process.exit(1);
 }
-console.log('\nAll design checks passed.');
+if (PARTIAL) {
+  console.log(
+    `\nChecks passed on the ${ROUTES.length} route(s) asked for. This is NOT a full` +
+      ' pass:\nrun without DESIGN_ROUTES before committing.',
+  );
+} else {
+  console.log('\nAll design checks passed.');
+}
