@@ -28,19 +28,23 @@ jobs:
       - name: Check formatting
         run: npm run format:check
 
-      - name: Build
-        run: npm run build
-
-      - name: Install Chromium for the smoke test
+      # Chromium before the suites that need it. The full browser, not the
+      # headless shell: the shell has no PushManager, so the device-notification
+      # states cannot be told apart in it.
+      - name: Install Chromium
         run: npx playwright install --with-deps chromium
 
-      - name: Smoke test
-        run: npm run test:smoke
-
       # Authorization is the one thing that must never regress silently: the
-      # portal is open to external stakeholders, so these run on every change.
+      # portal is open to external stakeholders, so the policy tests run on
+      # every change, and they need a real PostgreSQL.
       - name: Install PostgreSQL
         run: sudo apt-get update && sudo apt-get install -y postgresql postgresql-contrib
 
-      - name: Authorization policy tests
-        run: npm run test:policies
+      # One command, the same one a contributor runs. This used to list the
+      # steps by hand and ran two of the eight suites: the crypto round-trip,
+      # the push service worker, the translation rules, the export rules and
+      # the assistant rules were all absent from CI while being part of
+      # `verify`. A gate that is a subset of the local gate is a gate that
+      # passes things the local gate would have caught.
+      - name: Verify
+        run: npm run verify

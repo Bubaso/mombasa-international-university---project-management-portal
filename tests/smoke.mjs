@@ -31,6 +31,31 @@ function resolveChromium() {
   return candidates.find((p) => p && existsSync(p));
 }
 
+/**
+ * Launch options that get a browser with push in it.
+ *
+ * `chromium.launch()` defaults to chromium-headless-shell, which has no
+ * PushManager. That cost two CI failures that looked like panel bugs: the
+ * `not_asked` state cannot exist in a browser that cannot subscribe, so the
+ * panel honestly said "this browser cannot take push notifications" and two
+ * assertions expecting otherwise failed — while the assertion about a browser
+ * WITHOUT push passed for entirely the wrong reason. `channel: 'chromium'`
+ * asks for the full browser instead. An explicit executablePath wins, and the
+ * two cannot be passed together.
+ */
+async function launchChromium() {
+  const executablePath = resolveChromium();
+  if (executablePath) return chromium.launch({ executablePath });
+  try {
+    return await chromium.launch({ channel: 'chromium' });
+  } catch {
+    // The channel binary is not always installed. Falling back keeps the suite
+    // runnable; the push-support check reports what the browser can actually
+    // do, so a shell without PushManager is named rather than guessed at.
+    return chromium.launch();
+  }
+}
+
 /** The person the intercepted backend reports as signed in. */
 const TEST_PROFILE = {
   id: '00000000-0000-0000-0000-0000000000aa',
@@ -2930,7 +2955,7 @@ const check = (ok, label, detail) => {
 try {
   await waitForServer(BASE);
   try {
-    browser = await chromium.launch({ executablePath: resolveChromium() });
+    browser = await launchChromium();
   } catch (error) {
     console.error(
       'Could not start Chromium. Install it with `npx playwright install chromium`, ' +
@@ -5110,6 +5135,21 @@ try {
 
   // --- this device, and the ways it can fail to ring (M11-05) --------------
   //
+  // First, that this browser can do push at all. Without this check the five
+  // states below cannot be told apart from a browser that has no PushManager:
+  // the panel would honestly report `unsupported` every time and the failures
+  // would point at the panel instead of at the test environment, which is
+  // exactly what happened in CI.
+  const canPush = await page.evaluate(
+    () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window,
+  );
+  check(
+    canPush,
+    'the test browser has push in it, so the device states can be told apart',
+    canPush ? '' : 'launch with channel: "chromium" — the headless shell has no PushManager',
+  );
+
+  //
   // Waited for rather than slept on. These two assertions used to read the
   // panel 400ms after navigation and passed locally while failing in CI, for
   // the reason the panel itself was wrong about: the state is derived from a
@@ -5197,6 +5237,10 @@ try {
 
   // A browser that cannot do push at all. Simulated by removing PushManager,
   // because the honest answer differs from "off": there is nothing to turn on.
+  //
+  // This only means anything because `canPush` above established that the
+  // property was there to remove. In a headless shell it is absent already and
+  // this assertion would pass without the panel doing anything at all.
   await page.addInitScript(() => {
     Reflect.deleteProperty(window, 'PushManager');
   });

@@ -31,6 +31,31 @@ function resolveChromium() {
 }
 
 /**
+ * Launch options that get a browser with push in it.
+ *
+ * `chromium.launch()` defaults to chromium-headless-shell, which has no
+ * PushManager. That cost two CI failures that looked like panel bugs: the
+ * `not_asked` state cannot exist in a browser that cannot subscribe, so the
+ * panel honestly said "this browser cannot take push notifications" and two
+ * assertions expecting otherwise failed — while the assertion about a browser
+ * WITHOUT push passed for entirely the wrong reason. `channel: 'chromium'`
+ * asks for the full browser instead. An explicit executablePath wins, and the
+ * two cannot be passed together.
+ */
+async function launchChromium() {
+  const executablePath = resolveChromium();
+  if (executablePath) return chromium.launch({ executablePath });
+  try {
+    return await chromium.launch({ channel: 'chromium' });
+  } catch {
+    // The channel binary is not always installed. Falling back keeps the suite
+    // runnable; the push-support check reports what the browser can actually
+    // do, so a shell without PushManager is named rather than guessed at.
+    return chromium.launch();
+  }
+}
+
+/**
  * Refuses to run against a server this suite did not start.
  *
  * waitForServer is satisfied by anything answering on the port, which makes a
@@ -115,7 +140,7 @@ const check = (ok, label, detail) => {
 
 try {
   await waitForServer(BASE);
-  browser = await chromium.launch({ executablePath: resolveChromium() });
+  browser = await launchChromium();
   const ctx = await browser.newContext();
   // Granted up front: the handler's job is what is being tested, not the
   // permission dialog, which lib/push.ts owns and smoke.mjs covers.
