@@ -88,9 +88,16 @@ export const PROPOSAL_TARGETS = [
       {
         name: 'prohibits',
         type: 'boolean',
-        required: true,
+        // Zorunlu DEĞİL, ve bu bir ölçümün sonucu. 2 Ekim 2026, gerçek bir
+        // mektup: iki yükümlülük teklifi yalnızca bu alan boş geldiği için
+        // düştü. "Yasaklıyor mu?" sorusunun cevabı verilmediğinde hayırdır —
+        // bir yükümlülüğün tamamını bu yüzden atmak, cevabı bilinen bir soru
+        // uğruna bilinen bir kaydı kaybetmektir. Alan formda görünüyor ve
+        // onaylayan çevirebiliyor.
         label: { en: 'Forbids rather than requires', tr: 'Yasaklıyor' },
-        about: 'True when the duty is to refrain from something.',
+        about:
+          'True when the duty is to refrain from something. Leave it out when the duty is to ' +
+          'do something; that is the ordinary case.',
       },
     ],
   },
