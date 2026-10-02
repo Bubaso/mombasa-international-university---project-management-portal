@@ -37,9 +37,23 @@ var — iki açık anahtar, bir kısmı artık çözülemeyen abonelikler demekt
 
 ### 1. Göçü uygula
 
+İki yol var; ikincisi token istemez.
+
+**a) Göç betiği.** `SUPABASE_ACCESS_TOKEN` bir _kişisel erişim jetonu_ ister
+(`sbp_...`). Bu, proje ayarlarındaki API anahtarlarından biri **değildir** —
+hesap seviyesindedir ve Supabase Dashboard > hesap menüsü > **Access Tokens**
+altından üretilir. Projenin `sb_publishable_...` ve `sb_secret_...`
+anahtarları bu iş için kullanılamaz: ikisi de PostgREST anahtarıdır, DDL
+çalıştıramazlar.
+
 ```
-SUPABASE_ACCESS_TOKEN=<pat> node scripts/apply-migrations.mjs --project fwaclhrlsmnhvmdqqdhe
+SUPABASE_ACCESS_TOKEN=<sbp_...> node scripts/apply-migrations.mjs --project fwaclhrlsmnhvmdqqdhe
 ```
+
+**b) Dashboard SQL Editor.** Token gerekmez; editör zaten `postgres` rolüyle
+çalışır. Göçün kendisi, göç kaydı ve açık anahtar satırı tek bir işleme
+sarılmış hâlde hazırlanabilir — bir şey patlarsa hiçbir şey uygulanmaz ve
+ikinci kez çalıştırılırsa açık bir mesajla durur.
 
 0045 şunları kurar: `push_keys`, `delivery_media` görünümü, `push_health`
 görünümü, `record_push_subscription`, `push_public_key`,
@@ -58,6 +72,14 @@ supabase functions deploy send-notifications --project-ref fwaclhrlsmnhvmdqqdhe
 olmalı (RFC 8292 `sub`). Üçünden biri eksikse fonksiyon **503** döner ve "No
 VAPID key is configured" der — boş bir koşu gibi davranmaz, çünkü "anahtar
 yok" ile "sırada bir şey yoktu" farklı iki cevaptır.
+
+Sunucu tarafı anahtarının iki nesli var: eski `SUPABASE_SERVICE_ROLE_KEY`
+(JWT) ve yenisi `sb_secret_...`. Eski anahtarları kapatmış bir projede
+yalnızca ikincisi bulunur. Fonksiyon üç ismi de deniyor
+(`SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_SECRET_KEY`, `SB_SECRET_KEY`),
+hiçbirini bulamazsa **hangilerini aradığını söylüyor**, ve başarılı koşuşta
+cevaba `keyUsed` alanıyla hangisini kullandığını yazıyor — ilk canlı çağrının
+bunu tahmine bırakmaması için.
 
 ### 3. Açık anahtarı kaydet
 

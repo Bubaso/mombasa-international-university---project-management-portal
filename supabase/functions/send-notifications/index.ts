@@ -150,12 +150,31 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method !== 'POST') return json({ error: 'POST only.' }, 405);
 
   const url = Deno.env.get('SUPABASE_URL');
-  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   const privateKeyD = Deno.env.get('VAPID_PRIVATE_KEY');
   const publicKey = Deno.env.get('VAPID_PUBLIC_KEY');
   const contact = Deno.env.get('VAPID_CONTACT');
 
-  if (!url || !serviceKey) return json({ error: 'The function is not configured.' }, 500);
+  // Supabase has two generations of server-side key. The legacy one is a JWT
+  // in SUPABASE_SERVICE_ROLE_KEY; the current one is an `sb_secret_...` value,
+  // and a project that has turned the legacy keys off may have only the
+  // latter. Reading one name and calling the function "not configured" when
+  // the project simply uses the other is a failure that says nothing true
+  // about the cause, so all the names it can arrive under are tried and the
+  // error names them if none is present.
+  const KEY_NAMES = ['SUPABASE_SERVICE_ROLE_KEY', 'SUPABASE_SECRET_KEY', 'SB_SECRET_KEY'] as const;
+  const keyName = KEY_NAMES.find((name) => (Deno.env.get(name) ?? '') !== '');
+  const serviceKey = keyName ? Deno.env.get(keyName) : undefined;
+
+  if (!url || !serviceKey) {
+    return json(
+      {
+        error: 'The function has no server-side key.',
+        tried: KEY_NAMES,
+        remedy: `Set one of these as a function secret, or leave the project's legacy keys enabled.`,
+      },
+      500,
+    );
+  }
   if (!privateKeyD || !publicKey || !contact) {
     // Said plainly rather than treated as an empty run: "there is no key" and
     // "there was nothing queued" are different answers and a caller has to be
@@ -245,6 +264,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
   }
 
   // `claimed` is reported as well as the outcomes, so a run that found
-  // nothing is distinguishable from one that sent nothing.
-  return json({ claimed: claimed.length, sent, failed, forgotten });
+  // nothing is distinguishable from one that sent nothing. `keyUsed` says
+  // which key name the project turned out to have, so the first live call
+  // does not leave that a guess.
+  return json({ claimed: claimed.length, sent, failed, forgotten, keyUsed: keyName });
 });
