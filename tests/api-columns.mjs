@@ -32,9 +32,15 @@ if (!dumpPath) {
 /** @type {{table_name: string, column_name: string}[]} */
 const rows = JSON.parse(readFileSync(dumpPath, 'utf8'));
 const columns = new Map();
+/** Şemanın zorunlu tuttuğu sütunlar: not null ve varsayılanı yok. */
+const mandatory = new Map();
 for (const row of rows) {
   if (!columns.has(row.table_name)) columns.set(row.table_name, new Set());
   columns.get(row.table_name).add(row.column_name);
+  if (row.is_nullable === 'NO' && !row.has_default) {
+    if (!mandatory.has(row.table_name)) mandatory.set(row.table_name, new Set());
+    mandatory.get(row.table_name).add(row.column_name);
+  }
 }
 
 let failures = 0;
@@ -152,6 +158,33 @@ for (const target of PROPOSAL_TARGETS) {
     columns.has(target.table),
     `the ${target.key} target names a table that exists`,
     target.table,
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Şemanın zorunlu tuttuğu her sütunun, formda zorunlu bir alanı var mı?
+// ---------------------------------------------------------------------------
+//
+// Bu, "Onayla"ya basıldığında ne olacağının testi. Kütük bir sütunu `not null`
+// ve varsayılansız tutuyorsa, onu doldurmayan bir teklif kayıt açamaz — ve
+// bunu öğrenen, düğmeye basan kişi olur. Alanın `required` olması formun
+// onayı engellemesi demek, yani hata veritabanına hiç gitmiyor.
+//
+// Eşleme snake_case: `titleEn` → `title_en`. Hedeflerin hepsi bugün bu kurala
+// uyuyor; uymayan biri çıkarsa burada "eksik" diye görünür ve takma ad ister,
+// ki o da sessiz kalmaktan iyidir.
+
+const snake = (name) => name.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
+
+for (const target of PROPOSAL_TARGETS) {
+  const needed = mandatory.get(target.table);
+  if (!needed) continue;
+  const promised = new Set(target.fields.filter((f) => f.required).map((f) => snake(f.name)));
+  const unmet = [...needed].filter((column) => !promised.has(column));
+  check(
+    unmet.length === 0,
+    `${target.key}: every column ${target.table} insists on has a required field`,
+    unmet.join(', '),
   );
 }
 

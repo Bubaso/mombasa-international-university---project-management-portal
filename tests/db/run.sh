@@ -75,7 +75,9 @@ psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -q -f "$ROOT/tests/db/policies.test.sql"
 echo "→ api column check"
 COLUMNS_JSON="$(mktemp)"
 psql "$DATABASE_URL" -At -c "
-  select coalesce(json_agg(json_build_object('table_name', table_name, 'column_name', column_name)), '[]')
+  select coalesce(json_agg(json_build_object(
+           'table_name', table_name, 'column_name', column_name,
+           'is_nullable', is_nullable, 'has_default', column_default is not null)), '[]')
     from information_schema.columns where table_schema = 'public';
 " > "$COLUMNS_JSON"
 node "$ROOT/tests/api-columns.mjs" "$COLUMNS_JSON"
