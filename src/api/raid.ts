@@ -213,16 +213,21 @@ export async function createRisk(input: {
   likelihood: number;
   impact: number;
   triggerEn: string | null;
-}): Promise<void> {
+}): Promise<string> {
   // No score is sent. It is generated from the two numbers above.
-  const { error } = await supabase.from('risks').insert({
-    title_en: input.titleEn,
-    category: input.category,
-    likelihood: input.likelihood,
-    impact: input.impact,
-    trigger_en: input.triggerEn,
-  });
+  const { data, error } = await supabase
+    .from('risks')
+    .insert({
+      title_en: input.titleEn,
+      category: input.category,
+      likelihood: input.likelihood,
+      impact: input.impact,
+      trigger_en: input.triggerEn,
+    })
+    .select('id')
+    .single();
   fail(error);
+  return (data as { id: string }).id;
 }
 
 export async function rescoreRisk(input: {

@@ -19,6 +19,13 @@ import { deflateRawSync } from 'node:zlib';
 import { readFileSync } from 'node:fs';
 import { extract } from '../supabase/functions/document-intake/extract.js';
 import { REGISTERS, readClassification } from '../supabase/functions/ai-assistant/rules.js';
+import { readProposals } from '../supabase/functions/ai-assistant/rules.js';
+import {
+  PROPOSAL_TARGETS,
+  modelFields,
+  targetFor,
+  targetsBriefing,
+} from '../supabase/functions/ai-assistant/targets.js';
 
 let failures = 0;
 const check = (ok, label, detail = '') => {
@@ -268,6 +275,270 @@ check(
       !branch.includes('.insert(') &&
       !branch.includes('settle('),
     'and the self-test writes nothing at all',
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Teklifler (M13-14)
+// ---------------------------------------------------------------------------
+
+const DOC = [
+  'IN THE ENVIRONMENT AND LAND COURT AT MOMBASA. Case No. ELC 134/2013.',
+  'The court orders that the respondent shall vacate the suit land by 2026-11-30.',
+  'A letter dated 2026-09-14 from the African University Trust of Kenya was produced.',
+].join('\n');
+
+const registry = { targetFor, modelFields };
+
+const soundProposal = {
+  classifiedAs: 'a court ruling',
+  why: 'it carries a case number and an order',
+  aboutEn: 'The court orders the respondent to vacate the suit land by the end of November 2026.',
+  proposals: [
+    {
+      register: 'obligation',
+      why: 'the order creates a duty to vacate',
+      quote: 'The court orders that the respondent shall vacate the suit land by 2026-11-30.',
+      values: [
+        { name: 'titleEn', value: 'Vacate the suit land' },
+        { name: 'source', value: 'court_order' },
+        { name: 'obligorName', value: 'the respondent' },
+        { name: 'dueOn', value: '2026-11-30' },
+        { name: 'prohibits', value: 'false' },
+      ],
+    },
+  ],
+};
+
+const readP = (patch) => readProposals({ ...soundProposal, ...patch }, DOC, registry);
+
+{
+  const ok = readP({});
+  check(
+    ok.ok && ok.value.proposals.length === 1,
+    'a sound proposal is accepted',
+    ok.ok ? '' : ok.why,
+  );
+  check(
+    ok.ok &&
+      ok.value.proposals[0].values.dueOn === '2026-11-30' &&
+      ok.value.proposals[0].values.prohibits === false,
+    'and its fields are read into their own types, not left as strings',
+    ok.ok ? JSON.stringify(ok.value.proposals[0].values) : '',
+  );
+}
+
+// Değerler nesne hâlinde de gelebilmeli: şema değişirse okuyucu ikisini de
+// anlasın, yoksa teklif sessizce boş kalır.
+check(
+  readP({
+    proposals: [
+      {
+        ...soundProposal.proposals[0],
+        values: { titleEn: 'Vacate', source: 'court_order', obligorName: 'x', prohibits: 'false' },
+      },
+    ],
+  }).ok,
+  'values given as an object are read too',
+);
+
+// M13-16'nın teklif tarafı: belgede geçmeyen bir alıntı, kaydın dayanağını
+// uydurmaktır ve teklifin tamamını düşürür.
+{
+  const r = readP({
+    proposals: [
+      {
+        ...soundProposal.proposals[0],
+        quote: 'The court orders that the respondent shall pay 4,000,000 shillings.',
+      },
+    ],
+  });
+  check(
+    r.ok &&
+      r.value.proposals.length === 0 &&
+      r.value.rejected[0]?.why.includes('not in the document'),
+    'a quote that is not in the document throws the proposal away',
+    r.ok ? JSON.stringify(r.value.rejected) : r.why,
+  );
+}
+{
+  const r = readP({ proposals: [{ ...soundProposal.proposals[0], quote: 'the court' }] });
+  check(
+    r.ok && r.value.proposals.length === 0 && r.value.rejected[0]?.why.includes('too short'),
+    'and a quote too short to carry the claim is refused',
+  );
+}
+// Satır sonu nerede kırılırsa kırılsın: PDF metni sarar, alıntı sarmaz.
+check(
+  readP({
+    proposals: [
+      {
+        ...soundProposal.proposals[0],
+        quote: 'The court orders that the respondent\n  shall vacate the suit land',
+      },
+    ],
+  }).ok === true,
+  'a quote broken across lines still matches',
+);
+
+// Reddedilenler sayılıyor. Sessizce düşen bir teklif, hiç üretilmemiş bir
+// teklifle ekranda aynı görünür.
+{
+  const r = readP({
+    proposals: [{ ...soundProposal.proposals[0], register: 'the_secret_register' }],
+  });
+  check(
+    r.ok && r.value.rejected.length === 1 && r.value.rejected[0].why === 'no such register',
+    'a register nobody has is rejected, with the reason kept',
+  );
+}
+
+// Zorunlu alanı olmayan teklif girmiyor — uydurulmuş bir değerle değil, hiç.
+{
+  const r = readP({
+    proposals: [{ ...soundProposal.proposals[0], values: [{ name: 'titleEn', value: 'Vacate' }] }],
+  });
+  check(
+    r.ok && r.value.proposals.length === 0 && /required/.test(r.value.rejected[0]?.why ?? ''),
+    'a proposal missing a required field is rejected rather than half-filled',
+    r.ok ? JSON.stringify(r.value.rejected) : '',
+  );
+}
+
+// Tarih, modelin okuduğu olmalı; hesaplanmış ya da serbest metin değil.
+for (const [bad, label] of [
+  ['within 30 days', 'prose instead of a date'],
+  ['30/11/2026', 'a date in another format'],
+  ['2026-13-01', 'a month that does not exist'],
+]) {
+  const r = readP({
+    proposals: [
+      {
+        ...soundProposal.proposals[0],
+        values: [
+          ...soundProposal.proposals[0].values.slice(0, 3),
+          { name: 'dueOn', value: bad },
+          { name: 'prohibits', value: 'false' },
+        ],
+      },
+    ],
+  });
+  check(
+    r.ok && r.value.proposals.length === 0,
+    `a due date refused: ${label}`,
+    JSON.stringify(r.ok ? r.value.rejected : r.why),
+  );
+}
+
+// Enum, kütüğün gerçekten tanıdığı değer olmalı.
+{
+  const r = readP({
+    proposals: [
+      {
+        ...soundProposal.proposals[0],
+        values: [
+          { name: 'titleEn', value: 'x' },
+          { name: 'source', value: 'a_judge_said_so' },
+          { name: 'obligorName', value: 'y' },
+          { name: 'prohibits', value: 'false' },
+        ],
+      },
+    ],
+  });
+  check(
+    r.ok && r.value.proposals.length === 0,
+    'an enum value the register does not have is rejected',
+  );
+}
+
+// Özet zorunlu: ne olduğu ile ne dediği ayrı sorular, ve ikincisi
+// cevaplanmadığında ekran belgenin biçimini anlatmaya düşüyor (ölçüm, 2 Ekim).
+check(
+  !readP({ aboutEn: '  ' }).ok,
+  'an answer that does not say what the document is about is refused',
+);
+check(!readP({ classifiedAs: '' }).ok, 'nor one that does not say what it is');
+check(readP({ proposals: [] }).ok, 'but zero proposals is a valid answer');
+
+// ---------------------------------------------------------------------------
+// Hedef tanımı ile yazıcılar aynı anahtarları taşımalı
+// ---------------------------------------------------------------------------
+//
+// Hedefi olup yazıcısı olmayan bir kütük ekranda onaylanabilir görünür ve
+// onaylandığında patlar; yazıcısı olup hedefi olmayan bir kütüğe model hiç
+// teklif üretemez. İkisi de sessiz.
+
+const PROPOSALS_TS = readFileSync(new URL('../src/api/proposals.ts', import.meta.url), 'utf8');
+const writerKeys = [
+  ...PROPOSALS_TS.slice(
+    PROPOSALS_TS.indexOf('> = {'),
+    PROPOSALS_TS.indexOf('export const writableRegisters'),
+  ).matchAll(/^ {2}([a-z_]+): \(/gm),
+].map((m) => m[1]);
+
+check(
+  writerKeys.length > 0,
+  'the writer map is where the test expects it',
+  `${writerKeys.length} writers`,
+);
+for (const target of PROPOSAL_TARGETS) {
+  check(writerKeys.includes(target.key), `${target.key} has a writer`);
+}
+for (const key of writerKeys) {
+  check(
+    PROPOSAL_TARGETS.some((t) => t.key === key),
+    `the ${key} writer has a target the model can fill`,
+  );
+}
+
+// Modelin doldurduğu her alan yazıcıya ulaşmalı. Ulaşmayan alan, ekranda
+// doldurulup kütüğe hiç girmeyen alandır — ve bunu kimse fark etmez.
+const NEVER_WRITTEN = {
+  // Belgedeki ad, sorumlunun kendisi değil: eşleştirme için gösteriliyor,
+  // kütüğe sorumlu olarak girmiyor.
+  ownerHint: 'shown so the approver can match a name to a profile',
+};
+for (const target of PROPOSAL_TARGETS) {
+  for (const field of target.fields) {
+    const reached = PROPOSALS_TS.includes(`'${field.name}'`);
+    const excused = Object.prototype.hasOwnProperty.call(NEVER_WRITTEN, field.name);
+    check(
+      reached || excused,
+      `${target.key}.${field.name} reaches the register`,
+      excused ? NEVER_WRITTEN[field.name] : '',
+    );
+  }
+}
+
+// Talimat hedefleri anlatmalı: anlatmayan bir alanı model dolduramaz.
+{
+  const briefing = targetsBriefing();
+  const missing = PROPOSAL_TARGETS.flatMap((t) =>
+    modelFields(t)
+      .filter((f) => !briefing.includes(f.name))
+      .map((f) => `${t.key}.${f.name}`),
+  );
+  check(
+    missing.length === 0,
+    'every field the model may fill is described in the instruction',
+    missing.join(' '),
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Ekran, yapmadığı şeyi iddia etmemeli
+// ---------------------------------------------------------------------------
+
+{
+  const PANEL = readFileSync(
+    new URL('../src/components/assistant/IntakePanel.tsx', import.meta.url),
+    'utf8',
+  );
+  // Rozet 1. fazda "yazma yok" diyordu ve doğruydu. Onay yazdığına göre
+  // artık değil; doğru olmayan bir rozet, hiç rozet olmamasından kötüdür.
+  check(
+    !PANEL.includes("'writes nothing'") && !PANEL.includes("'yazma yok'"),
+    'the panel no longer claims it writes nothing, because approving writes',
   );
 }
 

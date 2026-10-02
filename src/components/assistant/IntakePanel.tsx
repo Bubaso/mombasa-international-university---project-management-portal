@@ -3,31 +3,36 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { FileUp, Loader2, TriangleAlert } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { fetchIntakes, intakeFile, type IntakeRecord } from '../../api/intake';
+import { fetchProposals, type Proposal } from '../../api/proposals';
+import { ProposalCard } from './ProposalCard';
 import { ActionButton, Field, Pill, Select, TextInput, WriteError } from '../ui/Controls';
 import { Explain } from '../ui/Explain';
 import { formatDate } from '../../lib/site';
 import type { Confidentiality, DocumentCategory } from '../../types';
 
 /**
- * Belge alımı, birinci faz: oku ve ne olduğunu söyle (M13-13).
+ * Belge alımı: oku, ne dediğini söyle, ne kaydedileceğini teklif et
+ * (M13-13, M13-14, M13-15).
  *
- * Bu panelde **hiçbir şey yazılamaz.** Kasaya bir belge girer, okunur, ve
- * ekranda ne olduğu ile neden öyle olduğu durur. Hangi kütükleri
- * ilgilendirdiği de bir işarettir, teklif değil: teklifler ikinci fazda
- * gelecek ve her biri onay isteyecek (M13-14).
+ * Ekranda dört şey var ve dördü de bir ölçümün sonucu.
  *
- * Ekranda görünen üç şeyin her biri bir gereksinimin karşılığı:
+ *   - **Ne olduğu ve neden.** Gerekçesiz bir kanaat denetlenemez; 0047'de
+ *     `ready` olan bir alım gerekçesiz olamıyor.
+ *   - **Ne dediği.** Ölçüm, 2 Ekim 2026: gerçek bir mektup için kanaat "bu
+ *     bir mektuptur, göndereni ve konu satırı vardır" oldu. Doğruydu ve
+ *     işe yaramazdı — belgenin biçimini anlatıp içeriğini anlatmıyordu.
+ *     Artık ne dediği ayrı bir alan ve belgeyi açmamış birine ne olduğunu
+ *     söylüyor.
+ *   - **Teklifler.** Aynı ölçümde dokuz kütük "ilgilendirebilir" diye
+ *     işaretlenmişti; dokuz kütük işaret etmek hiçbir şey işaret
+ *     etmemektir. Artık bir kütük ancak alanları doldurulmuş somut bir
+ *     teklifi varsa görünüyor, ve her teklif belgeden bir alıntı taşıyor.
+ *   - **Ne kadarının okunduğu.** Belgenin tamamı okunmadıysa söylenir,
+ *     yoksa ekran okumadığı bir şey hakkında kendinden emin görünür.
  *
- *   - **Neden öyle düşündüğü.** Bir satırın "vakıf senedi" demesi, neden
- *     öyle dediğini söylemiyorsa inanılacak ya da inanılmayacak bir
- *     iddiadır; denetlenebilir değildir. Veritabanı da aynı şeyi söylüyor:
- *     0047'de `ready` olan bir alım gerekçesiz olamaz.
- *   - **Başarısızlığın sebebi.** "Olmadı" bir cevap değil. Taranmış bir PDF
- *     ile okunamayan bir dosya farklı şeylerdir ve ikisi de söylenmeye
- *     değer.
- *   - **Ne kadarının okunduğu.** Sınıflandırma ilk 12.000 karakterden
- *     yapılıyor. Belgenin tamamı okunmadıysa bunu söylemek gerekir, yoksa
- *     ekran okunmamış bir şey hakkında kendinden emin görünür.
+ * Onay, kaydı kütüğün kendi normal yazma yolundan açıyor — yani o kütüğün
+ * bütün politikaları ve kısıtları aynen işliyor ve kayıt, onaylayan kişinin
+ * kendi oturumuyla giriyor.
  */
 
 const CATEGORIES: DocumentCategory[] = [
@@ -57,34 +62,22 @@ const CATEGORY_LABEL: Record<DocumentCategory, { tr: string; en: string }> = {
   other: { tr: 'Diğer', en: 'Other' },
 };
 
-/** Kütük anahtarlarının okunur adları. Faz 4'te veritabanından gelecek. */
-const REGISTER_LABEL: Record<string, { tr: string; en: string }> = {
-  document_vault: { tr: 'Belge kasası', en: 'Document vault' },
-  obligations: { tr: 'Yükümlülükler', en: 'Obligations' },
-  legal: { tr: 'Hukuk kaydı', en: 'Legal record' },
-  meetings: { tr: 'Toplantılar', en: 'Meetings' },
-  actions: { tr: 'Aksiyonlar', en: 'Actions' },
-  decisions: { tr: 'Kararlar', en: 'Decisions' },
-  stakeholders: { tr: 'Paydaşlar', en: 'Stakeholders' },
-  governance: { tr: 'Yönetişim', en: 'Governance' },
-  chronology: { tr: 'Kronoloji', en: 'Chronology' },
-  milestones: { tr: 'Kilometre taşları', en: 'Milestones' },
-  construction: { tr: 'İnşaat', en: 'Construction' },
-  procurement: { tr: 'Tedarik', en: 'Procurement' },
-  finance: { tr: 'Mali yönetim', en: 'Financials' },
-  risks: { tr: 'Riskler', en: 'Risks' },
-  readiness: { tr: 'Akademik hazırlık', en: 'Academic readiness' },
-  communication: { tr: 'İletişim', en: 'Communication' },
-};
-
-const registerName = (key: string, tr: boolean): string =>
-  REGISTER_LABEL[key]?.[tr ? 'tr' : 'en'] ?? key;
+// Kütük adlarının ikinci bir listesi burada duruyordu. Kalktı: teklifin
+// kütük adı artık `targets.js`'deki hedef tanımından geliyor ve o tanım aynı
+// zamanda alanları ve yazıcıyı besliyor. İki yerde tutulan isim listesi,
+// birinde eskir (CLAUDE.md §4).
 
 export const IntakePanel: React.FC<{ canWrite: boolean }> = ({ canWrite }) => {
   const { language } = useApp();
   const tr = language === 'tr';
   const queryClient = useQueryClient();
   const intakes = useQuery({ queryKey: ['documentIntake'], queryFn: () => fetchIntakes(20) });
+  const intakeIds = (intakes.data ?? []).map((row) => row.id);
+  const proposals = useQuery({
+    queryKey: ['intakeProposals', intakeIds],
+    queryFn: () => fetchProposals(intakeIds),
+    enabled: intakeIds.length > 0,
+  });
 
   const [file, setFile] = React.useState<File | null>(null);
   const [title, setTitle] = React.useState('');
@@ -122,13 +115,16 @@ export const IntakePanel: React.FC<{ canWrite: boolean }> = ({ canWrite }) => {
             </h2>
             <Explain id="intake.what">
               {tr
-                ? 'Yüklenen belge kasaya girer, okunur, ve ne olduğu hakkında bir kanaat kaydedilir. Bu kanaat bir kayıt değildir: bu fazda hiçbir şey kütüklere yazılmaz, yalnızca belgenin ne olduğu ve hangi kütükleri ilgilendirdiği söylenir. Teklifler ve onay bir sonraki fazda gelir.'
-                : 'An uploaded document goes into the vault, is read, and a reading of what it is gets recorded. That reading is not a record: nothing is written to any register in this phase. It says what the document is and which registers it could touch. Proposals and approval come next.'}
+                ? 'Yüklenen belge kasaya girer, okunur, ve ne olduğu, ne dediği ve hangi kayıtların açılması gerektiği söylenir. Teklifler kayıt değildir: her biri belgeden bir alıntı taşır, onay verilmeden hiçbir şey yazılmaz, ve onayladığında kaydı senin kendi oturumun açar — kütüğün bütün kuralları aynen işler.'
+                : 'An uploaded document goes into the vault, is read, and what it is, what it says and which records should be created are reported. A proposal is not a record: each carries a quote from the document, nothing is written until you approve, and on approval the record is created by your own session, under every rule that register has.'}
             </Explain>
           </div>
         </div>
+        {/* Eski rozet "yazma yok" diyordu ve 1. fazda doğruydu. Artık
+            değil: onaylanan teklif kütüğe kayıt açıyor. Doğru olmayan bir
+            rozet, hiç rozet olmamasından kötüdür. */}
         <Pill className="border-slate-300 bg-slate-100 text-slate-700">
-          {tr ? 'yazma yok' : 'writes nothing'}
+          {tr ? 'onayla yazar' : 'writes on approval'}
         </Pill>
       </header>
 
@@ -210,13 +206,21 @@ export const IntakePanel: React.FC<{ canWrite: boolean }> = ({ canWrite }) => {
           </p>
         )}
 
-        <IntakeList rows={intakes.data ?? []} loading={intakes.isLoading} />
+        <IntakeList
+          rows={intakes.data ?? []}
+          proposals={proposals.data ?? []}
+          loading={intakes.isLoading}
+        />
       </div>
     </section>
   );
 };
 
-const IntakeList: React.FC<{ rows: IntakeRecord[]; loading: boolean }> = ({ rows, loading }) => {
+const IntakeList: React.FC<{
+  rows: IntakeRecord[];
+  proposals: Proposal[];
+  loading: boolean;
+}> = ({ rows, proposals, loading }) => {
   const { language } = useApp();
   const tr = language === 'tr';
 
@@ -241,80 +245,94 @@ const IntakeList: React.FC<{ rows: IntakeRecord[]; loading: boolean }> = ({ rows
 
   return (
     <ul className="space-y-2">
-      {rows.map((row) => (
-        <li key={row.id} className="rounded-lg border border-slate-200 bg-white p-3">
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <div className="min-w-0">
-              {row.state === 'ready' && (
-                <p className="text-sm font-semibold text-slate-900">{row.classifiedAs}</p>
-              )}
-              {row.state === 'analysing' && (
-                <p className="flex items-center gap-1.5 text-sm font-semibold text-slate-700">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
-                  {tr ? 'Okunuyor' : 'Being read'}
-                </p>
-              )}
-              {row.state === 'failed' && (
-                <p className="text-sm font-semibold text-rose-800">
-                  {tr ? 'Okunamadı' : 'Could not be read'}
-                </p>
-              )}
-              <p className="text-xs text-slate-500">{formatDate(row.createdAt, language)}</p>
-            </div>
-            {row.state === 'ready' && row.pageCount !== null && (
-              <Pill>
-                {row.pageCount} {tr ? 'sayfa' : 'pages'}
-              </Pill>
-            )}
-          </div>
-
-          {/* Gerekçe. Onsuz sınıflandırma denetlenemez. */}
-          {row.classificationWhy && (
-            <p className="mt-1.5 text-sm leading-relaxed text-slate-600">{row.classificationWhy}</p>
-          )}
-
-          {/* Sebep. "Olmadı" bir cevap değil. */}
-          {row.failureReason && (
-            <p className="mt-1.5 text-sm leading-relaxed text-rose-800">{row.failureReason}</p>
-          )}
-
-          {row.touches.length > 0 && (
-            <div className="mt-2 flex flex-wrap items-center gap-1.5">
-              <span className="text-xs text-slate-500">
-                {tr ? 'İlgilendirebileceği kütükler:' : 'Registers it could touch:'}
-              </span>
-              {row.touches.map((key) => (
-                <Pill key={key} className="border-amber-300 bg-amber-50 text-amber-900">
-                  {registerName(key, tr)}
+      {rows.map((row) => {
+        const mine = proposals.filter((proposal) => proposal.intakeId === row.id);
+        return (
+          <li key={row.id} className="rounded-lg border border-slate-200 bg-white p-3">
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div className="min-w-0">
+                {row.state === 'ready' && (
+                  <p className="text-sm font-semibold text-slate-900">{row.classifiedAs}</p>
+                )}
+                {row.state === 'analysing' && (
+                  <p className="flex items-center gap-1.5 text-sm font-semibold text-slate-700">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                    {tr ? 'Okunuyor' : 'Being read'}
+                  </p>
+                )}
+                {row.state === 'failed' && (
+                  <p className="text-sm font-semibold text-rose-800">
+                    {tr ? 'Okunamadı' : 'Could not be read'}
+                  </p>
+                )}
+                <p className="text-xs text-slate-500">{formatDate(row.createdAt, language)}</p>
+              </div>
+              {row.state === 'ready' && row.pageCount !== null && (
+                <Pill>
+                  {row.pageCount} {tr ? 'sayfa' : 'pages'}
                 </Pill>
-              ))}
+              )}
             </div>
-          )}
 
-          {/* Hiçbir kütüğe işaret etmemek bir cevaptır ve söylenir: aksi
-              hâlde ekran "henüz bakmadım" ile "baktım, bir şey yok"u
-              birbirine karıştırır. */}
-          {row.state === 'ready' && row.touches.length === 0 && (
-            <p className="mt-2 text-xs text-slate-500">
-              {tr
-                ? 'Bu belgenin metni hiçbir kütüğe kayıt açmayı desteklemiyor.'
-                : 'Nothing in this document’s text supports adding a record to any register.'}
-            </p>
-          )}
+            {/* Gerekçe. Onsuz sınıflandırma denetlenemez. */}
+            {row.classificationWhy && (
+              <p className="mt-1.5 text-sm leading-relaxed text-slate-600">
+                {row.classificationWhy}
+              </p>
+            )}
 
-          {row.state === 'ready' && row.extractedChars !== null && (
-            <p className="mt-2 text-xs text-slate-500">
-              {row.extractedChars > 12_000
-                ? tr
-                  ? `${row.extractedChars.toLocaleString('tr-TR')} karakter çıkarıldı; sınıflandırma ilk 12.000 karakterden yapıldı.`
-                  : `${row.extractedChars.toLocaleString('en-GB')} characters extracted; the reading used the first 12,000.`
-                : tr
-                  ? `${row.extractedChars.toLocaleString('tr-TR')} karakterin tamamı okundu.`
-                  : `All ${row.extractedChars.toLocaleString('en-GB')} characters were read.`}
-            </p>
-          )}
-        </li>
-      ))}
+            {/* Sebep. "Olmadı" bir cevap değil. */}
+            {row.failureReason && (
+              <p className="mt-1.5 text-sm leading-relaxed text-rose-800">{row.failureReason}</p>
+            )}
+
+            {/* Belgenin ne dediği. Ne olduğu türünü, bu içeriğini söyler. */}
+            {row.aboutEn && (
+              <p className="mt-2 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-sm leading-relaxed text-slate-700">
+                {row.aboutEn}
+              </p>
+            )}
+
+            {mine.length > 0 && (
+              <div className="mt-2.5">
+                <p className="text-xs font-medium text-slate-600">
+                  {tr
+                    ? `${mine.length} kayıt teklifi — her biri onayınla açılır`
+                    : `${mine.length} proposed record${mine.length === 1 ? '' : 's'} — each is created when you approve`}
+                </p>
+                <ul className="mt-1.5 space-y-2">
+                  {mine.map((proposal) => (
+                    <ProposalCard key={proposal.id} proposal={proposal} />
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Hiç teklif çıkmaması bir cevaptır ve söylenir: aksi hâlde ekran
+              "henüz bakmadım" ile "baktım, açılacak kayıt yok"u birbirine
+              karıştırır. */}
+            {row.state === 'ready' && mine.length === 0 && (
+              <p className="mt-2 text-xs text-slate-500">
+                {tr
+                  ? 'Bu belgenin metni hiçbir kütüğe kayıt açmayı desteklemiyor.'
+                  : 'Nothing in this document’s text supports adding a record to any register.'}
+              </p>
+            )}
+
+            {row.state === 'ready' && row.extractedChars !== null && (
+              <p className="mt-2 text-xs text-slate-500">
+                {row.extractedChars > 30_000
+                  ? tr
+                    ? `${row.extractedChars.toLocaleString('tr-TR')} karakter çıkarıldı; okuma ilk 30.000 karakterden yapıldı.`
+                    : `${row.extractedChars.toLocaleString('en-GB')} characters extracted; the reading used the first 30,000.`
+                  : tr
+                    ? `${row.extractedChars.toLocaleString('tr-TR')} karakterin tamamı okundu.`
+                    : `All ${row.extractedChars.toLocaleString('en-GB')} characters were read.`}
+              </p>
+            )}
+          </li>
+        );
+      })}
     </ul>
   );
 };

@@ -26,7 +26,8 @@
  *   supabase functions deploy document-intake
  */
 import { createClient } from 'jsr:@supabase/supabase-js@2';
-import { CLASSIFY_INSTRUCTION, REGISTERS, readClassification } from '../ai-assistant/rules.js';
+import { proposeInstruction, readProposals } from '../ai-assistant/rules.js';
+import { answerSchema, modelFields, targetFor, targetsBriefing } from '../ai-assistant/targets.js';
 import { extract } from './extract.js';
 
 const CORS_HEADERS: Record<string, string> = {
@@ -51,12 +52,17 @@ const MAX_BYTES = 25 * 1024 * 1024;
 /**
  * Modele gönderilen azami metin.
  *
- * Sınıflandırma için belgenin tamamı gerekmez — ne olduğu ilk sayfalarda
- * bellidir. Kesme noktası maliyeti sınırlıyor ve kesildiği alım kaydında
- * görünüyor, çünkü "belgenin tamamı okundu" demek, okunmadığında yanlış
- * olur.
+ * 12.000 idi, sınıflandırma için. Teklif için az: bir mahkeme kararının
+ * hükmü sonda durur ve 12.000 karakter onu kesiyordu — yani belgenin
+ * yükümlülük üreten kısmı hiç okunmadan "bu bir karardır" deniyordu.
+ * 30.000 karakter yaklaşık 7.500 belirteç, belge başına ~$0,0025: kesmenin
+ * tasarrufu, kesilen hükmün bedelini karşılamıyor.
+ *
+ * Kesildiğinde bu görünür kalıyor — `extracted_chars` metnin tamamını
+ * sayıyor ve ekran ne kadarının okunduğunu yazıyor. "Belgenin tamamı
+ * okundu" demek, okunmadığında yanlış olur.
  */
-const CLASSIFY_CHARS = 12_000;
+const READ_CHARS = 30_000;
 
 /**
  * Modele giden istek, tek yerde.
@@ -71,10 +77,12 @@ const CLASSIFY_CHARS = 12_000;
  */
 async function askTheModel(
   apiKey: string,
+  instruction: string,
+  schema: unknown,
   prompt: string,
 ): Promise<
   | { ok: true; parsed: unknown; inputTokens: number | null; outputTokens: number | null }
-  | { ok: false; why: string; status: number }
+  | { ok: false; why: string; status: number; upstreamMessage?: string }
 > {
   let upstream: Response;
   try {
@@ -82,20 +90,15 @@ async function askTheModel(
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-goog-api-key': apiKey },
       body: JSON.stringify({
-        systemInstruction: { parts: [{ text: CLASSIFY_INSTRUCTION }] },
+        systemInstruction: { parts: [{ text: instruction }] },
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         generationConfig: {
           temperature: 0,
           responseMimeType: 'application/json',
-          responseSchema: {
-            type: 'object',
-            properties: {
-              classifiedAs: { type: 'string' },
-              why: { type: 'string' },
-              touches: { type: 'array', items: { type: 'string', enum: REGISTERS } },
-            },
-            required: ['classifiedAs', 'why', 'touches'],
-          },
+          responseSchema: schema,
+          // Üst sınır, kaçak bir cevabı ucuz kesmek için. Ölçüldü: şema
+          // kötüyken model 295.442 karakter üretip durdu, ve o da ödenir.
+          maxOutputTokens: 8192,
         },
       }),
     });
@@ -108,13 +111,33 @@ async function askTheModel(
   }
 
   if (!upstream.ok) {
-    console.error('Model refused', upstream.status, (await upstream.text()).slice(0, 600));
-    return { ok: false, status: 502, why: `The model refused the request (${upstream.status}).` };
+    const body = await upstream.text();
+    console.error('Model refused', upstream.status, body.slice(0, 900));
+    // Sağlayıcının kendi cümlesi ayrı tutuluyor. Gerçek yolda kullanılmıyor
+    // — ne çağırana gider ne kayda yazılır, çünkü kota ve anahtar ayrıntısı
+    // yankılayabilir. Yalnızca kendini sınama onu döndürüyor: o uç noktanın
+    // tek işi teşhis ve çağıranı zaten kasaya yazabilen, oturum açmış biri.
+    let upstreamMessage: string | undefined;
+    try {
+      upstreamMessage = (JSON.parse(body) as { error?: { message?: string } })?.error?.message;
+    } catch {
+      upstreamMessage = undefined;
+    }
+    return {
+      ok: false,
+      status: 502,
+      why: `The model refused the request (${upstream.status}).`,
+      upstreamMessage,
+    };
   }
 
   const payload = (await upstream.json().catch(() => null)) as {
-    candidates?: { content?: { parts?: { text?: string }[] } }[];
-    usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number };
+    candidates?: { content?: { parts?: { text?: string }[] }; finishReason?: string }[];
+    usageMetadata?: {
+      promptTokenCount?: number;
+      candidatesTokenCount?: number;
+      thoughtsTokenCount?: number;
+    };
   } | null;
 
   const answerText = payload?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
@@ -122,7 +145,17 @@ async function askTheModel(
   try {
     parsed = JSON.parse(answerText);
   } catch {
-    return { ok: false, status: 422, why: 'The model did not answer in the shape this asked for.' };
+    // Neden ayrıştırılamadığı, ayrıştırılamadığından daha çok şey söyler:
+    // kesilmiş bir cevapla hiç gelmemiş bir cevap aynı değildir.
+    const finish = payload?.candidates?.[0]?.finishReason ?? 'none';
+    const thoughts = payload?.usageMetadata?.thoughtsTokenCount ?? 0;
+    console.error('Unparseable answer', finish, answerText.slice(0, 400));
+    return {
+      ok: false,
+      status: 422,
+      why: 'The model did not answer in the shape this asked for.',
+      upstreamMessage: `finishReason=${finish} answerChars=${answerText.length} thoughtTokens=${thoughts}`,
+    };
   }
 
   return {
@@ -133,14 +166,16 @@ async function askTheModel(
   };
 }
 
-/** Modele gönderilen metin: hangi kütükler var, hangi dosya, ve belgenin kendisi. */
+/** Modele gönderilen metin: hangi dosya, ve belgenin kendisi. */
 const buildPrompt = (fileName: string, excerpt: string, truncated: boolean): string =>
-  `Register keys you may use: ${REGISTERS.join(', ')}\n\n` +
   `Document file name: ${fileName || 'unknown'}\n` +
   (truncated
-    ? `First ${CLASSIFY_CHARS} characters of the text follow.\n\n`
-    : 'The text follows.\n\n') +
+    ? `The first ${READ_CHARS} characters of the text follow; the document is longer.\n\n`
+    : 'The text follows in full.\n\n') +
   excerpt;
+
+/** Talimat her çağrıda aynı; hedef tanımlarından üretiliyor. */
+const INSTRUCTION = proposeInstruction(targetsBriefing());
 
 /**
  * Kendini sınama metni.
@@ -198,9 +233,19 @@ Deno.serve(async (req: Request): Promise<Response> => {
   // yükleme aynı zamanda ilk deneme olurdu — ve başarısızlığı kullanıcı
   // keşfederdi.
   if (body.selfTest) {
-    const answer = await askTheModel(apiKey, buildPrompt('self-test.txt', SELF_TEST_TEXT, false));
-    if (!answer.ok) return json({ selfTest: true, ok: false, error: answer.why }, answer.status);
-    const read = readClassification(answer.parsed);
+    const answer = await askTheModel(
+      apiKey,
+      INSTRUCTION,
+      answerSchema(),
+      buildPrompt('self-test.txt', SELF_TEST_TEXT, false),
+    );
+    if (!answer.ok) {
+      return json(
+        { selfTest: true, ok: false, error: answer.why, provider: answer.upstreamMessage ?? null },
+        answer.status,
+      );
+    }
+    const read = readProposals(answer.parsed, SELF_TEST_TEXT, { targetFor, modelFields });
     return json({
       selfTest: true,
       ok: read.ok,
@@ -211,7 +256,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
         ? {
             classifiedAs: read.value.classifiedAs,
             why: read.value.why,
-            touches: read.value.touches,
+            aboutEn: read.value.aboutEn,
+            proposals: read.value.proposals,
+            rejected: read.value.rejected,
           }
         : { refusedBecause: read.why }),
     });
@@ -299,27 +346,38 @@ Deno.serve(async (req: Request): Promise<Response> => {
     );
   }
 
-  const excerpt = extracted.text.slice(0, CLASSIFY_CHARS);
+  const excerpt = extracted.text.slice(0, READ_CHARS);
   const truncated = excerpt.length < extracted.text.length;
 
   const answer = await askTheModel(
     apiKey,
+    INSTRUCTION,
+    answerSchema(),
     buildPrompt(version.file_name ?? '', excerpt, truncated),
   );
   if (!answer.ok) return await givingUp(answer.why, answer.status);
 
-  const read = readClassification(answer.parsed);
+  // Alıntılar okunan kesite karşı doğrulanıyor, metnin tamamına karşı değil:
+  // modele gönderilmeyen bir yerden alıntı yapmış olamaz, ve kesitin dışında
+  // bulunan bir alıntı doğrulanmış sayılmaz.
+  const read = readProposals(answer.parsed, excerpt, { targetFor, modelFields });
   if (!read.ok) {
     // Reddedilen bir cevap saklanmaz. Sebebi saklanır: "model şunu dedi ama
     // kabul edilmedi" altı ay sonra sorulacak sorunun cevabıdır.
     return await givingUp(`The model's answer was not usable: ${read.why}`);
   }
 
+  // Hangi kütükleri ilgilendirdiği artık sorulmuyor, teklif edilenlerden
+  // türetiliyor. Sorulduğunda model dokuz kütük sayıyordu (ölçüm, 2 Ekim
+  // 2026); somut bir teklif üretmeden bir kütüğü işaret etmenin yolu kalmadı.
+  const touches = [...new Set(read.value.proposals.map((proposal) => proposal.register))];
+
   await settle({
     state: 'ready',
     classified_as: read.value.classifiedAs,
     classification_why: read.value.why,
-    touches: read.value.touches,
+    about_en: read.value.aboutEn,
+    touches,
     extracted_chars: extracted.text.length,
     page_count: extracted.pages,
     model: MODEL,
@@ -327,11 +385,37 @@ Deno.serve(async (req: Request): Promise<Response> => {
     output_tokens: answer.outputTokens,
   });
 
+  // Teklifleri servis anahtarı yazıyor: 0048'de `authenticated`'ın insert
+  // yetkisi yok, çünkü teklifin modelden geldiği satırın nasıl oluştuğuyla
+  // belli olmalı. Onayı veren ve kaydı açan taraf kullanıcıdır.
+  if (read.value.proposals.length > 0) {
+    const { error: proposalError } = await admin.from('intake_proposals').insert(
+      read.value.proposals.map((proposal) => ({
+        intake_id: intake.id,
+        document_id: version.document_id,
+        register: proposal.register,
+        why: proposal.why,
+        quote: proposal.quote,
+        // Buraya gelen her teklifin alıntısı zaten metinde bulundu —
+        // bulunmayanı `readProposals` düşürdü. Sütun, sonradan gevşetilmesi
+        // hâlinde denetlenebilsin diye açıkça yazılıyor.
+        quote_found: true,
+        proposed_values: proposal.values,
+      })),
+    );
+    if (proposalError) {
+      console.error('Proposals could not be stored', proposalError.message);
+    }
+  }
+
   return json({
     intakeId: intake.id,
     classifiedAs: read.value.classifiedAs,
     why: read.value.why,
-    touches: read.value.touches,
+    aboutEn: read.value.aboutEn,
+    touches,
+    proposals: read.value.proposals.length,
+    rejected: read.value.rejected,
     extractedChars: extracted.text.length,
     pageCount: extracted.pages,
     truncated,

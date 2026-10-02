@@ -269,7 +269,7 @@ export async function addChronologyEntry(input: {
   detailEn?: string | null;
   documentId?: string | null;
   sourceNote?: string | null;
-}): Promise<void> {
+}): Promise<string> {
   // The database requires one of the two, and saying so here is kinder than
   // letting it come back as a constraint name.
   if (!input.documentId && !input.sourceNote?.trim()) {
@@ -279,16 +279,21 @@ export async function addChronologyEntry(input: {
         'can trace is neither.',
     );
   }
-  const { error } = await supabase.from('chronology_entries').insert({
-    occurred_on: input.occurredOn,
-    precision: input.precision,
-    category: input.category,
-    title_en: input.titleEn.trim(),
-    detail_en: input.detailEn?.trim() || null,
-    document_id: input.documentId || null,
-    source_note: input.sourceNote?.trim() || null,
-  });
+  const { data, error } = await supabase
+    .from('chronology_entries')
+    .insert({
+      occurred_on: input.occurredOn,
+      precision: input.precision,
+      category: input.category,
+      title_en: input.titleEn.trim(),
+      detail_en: input.detailEn?.trim() || null,
+      document_id: input.documentId || null,
+      source_note: input.sourceNote?.trim() || null,
+    })
+    .select('id')
+    .single();
   fail(error);
+  return (data as { id: string }).id;
 }
 
 // ---------------------------------------------------------------------------

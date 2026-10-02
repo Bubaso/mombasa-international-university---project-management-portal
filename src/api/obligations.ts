@@ -109,23 +109,28 @@ export interface ObligationInput {
   confidentiality: Confidentiality;
 }
 
-export async function createObligation(input: ObligationInput): Promise<void> {
-  const { error } = await supabase.from('obligations').insert({
-    title_en: input.titleEn,
-    title_tr: input.titleTr,
-    detail_en: input.detailEn,
-    source: input.source,
-    source_document_id: input.sourceDocumentId,
-    source_legal_order_id: input.sourceLegalOrderId,
-    source_meeting_id: input.sourceMeetingId,
-    obligor_name: input.obligorName,
-    obligor_stakeholder_id: input.obligorStakeholderId,
-    beneficiary_name: input.beneficiaryName,
-    due_on: input.dueOn,
-    prohibits: input.prohibits,
-    confidentiality: input.confidentiality,
-  });
+export async function createObligation(input: ObligationInput): Promise<string> {
+  const { data, error } = await supabase
+    .from('obligations')
+    .insert({
+      title_en: input.titleEn,
+      title_tr: input.titleTr,
+      detail_en: input.detailEn,
+      source: input.source,
+      source_document_id: input.sourceDocumentId,
+      source_legal_order_id: input.sourceLegalOrderId,
+      source_meeting_id: input.sourceMeetingId,
+      obligor_name: input.obligorName,
+      obligor_stakeholder_id: input.obligorStakeholderId,
+      beneficiary_name: input.beneficiaryName,
+      due_on: input.dueOn,
+      prohibits: input.prohibits,
+      confidentiality: input.confidentiality,
+    })
+    .select('id')
+    .single();
   fail(error);
+  return (data as { id: string }).id;
 }
 
 /**

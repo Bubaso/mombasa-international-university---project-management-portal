@@ -8956,6 +8956,125 @@ begin
 end;
 $$;
 
+-- ===========================================================================
+-- Teklifler (M13-14, M13-15)
+-- ===========================================================================
+--
+-- Teklifin tamamı tek bir cümlenin üzerinde duruyor: **teklif kayıt
+-- değildir.** Burada sınanan beş şey o cümlenin veritabanı tarafı.
+
+set role postgres;
+insert into intake_proposals (id, intake_id, document_id, register, why, quote, quote_found,
+                              proposed_values)
+values ('1e000000-0000-0000-0000-000000000001',
+        '1d000000-0000-0000-0000-000000000001',
+        '1b000000-0000-0000-0000-000000000001',
+        'obligation', 'the order creates a duty',
+        'The court orders that the respondent shall vacate.', true,
+        '{"titleEn": "Vacate the suit land"}'::jsonb);
+-- Gizli belgenin alımına bağlı bir teklif: görünürlüğün belgeyi takip
+-- ettiğini sınamak için.
+insert into intake_proposals (id, intake_id, document_id, register, why, quote, quote_found)
+values ('1e000000-0000-0000-0000-00000000000f',
+        '1d000000-0000-0000-0000-00000000000f',
+        '1b000000-0000-0000-0000-000000000002',
+        'risk', 'the pack implies a dispute',
+        'A dispute over the assessment is likely.', true);
+set role authenticated;
+
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- project director
+select pg_temp.check('a director sees the proposals of a document they may see',
+  (select count(*) from intake_proposals
+    where id = '1e000000-0000-0000-0000-000000000001'), 1::bigint);
+
+select pg_temp.act_as('44444444-4444-4444-4444-444444444444');  -- field team
+select pg_temp.check('and nobody sees the proposals of a document they may not',
+  (select count(*) from intake_proposals
+    where id = '1e000000-0000-0000-0000-00000000000f'), 0::bigint);
+
+-- Teklifi istemci üretmez. Üretebilseydi, "model şunu teklif etti" cümlesi
+-- tarayıcının iddiası olurdu ve alıntı çapasının hiçbir anlamı kalmazdı.
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');
+do $$
+begin
+  begin
+    insert into intake_proposals (intake_id, document_id, register, why, quote, quote_found)
+    values ('1d000000-0000-0000-0000-000000000001', '1b000000-0000-0000-0000-000000000001',
+            'obligation', 'because I say so', 'a quote nobody checked', true);
+    raise exception 'FAIL a proposal was written from the browser';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   a proposal is not something a client can make up';
+  end;
+end;
+$$;
+
+-- Onaylayan kararı verir, teklifin metnini değiştiremez. Sütun bazlı grant,
+-- 0026'dan beri bu depodaki desen.
+do $$
+begin
+  begin
+    update intake_proposals set quote = 'a sentence the document never had'
+     where id = '1e000000-0000-0000-0000-000000000001';
+    raise exception 'FAIL the quote behind a proposal was rewritten';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   the quote a proposal rests on cannot be edited';
+  end;
+end;
+$$;
+do $$
+begin
+  begin
+    update intake_proposals set proposed_values = '{"titleEn": "something else"}'::jsonb
+     where id = '1e000000-0000-0000-0000-000000000001';
+    raise exception 'FAIL what the model proposed was rewritten';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   nor what it proposed, so the two can be compared later';
+  end;
+end;
+$$;
+
+-- Uygulanan teklif açtığı kaydı göstermek zorunda: göstermeyen bir
+-- "uygulandı" kontrol edilemez.
+do $$
+begin
+  begin
+    update intake_proposals set state = 'applied'
+     where id = '1e000000-0000-0000-0000-000000000001';
+    raise exception 'FAIL a proposal was applied without a record to point at';
+  exception
+    when check_violation then
+      raise notice 'ok   applied means there is a record, and it is named';
+  end;
+end;
+$$;
+
+update intake_proposals
+   set state = 'applied', created_record_id = '1b000000-0000-0000-0000-000000000001'
+ where id = '1e000000-0000-0000-0000-000000000001';
+
+select pg_temp.check('a decision stamps who made it, without being asked',
+  (select (decided_by = '22222222-2222-2222-2222-222222222222' and decided_at is not null)
+     from intake_proposals where id = '1e000000-0000-0000-0000-000000000001'), true);
+
+-- Ve bir kere. İki kere uygulanan teklif iki kayıt açar ve ikisi de kendini
+-- tek sanır.
+do $$
+begin
+  begin
+    update intake_proposals
+       set state = 'applied', created_record_id = '1b000000-0000-0000-0000-000000000002'
+     where id = '1e000000-0000-0000-0000-000000000001';
+    raise exception 'FAIL a proposal was applied twice';
+  exception
+    when check_violation then
+      raise notice 'ok   a decision is made once, and the second is refused';
+  end;
+end;
+$$;
+
 reset role;
 
 \echo ''

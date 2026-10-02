@@ -494,7 +494,7 @@ export async function addCorrespondence(input: {
   referenceNo?: string | null;
   documentId?: string | null;
   summary?: string | null;
-}): Promise<void> {
+}): Promise<string> {
   // The database requires the letter itself on anything outgoing. Saying so
   // here is kinder than letting a constraint name arrive on the screen.
   if (input.direction === 'outgoing' && !input.documentId) {
@@ -503,17 +503,22 @@ export async function addCorrespondence(input: {
         'a register of letters whose letters are missing is a list of assertions.',
     );
   }
-  const { error } = await supabase.from('correspondence').insert({
-    direction: input.direction,
-    route: input.route,
-    subject_en: input.subjectEn.trim(),
-    sent_on: input.sentOn,
-    counterparty_name: input.counterpartyName.trim(),
-    reference_no: input.referenceNo?.trim() || null,
-    document_id: input.documentId || null,
-    summary: input.summary?.trim() || null,
-  });
+  const { data, error } = await supabase
+    .from('correspondence')
+    .insert({
+      direction: input.direction,
+      route: input.route,
+      subject_en: input.subjectEn.trim(),
+      sent_on: input.sentOn,
+      counterparty_name: input.counterpartyName.trim(),
+      reference_no: input.referenceNo?.trim() || null,
+      document_id: input.documentId || null,
+      summary: input.summary?.trim() || null,
+    })
+    .select('id')
+    .single();
   fail(error);
+  return (data as { id: string }).id;
 }
 
 export async function confirmDelivery(input: {

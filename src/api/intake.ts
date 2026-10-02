@@ -25,6 +25,8 @@ export interface IntakeRecord {
   state: IntakeState;
   classifiedAs: string | null;
   classificationWhy: string | null;
+  /** Belgenin ne dediği. Ne olduğu ile ne dediği ayrı şeyler. */
+  aboutEn: string | null;
   /** Hangi kütükleri ilgilendirdiği. Teklif değil, işaret. */
   touches: string[];
   extractedChars: number | null;
@@ -44,6 +46,7 @@ interface IntakeRow {
   state: IntakeState;
   classified_as: string | null;
   classification_why: string | null;
+  about_en: string | null;
   touches: string[] | null;
   extracted_chars: number | null;
   page_count: number | null;
@@ -56,7 +59,7 @@ interface IntakeRow {
 }
 
 const COLUMNS =
-  'id, document_id, document_version_id, state, classified_as, classification_why, touches, ' +
+  'id, document_id, document_version_id, state, classified_as, classification_why, about_en, touches, ' +
   'extracted_chars, page_count, failure_reason, model, input_tokens, output_tokens, created_at, ' +
   'finished_at';
 
@@ -67,6 +70,7 @@ const toRecord = (row: IntakeRow): IntakeRecord => ({
   state: row.state,
   classifiedAs: row.classified_as,
   classificationWhy: row.classification_why,
+  aboutEn: row.about_en,
   touches: row.touches ?? [],
   extractedChars: row.extracted_chars,
   pageCount: row.page_count,

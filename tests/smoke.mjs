@@ -4502,8 +4502,11 @@ try {
   // ve bu assertion o fazın bunu bilinçli yapmasını sağlıyor.
   check(/Belge oku|Read a document/.test(assistant), 'the intake panel is on the assistant screen');
   check(
-    /yazma yok|writes nothing/.test(assistant),
-    'and says it writes nothing, because in this phase it does not',
+    /onayla yazar|writes on approval/.test(assistant),
+    // 1. fazda "yazma yok" diyordu ve o doğruydu. Onaylanan teklif kütüğe
+    // kayıt açtığına göre artık değil, ve bu assertion eski çözümü ölçüyordu:
+    // ekranın doğru söylediğini değil, belli bir cümleyi kurduğunu.
+    'and says plainly that approving is what writes',
   );
   // Boş durum, sebebini söyleyen cümleyle: "henüz okunmamış" ile
   // "okudum, bir şey yok" farklı şeylerdir (T5-05).
