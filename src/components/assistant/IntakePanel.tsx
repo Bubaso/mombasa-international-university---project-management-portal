@@ -1,9 +1,10 @@
 import React from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { FileUp, Loader2, TriangleAlert } from 'lucide-react';
+import { FileUp, Loader2, RefreshCw, TriangleAlert } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { fetchIntakes, intakeFile, type IntakeRecord } from '../../api/intake';
 import { fetchProposals, type Proposal } from '../../api/proposals';
+import { reanalyse } from '../../api/intake';
 import { ProposalCard } from './ProposalCard';
 import { ActionButton, Field, Pill, Select, TextInput, WriteError } from '../ui/Controls';
 import { Explain } from '../ui/Explain';
@@ -216,6 +217,46 @@ export const IntakePanel: React.FC<{ canWrite: boolean }> = ({ canWrite }) => {
   );
 };
 
+/**
+ * Aynı sürümü yeniden okut.
+ *
+ * Belge kasada; yeniden yüklemek ikinci bir sürüm yaratır ve kasada aynı
+ * belgenin iki kopyası durur. Okuma yeni bir alım satırı açıyor, eskisini
+ * silmiyor: bir kanaatin ne zaman verildiği de kayıttır.
+ */
+const ReadAgain: React.FC<{ versionId: string; note: string | null }> = ({ versionId, note }) => {
+  const { language } = useApp();
+  const tr = language === 'tr';
+  const queryClient = useQueryClient();
+  const again = useMutation({
+    mutationFn: () => reanalyse(versionId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['documentIntake'] });
+      void queryClient.invalidateQueries({ queryKey: ['intakeProposals'] });
+    },
+  });
+
+  return (
+    <div className="mt-2">
+      {note && <p className="text-xs text-slate-500">{note}</p>}
+      <ActionButton
+        tone="quiet"
+        className="mt-1.5"
+        disabled={again.isPending}
+        onClick={() => again.mutate()}
+      >
+        <RefreshCw
+          className={`h-3.5 w-3.5 ${again.isPending ? 'animate-spin' : ''}`}
+          aria-hidden="true"
+        />
+        {again.isPending ? (tr ? 'Okunuyor…' : 'Reading…') : tr ? 'Yeniden oku' : 'Read again'}
+      </ActionButton>
+      {again.data?.error && <p className="mt-1.5 text-sm text-amber-900">{again.data.error}</p>}
+      <WriteError error={again.error} />
+    </div>
+  );
+};
+
 const IntakeList: React.FC<{
   rows: IntakeRecord[];
   proposals: Proposal[];
@@ -310,14 +351,32 @@ const IntakeList: React.FC<{
 
             {/* Hiç teklif çıkmaması bir cevaptır ve söylenir: aksi hâlde ekran
               "henüz bakmadım" ile "baktım, açılacak kayıt yok"u birbirine
-              karıştırır. */}
-            {row.state === 'ready' && mine.length === 0 && (
+              karıştırır.
+
+              Üçüncü bir hâl var ve ikisinden de farklı: teklif üretemeyen bir
+              sürümle okunmuş belge. Ona "açılacak kayıt yok" demek, sorulmamış
+              bir soruya cevap uydurmaktır. Eski satırların `aboutEn` alanı boş
+              — o sütun tekliflerle birlikte geldi — ve ayrımı o söylüyor. */}
+            {row.state === 'ready' && mine.length === 0 && row.aboutEn !== null && (
               <p className="mt-2 text-xs text-slate-500">
                 {tr
                   ? 'Bu belgenin metni hiçbir kütüğe kayıt açmayı desteklemiyor.'
                   : 'Nothing in this document’s text supports adding a record to any register.'}
               </p>
             )}
+
+            {row.state === 'ready' && row.aboutEn === null && (
+              <ReadAgain
+                versionId={row.documentVersionId}
+                note={
+                  tr
+                    ? 'Bu okuma, modül henüz kayıt teklif edemezken yapıldı.'
+                    : 'This reading was made before the module could propose records.'
+                }
+              />
+            )}
+
+            {row.state === 'failed' && <ReadAgain versionId={row.documentVersionId} note={null} />}
 
             {row.state === 'ready' && row.extractedChars !== null && (
               <p className="mt-2 text-xs text-slate-500">
