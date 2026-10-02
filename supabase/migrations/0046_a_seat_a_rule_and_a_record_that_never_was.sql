@@ -121,3 +121,11 @@ comment on view trustee_register is
 grant select on trustee_register to authenticated;
 
 select app.reset_function_grants();
+
+-- PostgREST keeps its own list of what exists and serves a 404 for anything
+-- absent from it, so a view this migration creates can be invisible to the API
+-- while being perfectly present in the database. Supabase usually reloads that
+-- list on a DDL change by itself; it did for 0045's two views and did not for
+-- this one, which cost a round of "did the migration apply?". Asking for the
+-- reload here is one line and removes the question.
+notify pgrst, 'reload schema';
