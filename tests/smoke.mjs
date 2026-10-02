@@ -2931,21 +2931,51 @@ const ROUTES = [
 ];
 
 /** Each legal sub-tab, matched by the visible label in either language. */
-const LEGAL_TABS = {
-  hearings: /^Duruşmalar$|^Hearings$/i,
-  filings: /Layiha ve Süreler|Filings & Deadlines/i,
-  orders: /Mahkeme Kararları|Court Orders/i,
-  evidence: /Deliller ve Zincir|Evidence & Custody/i,
-  counsel: /Avukatlar ve Görüşler|Counsel & Opinions/i,
-  hearing_brief: /Duruşma Brifingi|Hearing Brief/i,
-  bench_qa: /Hâkimler Heyeti|Bench Q/i,
-  authorities: /İçtihat|Authorities/i,
-  overview: /Temyiz Dosyası|Appeal File/i,
-  grounds: /Temyiz İtirazları|Grounds of Appeal/i,
-  action_plan: /Eylem Planı|Action Plan/i,
-  who_is_who: /Kim Kimdir|Who is Who/i,
-  timeline: /Dava Tarihçesi|Case History/i,
-};
+/**
+ * The legal screen's thirteen tabs, by the section each one lives under.
+ *
+ * It was a flat list, which worked while all thirteen tabs were on screen at
+ * once. They are two levels now — four sections, each with its own two to
+ * four tabs — so a tab outside the open section is not in the document at
+ * all, and reaching it means clicking its section first, exactly as a person
+ * does. A flat click list did not fail honestly here: it timed out on the
+ * fifth tab.
+ */
+const LEGAL_SECTIONS = [
+  {
+    section: /^Dava$|^The case$/i,
+    tabs: {
+      hearings: /^Duruşmalar$|^Hearings$/i,
+      filings: /Layiha ve süreler|Filings & deadlines/i,
+      orders: /Mahkeme kararları|Court orders/i,
+      evidence: /Deliller ve zincir|Evidence & custody/i,
+    },
+  },
+  {
+    section: /^Temyiz$|^The appeal$/i,
+    tabs: {
+      overview: /Temyiz dosyası|Appeal file/i,
+      grounds: /Temyiz itirazları|Grounds of appeal/i,
+      authorities: /İçtihat ve kararlar|Authorities & precedents/i,
+    },
+  },
+  {
+    section: /^Duruşma hazırlığı$|^Hearing preparation$/i,
+    tabs: {
+      hearing_brief: /^Duruşma brifingi$|^Hearing brief$/i,
+      bench_qa: /Heyet soru-cevapları|Anticipated bench Q/i,
+      action_plan: /Kenya ziyaret planı|Kenya visit plan/i,
+    },
+  },
+  {
+    section: /^Taraflar ve tarihçe$|^People & history$/i,
+    tabs: {
+      counsel: /Avukatlar ve görüşler|Counsel & opinions/i,
+      who_is_who: /Kim kimdir|Who is who/i,
+      timeline: /Dava tarihçesi|Case history/i,
+    },
+  },
+];
 
 /** A page that rendered its shell has at least this much text. */
 const MIN_TEXT = 200;
@@ -3517,39 +3547,47 @@ try {
 
   await page.goto(BASE + '/legal', { waitUntil: 'networkidle' });
 
-  // Thirteen tabs, all of them reachable without dragging. They used to sit in
-  // a horizontal scroller, which put most of them off-screen with nothing
-  // saying they were there: a reader who did not think to drag the strip never
-  // found the chronology or the bench questions. Playwright scrolls a locator
-  // into view before clicking, so the tab clicks below pass either way — this
-  // is the assertion that does not.
-  const tabStrip = page.locator('[aria-label="Hukuk sekmeleri"]');
-  const overflow = await tabStrip.evaluate((el) => ({
-    scrollWidth: el.scrollWidth,
-    clientWidth: el.clientWidth,
-    rows: Math.round(el.getBoundingClientRect().height / 30),
-  }));
-  check(
-    overflow.scrollWidth <= overflow.clientWidth,
-    'the legal tabs all fit without a horizontal scroller',
-    `scrollWidth=${overflow.scrollWidth} clientWidth=${overflow.clientWidth}`,
-  );
-  check(
-    overflow.rows >= 2,
-    'wrapping onto more than one row, which is what makes them all visible',
-    `about ${overflow.rows} rows`,
-  );
-
-  for (const [tab, label] of Object.entries(LEGAL_TABS)) {
-    pageErrors = [];
-    await page.locator('button').filter({ hasText: label }).first().click();
-    await page.waitForTimeout(300);
-    const text = (await page.textContent('body'))?.trim() ?? '';
+  // Thirteen tabs, none of them needing a drag to reach (T1-07, T1-08).
+  //
+  // Playwright scrolls a locator into view before clicking, so the clicks
+  // below would pass even against a strip that scrolled sideways. These are
+  // the assertions that would not. The earlier version of this check also
+  // required the strip to wrap onto two or more rows, which was measuring the
+  // old solution rather than the rule: with four tabs in a section they fit
+  // one row, and that is better, not worse. What the rule actually says is
+  // that no strip scrolls and no strip asks a reader to weigh more than six
+  // choices at a time.
+  for (const label of ['Hukuk bölümleri', 'Hukuk sekmeleri']) {
+    const strip = page.locator(`[aria-label="${label}"]`);
+    const m = await strip.evaluate((el) => ({
+      scrollWidth: el.scrollWidth,
+      clientWidth: el.clientWidth,
+      options: el.querySelectorAll('button').length,
+    }));
     check(
-      pageErrors.length === 0 && text.length > MIN_TEXT,
-      `/legal → ${tab}`.padEnd(16),
-      `text=${text.length} errors=${pageErrors.length}${pageErrors[0] ? ` — ${pageErrors[0].slice(0, 120)}` : ''}`,
+      m.scrollWidth <= m.clientWidth,
+      `the ${label === 'Hukuk bölümleri' ? 'section' : 'tab'} strip fits without a scroller`,
+      `scrollWidth=${m.scrollWidth} clientWidth=${m.clientWidth}`,
     );
+    check(m.options <= 6, `and offers at most six choices`, `${m.options} buttons`);
+  }
+
+  for (const { section, tabs } of LEGAL_SECTIONS) {
+    // The section first: a tab under a closed section is not in the document,
+    // which is the point of splitting them.
+    await page.locator('button').filter({ hasText: section }).first().click();
+    await page.waitForTimeout(250);
+    for (const [tab, label] of Object.entries(tabs)) {
+      pageErrors = [];
+      await page.locator('button').filter({ hasText: label }).first().click();
+      await page.waitForTimeout(300);
+      const text = (await page.textContent('body'))?.trim() ?? '';
+      check(
+        pageErrors.length === 0 && text.length > MIN_TEXT,
+        `/legal → ${tab}`.padEnd(16),
+        `text=${text.length} errors=${pageErrors.length}${pageErrors[0] ? ` — ${pageErrors[0].slice(0, 120)}` : ''}`,
+      );
+    }
   }
 
   // --- the legal record ------------------------------------------------------
@@ -4350,12 +4388,20 @@ try {
 
   // Cross-view links used to be relative, resolving under the current route
   // (/legal/documents) instead of to the sibling route. The link lives on the
-  // appeal-file tab, which is no longer the one /legal opens on.
+  // appeal-file tab, which is no longer the one /legal opens on — and since
+  // the tabs went to two levels it is not even in the document until its
+  // section is open, so the section is clicked first.
   pageErrors = [];
   await page.goto(BASE + '/legal', { waitUntil: 'networkidle' });
   await page
     .locator('button')
-    .filter({ hasText: /Temyiz Dosyası|Appeal File/ })
+    .filter({ hasText: /^Temyiz$|^The appeal$/i })
+    .first()
+    .click();
+  await page.waitForTimeout(250);
+  await page
+    .locator('button')
+    .filter({ hasText: /Temyiz dosyası|Appeal file/i })
     .first()
     .click();
   await page.waitForTimeout(400);

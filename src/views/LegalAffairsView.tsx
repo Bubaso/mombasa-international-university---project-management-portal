@@ -56,6 +56,63 @@ function loadHearingBrief(): HearingBrief | null {
   return null;
 }
 
+/**
+ * The legal screen's thirteen tabs, in four sections.
+ *
+ * Grouped by what somebody is actually doing: following the live case,
+ * working the appeal, preparing for a hearing, or looking up who is who and
+ * what happened when.
+ *
+ * Several labels used to carry a fact in parentheses — "(28 Sept 2026)",
+ * "(9 Grounds)", "E062/2025", "30-Year" — typed into a tab. A date in a tab
+ * label goes stale silently and a count disagrees with the list under it the
+ * moment a row is added, so the label names the thing and the screen under
+ * it carries the particulars, which come from the record.
+ */
+const LEGAL_SECTIONS = [
+  {
+    id: 'case',
+    labelTr: 'Dava',
+    labelEn: 'The case',
+    tabs: [
+      { id: 'hearings', labelTr: 'Duruşmalar', labelEn: 'Hearings' },
+      { id: 'filings', labelTr: 'Layiha ve süreler', labelEn: 'Filings & deadlines' },
+      { id: 'orders', labelTr: 'Mahkeme kararları', labelEn: 'Court orders' },
+      { id: 'evidence', labelTr: 'Deliller ve zincir', labelEn: 'Evidence & custody' },
+    ],
+  },
+  {
+    id: 'appeal',
+    labelTr: 'Temyiz',
+    labelEn: 'The appeal',
+    tabs: [
+      { id: 'overview', labelTr: 'Temyiz dosyası', labelEn: 'Appeal file' },
+      { id: 'grounds', labelTr: 'Temyiz itirazları', labelEn: 'Grounds of appeal' },
+      { id: 'authorities', labelTr: 'İçtihat ve kararlar', labelEn: 'Authorities & precedents' },
+    ],
+  },
+  {
+    id: 'hearing_prep',
+    labelTr: 'Duruşma hazırlığı',
+    labelEn: 'Hearing preparation',
+    tabs: [
+      { id: 'hearing_brief', labelTr: 'Duruşma brifingi', labelEn: 'Hearing brief' },
+      { id: 'bench_qa', labelTr: 'Heyet soru-cevapları', labelEn: 'Anticipated bench Q&A' },
+      { id: 'action_plan', labelTr: 'Kenya ziyaret planı', labelEn: 'Kenya visit plan' },
+    ],
+  },
+  {
+    id: 'people',
+    labelTr: 'Taraflar ve tarihçe',
+    labelEn: 'People & history',
+    tabs: [
+      { id: 'counsel', labelTr: 'Avukatlar ve görüşler', labelEn: 'Counsel & opinions' },
+      { id: 'who_is_who', labelTr: 'Kim kimdir', labelEn: 'Who is who' },
+      { id: 'timeline', labelTr: 'Dava tarihçesi', labelEn: 'Case history' },
+    ],
+  },
+] as const;
+
 export const LegalAffairsView: React.FC = () => {
   const navigate = useNavigate();
   const { language } = useApp();
@@ -80,6 +137,10 @@ export const LegalAffairsView: React.FC = () => {
     | 'who_is_who'
     | 'timeline'
   >('hearings');
+
+  // Derived, never stored: the section is wherever the active tab lives.
+  const activeSection =
+    LEGAL_SECTIONS.find((sec) => sec.tabs.some((t) => t.id === activeSubTab)) ?? LEGAL_SECTIONS[0];
   const [showNewMotionModal, setShowNewMotionModal] = useState(false);
   const [qSearch, setQSearch] = useState('');
 
@@ -248,81 +309,65 @@ export const LegalAffairsView: React.FC = () => {
         onSelect={setSelectedCaseId}
       />
 
-      {/* Navigation Sub-Tabs
-          Wrapped, not scrolled. Thirteen tabs in a horizontal scroller put most
-          of them off-screen with nothing saying they are there, so a reader who
-          does not think to drag the strip never finds the chronology or the
-          bench questions. Two or three rows cost a little height and show every
-          tab at once. */}
-      <div
-        aria-label={language === 'tr' ? 'Hukuk sekmeleri' : 'Legal sub-tabs'}
-        className="flex flex-wrap items-center gap-1.5 border-b border-slate-200 pb-2"
-      >
-        {[
-          { id: 'hearings', labelEn: 'Hearings', labelTr: 'Duruşmalar' },
-          { id: 'filings', labelEn: 'Filings & Deadlines', labelTr: 'Layiha ve Süreler' },
-          { id: 'orders', labelEn: 'Court Orders', labelTr: 'Mahkeme Kararları' },
-          { id: 'evidence', labelEn: 'Evidence & Custody', labelTr: 'Deliller ve Zincir' },
-          { id: 'counsel', labelEn: 'Counsel & Opinions', labelTr: 'Avukatlar ve Görüşler' },
-          {
-            id: 'hearing_brief',
-            labelEn: 'Hearing Brief (28 Sept 2026)',
-            labelTr: 'Duruşma Brifingi (28 Eylül 2026)',
-            badge: undefined,
-          },
-          {
-            id: 'bench_qa',
-            labelEn: 'Anticipated Bench Q&A',
-            labelTr: 'Hâkimler Heyeti Soru-Cevapları',
-            badge: language === 'tr' ? 'Bölüm E' : 'Part E',
-          },
-          {
-            id: 'authorities',
-            labelEn: 'Legal Authorities & Precedents',
-            labelTr: 'Hukuki İçtihatlar & Kararlar',
-            badge: language === 'tr' ? 'Bölüm F' : 'Part F',
-          },
-          { id: 'overview', labelEn: 'Appeal File E062/2025', labelTr: 'Temyiz Dosyası E062/2025' },
-          {
-            id: 'grounds',
-            labelEn: 'Grounds of Appeal (9 Grounds)',
-            labelTr: 'Temyiz İtirazları (9 Gerekçe)',
-          },
-          {
-            id: 'action_plan',
-            labelEn: 'Kenya Visit Action Plan',
-            labelTr: 'Kenya Ziyareti Eylem Planı',
-          },
-          {
-            id: 'who_is_who',
-            labelEn: 'Who is Who Directory',
-            labelTr: 'Kim Kimdir? (Taraflar & Avukatlar)',
-          },
-          { id: 'timeline', labelEn: '30-Year Case History', labelTr: '30 Yıllık Dava Tarihçesi' },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveSubTab(tab.id as typeof activeSubTab)}
-            className={`flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors ${
-              activeSubTab === tab.id
-                ? 'bg-amber-600 text-white font-semibold shadow-xs'
-                : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
-            }`}
-          >
-            <span>{language === 'tr' ? tab.labelTr : tab.labelEn}</span>
-            {tab.badge && (
-              <span
-                className={`text-xs font-mono px-1.5 py-0.2 rounded ${
-                  tab.badge === 'LIVE' || tab.badge === 'CANLI'
-                    ? 'bg-rose-500 text-white animate-pulse font-bold'
-                    : 'bg-slate-100 text-amber-700 border border-slate-200'
+      {/* Sub-tabs, in two levels.
+          There were thirteen of them in one strip, all the same size and all
+          equally loud, so finding the chronology or the bench questions meant
+          reading every label. They are four sections now, and choosing a
+          section shows only its own two to four tabs.
+
+          The section is DERIVED from the active tab rather than held in its
+          own state. Two states would have to be kept in step, and the one
+          that drifts is always the second — the same reason the sidebar and
+          the phone menu now read a single list. */}
+      <div className="space-y-2 border-b border-slate-200 pb-2">
+        <div
+          role="tablist"
+          aria-label={language === 'tr' ? 'Hukuk bölümleri' : 'Legal sections'}
+          className="flex flex-wrap items-center gap-1.5"
+        >
+          {LEGAL_SECTIONS.map((section) => {
+            const isActive = section.id === activeSection.id;
+            return (
+              <button
+                key={section.id}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => setActiveSubTab(section.tabs[0].id as typeof activeSubTab)}
+                className={`cursor-pointer rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
+                  isActive
+                    ? 'bg-slate-800 text-white shadow-xs'
+                    : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
                 }`}
               >
-                {tab.badge}
-              </span>
-            )}
-          </button>
-        ))}
+                {language === 'tr' ? section.labelTr : section.labelEn}
+              </button>
+            );
+          })}
+        </div>
+
+        <div
+          role="tablist"
+          aria-label={language === 'tr' ? 'Hukuk sekmeleri' : 'Legal sub-tabs'}
+          className="flex flex-wrap items-center gap-1.5"
+        >
+          {activeSection.tabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={activeSubTab === tab.id}
+              onClick={() => setActiveSubTab(tab.id as typeof activeSubTab)}
+              className={`flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                activeSubTab === tab.id
+                  ? 'bg-amber-600 font-semibold text-white shadow-xs'
+                  : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
+              }`}
+            >
+              <span>{language === 'tr' ? tab.labelTr : tab.labelEn}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* The record tabs. Everything below them is narrative held in this

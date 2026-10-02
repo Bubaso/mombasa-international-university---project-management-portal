@@ -236,7 +236,59 @@ const PROBE = () => {
     };
   });
 
-  return { smallText, smallTargets, pageOverflow, past, scrollers, registers };
+  // ---- navigation: labels whole, strips not scrolling (T1-02, T1-08) ----
+  //
+  // Truncation is measured, not guessed from the class list: an element is
+  // truncated when its text is wider than the box it sits in. Five sidebar
+  // labels used to be, at every width, and `truncate` meant the screen said
+  // nothing about it — the end of the word simply was not there.
+  const navLabels = [];
+  for (const el of document.querySelectorAll('nav button span, nav a span')) {
+    if (!visible(el)) continue;
+    const text = el.textContent?.trim() ?? '';
+    if (!text) continue;
+    if (el.scrollWidth > el.clientWidth + 1) {
+      navLabels.push({ text: text.slice(0, 40), scroll: el.scrollWidth, client: el.clientWidth });
+    }
+  }
+
+  // Any strip of choices: the tab lists on a screen and the nav itself. A
+  // strip that scrolls hides options with nothing saying they are there.
+  const strips = [];
+  for (const el of document.querySelectorAll(
+    '[role="tablist"], [aria-label*="sekme"], [aria-label*="bölüm"]',
+  )) {
+    if (!visible(el)) continue;
+    strips.push({
+      label: el.getAttribute('aria-label') ?? '',
+      scrolls: el.scrollWidth > el.clientWidth + 1,
+      options: el.querySelectorAll('button, a').length,
+    });
+  }
+
+  // Which routes this width can actually reach, for T1-05. On a phone the
+  // menu sheet has to be open for its links to be in the document, so the
+  // caller opens it before reading this.
+  const reachable = [
+    ...new Set(
+      Array.from(document.querySelectorAll('nav button, nav a'))
+        .filter(visible)
+        .map((el) => el.getAttribute('data-path') ?? '')
+        .filter(Boolean),
+    ),
+  ];
+
+  return {
+    smallText,
+    smallTargets,
+    pageOverflow,
+    past,
+    scrollers,
+    registers,
+    navLabels,
+    strips,
+    reachable,
+  };
 };
 
 /**
@@ -352,6 +404,21 @@ try {
         .join(', ');
       console.log(`  ${w.name} ${route.padEnd(15)} ${flag || 'clean'}`);
     }
+    // What a phone can reach (T1-05). The sheet has to be open for its links
+    // to be in the document, so it is opened deliberately rather than hoped
+    // for: six routes used to be in neither this sheet nor the bottom bar,
+    // and a probe that only read the closed bar would have called that fine.
+    if (w.mobile) {
+      await page.goto(BASE + '/', { waitUntil: 'domcontentloaded' });
+      await page.waitForLoadState('networkidle', { timeout: 20000 }).catch(() => {});
+      await sleep(600);
+      const menu = page.locator('nav button').filter({ hasText: /^(Menü|More)$/ });
+      await menu.first().click();
+      await sleep(600);
+      report.menu = await page.evaluate(PROBE);
+      console.log(`  phone menu reaches ${report.menu.reachable.length} routes`);
+    }
+
     report.widths[w.name] = routes;
     await context.close();
   }
@@ -394,6 +461,16 @@ for (const [name, routes] of Object.entries(report.widths)) {
     headVisible: sum((r) => r.registers.filter((t) => t.headVisible).length),
     registerScrolls: sum((r) => r.registers.filter((t) => t.scrolls).length),
     registerRows: sum((r) => r.registers.reduce((a, t) => a + t.rows, 0)),
+    truncated: rs.flatMap(([route, r]) => r.navLabels.map((l) => `${route} "${l.text}"`)),
+    scrollingStrips: rs.flatMap(([route, r]) =>
+      r.strips.filter((t) => t.scrolls).map((t) => `${route} ${t.label || 'tablist'}`),
+    ),
+    crowdedStrips: rs.flatMap(([route, r]) =>
+      r.strips
+        .filter((t) => t.options > 6)
+        .map((t) => `${route} ${t.label || 'tablist'} (${t.options})`),
+    ),
+    strips: sum((r) => r.strips.length),
   };
 }
 
@@ -474,6 +551,56 @@ if (desktop.registers > 0) {
     'T5-01 and keeps its headings in the header row',
     `${desktop.headVisible}/${desktop.registers}`,
   );
+}
+
+// T1-02: a label whose text is wider than its box is a label with its end
+// missing. Measured, not inferred from a class name.
+check(
+  phone.truncated.length === 0,
+  'T1-02 no navigation label is truncated on a phone',
+  phone.truncated.slice(0, 3).join(', '),
+);
+check(
+  desktop.truncated.length === 0,
+  'T1-02 nor on a desktop, where the sidebar is',
+  desktop.truncated.slice(0, 3).join(', '),
+);
+
+// T1-08: no strip of choices scrolls sideways, at either width.
+check(
+  phone.scrollingStrips.length === 0,
+  'T1-08 no tab strip scrolls sideways on a phone',
+  phone.scrollingStrips.slice(0, 3).join(', '),
+);
+check(
+  desktop.scrollingStrips.length === 0,
+  'T1-08 nor on a desktop',
+  desktop.scrollingStrips.slice(0, 3).join(', '),
+);
+
+// T1-07: never more than six choices in one strip.
+check(
+  phone.crowdedStrips.length === 0 && desktop.crowdedStrips.length === 0,
+  'T1-07 no strip offers more than six choices at once',
+  [...phone.crowdedStrips, ...desktop.crowdedStrips].slice(0, 3).join(', '),
+);
+
+// T1-05: every route in the sidebar is reachable from the phone's menu.
+if (report.menu) {
+  const onPhone = new Set(report.menu.reachable);
+  const unreachable = ROUTES.filter((r) => !onPhone.has(r));
+  check(
+    PARTIAL || onPhone.size >= 19,
+    'T1-05 the phone menu reaches every route',
+    `${onPhone.size} reachable`,
+  );
+  check(
+    unreachable.length === 0,
+    'T1-05 and none of the measured routes is missing from it',
+    unreachable.join(', '),
+  );
+} else {
+  check(false, 'T1-05 could not be measured: the phone menu never opened');
 }
 
 console.log(

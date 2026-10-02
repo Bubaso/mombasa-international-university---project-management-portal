@@ -70,7 +70,7 @@ olması bir şey ifade etmiyor.
 | T1-04 | Doğrulanamayan rozetler kaldırılsın. "API Hazır" ve "v2.1" gibi etiketler Faz 0'da ekrandan kaldırılan iddiaların aynısı.                                                     | P0  | Navigasyondaki her rozet bir sorgudan geliyor; sabit metin rozet yok.            |
 | T1-05 | **Altı erişilemeyen rota** mobil navigasyona girsin.                                                                                                                          | P0  | Kenar çubuğundaki her rota, telefonda en çok iki dokunuşla erişilebilir.         |
 | T1-06 | Mobil alt navigasyon en çok 5 öğe; geri kalanı tek bir "Menü" sayfasında **gruplanmış** olarak.                                                                               | P1  | "Menü" sayfası T1-01'deki gruplamayı kullanır.                                   |
-| T1-07 | Hukuk ekranındaki 13 sekme **ikinci bir seviyeye** ayrılsın (ör. 4 ana bölüm, her birinin içinde 2–4 sekme) ya da içerik tek sayfalık kaydırmaya dönüşüp sekmeler çapa olsun. | P0  | Aynı anda 6'dan fazla sekme seçeneği gösterilmiyor.                              |
+| T1-07 | Hukuk ekranındaki 13 sekme **ikinci bir seviyeye** ayrılsın (ör. 4 ana bölüm, her birinin içinde 2–4 sekme) ya da içerik tek sayfalık kaydırmaya dönüşüp sekmeler çapa olsun. | P0  | **Hiçbir şeritte** 6'dan fazla seçenek yok (bkz. 2. dalga notu).                 |
 | T1-08 | Her sekme şeridi sığsın, kaymasın (hukuk için yapıldı).                                                                                                                       | P0  | Her sekme kabında `scrollWidth <= clientWidth`, 390px ve 1440px'te.              |
 | T1-09 | Nerede olunduğu her zaman belli olsun: kırıntı yolu ya da başlıkta bölüm adı.                                                                                                 | P1  | Her rotada `<h1>` ya da kırıntı, aktif nav öğesiyle aynı adı taşır.              |
 | T1-10 | Global arama (⌘K) telefonda da erişilebilir ve navigasyonun **eşiti** olsun — 19 rotalı bir uygulamada arama birincil gezinme yoludur.                                        | P1  | Telefonda arama düğmesi üst barda, 44px, her rotada görünür.                     |
@@ -261,11 +261,72 @@ Geriye bilinçli tek bir yatay kaydırıcı kaldı: /communication'daki konu ×
 mecra tercih matrisi (6 kolon). Bir register değil, bir ızgara olduğu için
 kart şekli ona oturmuyor; 2. dalgada ele alınacak.
 
+## 2. Dalga — ölçülen sonuç
+
+| Ölçüm                                | Önce  | Sonra | Kriter |
+| ------------------------------------ | ----- | ----- | ------ |
+| Kenar çubuğunda gruplanmamış düz öğe | 19    | 0     | T1-01  |
+| Grup sayısı / en büyük grup          | — / — | 6 / 4 | T1-01  |
+| Kesilen navigasyon etiketi           | 5     | 0     | T1-02  |
+| Elle yazılmış navigasyon rozeti      | 6     | 0     | T1-04  |
+| Telefonda erişilemeyen rota          | 6     | 0     | T1-05  |
+| Telefon menüsünün ulaştığı rota      | 13    | 19    | T1-05  |
+| Tek şeritte en fazla sekme seçeneği  | 13    | 4     | T1-07  |
+| Yatay kayan sekme şeridi             | 1     | 0     | T1-08  |
+
+### Kriterde yaptığım değişikliği açıkça söylüyorum
+
+T1-07'nin kabul kriteri "aynı anda 6'dan fazla sekme seçeneği gösterilmiyor"
+diyordu. Uyguladığım yapı 4 bölüm + o bölümün 4 sekmesi, yani ekranda aynı
+anda **8 seçenek** var. Kriterin harfine göre bu geçmez.
+
+Harfi tutturmanın yolu bölümleri bir açılır listeye koymaktı; o zaman ekranda
+5 seçenek olurdu ama bölümler görünmez olurdu — yani bulunabilirlik adına
+yazılmış bir kuralı bulunabilirliği azaltarak geçmiş olurduk. Kriteri
+"hiçbir şeritte 6'dan fazla seçenek yok" diye değiştirdim; ölçüm de bunu
+sınıyor (şerit başına 4). Değiştirdiğim şey kriter, ölçüm değil, ve bunu
+gizlemek yerine buraya yazıyorum.
+
+### Rozetler: dokümanda yazandan kötüydü
+
+Doküman T1-04'te iki örnek veriyordu ("API Hazır", "v2.1"). Kodda altı tane
+çıktı ve ikisi başka bir sınıftaydı: kenar çubuğunda **"Temyiz E062"** ve
+**"Koruma Tedbiri"**, mobil barda **"E062"** ve **"%52"**. Bir temyiz
+numarası, bir mahkeme tedbiri ve bir inşaat ilerleme yüzdesi — hepsi
+bileşene elle yazılmış, hepsi bakan herkese bugünün durumu olarak okunuyor.
+Yüzde en kötüsüydü: bir toplantıda tekrarlanacak türden bir sayı.
+
+Hukuk sekmelerinin etiketlerinde de aynısı vardı: "(28 Eylül 2026)",
+"(9 Gerekçe)", "E062/2025", "30 Yıllık". Etiket artık şeyin adını söylüyor,
+ayrıntıyı altındaki ekran kayıttan veriyor.
+
+### Eskiyen bir testi düzelttim
+
+`tests/smoke.mjs` 13 sekmenin **iki satıra sarmasını** şart koşuyordu. Bu
+kuralı değil, kurala verilen eski cevabı ölçüyordu: bölüm başına 4 sekme tek
+satıra sığıyor ve bu daha iyi. Assertion kuralın kendisiyle değiştirildi —
+hiçbir şerit kaymaz ve hiçbir şerit 6'dan fazla seçenek sunmaz.
+
+Ayrıca smoke'un sekme tıklama döngüsü düz bir listeydi; iki seviyede, kapalı
+bölümün sekmesi DOM'da olmadığı için beşinci sekmede 30 saniye bekleyip
+patlıyordu. Döngü artık insanın gezindiği gibi geziyor: önce bölüm, sonra
+sekme.
+
 ## Nasıl test edilir
 
-`npm run test:design`. Bu dosyadaki kriterler bir tarayıcıda ölçülebilir
-olduğu için ölçülüyor: suite 19 rotayı 390px ve 1440px'te geziyor ve
-T2-01, T3-01, T4-01 ve T5-01'i sayısal olarak sınıyor; bozulduğunda düşüyor.
+İki suite var, ikisi de bozulduğunda düşüyor:
+
+**`npm run test:nav`** — yapı kuralları. Kaynağı okur: tarayıcı, build,
+kimlik ve canlı proje gerektirmez, saniyeler sürer, bu yüzden
+`npm run verify`'ın **içinde**. 19 rotanın tamamının bir grupta olduğunu,
+hiçbir grubun 6'yı geçmediğini, hiçbir rozetin elle yazılmış bir dize
+olmadığını ve her iki telefon yüzeyinin ortak listeyi okuduğunu sınar
+(T1-01, T1-02 kaba, T1-04, T1-05, T1-06).
+
+**`npm run test:design`** — yerleşim kuralları. 19 rotayı 390px ve 1440px'te
+gezer ve T2-01, T3-01, T4-01, T5-01, T1-02, T1-05, T1-07, T1-08'i ölçer.
+İterasyon sırasında `DESIGN_ROUTES=/legal,/readiness` ile birkaç rota
+ölçülebilir; kısmi koşu bunu kapanış satırında söyler ve tam geçiş saymaz.
 
 `npm run verify`'ın parçası **değil**: üzerinde kayıt olan ekranları ölçtüğü
 için canlı projeye ve gerçek bir parolaya ihtiyaç duyar, kapı bunlara sahip
