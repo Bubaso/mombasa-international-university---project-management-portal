@@ -344,7 +344,37 @@ Ek kalemler:
   önbellek süresi doluyor. Toplu arşiv aktarımında anlamlı olur.
 - Toplu aktarımda Batch API %50 indirim verir ve acele olmayan iş için uygundur.
 
-### 7.4 Maliyet tavanı
+### 7.4 Ölçüm: 1. fazın gerçek maliyeti (2 Ekim 2026)
+
+Yukarıdaki tablo bir tahmindi. 1. faz artık canlıda ve ölçüldü, yani o satırlar
+artık tahmin olarak okunmamalı.
+
+**Kullanılan model Haiku 4.5 değil, `gemini-2.5-flash-lite`.** Rapor 1. geçiş
+için Haiku öneriyordu; uygulamada Gemini'de kalındı ve sebebi maliyet değil:
+portalın hâlihazırda çalışan model yolu (`ai-assistant`) Gemini'dir, anahtarı
+kurulu, ve veri saklama tutumu bir kez değerlendirildi. İkinci bir sağlayıcı
+ikinci bir anahtar, ikinci bir saklama tutumu ve ikinci bir arıza biçimi
+demekti. 2. geçiş (alıntı çapalı alan çıkarma) için bu karar yeniden
+verilecek — zor olan iş o.
+
+Fonksiyonun kendini sınama çağrısından, gerçek anahtar ve gerçek şema ile:
+
+| Ölçülen                                      | Değer                         |
+| -------------------------------------------- | ----------------------------- |
+| Talimat + kütük listesi + şema (sabit kısım) | ~210 belirteç                 |
+| 150 karakterlik sınama metni                 | 249 girdi / 52 çıktı belirteç |
+| 12.000 karakterlik kesit (azami, bir belge)  | ~3.200 girdi / ~60 çıktı      |
+| **Sınıflandırma, belge başına**              | **~$0,001**                   |
+| **Ayda 50 belge**                            | **~$0,06**                    |
+
+Yani 1. fazın sınıflandırması, tablodaki Haiku tahmininin (~$0,033) otuzda
+biri mertebesinde. Sebebi hem daha ucuz model hem de tek geçiş: bu fazda
+belgenin tamamı değil ilk 12.000 karakteri okunuyor ve ikinci bir okuma yok.
+
+Tablodaki büyük rakamlar 2. faz içindir ve hâlâ geçerli: alan çıkarma metni
+ikinci kez okur, alıntı çapası ister ve daha iyi bir model gerektirir.
+
+### 7.5 Maliyet tavanı
 
 `ai_queries` tablosu (0019) kullanımı zaten kaydediyor. Üzerine aylık bir
 tavan eklenmeli: tavan aşılınca modül yeni analiz kabul etmez ve bunu söyler.
@@ -461,11 +491,19 @@ Bu raporun bilmediği şeyler:
 
 - **Çıkarma kalitesi gerçek belgelerde ölçülmedi.** Bir mahkeme kararından
   duruşma kaydının ne kadar doğru çıktığı, ancak gerçek belgelerle denenerek
-  bilinir. Faz 1 bunu ölçmenin en ucuz yolu.
+  bilinir. Faz 1 canlıda ve bunu ölçmenin en ucuz yolu; ölçüm, ilk gerçek
+  belgeler yüklendiğinde yapılacak. Uydurma bir sınama metni modelin
+  biçimini doğrular, kalitesini doğrulamaz.
 - **Taranmış belgelerin oranı bilinmiyor.** Metin PDF ile taranmış arasındaki
   maliyet farkı 4–6 kat; oran bilinmediği için ortalama maliyet bir aralık.
-- **`.docx` ayrıştırma Deno'da denenmedi.** docx bir zip içinde XML, ayrıştırılabilir,
-  ama hangi kütüphanenin edge runtime'da sorunsuz çalıştığı denenmeli.
+- **Metin çıkarma Deno'da gerçek bir dosyayla denenmedi.** 1. faz kütüphane
+  sorununu ortadan kaldırdı: `.docx` elle okunuyor (zip başlıkları ve
+  `DecompressionStream`, ikisi de web standardı), tek npm bağımlılığı PDF
+  için `unpdf`. Birim testleri Node'da gerçek zip baytlarıyla geçiyor. Edge
+  runtime'da gerçek bir dosyayla çalıştığı ise ilk yüklemede görülecek.
+  Modelin kendisi 2 Ekim'de canlıda doğrulandı (§7.4): fonksiyonun kendini
+  sınama çağrısı, gerçek anahtar ve gerçek şemayla, kabul edilen bir
+  sınıflandırma döndürdü.
 - **Sıfır-saklama düzenlemesinin süresi ve koşulları** sağlayıcıyla
   konuşulmadan bilinmez; organizasyon başına açılıyor.
 - **Fiyatlar 2 Ekim 2026 tarihli.** Tablolar o günün dokümanlarından.

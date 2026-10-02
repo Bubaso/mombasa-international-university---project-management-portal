@@ -58,6 +58,100 @@ const MAX_BYTES = 25 * 1024 * 1024;
  */
 const CLASSIFY_CHARS = 12_000;
 
+/**
+ * Modele giden istek, tek yerde.
+ *
+ * Kendini sınama da bunu çağırıyor. Ayrı bir istek kursa, sınadığı şey
+ * gerçekten gönderilen istek olmazdı — ve sınanmak istenen tam olarak o.
+ *
+ * Anahtar başlıkta gider, sorgu dizesinde değil: URL'ler log'a düşer ve
+ * `ai-assistant` da bu yüzden başlığı kullanıyor. Yukarı akışın gövdesi
+ * asla çağırana ya da veritabanına geçmez, çünkü kota ve anahtar ayrıntısı
+ * yankılayabilir; sunucu kütüğüne yazılır, ki 400'ün sebebi sorulabilsin.
+ */
+async function askTheModel(
+  apiKey: string,
+  prompt: string,
+): Promise<
+  | { ok: true; parsed: unknown; inputTokens: number | null; outputTokens: number | null }
+  | { ok: false; why: string; status: number }
+> {
+  let upstream: Response;
+  try {
+    upstream = await fetch(ENDPOINT, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-goog-api-key': apiKey },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: CLASSIFY_INSTRUCTION }] },
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0,
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: 'object',
+            properties: {
+              classifiedAs: { type: 'string' },
+              why: { type: 'string' },
+              touches: { type: 'array', items: { type: 'string', enum: REGISTERS } },
+            },
+            required: ['classifiedAs', 'why', 'touches'],
+          },
+        },
+      }),
+    });
+  } catch (error) {
+    return {
+      ok: false,
+      status: 502,
+      why: `The model could not be reached: ${error instanceof Error ? error.message : 'unknown'}`,
+    };
+  }
+
+  if (!upstream.ok) {
+    console.error('Model refused', upstream.status, (await upstream.text()).slice(0, 600));
+    return { ok: false, status: 502, why: `The model refused the request (${upstream.status}).` };
+  }
+
+  const payload = (await upstream.json().catch(() => null)) as {
+    candidates?: { content?: { parts?: { text?: string }[] } }[];
+    usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number };
+  } | null;
+
+  const answerText = payload?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(answerText);
+  } catch {
+    return { ok: false, status: 422, why: 'The model did not answer in the shape this asked for.' };
+  }
+
+  return {
+    ok: true,
+    parsed,
+    inputTokens: payload?.usageMetadata?.promptTokenCount ?? null,
+    outputTokens: payload?.usageMetadata?.candidatesTokenCount ?? null,
+  };
+}
+
+/** Modele gönderilen metin: hangi kütükler var, hangi dosya, ve belgenin kendisi. */
+const buildPrompt = (fileName: string, excerpt: string, truncated: boolean): string =>
+  `Register keys you may use: ${REGISTERS.join(', ')}\n\n` +
+  `Document file name: ${fileName || 'unknown'}\n` +
+  (truncated
+    ? `First ${CLASSIFY_CHARS} characters of the text follow.\n\n`
+    : 'The text follows.\n\n') +
+  excerpt;
+
+/**
+ * Kendini sınama metni.
+ *
+ * Uydurma ve kısa, ve kasıtlı olarak istekten gelmiyor: istekten gelse bu
+ * uç nokta bedava bir model vekili olurdu.
+ */
+const SELF_TEST_TEXT =
+  'IN THE ENVIRONMENT AND LAND COURT AT MOMBASA. Case No. ELC 1/2020. ' +
+  'The court orders that the respondent shall file a response within 30 days.';
+
 // ---------------------------------------------------------------------------
 
 Deno.serve(async (req: Request): Promise<Response> => {
@@ -80,18 +174,51 @@ Deno.serve(async (req: Request): Promise<Response> => {
   const authorization = req.headers.get('Authorization');
   if (!authorization) return json({ error: 'Not signed in.' }, 401);
 
-  let body: { versionId?: string };
+  let body: { versionId?: string; selfTest?: boolean };
   try {
     body = await req.json();
   } catch {
     return json({ error: 'Request body must be JSON.' }, 400);
   }
-  const versionId = body.versionId;
-  if (!versionId) return json({ error: 'A version id is required.' }, 400);
 
   const asCaller = createClient(url, anonKey, {
     global: { headers: { Authorization: authorization } },
   });
+
+  const { data: user } = await asCaller.auth.getUser();
+  const requestedBy = user?.user?.id;
+  if (!requestedBy) return json({ error: 'Not signed in.' }, 401);
+
+  // Kendini sınama: modele ulaşılıyor mu ve cevabı istenen biçimde mi.
+  //
+  // Hiçbir şey yazmaz, hiçbir belgeye dokunmaz, ve metni istekten almaz.
+  // Var olma sebebi ölçüm: bu fonksiyonun model çağrısı yerelde
+  // çalıştırılamıyor (anahtar sunucuda) ve dokümanda şemanın dizi
+  // elemanındaki `enum`'u desteklediği açıkça yazmıyor. Onsuz, ilk gerçek
+  // yükleme aynı zamanda ilk deneme olurdu — ve başarısızlığı kullanıcı
+  // keşfederdi.
+  if (body.selfTest) {
+    const answer = await askTheModel(apiKey, buildPrompt('self-test.txt', SELF_TEST_TEXT, false));
+    if (!answer.ok) return json({ selfTest: true, ok: false, error: answer.why }, answer.status);
+    const read = readClassification(answer.parsed);
+    return json({
+      selfTest: true,
+      ok: read.ok,
+      model: MODEL,
+      inputTokens: answer.inputTokens,
+      outputTokens: answer.outputTokens,
+      ...(read.ok
+        ? {
+            classifiedAs: read.value.classifiedAs,
+            why: read.value.why,
+            touches: read.value.touches,
+          }
+        : { refusedBecause: read.why }),
+    });
+  }
+
+  const versionId = body.versionId;
+  if (!versionId) return json({ error: 'A version id is required.' }, 400);
 
   // Görebiliyor mu. Göremiyorsa cevabı "yok", çünkü "var ama senin değil"
   // de bir bilgidir.
@@ -113,10 +240,6 @@ Deno.serve(async (req: Request): Promise<Response> => {
   // Alım satırı çağıranın token'ıyla açılır, ki 0047'nin insert politikası
   // uygulansın: yazma yetkisi yoksa burada reddedilir, ve satır `analysing`
   // doğar — bitmiş bir alımı istemci iddia edemez.
-  const { data: user } = await asCaller.auth.getUser();
-  const requestedBy = user?.user?.id;
-  if (!requestedBy) return json({ error: 'Not signed in.' }, 401);
-
   const { data: intake, error: intakeError } = await asCaller
     .from('document_intake')
     .insert({
@@ -177,70 +300,15 @@ Deno.serve(async (req: Request): Promise<Response> => {
   }
 
   const excerpt = extracted.text.slice(0, CLASSIFY_CHARS);
+  const truncated = excerpt.length < extracted.text.length;
 
-  let upstream: Response;
-  try {
-    upstream = await fetch(`${ENDPOINT}?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: CLASSIFY_INSTRUCTION }] },
-        contents: [
-          {
-            role: 'user',
-            parts: [
-              {
-                text:
-                  `Register keys you may use: ${REGISTERS.join(', ')}\n\n` +
-                  `Document file name: ${version.file_name ?? 'unknown'}\n` +
-                  (excerpt.length < extracted.text.length
-                    ? `First ${CLASSIFY_CHARS} characters of the text follow.\n\n`
-                    : 'The text follows.\n\n') +
-                  excerpt,
-              },
-            ],
-          },
-        ],
-        generationConfig: {
-          temperature: 0,
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: 'object',
-            properties: {
-              classifiedAs: { type: 'string' },
-              why: { type: 'string' },
-              touches: { type: 'array', items: { type: 'string', enum: REGISTERS } },
-            },
-            required: ['classifiedAs', 'why', 'touches'],
-          },
-        },
-      }),
-    });
-  } catch (error) {
-    return await givingUp(
-      `The model could not be reached: ${error instanceof Error ? error.message : 'unknown'}`,
-      502,
-    );
-  }
+  const answer = await askTheModel(
+    apiKey,
+    buildPrompt(version.file_name ?? '', excerpt, truncated),
+  );
+  if (!answer.ok) return await givingUp(answer.why, answer.status);
 
-  if (!upstream.ok) {
-    return await givingUp(`The model refused the request (${upstream.status}).`, 502);
-  }
-
-  const payload = (await upstream.json().catch(() => null)) as {
-    candidates?: { content?: { parts?: { text?: string }[] } }[];
-    usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number };
-  } | null;
-
-  const answerText = payload?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(answerText);
-  } catch {
-    return await givingUp('The model did not answer in the shape this asked for.');
-  }
-
-  const read = readClassification(parsed);
+  const read = readClassification(answer.parsed);
   if (!read.ok) {
     // Reddedilen bir cevap saklanmaz. Sebebi saklanır: "model şunu dedi ama
     // kabul edilmedi" altı ay sonra sorulacak sorunun cevabıdır.
@@ -255,8 +323,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
     extracted_chars: extracted.text.length,
     page_count: extracted.pages,
     model: MODEL,
-    input_tokens: payload?.usageMetadata?.promptTokenCount ?? null,
-    output_tokens: payload?.usageMetadata?.candidatesTokenCount ?? null,
+    input_tokens: answer.inputTokens,
+    output_tokens: answer.outputTokens,
   });
 
   return json({
@@ -266,6 +334,6 @@ Deno.serve(async (req: Request): Promise<Response> => {
     touches: read.value.touches,
     extractedChars: extracted.text.length,
     pageCount: extracted.pages,
-    truncated: excerpt.length < extracted.text.length,
+    truncated,
   });
 });

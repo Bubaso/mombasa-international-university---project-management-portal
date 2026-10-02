@@ -16,6 +16,7 @@
  * Usage: npm run test:intake
  */
 import { deflateRawSync } from 'node:zlib';
+import { readFileSync } from 'node:fs';
 import { extract } from '../supabase/functions/document-intake/extract.js';
 import { REGISTERS, readClassification } from '../supabase/functions/ai-assistant/rules.js';
 
@@ -200,6 +201,75 @@ check(
   'and holds the ones the vault and the obligations register need',
 );
 check(new Set(REGISTERS).size === REGISTERS.length, 'with no key listed twice');
+
+// ---------------------------------------------------------------------------
+// Fonksiyonun kaynağındaki iki kural
+// ---------------------------------------------------------------------------
+//
+// İkisi de tarayıcıdan ve birim testinden görülmez, ikisi de kaynağa
+// bakılarak sınanabilir, ve ikisinin de bozulması sessizdir.
+
+const FUNCTION_SOURCE = readFileSync(
+  new URL('../supabase/functions/document-intake/index.ts', import.meta.url),
+  'utf8',
+);
+
+// Anahtar başlıkta gider. Sorgu dizesindeki bir anahtar, yukarı akışın hata
+// gövdesi log'landığı anda log'a düşer — ve o gövde kütüğe yazılmasa bile
+// sunucu kütüğünde durur.
+check(
+  !/[?&]key=/.test(FUNCTION_SOURCE),
+  'the model key is never put in a URL',
+  (FUNCTION_SOURCE.match(/.{0,40}[?&]key=.{0,20}/) ?? [''])[0],
+);
+check(
+  FUNCTION_SOURCE.includes("'x-goog-api-key'"),
+  'and it travels in the header the provider documents',
+);
+
+// Kendini sınama metni sabittir. İstekten gelse, bu uç nokta oturum açmış
+// herkese bedava bir model vekili olurdu — ve bunu kimse istemedi.
+{
+  const branch = FUNCTION_SOURCE.slice(
+    FUNCTION_SOURCE.indexOf('if (body.selfTest)'),
+    FUNCTION_SOURCE.indexOf('const versionId = body.versionId'),
+  );
+  check(
+    branch.length > 100,
+    'the self-test branch is where it is expected',
+    `${branch.length} chars`,
+  );
+  // `body.text` aramak yetmiyordu: bir mutasyon `(body as {...}).text` yazdı
+  // ve test geçti. Kural isimle değil sayıyla kuruluyor — dalın içinde
+  // `body`, girdiği `if`'teki tek geçişinden fazla görünmemeli.
+  const mentionsOfBody = (branch.match(/\bbody\b/g) ?? []).length;
+  check(
+    branch.includes('SELF_TEST_TEXT') && mentionsOfBody === 1,
+    'and its text is fixed in the source, not taken from the request',
+    `${mentionsOfBody} mention(s) of the request body`,
+  );
+  check(/const SELF_TEST_TEXT =\s*\n?\s*'/.test(FUNCTION_SOURCE), 'with the text itself a literal');
+  // Aynı isteği kuruyor olmalı: ayrı bir istek kursa sınadığı şey gerçekten
+  // gönderilen istek olmazdı.
+  check(
+    branch.includes('askTheModel(') && branch.includes('buildPrompt('),
+    'and it goes through the same request the real path uses',
+  );
+}
+
+// Yazma yok: dalın içinde hiçbir tablo adı geçmemeli.
+{
+  const branch = FUNCTION_SOURCE.slice(
+    FUNCTION_SOURCE.indexOf('if (body.selfTest)'),
+    FUNCTION_SOURCE.indexOf('const versionId = body.versionId'),
+  );
+  check(
+    !branch.includes('document_intake') &&
+      !branch.includes('.insert(') &&
+      !branch.includes('settle('),
+    'and the self-test writes nothing at all',
+  );
+}
 
 console.log('');
 if (failures > 0) {
