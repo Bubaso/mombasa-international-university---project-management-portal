@@ -3,11 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   CalendarClock,
-  Gavel,
-  FileText,
-  ScrollText,
   CircleAlert,
+  CircleHelp,
+  FileSignature,
+  FileText,
+  Flag,
+  Gavel,
   HelpCircle,
+  ScrollText,
   Users,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
@@ -20,50 +23,34 @@ import { MachineBadge } from '../components/ui/MachineBadge';
 import { IcsExport } from '../components/calendar/IcsExport';
 import { Pill } from '../components/ui/Controls';
 import type { CalendarEntry, CalendarKind, Language } from '../types';
+import { CALENDAR_KIND_ORDER, calendarKindWord } from '../lib/calendarKinds';
 
-const KINDS: Record<
-  CalendarKind,
-  { icon: React.ElementType; tr: string; en: string; style: string }
-> = {
-  hearing: {
-    icon: Gavel,
-    tr: 'Duruşma',
-    en: 'Hearing',
-    style: 'border-rose-300 bg-rose-50 text-rose-900',
-  },
-  filing: {
-    icon: FileText,
-    tr: 'Layiha süresi',
-    en: 'Filing deadline',
-    style: 'border-amber-300 bg-amber-50 text-amber-900',
-  },
-  obligation: {
-    icon: ScrollText,
-    tr: 'Yükümlülük',
-    en: 'Obligation',
-    style: 'border-purple-300 bg-purple-50 text-purple-900',
-  },
-  action: {
-    icon: CircleAlert,
-    tr: 'Aksiyon',
-    en: 'Action',
-    style: 'border-teal-300 bg-teal-50 text-teal-900',
-  },
-  question: {
-    icon: HelpCircle,
-    tr: 'Açık soru',
-    en: 'Open question',
-    style: 'border-slate-300 bg-slate-100 text-slate-700',
-  },
-  meeting: {
-    icon: Users,
-    tr: 'Toplantı',
-    en: 'Meeting',
-    style: 'border-indigo-300 bg-indigo-50 text-indigo-900',
-  },
+/**
+ * Türün görsel parçası. Ad ve rota `lib/calendarKinds`'te; burada yalnız
+ * ikon ve renk var, çünkü onlar ekrana ait.
+ */
+const FACE: Record<CalendarKind, { icon: React.ElementType; style: string }> = {
+  hearing: { icon: Gavel, style: 'border-rose-300 bg-rose-50 text-rose-900' },
+  filing: { icon: FileText, style: 'border-amber-300 bg-amber-50 text-amber-900' },
+  obligation: { icon: ScrollText, style: 'border-purple-300 bg-purple-50 text-purple-900' },
+  action: { icon: CircleAlert, style: 'border-teal-300 bg-teal-50 text-teal-900' },
+  question: { icon: HelpCircle, style: 'border-slate-300 bg-slate-100 text-slate-700' },
+  meeting: { icon: Users, style: 'border-indigo-300 bg-indigo-50 text-indigo-900' },
+  contract: { icon: FileSignature, style: 'border-sky-300 bg-sky-50 text-sky-900' },
+  milestone: { icon: Flag, style: 'border-emerald-300 bg-emerald-50 text-emerald-900' },
 };
 
-const KIND_ORDER = Object.keys(KINDS) as CalendarKind[];
+/**
+ * Aynı tablo, gevşek anahtarla — `calendarKinds`'teki gerekçeyle aynı:
+ * veritabanı yayınlanmış pakete göre bir göç önde olabilir. Tanınmayan tür
+ * nötr bir ikonla ve ham adıyla görünür; satırı gizlemek de, ekranı
+ * düşürmek de o satırı görülmez yapar.
+ */
+const FACE_BY_KEY: Record<string, { icon: React.ElementType; style: string }> = FACE;
+const UNKNOWN_FACE = { icon: CircleHelp, style: 'border-slate-300 bg-slate-100 text-slate-700' };
+const faceOf = (kind: string) => FACE_BY_KEY[kind] ?? UNKNOWN_FACE;
+
+const KIND_ORDER = CALENDAR_KIND_ORDER;
 
 /** The bands the requirements name, applied across every register at once. */
 function band(dueOn: string | null): { key: string; tr: string; en: string } {
@@ -204,11 +191,11 @@ export const CalendarView: React.FC = () => {
         {KIND_ORDER.map((k) => {
           const count = entries.filter((e) => e.kind === k).length;
           if (count === 0) return null;
-          const Icon = KINDS[k].icon;
+          const Icon = faceOf(k).icon;
           return (
             <FilterChip key={k} active={kind === k} onClick={() => setKind(kind === k ? '' : k)}>
               <Icon className="h-3 w-3" aria-hidden="true" />
-              {KINDS[k][language]} ({count})
+              {calendarKindWord(k, language)} ({count})
             </FilterChip>
           );
         })}
@@ -255,7 +242,7 @@ export const CalendarView: React.FC = () => {
               </header>
               <ul className="divide-y divide-slate-100">
                 {group.rows.map((entry) => {
-                  const Icon = KINDS[entry.kind].icon;
+                  const Icon = faceOf(entry.kind).icon;
                   return (
                     <li key={`${entry.kind}-${entry.id}`}>
                       <button
@@ -277,7 +264,7 @@ export const CalendarView: React.FC = () => {
                               {machineWritten(entry) && <MachineBadge className="ml-1.5" />}
                             </p>
                             <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-slate-500">
-                              <span>{KINDS[entry.kind][language]}</span>
+                              <span>{calendarKindWord(entry.kind, language)}</span>
                               {entry.detail && <span>· {entry.detail.replace(/_/g, ' ')}</span>}
                               {entry.state && entry.state !== entry.detail && (
                                 <span>· {entry.state.replace(/_/g, ' ')}</span>

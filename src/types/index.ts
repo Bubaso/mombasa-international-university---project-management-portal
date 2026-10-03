@@ -1258,7 +1258,32 @@ export interface CommitmentRecord {
 // The unified calendar (M15-03) — mirrors the view in 0011
 // ---------------------------------------------------------------------------
 
-export type CalendarKind = 'hearing' | 'filing' | 'obligation' | 'action' | 'question' | 'meeting';
+/**
+ * Mirrors the calendar_kind enum in Postgres, which 0022 and 0024 each grew by
+ * one value after 0011 created it. This type did not grow with it, and that is
+ * what took the calendar screen down: a single milestone row made
+ * `KINDS[entry.kind]` undefined, and reading `.icon` off it threw. The type
+ * said six values, the database held eight, and TypeScript believed the type.
+ *
+ * `tests/enum-drift.mjs` now compares the two, so the next `alter type ... add
+ * value` fails the build instead of a screen.
+ */
+export type CalendarKind =
+  | 'hearing'
+  | 'filing'
+  | 'obligation'
+  | 'action'
+  | 'question'
+  | 'meeting'
+  | 'contract'
+  | 'milestone';
+
+/** Bir takvim türünün adı ve ait olduğu kütük. Tanımı `lib/calendarKinds`. */
+export interface CalendarKindFace {
+  tr: string;
+  en: string;
+  route: string;
+}
 
 /**
  * One dated thing, from whichever register it belongs to. Each row was

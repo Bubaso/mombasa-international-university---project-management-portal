@@ -10,7 +10,7 @@
  * Usage: npm run test:exports
  */
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -46,6 +46,23 @@ try {
   console.error('Could not compile the export modules');
   console.error(error.stdout?.toString() ?? error.message);
   process.exit(1);
+}
+
+// Çıkan JS'te göreli içe almalar uzantısız: `moduleResolution: bundler`
+// altında kaynak `./calendarKinds` yazıyor, çünkü paketleyici onu çözüyor.
+// Node çözmüyor. Burada modüller paketleyici olmadan içe alındığı için
+// uzantıyı yayımlanmış dosyalara test ekliyor — kaynağı Node'un kuralına
+// göre yazmak, uygulamanın kendi kuralını teste uydurmak olurdu.
+for (const file of readdirSync(join(out, 'lib'))) {
+  if (!file.endsWith('.js')) continue;
+  const path = join(out, 'lib', file);
+  writeFileSync(
+    path,
+    readFileSync(path, 'utf8').replace(
+      /(\bfrom\s+['"]\.\.?\/[^'"]+)(['"])/g,
+      (whole, spec, quote) => (/\.[cm]?js$/.test(spec) ? whole : `${spec}.js${quote}`),
+    ),
+  );
 }
 
 const { toIcs } = await import(join(out, 'lib', 'ics.js'));
@@ -85,6 +102,47 @@ check(
   'and carries the two properties a reader needs',
 );
 check(basic.events === 1 && basic.allDay === 1, 'one event, and it is an all-day one');
+
+// --- türün adı -------------------------------------------------------------
+//
+// 0022 ve 0024 `calendar_kind`'a birer değer ekledi; o iki değer bu dosyanın
+// sözlüğüne girmemişti ve ihracat satırın türünü ham anahtarla yazıyordu.
+// Artık sözlük tek yerde (`lib/calendarKinds`), ve burada sınanan şey o
+// yerin bu ihracata da ulaştığı.
+const milestone = toIcs([entry({ kind: 'milestone' })], {
+  language: 'tr',
+  includeClosed: false,
+  now: NOW,
+});
+check(
+  /^SUMMARY:Kilometre taşı: /m.test(milestone.text),
+  'a milestone row carries the word for its kind, not its enum key',
+  milestone.text.match(/^SUMMARY:.*$/m)?.[0] ?? '',
+);
+const contract = toIcs([entry({ kind: 'contract' })], {
+  language: 'en',
+  includeClosed: false,
+  now: NOW,
+});
+check(
+  /^SUMMARY:Contract: /m.test(contract.text),
+  'and so does a contract row, in the language asked for',
+  contract.text.match(/^SUMMARY:.*$/m)?.[0] ?? '',
+);
+
+// Veritabanı bir göç önde olabilir: değer canlıya uygulandığı an gelmeye
+// başlıyor, paket bir sonraki deploy'da öğreniyor. O satır ham adıyla
+// görünür — uydurulmuş bir ad, tanınmayan bir türden kötüdür (CLAUDE.md §2).
+const unknown = toIcs([entry({ kind: 'something_0051_will_add' })], {
+  language: 'tr',
+  includeClosed: false,
+  now: NOW,
+});
+check(
+  /^SUMMARY:something_0051_will_add: /m.test(unknown.text),
+  'a kind this bundle has never heard of is written out, not dropped or guessed',
+  unknown.text.match(/^SUMMARY:.*$/m)?.[0] ?? '',
+);
 
 // --- a date is not a time --------------------------------------------------
 

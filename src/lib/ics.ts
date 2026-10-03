@@ -27,6 +27,7 @@
  * file that imports silently wrong.
  */
 import type { CalendarEntry, Confidentiality } from '../types';
+import { calendarKindWord } from './calendarKinds';
 
 /** RFC 5545 §3.1: lines are folded at 75 octets, continuations begin with a space. */
 function fold(line: string): string {
@@ -84,16 +85,6 @@ const CLASS: Record<Confidentiality, string> = {
   confidential: 'CONFIDENTIAL',
   restricted: 'PRIVATE',
 };
-
-const KIND_WORD: Record<string, { en: string; tr: string }> = {
-  hearing: { en: 'Hearing', tr: 'Duruşma' },
-  filing: { en: 'Filing deadline', tr: 'Layiha süresi' },
-  obligation: { en: 'Obligation', tr: 'Yükümlülük' },
-  action: { en: 'Action', tr: 'Aksiyon' },
-  question: { en: 'Open question', tr: 'Açık soru' },
-  meeting: { en: 'Meeting', tr: 'Toplantı' },
-};
-
 export interface IcsOptions {
   language: 'tr' | 'en';
   /** Whether confidential and restricted matters go into the file. */
@@ -137,9 +128,8 @@ export function toIcs(entries: CalendarEntry[], options: IcsOptions): IcsResult 
       continue;
     }
 
-    const kind = KIND_WORD[entry.kind];
     const label = (tr ? entry.titleTr : entry.titleEn) ?? entry.titleEn ?? entry.titleTr ?? '';
-    const prefix = kind ? (tr ? kind.tr : kind.en) : entry.kind;
+    const prefix = calendarKindWord(entry.kind, tr ? 'tr' : 'en');
     const summary = label ? `${prefix}: ${label}` : prefix;
 
     const notes: string[] = [];

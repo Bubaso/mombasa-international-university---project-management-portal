@@ -26,19 +26,9 @@ import { Check, Clock, Gavel, ShieldAlert } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useAcknowledgeDate, useCriticalDates } from '../api/planHooks';
 import { formatDate } from '../lib/site';
+import { calendarKindRoute } from '../lib/calendarKinds';
 
 /** Where each kind of date lives, so the strip is clickable. */
-const ROUTE: Record<string, string> = {
-  hearing: '/legal',
-  filing: '/legal',
-  obligation: '/obligations',
-  action: '/meetings',
-  question: '/meetings',
-  meeting: '/meetings',
-  contract: '/procurement',
-  milestone: '/plan',
-};
-
 export const DeadlineAlertBanner: React.FC = () => {
   const { language } = useApp();
   const tr = language === 'tr';
@@ -72,7 +62,7 @@ export const DeadlineAlertBanner: React.FC = () => {
                 )}
                 <button
                   type="button"
-                  onClick={() => navigate(ROUTE[date.kind] ?? '/calendar')}
+                  onClick={() => navigate(calendarKindRoute(date.kind))}
                   className="min-w-0 cursor-pointer truncate text-left text-amber-900 hover:underline"
                 >
                   {title ?? (tr ? '(başlıksız)' : '(untitled)')}
