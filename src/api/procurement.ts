@@ -17,7 +17,7 @@
 import { supabase } from '../lib/supabase';
 import type {
   AmountVerdict,
-  ContractAlert,
+  ContractRow,
   ContractMilestone,
   ContractSettlement,
   ContractTerm,
@@ -239,9 +239,18 @@ export async function rejectCandidate(id: string, reasonEn: string): Promise<voi
 // Contracts (M14-03, M14-05)
 // ---------------------------------------------------------------------------
 
-export async function fetchContractAlerts(): Promise<ContractAlert[]> {
+/**
+ * Every contract, ended ones included.
+ *
+ * Reads `contract_register` rather than `contract_alerts` (0052). The alert
+ * feed stays in the database for what it is named for; a register that cannot
+ * show a terminated contract is not a register — and the performance review
+ * form reads this too, so a firm whose contract has ended can finally be
+ * scored, which is when scoring one is most honest.
+ */
+export async function fetchContracts(): Promise<ContractRow[]> {
   const { data, error } = await supabase
-    .from('contract_alerts')
+    .from('contract_register')
     .select('*')
     .order('next_date', { nullsFirst: false });
   fail(error);
@@ -252,17 +261,17 @@ export async function fetchContractAlerts(): Promise<ContractAlert[]> {
     counterpartyName: row.counterparty_name as string,
     subjectEn: row.subject_en as string,
     subjectTr: row.subject_tr as string | null,
-    state: row.state as ContractAlert['state'],
+    state: row.state as ContractRow['state'],
     startsOn: row.starts_on as string | null,
     endsOn: row.ends_on as string | null,
     renewalOn: row.renewal_on as string | null,
     noticeDays: row.notice_days == null ? null : Number(row.notice_days),
     valueAmount: num(row.value_amount),
-    valueCurrency: row.value_currency as ContractAlert['valueCurrency'],
+    valueCurrency: row.value_currency as ContractRow['valueCurrency'],
     valueAmountKes: num(row.value_amount_kes),
-    valueBasis: row.value_basis as ContractAlert['valueBasis'],
-    renewalBand: row.renewal_band as ContractAlert['renewalBand'],
-    expiryBand: row.expiry_band as ContractAlert['expiryBand'],
+    valueBasis: row.value_basis as ContractRow['valueBasis'],
+    renewalBand: row.renewal_band as ContractRow['renewalBand'],
+    expiryBand: row.expiry_band as ContractRow['expiryBand'],
     // 'infinity' comes back from least() when neither date is set; it is not
     // a date anybody should see on a screen.
     nextDate:
@@ -270,7 +279,7 @@ export async function fetchContractAlerts(): Promise<ContractAlert[]> {
     daysToExpiry: row.days_to_expiry == null ? null : Number(row.days_to_expiry),
     daysToRenewal: row.days_to_renewal == null ? null : Number(row.days_to_renewal),
     renewalDrafted: Boolean(row.renewal_drafted),
-    confidentiality: row.confidentiality as ContractAlert['confidentiality'],
+    confidentiality: row.confidentiality as ContractRow['confidentiality'],
   }));
 }
 

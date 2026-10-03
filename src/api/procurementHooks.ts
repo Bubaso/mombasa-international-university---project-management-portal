@@ -13,8 +13,8 @@ export const useCandidates = (requestId: string | null) =>
     enabled: requestId != null,
   });
 
-export const useContractAlerts = () =>
-  useQuery({ queryKey: ['contractAlerts'], queryFn: api.fetchContractAlerts });
+export const useContracts = () =>
+  useQuery({ queryKey: ['contracts'], queryFn: api.fetchContracts });
 
 export const useContractTerms = (contractId: string | null) =>
   useQuery({

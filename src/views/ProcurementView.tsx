@@ -23,15 +23,15 @@ import { ContractPanel } from '../components/procurement/ContractPanel';
 import { ReviewPanel } from '../components/procurement/ReviewPanel';
 import { MatchingPanel } from '../components/procurement/MatchingPanel';
 import { DataFreshness } from '../components/DataFreshness';
-import { fetchContractAlerts } from '../api/procurement';
+import { fetchContracts } from '../api/procurement';
 
 export const ProcurementView: React.FC = () => {
   const { language } = useApp();
   const tr = language === 'tr';
 
-  // Freshness is measured on the contract alerts, because they are the part
-  // of this screen that is about today rather than about the record.
-  const alerts = useQuery({ queryKey: ['contractAlerts'], queryFn: fetchContractAlerts });
+  // Freshness is measured on the contracts, because their warning bands are
+  // the part of this screen that is about today rather than about the record.
+  const contracts = useQuery({ queryKey: ['contracts'], queryFn: fetchContracts });
 
   return (
     <div className="space-y-4">
@@ -49,7 +49,7 @@ export const ProcurementView: React.FC = () => {
             </p>
           </div>
         </div>
-        <DataFreshness queries={[alerts]} />
+        <DataFreshness queries={[contracts]} />
       </header>
 
       <RequestPanel />

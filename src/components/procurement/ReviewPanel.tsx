@@ -15,7 +15,7 @@ import React, { useState } from 'react';
 import { Lock, Plus, Star } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useAddReview, useReviews } from '../../api/procurementHooks';
-import { useContractAlerts } from '../../api/procurementHooks';
+import { useContracts } from '../../api/procurementHooks';
 import { QueryStatus } from '../QueryStatus';
 import { ActionButton, Field, Pill, Select, TextInput, WriteError } from '../ui/Controls';
 import { formatDate } from '../../lib/site';
@@ -44,7 +44,7 @@ export const ReviewPanel: React.FC = () => {
   const { language } = useApp();
   const tr = language === 'tr';
   const reviews = useReviews();
-  const contracts = useContractAlerts();
+  const contracts = useContracts();
   const add = useAddReview();
 
   const [writing, setWriting] = useState(false);

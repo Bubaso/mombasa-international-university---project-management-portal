@@ -2020,8 +2020,17 @@ export type ValueBasis = 'fixed' | 'estimated' | 'capped' | 'rate_based';
 
 export type NoticeBand = 'overdue' | 'within_30' | 'within_60' | 'within_90' | 'later';
 
-/** A contract approaching its renewal or its end (M14-03, M14-05). */
-export interface ContractAlert {
+/**
+ * A contract on the register, with its warning bands (M14-03, M14-05).
+ *
+ * This was called ContractAlert until 0052, and the name was the bug: the
+ * screen titled "Contract register" read an alert feed, and that feed filters
+ * to live contracts, so an expired or terminated contract was invisible
+ * everywhere in the portal. The bands are null once a contract is no longer
+ * open, because a warning about something nobody has to do is worse than no
+ * warning.
+ */
+export interface ContractRow {
   contractId: string;
   referenceNo: string | null;
   counterpartyName: string;

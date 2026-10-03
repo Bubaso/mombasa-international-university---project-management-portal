@@ -1299,7 +1299,17 @@ const TEST_CANDIDATES = [
   },
 ];
 
-const TEST_CONTRACT_ALERTS = [
+/**
+ * The contracts on the register, the ended one included.
+ *
+ * Until 0052 the panel read contract_alerts, which filters to live states, so
+ * a terminated contract was invisible everywhere in the portal. The third row
+ * is here to hold that fixed: it is on the register, it carries no band
+ * (a warning about a contract that ended would be a warning about nothing),
+ * and it is withdrawn behind its count rather than listed alongside the live
+ * ones.
+ */
+const TEST_CONTRACTS = [
   {
     contract_id: '00000000-0000-0000-0000-000000000f01',
     reference_no: 'CT-2026-01',
@@ -1347,6 +1357,31 @@ const TEST_CONTRACT_ALERTS = [
     days_to_expiry: 300,
     days_to_renewal: null,
     renewal_drafted: true,
+    confidentiality: 'internal',
+  },
+  {
+    contract_id: '00000000-0000-0000-0000-000000000f03',
+    reference_no: 'CT-2024-09',
+    counterparty_name: 'Otieno Advocates',
+    subject_en: 'Earlier retainer, since terminated',
+    subject_tr: 'Önceki vekâlet, feshedildi',
+    state: 'terminated',
+    starts_on: '2024-02-01',
+    ends_on: '2025-08-20',
+    renewal_on: null,
+    notice_days: 30,
+    value_amount: 900000,
+    value_currency: 'KES',
+    value_amount_kes: 900000,
+    value_basis: 'fixed',
+    // Null on purpose: app.contract_is_open() is false, so the view leaves
+    // both bands empty.
+    renewal_band: null,
+    expiry_band: null,
+    next_date: '2025-08-20',
+    days_to_expiry: -400,
+    days_to_renewal: null,
+    renewal_drafted: false,
     confidentiality: 'internal',
   },
 ];
@@ -3472,7 +3507,7 @@ try {
   await serve('**/rest/v1/conflict_declarations**', TEST_CONFLICTS);
   await serve('**/rest/v1/procurement_requests**', TEST_PROCUREMENTS);
   await serve('**/rest/v1/procurement_candidates**', TEST_CANDIDATES);
-  await serve('**/rest/v1/contract_alerts**', TEST_CONTRACT_ALERTS);
+  await serve('**/rest/v1/contract_register**', TEST_CONTRACTS);
   await serve('**/rest/v1/contract_terms**', TEST_CONTRACT_TERMS);
   await serve('**/rest/v1/contract_settlement**', TEST_SETTLEMENT);
   await serve('**/rest/v1/financial_close**', TEST_PERIODS);
@@ -5045,6 +5080,25 @@ try {
   check(
     /devamı yazılmamış|no successor drafted/.test(procurement),
     'and a renewal nobody has drafted is called out — the column the alert is for',
+  );
+  // 0052: the register holds contracts that ended, and holds them the way the
+  // round holds anything finished — counted, withdrawn, one click away. Before
+  // 0052 the panel read the alert feed and this row could not appear at all.
+  check(
+    !/CT-2024-09/.test(procurement),
+    'a terminated contract is not listed beside the live ones',
+  );
+  const endedContracts = page
+    .locator('button')
+    .filter({ hasText: /sona ermiş|ended/i })
+    .first();
+  check(await endedContracts.isVisible(), 'but it is on the register and counted (0052)');
+  await endedContracts.click();
+  await page.waitForTimeout(400);
+  const withEnded = (await page.textContent('body')) ?? '';
+  check(
+    /CT-2024-09/.test(withEnded) && /Otieno Advocates/.test(withEnded),
+    'and opening the section shows the contract an audit would ask about',
   );
   check(
     /devamı yazıldı|successor drafted/.test(procurement),

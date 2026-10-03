@@ -244,6 +244,7 @@ const CONVERTED = [
   { file: 'src/components/site/CommercialPanel.tsx', enumName: 'boq_state' },
   { file: 'src/components/governance/AccreditationPanel.tsx', enumName: 'accreditation_state' },
   { file: 'src/views/MeetingsView.tsx', enumName: 'meeting_status' },
+  { file: 'src/components/procurement/ContractPanel.tsx', enumName: 'contract_state' },
 ];
 
 /** Listede yazılı yol gerçekten var mı? Yazım hatası testi çökertmemeli. */
@@ -452,10 +453,36 @@ const BOUND_IN_SQL = [
     enumName: 'action_status',
     side: 'open',
   },
+  // 0052: artık sözleşme kümesinin SQL'deki **tek** kopyası. 0022'de iki yerde
+  // (görünümün WHERE'i ve bandın CASE'i) yazılacaktı; bir fonksiyona alındı.
+  {
+    file: '0052_a_contract_that_ended_is_still_a_contract.sql',
+    line: 49,
+    enumName: 'contract_state',
+    side: 'open',
+  },
 ];
 
 /** Bir SQL satırındaki `... in ('a', 'b')` değerleri. */
 const LIST = /(\w+)\s+(?:not\s+)?in\s*\(((?:\s*'[a-z_]+'\s*,?)+)\)/gi;
+
+/**
+ * Yorumu kes.
+ *
+ * Ölçüm: 0052 bu kuralı iki kez tetikledi — biri fonksiyonun gövdesi (gerçek
+ * kopya), biri 0022'nin eski WHERE'ini **anlatan** yorum. Bir yorum hiçbir
+ * satırı süzmüyor, ve neyi düzelttiğini yazmayı kusur saymak yanlış olurdu;
+ * aynı hata `FilingList`'te de olmuştu. Dize içindeki `--` kesilmiyor, çünkü
+ * orada yorum başlamıyor.
+ */
+const withoutComment = (line) => {
+  let inString = false;
+  for (let i = 0; i < line.length; i++) {
+    if (line[i] === "'") inString = !inString;
+    else if (!inString && line[i] === '-' && line[i + 1] === '-') return line.slice(0, i);
+  }
+  return line;
+};
 
 const migrations = join(root, 'supabase', 'migrations');
 /** @type {Map<string, {enumName: string, side: string, values: Set<string>}>} */
@@ -465,7 +492,7 @@ for (const file of readdirSync(migrations).filter((f) => f.endsWith('.sql'))) {
   let offset = 0;
   for (const line of text.split('\n')) {
     offset++;
-    for (const m of line.matchAll(LIST)) {
+    for (const m of withoutComment(line).matchAll(LIST)) {
       const values = new Set([...m[2].matchAll(/'([a-z_]+)'/g)].map((v) => v[1]));
       if (values.size < 2) continue;
       for (const [name, rule] of rules) {

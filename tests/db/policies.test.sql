@@ -3934,6 +3934,44 @@ select pg_temp.check('once a successor is drafted the alert says so',
   (select renewal_drafted from contract_alerts
     where contract_id = 'a3000000-0000-0000-0000-000000000001'), true);
 
+-- --- 0052: a contract that ended is still a contract -----------------------
+--
+-- The register round found the screen could not show an ended contract at
+-- all: ContractPanel read contract_alerts, and that view filters to the live
+-- states. The register and the alert feed are now two views, and these are
+-- the three things that has to mean.
+-- Torn up properly: the table demands the signing date, the termination date
+-- and the reason, which is why this fixture carries all three.
+insert into contracts
+  (id, reference_no, counterparty_name, subject_en, value_amount, value_basis,
+   signed_on, starts_on, ends_on, terminated_on, termination_reason,
+   document_id, state, confidentiality)
+values ('a3000000-0000-0000-0000-000000000003', 'CT-2024-09', 'Otieno Advocates',
+        'Earlier retainer, since terminated', 900000, 'fixed',
+        current_date - 400, current_date - 400, current_date - 40,
+        current_date - 60, 'Replaced after the appellate brief was reassigned.',
+        '1b000000-0000-0000-0000-000000000001', 'terminated', 'internal');
+
+select pg_temp.check('a terminated contract is on the register',
+  (select count(*) from contract_register
+    where contract_id = 'a3000000-0000-0000-0000-000000000003'), 1::bigint);
+select pg_temp.check('and is not in the alert feed, which is about what is still live',
+  (select count(*) from contract_alerts
+    where contract_id = 'a3000000-0000-0000-0000-000000000003'), 0::bigint);
+-- A band on a contract that has ended would be a warning about nothing: its
+-- end date is in the past, so notice_band would call it overdue.
+select pg_temp.check('an ended contract carries no expiry band to warn about',
+  (select expiry_band::text from contract_register
+    where contract_id = 'a3000000-0000-0000-0000-000000000003'), null::text);
+select pg_temp.check('while a live one still does',
+  (select expiry_band::text from contract_register
+    where contract_id = 'a3000000-0000-0000-0000-000000000001'), 'within_30');
+-- The judgment itself, where SQL keeps its one copy of it.
+select pg_temp.check('the open set says a suspended contract still binds',
+  app.contract_is_open('suspended'), true);
+select pg_temp.check('and that an expired one does not',
+  app.contract_is_open('expired'), false);
+
 -- Both dates reach the one calendar anybody looks at a week in, as two rows,
 -- because deciding about a renewal and the contract ending are two different
 -- things to do.
@@ -4054,8 +4092,13 @@ select pg_temp.check('an outside auditor reads the procurement register',
 select pg_temp.check('and the candidate comparison with its fees',
   (select count(*) from procurement_candidates
     where request_id = 'a1000000-0000-0000-0000-000000000001'), 5::bigint);
-select pg_temp.check('and the contracts',
-  (select count(*) from contracts), 2::bigint);
+-- Three by now, and the third is the terminated one: a contract that was torn
+-- up is the one an audit asks about, so it had better be readable. Until 0052
+-- it was in the table and on no screen.
+select pg_temp.check('and the contracts, the terminated one included',
+  (select count(*) from contracts), 3::bigint);
+select pg_temp.check('and reads it through the register rather than the alert feed',
+  (select count(*) from contract_register where state = 'terminated'), 1::bigint);
 -- Reading is not keeping: an auditor does not award contracts.
 do $$
 begin
