@@ -1,4 +1,5 @@
 import type { Authority, Confidentiality, Language, UserRole } from '../types';
+import { wordFor } from './labels';
 
 /**
  * The client-side twin of app.acts_as: does the caller hold any of these
@@ -115,7 +116,7 @@ const TIER_LABELS: Record<Confidentiality, { tr: string; en: string }> = {
 };
 
 export function clearanceLabel(tier: Confidentiality, language: Language): string {
-  return TIER_LABELS[tier][language];
+  return wordFor(TIER_LABELS, tier, language);
 }
 
 const TIER_STYLES: Record<Confidentiality, string> = {

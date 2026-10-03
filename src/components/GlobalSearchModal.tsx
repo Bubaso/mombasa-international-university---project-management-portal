@@ -32,6 +32,7 @@ import { Pill } from './ui/Controls';
 import { ALL_KINDS, collapseByRecord, kindIcon, kindLabel, routeFor } from '../lib/search';
 import { formatDate } from '../lib/site';
 import type { Confidentiality, SearchKind } from '../types';
+import { wordFor } from '../lib/labels';
 
 /** Debounce, so typing a case number is one query and not eleven. */
 function useDebounced(value: string, ms: number): string {
@@ -369,9 +370,7 @@ export const GlobalSearchModal: React.FC = () => {
                                 search result should be able to see from the
                                 result that they must not. */}
                             <Pill className={TIER[hit.confidentiality]}>
-                              {tr
-                                ? TIER_LABEL[hit.confidentiality].tr
-                                : TIER_LABEL[hit.confidentiality].en}
+                              {wordFor(TIER_LABEL, hit.confidentiality, tr ? 'tr' : 'en')}
                             </Pill>
                             {hit.occurredOn && (
                               <span className="font-mono text-xs text-slate-500">

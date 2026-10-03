@@ -1,3 +1,4 @@
+import { wordFor } from './labels';
 import type {
   AssumptionState,
   IssueState,
@@ -22,7 +23,7 @@ const CATEGORIES: Record<RiskCategory, Bilingual> = {
 };
 
 export const RISK_CATEGORIES = Object.keys(CATEGORIES) as RiskCategory[];
-export const riskCategoryLabel = (c: RiskCategory, l: Language) => CATEGORIES[c][l];
+export const riskCategoryLabel = (c: RiskCategory, l: Language) => wordFor(CATEGORIES, c, l);
 
 const STATES: Record<RiskState, Bilingual> = {
   open: { tr: 'Açık', en: 'Open' },
@@ -31,7 +32,7 @@ const STATES: Record<RiskState, Bilingual> = {
   closed: { tr: 'Kapandı', en: 'Closed' },
 };
 
-export const riskStateLabel = (s: RiskState, l: Language) => STATES[s][l];
+export const riskStateLabel = (s: RiskState, l: Language) => wordFor(STATES, s, l);
 
 const RESPONSES: Record<RiskResponse, Bilingual> = {
   avoid: { tr: 'Kaçın', en: 'Avoid' },
@@ -41,7 +42,7 @@ const RESPONSES: Record<RiskResponse, Bilingual> = {
 };
 
 export const RISK_RESPONSES = Object.keys(RESPONSES) as RiskResponse[];
-export const riskResponseLabel = (r: RiskResponse, l: Language) => RESPONSES[r][l];
+export const riskResponseLabel = (r: RiskResponse, l: Language) => wordFor(RESPONSES, r, l);
 
 const ASSUMPTION_STATES: Record<AssumptionState, Bilingual> = {
   unverified: { tr: 'Doğrulanmadı', en: 'Unverified' },
@@ -51,7 +52,8 @@ const ASSUMPTION_STATES: Record<AssumptionState, Bilingual> = {
 };
 
 export const ASSUMPTION_STATES_LIST = Object.keys(ASSUMPTION_STATES) as AssumptionState[];
-export const assumptionStateLabel = (s: AssumptionState, l: Language) => ASSUMPTION_STATES[s][l];
+export const assumptionStateLabel = (s: AssumptionState, l: Language) =>
+  wordFor(ASSUMPTION_STATES, s, l);
 
 export function assumptionStateStyle(state: AssumptionState): string {
   switch (state) {
@@ -75,7 +77,7 @@ const ISSUE_STATES: Record<IssueState, Bilingual> = {
   closed: { tr: 'Kapandı', en: 'Closed' },
 };
 
-export const issueStateLabel = (s: IssueState, l: Language) => ISSUE_STATES[s][l];
+export const issueStateLabel = (s: IssueState, l: Language) => wordFor(ISSUE_STATES, s, l);
 
 /** Where the escalation line sits. Mirrors app.risk_escalation_threshold(). */
 export const ESCALATION_THRESHOLD = 15;

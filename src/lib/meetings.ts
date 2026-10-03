@@ -11,10 +11,9 @@ import type {
   QuestionStatus,
   VoteOutcome,
 } from '../types';
+import { wordFor } from './labels';
 
 type Bilingual = { tr: string; en: string };
-
-const pick = (map: Bilingual, language: Language) => map[language];
 
 const MEETING_KINDS: Record<MeetingKind, Bilingual> = {
   internal: { tr: 'İç toplantı', en: 'Internal' },
@@ -27,7 +26,7 @@ const MEETING_KINDS: Record<MeetingKind, Bilingual> = {
 };
 
 export const MEETING_KIND_VALUES = Object.keys(MEETING_KINDS) as MeetingKind[];
-export const meetingKindLabel = (k: MeetingKind, l: Language) => pick(MEETING_KINDS[k], l);
+export const meetingKindLabel = (k: MeetingKind, l: Language) => wordFor(MEETING_KINDS, k, l);
 
 const MEETING_STATUSES: Record<MeetingStatus, Bilingual> = {
   planned: { tr: 'Planlandı', en: 'Planned' },
@@ -37,7 +36,8 @@ const MEETING_STATUSES: Record<MeetingStatus, Bilingual> = {
 };
 
 export const MEETING_STATUS_VALUES = Object.keys(MEETING_STATUSES) as MeetingStatus[];
-export const meetingStatusLabel = (s: MeetingStatus, l: Language) => pick(MEETING_STATUSES[s], l);
+export const meetingStatusLabel = (s: MeetingStatus, l: Language) =>
+  wordFor(MEETING_STATUSES, s, l);
 
 const MINUTES_STATUSES: Record<MinutesStatus, Bilingual> = {
   draft: { tr: 'Taslak', en: 'Draft' },
@@ -46,7 +46,8 @@ const MINUTES_STATUSES: Record<MinutesStatus, Bilingual> = {
 };
 
 export const MINUTES_STATUS_VALUES = Object.keys(MINUTES_STATUSES) as MinutesStatus[];
-export const minutesStatusLabel = (s: MinutesStatus, l: Language) => pick(MINUTES_STATUSES[s], l);
+export const minutesStatusLabel = (s: MinutesStatus, l: Language) =>
+  wordFor(MINUTES_STATUSES, s, l);
 
 /** Final is styled as settled, not as success: it means closed to edits. */
 export const MINUTES_STATUS_STYLES: Record<MinutesStatus, string> = {
@@ -63,7 +64,8 @@ const ATTENDANCE_ROLES: Record<AttendanceRole, Bilingual> = {
 };
 
 export const ATTENDANCE_ROLE_VALUES = Object.keys(ATTENDANCE_ROLES) as AttendanceRole[];
-export const attendanceRoleLabel = (r: AttendanceRole, l: Language) => pick(ATTENDANCE_ROLES[r], l);
+export const attendanceRoleLabel = (r: AttendanceRole, l: Language) =>
+  wordFor(ATTENDANCE_ROLES, r, l);
 
 /**
  * The five headings the team already writes under, in the order they are
@@ -86,7 +88,7 @@ export const NOTE_SECTION_VALUES: NoteSection[] = [
   'outcomes',
   'open_questions',
 ];
-export const noteSectionLabel = (s: NoteSection, l: Language) => pick(NOTE_SECTIONS[s], l);
+export const noteSectionLabel = (s: NoteSection, l: Language) => wordFor(NOTE_SECTIONS, s, l);
 
 const VOTE_OUTCOMES: Record<VoteOutcome, Bilingual> = {
   unanimous: { tr: 'Oybirliği', en: 'Unanimous' },
@@ -96,7 +98,7 @@ const VOTE_OUTCOMES: Record<VoteOutcome, Bilingual> = {
 };
 
 export const VOTE_OUTCOME_VALUES = Object.keys(VOTE_OUTCOMES) as VoteOutcome[];
-export const voteOutcomeLabel = (v: VoteOutcome, l: Language) => pick(VOTE_OUTCOMES[v], l);
+export const voteOutcomeLabel = (v: VoteOutcome, l: Language) => wordFor(VOTE_OUTCOMES, v, l);
 
 const DECISION_STATUSES: Record<DecisionStatus, Bilingual> = {
   in_force: { tr: 'Yürürlükte', en: 'In force' },
@@ -107,7 +109,7 @@ const DECISION_STATUSES: Record<DecisionStatus, Bilingual> = {
 
 export const DECISION_STATUS_VALUES = Object.keys(DECISION_STATUSES) as DecisionStatus[];
 export const decisionStatusLabel = (s: DecisionStatus, l: Language) =>
-  pick(DECISION_STATUSES[s], l);
+  wordFor(DECISION_STATUSES, s, l);
 
 export const DECISION_STATUS_STYLES: Record<DecisionStatus, string> = {
   in_force: 'border-emerald-300 bg-emerald-50 text-emerald-800',
@@ -125,7 +127,7 @@ const ACTION_STATUSES: Record<ActionStatus, Bilingual> = {
 };
 
 export const ACTION_STATUS_VALUES = Object.keys(ACTION_STATUSES) as ActionStatus[];
-export const actionStatusLabel = (s: ActionStatus, l: Language) => pick(ACTION_STATUSES[s], l);
+export const actionStatusLabel = (s: ActionStatus, l: Language) => wordFor(ACTION_STATUSES, s, l);
 
 export const ACTION_STATUS_STYLES: Record<ActionStatus, string> = {
   open: 'border-slate-300 bg-slate-100 text-slate-700',
@@ -144,7 +146,7 @@ const QUESTION_STATUSES: Record<QuestionStatus, Bilingual> = {
 
 export const QUESTION_STATUS_VALUES = Object.keys(QUESTION_STATUSES) as QuestionStatus[];
 export const questionStatusLabel = (s: QuestionStatus, l: Language) =>
-  pick(QUESTION_STATUSES[s], l);
+  wordFor(QUESTION_STATUSES, s, l);
 
 const PRIORITIES: Record<PriorityLevel, Bilingual> = {
   low: { tr: 'Düşük', en: 'Low' },
@@ -154,7 +156,7 @@ const PRIORITIES: Record<PriorityLevel, Bilingual> = {
 };
 
 export const PRIORITY_VALUES = Object.keys(PRIORITIES) as PriorityLevel[];
-export const priorityLabel = (p: PriorityLevel, l: Language) => pick(PRIORITIES[p], l);
+export const priorityLabel = (p: PriorityLevel, l: Language) => wordFor(PRIORITIES, p, l);
 
 export const PRIORITY_STYLES: Record<PriorityLevel, string> = {
   low: 'border-slate-200 bg-white text-slate-500',

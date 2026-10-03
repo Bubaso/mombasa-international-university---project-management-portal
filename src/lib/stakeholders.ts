@@ -1,3 +1,4 @@
+import { wordFor } from './labels';
 import type {
   ContactChannel,
   Language,
@@ -27,7 +28,7 @@ const CATEGORY_LABELS: Record<StakeholderCategory, Bilingual> = {
 export const STAKEHOLDER_CATEGORIES = Object.keys(CATEGORY_LABELS) as StakeholderCategory[];
 
 export function categoryLabel(category: StakeholderCategory, language: Language): string {
-  return CATEGORY_LABELS[category][language];
+  return wordFor(CATEGORY_LABELS, category, language);
 }
 
 const STANCE_LABELS: Record<Stance, Bilingual> = {
@@ -42,7 +43,7 @@ const STANCE_LABELS: Record<Stance, Bilingual> = {
 export const STANCES = Object.keys(STANCE_LABELS) as Stance[];
 
 export function stanceLabel(stance: Stance, language: Language): string {
-  return STANCE_LABELS[stance][language];
+  return wordFor(STANCE_LABELS, stance, language);
 }
 
 /**
@@ -74,7 +75,7 @@ const CHANNEL_LABELS: Record<ContactChannel, Bilingual> = {
 export const CONTACT_CHANNELS = Object.keys(CHANNEL_LABELS) as ContactChannel[];
 
 export function channelLabel(channel: ContactChannel, language: Language): string {
-  return CHANNEL_LABELS[channel][language];
+  return wordFor(CHANNEL_LABELS, channel, language);
 }
 
 const RELATIONSHIP_LABELS: Record<RelationshipKind, Bilingual> = {
@@ -89,7 +90,7 @@ const RELATIONSHIP_LABELS: Record<RelationshipKind, Bilingual> = {
 export const RELATIONSHIP_KINDS = Object.keys(RELATIONSHIP_LABELS) as RelationshipKind[];
 
 export function relationshipLabel(kind: RelationshipKind, language: Language): string {
-  return RELATIONSHIP_LABELS[kind][language];
+  return wordFor(RELATIONSHIP_LABELS, kind, language);
 }
 
 /**
@@ -115,7 +116,7 @@ const QUADRANT_LABELS: Record<Quadrant, Bilingual> = {
 };
 
 export function quadrantLabel(quadrant: Quadrant, language: Language): string {
-  return QUADRANT_LABELS[quadrant][language];
+  return wordFor(QUADRANT_LABELS, quadrant, language);
 }
 
 const QUADRANT_STYLES: Record<Quadrant, string> = {

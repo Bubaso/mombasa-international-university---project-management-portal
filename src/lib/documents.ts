@@ -1,4 +1,5 @@
 import type { DocumentCategory, Language } from '../types';
+import { wordFor } from './labels';
 
 type Bilingual = { tr: string; en: string };
 
@@ -17,7 +18,7 @@ const CATEGORIES: Record<DocumentCategory, Bilingual> = {
 };
 
 export const DOCUMENT_CATEGORIES = Object.keys(CATEGORIES) as DocumentCategory[];
-export const categoryLabel = (c: DocumentCategory, l: Language) => CATEGORIES[c][l];
+export const categoryLabel = (c: DocumentCategory, l: Language) => wordFor(CATEGORIES, c, l);
 
 /** Bytes, in the roughest terms that are still useful. */
 export function fileSize(bytes: number | null): string {

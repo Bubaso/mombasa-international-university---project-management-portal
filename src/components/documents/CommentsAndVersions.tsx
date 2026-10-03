@@ -31,6 +31,7 @@ import * as vault from '../../api/documentHooks';
 import { QueryStatus } from '../QueryStatus';
 import { ActionButton, Field, Pill, TextInput, WriteError } from '../ui/Controls';
 import type { BytesVerdict, DocumentComment } from '../../types';
+import { unknownValue } from '../../lib/unknownValue';
 
 const when = (iso: string): string =>
   new Date(iso).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' });
@@ -64,6 +65,9 @@ function bytesWords(verdict: BytesVerdict, tr: boolean): { text: string; grave: 
         grave: false,
       };
   }
+  // Aynı gerekçe `MatchingPanel`'dekiyle: bu üç cevabı bir görünümün `case`
+  // ifadesi üretiyor ve o ifade bu paketten bağımsız değişebiliyor.
+  return { text: unknownValue(verdict), grave: false };
 }
 
 function anchorWords(comment: DocumentComment, tr: boolean): string {

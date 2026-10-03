@@ -57,6 +57,7 @@ import {
 import { formatDate } from '../lib/site';
 import { todayIso } from '../lib/date';
 import type { ReportKind, UserRole } from '../types';
+import { toneFor, wordFor } from '../lib/labels';
 
 /** Mirrors app.can_approve_report(). */
 const APPROVERS: UserRole[] = ['admin', 'project_director', 'trustee', 'board_director'];
@@ -257,8 +258,8 @@ export const ReportsView: React.FC = () => {
                     <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-900">
                       {run.title}
                     </span>
-                    <Pill className={STATE_LABEL[run.state].tone}>
-                      {tr ? STATE_LABEL[run.state].tr : STATE_LABEL[run.state].en}
+                    <Pill className={toneFor(STATE_LABEL, run.state)}>
+                      {wordFor(STATE_LABEL, run.state, tr ? 'tr' : 'en')}
                     </Pill>
                   </div>
                   <p className="mt-0.5 text-xs text-slate-500">
@@ -301,8 +302,8 @@ export const ReportsView: React.FC = () => {
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2 print:hidden">
-                    <Pill className={STATE_LABEL[active.state].tone}>
-                      {tr ? STATE_LABEL[active.state].tr : STATE_LABEL[active.state].en}
+                    <Pill className={toneFor(STATE_LABEL, active.state)}>
+                      {wordFor(STATE_LABEL, active.state, tr ? 'tr' : 'en')}
                     </Pill>
                     <button
                       type="button"

@@ -1,4 +1,5 @@
 import type { Language, ObligationSource, ObligationState } from '../types';
+import { wordFor } from './labels';
 
 type Bilingual = { tr: string; en: string };
 
@@ -13,7 +14,7 @@ const SOURCES: Record<ObligationSource, Bilingual> = {
 };
 
 export const OBLIGATION_SOURCES = Object.keys(SOURCES) as ObligationSource[];
-export const sourceLabel = (s: ObligationSource, l: Language) => SOURCES[s][l];
+export const sourceLabel = (s: ObligationSource, l: Language) => wordFor(SOURCES, s, l);
 
 /**
  * A promise made in a meeting is styled apart from the rest. It is the one
@@ -40,7 +41,7 @@ const STATES: Record<ObligationState, Bilingual> = {
 };
 
 export const OBLIGATION_STATES = Object.keys(STATES) as ObligationState[];
-export const stateLabel = (s: ObligationState, l: Language) => STATES[s][l];
+export const stateLabel = (s: ObligationState, l: Language) => wordFor(STATES, s, l);
 
 export const STATE_STYLES: Record<ObligationState, string> = {
   open: 'border-slate-300 bg-slate-100 text-slate-700',

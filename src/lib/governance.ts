@@ -8,11 +8,9 @@ import type {
   ProgrammeState,
   StageState,
 } from '../types';
+import { wordFor } from './labels';
 
 type Pair = { tr: string; en: string };
-
-const pick = (pair: Pair | undefined, language: 'tr' | 'en', fallback: string) =>
-  pair ? (language === 'tr' ? pair.tr : pair.en) : fallback;
 
 const ORGAN: Record<GovernanceOrganKind, Pair> = {
   board_of_trustees: { tr: 'Mütevelli Heyeti', en: 'Board of Trustees' },
@@ -83,16 +81,16 @@ const STRAND: Record<string, Pair> = {
   academic_staff: { tr: 'Akademik kadro', en: 'Academic staff' },
 };
 
-export const organLabel = (k: GovernanceOrganKind, l: 'tr' | 'en') => pick(ORGAN[k], l, k);
-export const cadenceLabel = (k: MeetingCadence, l: 'tr' | 'en') => pick(CADENCE[k], l, k);
+export const organLabel = (k: GovernanceOrganKind, l: 'tr' | 'en') => wordFor(ORGAN, k, l);
+export const cadenceLabel = (k: MeetingCadence, l: 'tr' | 'en') => wordFor(CADENCE, k, l);
 export const implementationLabel = (k: ImplementationState, l: 'tr' | 'en') =>
-  pick(IMPLEMENTATION[k], l, k);
-export const regimeLabel = (k: ComplianceRegime, l: 'tr' | 'en') => pick(REGIME[k], l, k);
+  wordFor(IMPLEMENTATION, k, l);
+export const regimeLabel = (k: ComplianceRegime, l: 'tr' | 'en') => wordFor(REGIME, k, l);
 export const accreditationLabel = (k: AccreditationState, l: 'tr' | 'en') =>
-  pick(ACCREDITATION[k], l, k);
-export const stageLabel = (k: StageState, l: 'tr' | 'en') => pick(STAGE[k], l, k);
-export const programmeLabel = (k: ProgrammeState, l: 'tr' | 'en') => pick(PROGRAMME[k], l, k);
-export const strandLabel = (k: string, l: 'tr' | 'en') => pick(STRAND[k], l, k);
+  wordFor(ACCREDITATION, k, l);
+export const stageLabel = (k: StageState, l: 'tr' | 'en') => wordFor(STAGE, k, l);
+export const programmeLabel = (k: ProgrammeState, l: 'tr' | 'en') => wordFor(PROGRAMME, k, l);
+export const strandLabel = (k: string, l: 'tr' | 'en') => wordFor(STRAND, k, l);
 
 /** The colour each implementation state earns. */
 export const IMPLEMENTATION_TONE: Record<ImplementationState, string> = {

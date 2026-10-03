@@ -27,6 +27,7 @@ import { QueryStatus } from '../QueryStatus';
 import { Pill } from '../ui/Controls';
 import { formatDate, money } from '../../lib/site';
 import type { AmountVerdict, MilestoneMatch, PaymentMatchingHealth } from '../../types';
+import { unknownValue } from '../../lib/unknownValue';
 
 /**
  * What a verdict is called. "İki para birimi" is not a disagreement and is
@@ -56,6 +57,11 @@ function verdictWords(verdict: AmountVerdict, tr: boolean): { text: string; grav
     case 'agree':
       return { text: tr ? 'tutarlar uyuşuyor' : 'the amounts agree', grave: false };
   }
+  // 0038'in `case` ifadesi bugün dört cevap üretiyor ve `else`'i var, yani
+  // beşinci bir değer ancak o SQL değişirse gelir. Geldiği gün bu satır
+  // değeri olduğu gibi gösterir; alternatifi, hakediş eşleşmesinin tamamını
+  // ekrandan kaldırmaktı.
+  return { text: unknownValue(verdict), grave: false };
 }
 
 function disagreements(health: PaymentMatchingHealth, tr: boolean): string[] {

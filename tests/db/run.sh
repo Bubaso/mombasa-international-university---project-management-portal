@@ -72,13 +72,30 @@ psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -q -f "$ROOT/tests/db/policies.test.sql"
 # Sütun listesi veritabanından alınıyor, migration metninden değil: 0003'ün
 # yardımcıları sütunları `execute` ile ekliyor ve metni ayrıştıran bir araç
 # onları göremez. Burada zaten uygulanmış bir şema var; kullanılmaması israf.
-echo "→ api column check"
-COLUMNS_JSON="$(mktemp)"
+echo "→ schema dump"
+# Döküm silinmiyor: `tests/populated.mjs` de aynı şemayı okuyor ve kendi
+# Postgres'ini kurmak yerine burada zaten uygulanmış olanı kullanıyor. Aynı
+# şemayı iki yerde kurmak, ikisinin ayrı düşmesine davetiyedir (§4).
+SCHEMA_JSON="$ROOT/tests/db/schema.json"
 psql "$DATABASE_URL" -At -c "
+  with enums as (
+    select t.typname, json_agg(e.enumlabel order by e.enumsortorder) as labels
+      from pg_type t join pg_enum e on e.enumtypid = t.oid
+     group by t.typname
+  )
   select coalesce(json_agg(json_build_object(
-           'table_name', table_name, 'column_name', column_name,
-           'is_nullable', is_nullable, 'has_default', column_default is not null)), '[]')
-    from information_schema.columns where table_schema = 'public';
-" > "$COLUMNS_JSON"
-node "$ROOT/tests/api-columns.mjs" "$COLUMNS_JSON"
-rm -f "$COLUMNS_JSON"
+           'table_name', c.table_name, 'column_name', c.column_name,
+           'is_nullable', c.is_nullable, 'data_type', c.data_type,
+           'udt_name', c.udt_name,
+           'has_default', c.column_default is not null,
+           'table_type', t.table_type,
+           'enum_values', e.labels)), '[]')
+    from information_schema.columns c
+    join information_schema.tables t
+      on t.table_schema = c.table_schema and t.table_name = c.table_name
+    left join enums e on e.typname = c.udt_name
+   where c.table_schema = 'public';
+" > "$SCHEMA_JSON"
+
+echo "→ api column check"
+node "$ROOT/tests/api-columns.mjs" "$SCHEMA_JSON"

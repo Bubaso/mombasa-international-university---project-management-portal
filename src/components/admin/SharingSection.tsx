@@ -19,6 +19,7 @@ import {
   WriteError,
 } from '../ui/Controls';
 import type { GrantPermission } from '../../types';
+import { wordFor } from '../../lib/labels';
 
 /**
  * The record types a grant can name here.
@@ -252,7 +253,7 @@ export const SharingSection: React.FC<{ canManage: boolean }> = ({ canManage }) 
               >
                 {ENTITY_TYPES.map((type) => (
                   <option key={type} value={type}>
-                    {ENTITY_LABELS[type][language]}
+                    {wordFor(ENTITY_LABELS, type, language)}
                   </option>
                 ))}
               </Select>

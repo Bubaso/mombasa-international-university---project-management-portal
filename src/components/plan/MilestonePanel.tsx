@@ -35,6 +35,7 @@ import { actsAs } from '../../lib/authority';
 import { formatDate } from '../../lib/site';
 import { todayIso } from '../../lib/date';
 import type { MilestoneProgress, UserRole } from '../../types';
+import { toneFor, wordFor } from '../../lib/labels';
 
 /** Mirrors app.can_keep_plan(). */
 const PLAN_KEEPERS: UserRole[] = [
@@ -279,8 +280,8 @@ export const MilestonePanel: React.FC = () => {
                           tr={m.titleTr}
                         />
                       </span>
-                      <Pill className={STATE[m.state].tone}>
-                        {tr ? STATE[m.state].tr : STATE[m.state].en}
+                      <Pill className={toneFor(STATE, m.state)}>
+                        {wordFor(STATE, m.state, tr ? 'tr' : 'en')}
                       </Pill>
                       {m.critical && (
                         <Pill className="border-amber-300 bg-amber-50 text-amber-900">

@@ -231,7 +231,7 @@ export const ConstructionView: React.FC = () => {
                     </p>
                   )}
                 </div>
-                <div className="flex gap-1.5">
+                <div role="tablist" className="flex gap-1.5">
                   <TabButton
                     icon={HardHat}
                     label={tr ? 'İşler' : 'Works'}
@@ -282,6 +282,8 @@ const TabButton: React.FC<{
 }> = ({ icon: Icon, label, active, onClick }) => (
   <button
     type="button"
+    role="tab"
+    aria-selected={active}
     onClick={onClick}
     className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors ${
       active

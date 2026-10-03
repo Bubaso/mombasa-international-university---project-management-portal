@@ -69,11 +69,13 @@ export const FinanceAccountingView: React.FC = () => {
         </div>
       </header>
 
-      <div className="flex flex-wrap gap-1.5">
+      <div role="tablist" className="flex flex-wrap gap-1.5">
         {TABS.map(({ key, icon: Icon, label }) => (
           <button
             key={key}
             type="button"
+            role="tab"
+            aria-selected={tab === key}
             onClick={() => setTab(key)}
             className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors ${
               tab === key

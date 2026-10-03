@@ -14,3 +14,9 @@ dist-smoke/
 
 # Written by tests/design.mjs: a measurement, not a source file.
 design-measurement.json
+
+# tests/db/run.sh'un yazdığı şema dökümü; populated testi onu okuyor.
+tests/db/schema.json
+
+# Küçültmesiz derleme: populated testi hata ayıklarken kullanıyor.
+dist-unminified

@@ -17,6 +17,7 @@ import {
   WriteError,
 } from '../ui/Controls';
 import type { Authority, Delegation } from '../../types';
+import { wordFor } from '../../lib/labels';
 
 type State = 'awaiting' | 'in_force' | 'expired' | 'revoked';
 
@@ -158,7 +159,9 @@ export const DelegationSection: React.FC<{ authority: Authority | null | undefin
                   )}
                 </Td>
                 <Td>
-                  <Pill className={STATE_STYLES[state]}>{STATE_LABELS[state][language]}</Pill>
+                  <Pill className={STATE_STYLES[state]}>
+                    {wordFor(STATE_LABELS, state, language)}
+                  </Pill>
                   {state === 'revoked' && d.revokedByName && (
                     <div className="mt-0.5 text-xs text-slate-500">{d.revokedByName}</div>
                   )}

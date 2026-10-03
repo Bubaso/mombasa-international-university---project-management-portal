@@ -38,6 +38,7 @@ import {
   roundWords,
 } from '../../lib/watch';
 import type { IncidentKind, WatchHealth } from '../../types';
+import { wordFor } from '../../lib/labels';
 
 const when = (iso: string | null): string =>
   iso == null
@@ -273,7 +274,7 @@ export const WatchPanel: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
               >
                 {(Object.keys(INCIDENT_LABELS) as IncidentKind[]).map((option) => (
                   <option key={option} value={option}>
-                    {tr ? INCIDENT_LABELS[option].tr : INCIDENT_LABELS[option].en}
+                    {wordFor(INCIDENT_LABELS, option, tr ? 'tr' : 'en')}
                   </option>
                 ))}
               </Select>
@@ -325,7 +326,7 @@ export const WatchPanel: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
                 >
                   <div className="flex flex-wrap items-center gap-1.5">
                     <Pill className="border-slate-300 bg-white text-slate-700">
-                      {tr ? INCIDENT_LABELS[incident.kind].tr : INCIDENT_LABELS[incident.kind].en}
+                      {wordFor(INCIDENT_LABELS, incident.kind, tr ? 'tr' : 'en')}
                     </Pill>
                     <span className="text-xs text-slate-500">{when(incident.occurredAt)}</span>
                     {incident.blockCode != null && (
@@ -444,7 +445,7 @@ export const WatchPanel: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
                   className="flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs"
                 >
                   <span className="font-medium text-slate-900">
-                    {tr ? POST_LABELS[shift.post].tr : POST_LABELS[shift.post].en}
+                    {wordFor(POST_LABELS, shift.post, tr ? 'tr' : 'en')}
                     {shift.blockCode != null && ` ${shift.blockCode}`}
                   </span>
                   <span className="text-slate-600">{shift.onWatch}</span>

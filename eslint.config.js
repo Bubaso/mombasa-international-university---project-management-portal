@@ -8,7 +8,17 @@ import prettier from 'eslint-config-prettier';
 
 export default tseslint.config(
   {
-    ignores: ['dist', 'dist-smoke', 'dev-dist', 'node_modules', '.firebase', 'public'],
+    ignores: [
+      'dist',
+      'dist-smoke',
+      // tests/populated.mjs hata ayıklarken küçültmesiz bir derleme kuruyor;
+      // derleme çıktısı lint'e girmez.
+      'dist-unminified',
+      'dev-dist',
+      'node_modules',
+      '.firebase',
+      'public',
+    ],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,

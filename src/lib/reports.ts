@@ -1,5 +1,6 @@
 /** Labels, section order and the Markdown export for compiled reports (M12). */
 import type { ReportKind, ReportRow, ReportRun, ReportState } from '../types';
+import { wordFor } from './labels';
 
 export const KINDS: { key: ReportKind; tr: string; en: string; why: { tr: string; en: string } }[] =
   [
@@ -119,9 +120,7 @@ export function toMarkdown(run: ReportRun, tr: boolean): string {
   const lines: string[] = [];
   lines.push(`# ${run.title}`);
   lines.push('');
-  lines.push(
-    `${kindName(run.kind, tr)} · ${tr ? STATE_LABEL[run.state].tr : STATE_LABEL[run.state].en}`,
-  );
+  lines.push(`${kindName(run.kind, tr)} · ${wordFor(STATE_LABEL, run.state, tr ? 'tr' : 'en')}`);
   if (run.periodFrom && run.periodTo) {
     lines.push(`${tr ? 'Dönem' : 'Period'}: ${run.periodFrom} — ${run.periodTo}`);
   }

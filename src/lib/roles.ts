@@ -1,4 +1,5 @@
 import type { Language, UserRole } from '../types';
+import { wordFor } from './labels';
 
 /**
  * Display names for the thirteen roles. The roles themselves are defined in
@@ -21,5 +22,5 @@ const ROLE_LABELS: Record<UserRole, { tr: string; en: string }> = {
 };
 
 export function roleLabel(role: UserRole, language: Language): string {
-  return ROLE_LABELS[role][language];
+  return wordFor(ROLE_LABELS, role, language);
 }

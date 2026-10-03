@@ -6,10 +6,9 @@ import type {
   WorkKind,
   WorkState,
 } from '../types';
+import { wordFor } from './labels';
 
 type Bilingual = { tr: string; en: string };
-
-const say = (pair: Bilingual, l: Language) => pair[l];
 
 const WORK_STATES: Record<WorkState, Bilingual> = {
   planned: { tr: 'Planlandı', en: 'Planned' },
@@ -21,7 +20,7 @@ const WORK_STATES: Record<WorkState, Bilingual> = {
 };
 
 export const WORK_STATE_VALUES = Object.keys(WORK_STATES) as WorkState[];
-export const workStateLabel = (s: WorkState, l: Language) => say(WORK_STATES[s], l);
+export const workStateLabel = (s: WorkState, l: Language) => wordFor(WORK_STATES, s, l);
 
 /**
  * Suspended work is amber rather than red: it is not a failure, and reading
@@ -49,7 +48,7 @@ const KINDS: Record<WorkKind, Bilingual> = {
   preservation: { tr: 'Koruma', en: 'Preservation' },
 };
 
-export const workKindLabel = (k: WorkKind, l: Language) => say(KINDS[k], l);
+export const workKindLabel = (k: WorkKind, l: Language) => wordFor(KINDS, k, l);
 
 const VALUATION_STATES: Record<ValuationState, Bilingual> = {
   draft: { tr: 'Taslak', en: 'Draft' },
@@ -59,7 +58,8 @@ const VALUATION_STATES: Record<ValuationState, Bilingual> = {
   rejected: { tr: 'Reddedildi', en: 'Rejected' },
 };
 
-export const valuationStateLabel = (s: ValuationState, l: Language) => say(VALUATION_STATES[s], l);
+export const valuationStateLabel = (s: ValuationState, l: Language) =>
+  wordFor(VALUATION_STATES, s, l);
 
 export function valuationStateStyle(state: ValuationState): string {
   switch (state) {
@@ -82,7 +82,7 @@ const BOQ_STATES: Record<BoqState, Bilingual> = {
   superseded: { tr: 'Yerine yenisi geçti', en: 'Superseded' },
 };
 
-export const boqStateLabel = (s: BoqState, l: Language) => say(BOQ_STATES[s], l);
+export const boqStateLabel = (s: BoqState, l: Language) => wordFor(BOQ_STATES, s, l);
 
 export const CURRENCIES: CurrencyCode[] = ['KES', 'USD', 'TRY'];
 

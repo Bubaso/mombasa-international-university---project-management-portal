@@ -10,10 +10,9 @@ import type {
   ProcurementState,
   ValueBasis,
 } from '../types';
+import { wordFor } from './labels';
 
 type Pair = { tr: string; en: string };
-const pick = (p: Pair | undefined, l: 'tr' | 'en', fallback: string) =>
-  p ? (l === 'tr' ? p.tr : p.en) : fallback;
 
 const KIND: Record<ProcurementKind, Pair> = {
   legal_counsel: { tr: 'Avukat', en: 'Legal counsel' },
@@ -93,17 +92,17 @@ const BAND: Record<NoticeBand, Pair> = {
   later: { tr: 'daha sonra', en: 'later' },
 };
 
-export const kindLabel = (k: ProcurementKind, l: 'tr' | 'en') => pick(KIND[k], l, k);
+export const kindLabel = (k: ProcurementKind, l: 'tr' | 'en') => wordFor(KIND, k, l);
 export const requestStateLabel = (k: ProcurementState, l: 'tr' | 'en') =>
-  pick(REQUEST_STATE[k], l, k);
-export const outcomeLabel = (k: CandidateOutcome, l: 'tr' | 'en') => pick(OUTCOME[k], l, k);
-export const feeBasisLabel = (k: FeeBasis, l: 'tr' | 'en') => pick(FEE[k], l, k);
+  wordFor(REQUEST_STATE, k, l);
+export const outcomeLabel = (k: CandidateOutcome, l: 'tr' | 'en') => wordFor(OUTCOME, k, l);
+export const feeBasisLabel = (k: FeeBasis, l: 'tr' | 'en') => wordFor(FEE, k, l);
 export const contractStateLabel = (k: ContractState, l: 'tr' | 'en') =>
-  pick(CONTRACT_STATE[k], l, k);
-export const valueBasisLabel = (k: ValueBasis, l: 'tr' | 'en') => pick(VALUE_BASIS[k], l, k);
-export const partyLabel = (k: ContractParty, l: 'tr' | 'en') => pick(PARTY[k], l, k);
-export const milestoneLabel = (k: MilestoneState, l: 'tr' | 'en') => pick(MILESTONE[k], l, k);
-export const bandLabel = (k: NoticeBand, l: 'tr' | 'en') => pick(BAND[k], l, k);
+  wordFor(CONTRACT_STATE, k, l);
+export const valueBasisLabel = (k: ValueBasis, l: 'tr' | 'en') => wordFor(VALUE_BASIS, k, l);
+export const partyLabel = (k: ContractParty, l: 'tr' | 'en') => wordFor(PARTY, k, l);
+export const milestoneLabel = (k: MilestoneState, l: 'tr' | 'en') => wordFor(MILESTONE, k, l);
+export const bandLabel = (k: NoticeBand, l: 'tr' | 'en') => wordFor(BAND, k, l);
 
 export const OUTCOME_TONE: Record<CandidateOutcome, string> = {
   under_review: 'border-slate-300 bg-slate-100 text-slate-700',

@@ -1,3 +1,4 @@
+import { wordFor } from './labels';
 import type {
   CounselState,
   FilingKind,
@@ -20,7 +21,7 @@ const HEARING_KINDS: Record<HearingKind, Bilingual> = {
 };
 
 export const HEARING_KIND_VALUES = Object.keys(HEARING_KINDS) as HearingKind[];
-export const hearingKindLabel = (k: HearingKind, l: Language) => HEARING_KINDS[k][l];
+export const hearingKindLabel = (k: HearingKind, l: Language) => wordFor(HEARING_KINDS, k, l);
 
 const PREPARATION: Record<PreparationState, Bilingual> = {
   not_started: { tr: 'Hazırlık başlamadı', en: 'Not started' },
@@ -30,7 +31,7 @@ const PREPARATION: Record<PreparationState, Bilingual> = {
 };
 
 export const PREPARATION_VALUES = Object.keys(PREPARATION) as PreparationState[];
-export const preparationLabel = (s: PreparationState, l: Language) => PREPARATION[s][l];
+export const preparationLabel = (s: PreparationState, l: Language) => wordFor(PREPARATION, s, l);
 
 /** A hearing nobody has prepared for is the one worth colouring. */
 export const PREPARATION_STYLES: Record<PreparationState, string> = {
@@ -52,7 +53,7 @@ const FILING_KINDS: Record<FilingKind, Bilingual> = {
 };
 
 export const FILING_KIND_VALUES = Object.keys(FILING_KINDS) as FilingKind[];
-export const filingKindLabel = (k: FilingKind, l: Language) => FILING_KINDS[k][l];
+export const filingKindLabel = (k: FilingKind, l: Language) => wordFor(FILING_KINDS, k, l);
 
 const FILING_STATES: Record<FilingState, Bilingual> = {
   planned: { tr: 'Planlandı', en: 'Planned' },
@@ -64,7 +65,7 @@ const FILING_STATES: Record<FilingState, Bilingual> = {
 };
 
 export const FILING_STATE_VALUES = Object.keys(FILING_STATES) as FilingState[];
-export const filingStateLabel = (s: FilingState, l: Language) => FILING_STATES[s][l];
+export const filingStateLabel = (s: FilingState, l: Language) => wordFor(FILING_STATES, s, l);
 
 export const FILING_STATE_STYLES: Record<FilingState, string> = {
   planned: 'border-slate-300 bg-slate-100 text-slate-700',
@@ -84,7 +85,7 @@ const ORDER_STATES: Record<OrderState, Bilingual> = {
 };
 
 export const ORDER_STATE_VALUES = Object.keys(ORDER_STATES) as OrderState[];
-export const orderStateLabel = (s: OrderState, l: Language) => ORDER_STATES[s][l];
+export const orderStateLabel = (s: OrderState, l: Language) => wordFor(ORDER_STATES, s, l);
 
 export const ORDER_STATE_STYLES: Record<OrderState, string> = {
   in_force: 'border-emerald-300 bg-emerald-50 text-emerald-800',
@@ -102,4 +103,4 @@ const COUNSEL_STATES: Record<CounselState, Bilingual> = {
 };
 
 export const COUNSEL_STATE_VALUES = Object.keys(COUNSEL_STATES) as CounselState[];
-export const counselStateLabel = (s: CounselState, l: Language) => COUNSEL_STATES[s][l];
+export const counselStateLabel = (s: CounselState, l: Language) => wordFor(COUNSEL_STATES, s, l);

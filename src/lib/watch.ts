@@ -14,6 +14,7 @@
  *     conversations.
  */
 import type { AuthorityNotice, IncidentKind, WatchPost } from '../types';
+import { unknownValue } from './unknownValue';
 
 export const POST_LABELS: Record<WatchPost, { tr: string; en: string }> = {
   main_gate: { tr: 'Ana kapı', en: 'Main gate' },
@@ -70,6 +71,9 @@ export function noticeWords(notice: AuthorityNotice): { tr: string; en: string }
     case 'unknown':
       return { tr: 'Bildirim kararı kayıtlı değil', en: 'No notification decision recorded' };
   }
+  // `authority_notice` bir Postgres enum'ı: bir göç ona dördüncü bir değer
+  // ekleyebilir ve o an bu paket henüz bilmez.
+  return { tr: unknownValue(notice), en: unknownValue(notice) };
 }
 
 /**

@@ -1,4 +1,5 @@
 import type { DonationState, Language, VoucherState } from '../types';
+import { wordFor } from './labels';
 
 type Bilingual = { tr: string; en: string };
 
@@ -10,7 +11,7 @@ const VOUCHER_STATES: Record<VoucherState, Bilingual> = {
   withdrawn: { tr: 'Geri çekildi', en: 'Withdrawn' },
 };
 
-export const voucherStateLabel = (s: VoucherState, l: Language) => VOUCHER_STATES[s][l];
+export const voucherStateLabel = (s: VoucherState, l: Language) => wordFor(VOUCHER_STATES, s, l);
 
 export function voucherStateStyle(state: VoucherState): string {
   switch (state) {
@@ -34,7 +35,7 @@ const DONATION_STATES: Record<DonationState, Bilingual> = {
   lapsed: { tr: 'Düştü', en: 'Lapsed' },
 };
 
-export const donationStateLabel = (s: DonationState, l: Language) => DONATION_STATES[s][l];
+export const donationStateLabel = (s: DonationState, l: Language) => wordFor(DONATION_STATES, s, l);
 
 const CATEGORIES: Record<string, Bilingual> = {
   civil_construction: { tr: 'İnşaat', en: 'Civil construction' },
