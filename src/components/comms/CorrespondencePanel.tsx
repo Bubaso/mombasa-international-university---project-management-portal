@@ -40,6 +40,8 @@ import { formatDate } from '../../lib/site';
 import { todayIso } from '../../lib/date';
 import type { CorrespondenceEntry, UserRole } from '../../types';
 import { MoreRows } from '../ui/MoreRows';
+import { useRecordOrigins } from '../../api/proposalHooks';
+import { RecordOrigin } from '../ui/RecordOrigin';
 
 /** Mirrors app.can_keep_correspondence(). */
 const KEEPERS: UserRole[] = ['admin', 'project_director', 'trustee', 'board_director'];
@@ -82,6 +84,8 @@ export const CorrespondencePanel: React.FC = () => {
   const rows = letters.data?.rows ?? [];
   // Kütüğün tamamından sayılıyor; dilimin içinden saymak az gösterirdi.
   const unconfirmed = unconfirmedCount.data ?? 0;
+  // Bir ekran dolusu için tek okuma (M13-21).
+  const origins = useRecordOrigins(rows.map((r) => r.id));
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-4">
@@ -255,6 +259,7 @@ export const CorrespondencePanel: React.FC = () => {
                 <span className="text-sm text-slate-900">
                   {(tr ? row.subjectTr : row.subjectEn) ?? row.subjectEn}
                 </span>
+                <RecordOrigin origin={origins.of(row.id)} />
                 {row.documentId ? (
                   <Pill className="ml-1.5 border-emerald-300 bg-emerald-50 text-emerald-900">
                     <FileCheck2 className="mr-0.5 inline h-3 w-3" aria-hidden="true" />

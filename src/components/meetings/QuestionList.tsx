@@ -16,6 +16,9 @@ import { NO_PARTY, PartyPicker, type PartyValue } from './PartyPicker';
 import type { Confidentiality, OpenQuestion, QuestionStatus } from '../../types';
 import { splitBySettled } from '../../lib/registerStates';
 import { SettledSection } from '../ui/SettledSection';
+import { useRecordOrigins } from '../../api/proposalHooks';
+import { RecordOrigin } from '../ui/RecordOrigin';
+import type { Provenance } from '../../api/proposals';
 
 const STATUS_STYLES: Record<QuestionStatus, string> = {
   open: 'border-amber-300 bg-amber-50 text-amber-800',
@@ -56,6 +59,8 @@ export const QuestionList: React.FC<{
   // olan bekleyen tarafta kalıyor, çünkü daha yüksek sesle açıktır. Hüküm
   // `lib/registerStates`'te.
   const { open: waiting, settled } = splitBySettled(rows, 'question_status', (q) => q.status);
+  // Bir ekran dolusu için tek okuma (M13-21).
+  const origins = useRecordOrigins(rows.map((q) => q.id));
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white shadow-xs">
@@ -94,6 +99,7 @@ export const QuestionList: React.FC<{
               <QuestionRow
                 key={question.id}
                 question={question}
+                origin={origins.of(question.id)}
                 canKeep={canKeep}
                 marks={marks}
                 onAnswer={(input) => answer.mutate(input)}
@@ -118,6 +124,7 @@ export const QuestionList: React.FC<{
                     <QuestionRow
                       key={question.id}
                       question={question}
+                      origin={origins.of(question.id)}
                       canKeep={canKeep}
                       marks={marks}
                       onAnswer={(input) => answer.mutate(input)}
@@ -144,11 +151,13 @@ export const QuestionList: React.FC<{
  */
 const QuestionRow: React.FC<{
   question: OpenQuestion;
+  /** Kaydın kökeni, ebeveynin tek okumasından (M13-21). */
+  origin: Provenance | undefined;
   canKeep: boolean;
   marks: ReturnType<typeof useMachineMarks>;
   onAnswer: (input: { id: string; status: QuestionStatus; answerEn: string | null }) => void;
   answering: boolean;
-}> = ({ question, canKeep, marks, onAnswer, answering }) => {
+}> = ({ question, origin, canKeep, marks, onAnswer, answering }) => {
   const { language } = useApp();
   const tr = language === 'tr';
   const late = question.status === 'open' && isOverdue(question.targetResolutionDate);
@@ -195,6 +204,8 @@ const QuestionRow: React.FC<{
           {question.answerEn}
         </p>
       )}
+
+      <RecordOrigin origin={origin} />
 
       {canKeep && (
         <AnswerForm

@@ -27,6 +27,8 @@ import { actsAs } from '../../lib/authority';
 import { formatDate } from '../../lib/site';
 import type { ChronologyEvent, UserRole } from '../../types';
 import { MoreRows } from '../ui/MoreRows';
+import { useRecordOrigins } from '../../api/proposalHooks';
+import { RecordOrigin } from '../ui/RecordOrigin';
 
 const PLAN_KEEPERS: UserRole[] = [
   'admin',
@@ -106,6 +108,9 @@ export const ChronologyPanel: React.FC = () => {
   const rows = filter ? all.filter((e) => e.category === filter) : all;
   // Kütüğün tamamından; dilim büyüdükçe artan bir sayı, sayı değildir.
   const unevidenced = unevidencedCount.data ?? 0;
+  // Bir ekran dolusu için tek okuma (M13-21). Kronoloji kaydı tam olarak
+  // asistanın belgeden çıkardığı şey, yani kökeni en çok burada aranır.
+  const origins = useRecordOrigins(rows.map((e) => e.id));
   const earliest = all.length > 0 ? all[all.length - 1] : null;
 
   return (
@@ -327,6 +332,7 @@ export const ChronologyPanel: React.FC = () => {
                   {event.detailEn && (
                     <p className="mt-0.5 line-clamp-2 text-xs text-slate-600">{event.detailEn}</p>
                   )}
+                  <RecordOrigin origin={origins.of(event.id)} />
                   {/* The source, named. Without it this is an account rather
                       than evidence. */}
                   <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs">

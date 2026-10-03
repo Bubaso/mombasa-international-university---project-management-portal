@@ -559,6 +559,113 @@ check(
   unlisted.length ? `unlisted: ${unlisted.join(', ')}` : `${BOUND_IN_SQL.length} bound`,
 );
 
+// ------------------------------------------- her kütük kaydının kökeni var mı
+//
+// M13-21: asistan bir belgeyi okuyup bir kütüğe kayıt açtığında, o kaydın
+// dayanağı belgedeki bir cümledir. Teklif kuyruğu artık **boşalmak için**
+// kurulu, yani o cümle kuyrukla birlikte gidiyor — ve gittiğinde kaydın neden
+// var olduğunu söyleyen tek şey gitmiş olur. Satır kaydın yanında duruyor
+// (`src/components/ui/RecordOrigin.tsx`), ve ekranın tek okumasından besleniyor
+// (`useRecordOrigins`), çünkü satır başına sorgu yirmi üç ekranda yirmi üç kez
+// ödenirdi.
+//
+// Aşağıdaki liste asistanın yazabildiği yirmi üç kütüğün her birini ekranına
+// bağlıyor. `pending` olanlar henüz bağlanmadı ve sayısı kayıtlı: iş bitince
+// sayı düşer, ve bağlanmış bir ekran sessizce geri alınamaz.
+
+const ORIGIN_SCREENS = [
+  { table: 'obligations', file: 'src/views/ObligationsView.tsx' },
+  { table: 'chronology_entries', file: 'src/components/plan/ChronologyPanel.tsx' },
+  { table: 'correspondence', file: 'src/components/comms/CorrespondencePanel.tsx' },
+  { table: 'action_items', file: 'src/components/meetings/ActionList.tsx' },
+  { table: 'risks', file: 'src/components/raid/RiskList.tsx' },
+  { table: 'filings', file: 'src/components/legal/FilingList.tsx' },
+  { table: 'legal_orders', file: 'src/components/legal/OrderList.tsx' },
+  { table: 'open_questions', file: 'src/components/meetings/QuestionList.tsx' },
+  { table: 'milestones', file: 'src/components/plan/MilestonePanel.tsx' },
+  { table: 'issues', file: 'src/components/raid/IssueList.tsx' },
+  { table: 'assumptions', file: 'src/components/raid/AssumptionList.tsx' },
+  // Henüz bağlanmadı. Her biri bir ekran ve sıraya göre gidiyor.
+  { table: 'hearings', file: 'src/components/legal/HearingList.tsx', pending: true },
+  { table: 'meetings', file: 'src/views/MeetingsView.tsx', pending: true },
+  { table: 'decisions', file: 'src/components/meetings/DecisionList.tsx', pending: true },
+  { table: 'stakeholders', file: 'src/views/StakeholdersView.tsx', pending: true },
+  {
+    table: 'stakeholder_interactions',
+    file: 'src/components/stakeholders/StakeholderDetail.tsx',
+    pending: true,
+  },
+  { table: 'legal_opinions', file: 'src/components/legal/CounselPanel.tsx', pending: true },
+  { table: 'exhibits', file: 'src/components/legal/EvidenceList.tsx', pending: true },
+  { table: 'financial_transactions', file: 'src/components/money/LedgerPanel.tsx', pending: true },
+  { table: 'site_inspections', file: 'src/components/site/InspectionList.tsx', pending: true },
+  {
+    table: 'procurement_requests',
+    file: 'src/components/procurement/RequestPanel.tsx',
+    pending: true,
+  },
+  { table: 'budget_lines', file: 'src/components/money/BudgetPanel.tsx', pending: true },
+  { table: 'valuations', file: 'src/components/site/CommercialPanel.tsx', pending: true },
+];
+
+// Liste asistanın hedeflerinin tamamını kapsıyor mu? Hedefler
+// `supabase/functions/ai-assistant/targets.js`'te ve oraya bir hedef
+// eklendiğinde buraya da bir satır gerekiyor — yoksa yeni kütük köken
+// satırı olmadan doğar.
+const targetsSource = readFileSync(
+  join(root, 'supabase', 'functions', 'ai-assistant', 'targets.js'),
+  'utf8',
+);
+const targetTables = [...targetsSource.matchAll(/^ {4}table: '(\w+)',$/gm)].map((m) => m[1]);
+check(
+  targetTables.length > 20,
+  'the assistant names the registers it can write to',
+  `${targetTables.length}`,
+);
+
+const listed = new Set(ORIGIN_SCREENS.map((e) => e.table));
+const withoutAScreen = targetTables.filter((t) => !listed.has(t));
+check(
+  withoutAScreen.length === 0,
+  'every register the assistant can write to has a screen named for its origin line',
+  withoutAScreen.length ? `missing: ${withoutAScreen.join(', ')}` : `${listed.size} listed`,
+);
+
+// Bekleyen satırların yolu da sınanıyor. İlk hâlinde altısı uydurmaydı ve
+// liste bir sonraki partiyi var olmayan dosyalara yönlendirecekti: yanlış yol
+// taşıyan bir liste, listesiz olmaktan kötü.
+for (const entry of ORIGIN_SCREENS) {
+  check(
+    existsSync(join(root, entry.file)),
+    `${entry.file.slice(entry.file.indexOf('src/'))} is a file this repository has`,
+  );
+}
+
+for (const entry of ORIGIN_SCREENS) {
+  if (entry.pending) continue;
+  const text = sourceOf(entry.file);
+  if (text === null) continue;
+  const wired = /<RecordOrigin\s/.test(text) && text.includes('useRecordOrigins(');
+  check(
+    wired,
+    `${entry.file.slice(entry.file.indexOf('src/'))} says where a ${entry.table} record came from`,
+    wired
+      ? ''
+      : 'the line and the screenful read go together — one without the other is N+1 or nothing',
+  );
+}
+
+// Kalanların sayısı kayıtlı: düşmesi iş, artması geri alma.
+const PENDING_TODAY = 12;
+const stillPending = ORIGIN_SCREENS.filter((e) => e.pending).length;
+check(
+  stillPending === PENDING_TODAY,
+  'the number of registers still waiting for their origin line is the number recorded',
+  stillPending === PENDING_TODAY
+    ? `${stillPending} of ${ORIGIN_SCREENS.length}`
+    : `${stillPending} now, ${PENDING_TODAY} recorded`,
+);
+
 console.log('');
 if (failures > 0) {
   console.error(`${failures} register-state check(s) failed.`);

@@ -40,6 +40,9 @@ import type {
 } from '../types';
 import { splitBySettled } from '../lib/registerStates';
 import { SettledSection } from '../components/ui/SettledSection';
+import { useRecordOrigins } from '../api/proposalHooks';
+import { RecordOrigin } from '../components/ui/RecordOrigin';
+import type { Provenance } from '../api/proposals';
 
 /**
  * The obligations and commitments register (M2).
@@ -67,6 +70,8 @@ export const ObligationsView: React.FC = () => {
   const [adding, setAdding] = useState(false);
 
   const rows = obligations.data ?? [];
+  // Bir ekran dolusu için tek okuma (M13-21).
+  const origins = useRecordOrigins(rows.map((o) => o.id));
 
   const shown = useMemo(
     () => rows.filter((o) => (!source || o.source === source) && (!state || o.state === state)),
@@ -214,6 +219,7 @@ export const ObligationsView: React.FC = () => {
                     <ObligationRow
                       key={o.id}
                       o={o}
+                      origin={origins.of(o.id)}
                       language={language}
                       selected={o.id === selectedId}
                       onOpen={() => setSelectedId(o.id)}
@@ -236,6 +242,7 @@ export const ObligationsView: React.FC = () => {
                             <ObligationRow
                               key={o.id}
                               o={o}
+                              origin={origins.of(o.id)}
                               language={language}
                               selected={o.id === selectedId}
                               onOpen={() => setSelectedId(o.id)}
@@ -273,10 +280,12 @@ export const ObligationsView: React.FC = () => {
  */
 const ObligationRow: React.FC<{
   o: Obligation;
+  /** Kaydın kökeni, ekranın tek okumasından (M13-21). */
+  origin: Provenance | undefined;
   language: Language;
   selected: boolean;
   onOpen: () => void;
-}> = ({ o, language, selected, onOpen }) => {
+}> = ({ o, origin, language, selected, onOpen }) => {
   const tr = language === 'tr';
   const band = o.state === 'fulfilled' ? null : thresholdBand(o.dueOn);
 
@@ -329,6 +338,7 @@ const ObligationRow: React.FC<{
           <Pill className={STATE_STYLES[o.state]}>{stateLabel(o.state, language)}</Pill>
         </div>
       </button>
+      <RecordOrigin origin={origin} />
     </li>
   );
 };

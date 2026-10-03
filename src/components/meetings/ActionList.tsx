@@ -23,6 +23,9 @@ import { NO_PARTY, PartyPicker, type PartyValue } from './PartyPicker';
 import type { ActionItem, ActionStatus, Confidentiality, PriorityLevel } from '../../types';
 import { isSettled, splitBySettled } from '../../lib/registerStates';
 import { SettledSection } from '../ui/SettledSection';
+import { useRecordOrigins } from '../../api/proposalHooks';
+import { RecordOrigin } from '../ui/RecordOrigin';
+import type { Provenance } from '../../api/proposals';
 
 /**
  * Actions: exactly one owner and one date, both required by the table (M3-05).
@@ -63,6 +66,8 @@ export const ActionList: React.FC<{
   // (CLAUDE.md §4). Sıra bozulmuyor — API vade tarihine göre sıralıyor, yani
   // bekleyenlerin içinde en yakın olan en üstte.
   const { open: waiting, settled } = splitBySettled(rows, 'action_status', (a) => a.status);
+  // Bir ekran dolusu için tek okuma (M13-21).
+  const origins = useRecordOrigins(rows.map((a) => a.id));
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white shadow-xs">
@@ -117,6 +122,7 @@ export const ActionList: React.FC<{
               <ActionRow
                 key={action.id}
                 action={action}
+                origin={origins.of(action.id)}
                 canKeep={canKeep}
                 machineWritten={marks.is(
                   action.id,
@@ -144,6 +150,7 @@ export const ActionList: React.FC<{
                     <ActionRow
                       key={action.id}
                       action={action}
+                      origin={origins.of(action.id)}
                       canKeep={canKeep}
                       machineWritten={marks.is(
                         action.id,
@@ -164,10 +171,12 @@ export const ActionList: React.FC<{
 
 const ActionRow: React.FC<{
   action: ActionItem;
+  /** Kaydın kökeni, ebeveynin tek okumasından (M13-21). */
+  origin: Provenance | undefined;
   canKeep: boolean;
   /** Whether the sentence shown is a machine's and nobody has approved it. */
   machineWritten: boolean;
-}> = ({ action, canKeep, machineWritten }) => {
+}> = ({ action, origin, canKeep, machineWritten }) => {
   const { language } = useApp();
   const { user } = useAuth();
   const tr = language === 'tr';
@@ -285,6 +294,7 @@ const ActionRow: React.FC<{
         </div>
       )}
 
+      <RecordOrigin origin={origin} />
       <WriteError error={report.error ?? reschedule.error} />
     </div>
   );

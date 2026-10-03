@@ -28,6 +28,8 @@ import {
   riskCategoryLabel,
 } from '../../lib/raid';
 import type { AssumptionState, RiskCategory } from '../../types';
+import { useRecordOrigins } from '../../api/proposalHooks';
+import { RecordOrigin } from '../ui/RecordOrigin';
 
 export const AssumptionList: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
   const { language } = useApp();
@@ -42,6 +44,8 @@ export const AssumptionList: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
 
   const rows = assumptions.data ?? [];
   const unchecked = rows.filter((a) => a.state === 'unverified').length;
+  // Bir ekran dolusu için tek okuma (M13-21).
+  const origins = useRecordOrigins(rows.map((a) => a.id));
 
   // Burada **kasıtlı olarak** bitmiş/bekleyen ayrımı yok. Kütük turunda on iki
   // ekran bölündü; bu onlardan biri değil, çünkü bir varsayımın bitmiş hâli
@@ -171,6 +175,7 @@ export const AssumptionList: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
                         </span>
                       </Pill>
                     )}
+                    <RecordOrigin origin={origins.of(assumption.id)} />
                   </div>
                   <div className="mt-0.5 text-slate-500">
                     {riskCategoryLabel(assumption.riskCategory, language)}
