@@ -119,7 +119,11 @@ for (const read of bounded) {
 // denetlenmiş tutarı — bir toplam bütün değerleri ister) ve bir bütünlük
 // sayımı (`countUndigestedDocuments` — birleştirmeyi doğrulayamadığım için iki
 // ucuz okuma). Dördünün gerekçesi kendi dosyasında yazılı.
-const UNBOUNDED_TODAY = 120;
+// Dördüncü dalgadan sonra 121: `fetchProvenanceOfRecords` eklendi ve sınır
+// koymuyor, ama **koymasına gerek yok** — `.in('record_id', ids)` ile
+// çağıranın verdiği kimliklerle sınırlı, yani ekranın dilimden fazla satır
+// döndürmesi imkânsız. Sınır çağıranın dilimi.
+const UNBOUNDED_TODAY = 121;
 
 // Sayan okumalar sayılmıyor: sorumuz "kaç okuma her satırı çekiyor", ve
 // `head: true` olan hiç satır çekmiyor.

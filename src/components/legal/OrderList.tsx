@@ -13,6 +13,8 @@ import { ActionButton, Field, Pill, Select, TextInput, WriteError } from '../ui/
 import { SettledSection } from '../ui/SettledSection';
 import { EmptyState } from '../EmptyState';
 import type { LegalOrder, OrderState } from '../../types';
+import { useRecordOrigins } from '../../api/proposalHooks';
+import { RecordOrigin } from '../ui/RecordOrigin';
 
 /**
  * Court orders, and the one thing that makes this register worth more than a
@@ -45,6 +47,8 @@ export const OrderList: React.FC<{ caseId: string; canWrite: boolean; canOblige:
   // değiştirilmiş ve temyizdeki karar bağlıyor. Hüküm `lib/registerStates`'te,
   // bir kez (CLAUDE.md §4).
   const { open: waiting, settled } = splitBySettled(rows, 'order_state', (o) => o.state);
+  // Bu ekranın bütün satırlarının kökeni, tek okumada (M13-21).
+  const origins = useRecordOrigins(rows.map((r) => r.id));
 
   /** Bir satır; iki yerde çiziliyor (yürürlükte olanlar ve çıkanlar). */
   const row = (order: LegalOrder) => {
@@ -75,6 +79,7 @@ export const OrderList: React.FC<{ caseId: string; canWrite: boolean; canOblige:
 
         {derived.length > 0 && <DerivedObligations orderId={order.id} count={derived.length} />}
 
+        <RecordOrigin origin={origins.of(order.id)} />
         <div className="mt-2 flex flex-wrap items-end gap-2">
           {canWrite && (
             <Field label={tr ? 'Durum' : 'State'}>

@@ -580,6 +580,35 @@ export async function fetchProvenanceOfDocument(documentId: string): Promise<Pro
 }
 
 /** Bu kayıt hangi belgeden açıldı. Kütük ekranlarında gösterilmek için. */
+/**
+ * Bir ekranın bütün satırlarının kökeni, tek okumada.
+ *
+ * `fetchProvenanceOfRecord` tek kayıt için; bu bir ekran dolusu için. Satır
+ * başına bir sorgu, yirmi satırlık bir kütükte yirmi istek demek — ve köken
+ * satırı tam olarak her kütüğe eklenecek şey, yani o maliyet yirmi üç ekranda
+ * tekrarlanırdı. Makine çevirisi rozetinde aynı sebeple aynı şey yapıldı
+ * (`useMachineMarks`: "one query for the screenful").
+ *
+ * Kökeni olmayan kayıt haritada yok: elle girilmiş bir kaydın kökeni yoktur ve
+ * "kökeni yok" demek, boş bir satır çizmek olurdu.
+ */
+export async function fetchProvenanceOfRecords(
+  recordIds: string[],
+): Promise<Map<string, Provenance>> {
+  if (recordIds.length === 0) return new Map();
+  const { data, error } = await supabase
+    .from('record_provenance')
+    .select(PROVENANCE_COLUMNS)
+    .in('record_id', recordIds);
+  if (error) throw new Error(error.message);
+  const found = new Map<string, Provenance>();
+  for (const row of (data ?? []) as unknown as ProvenanceRow[]) {
+    const entry = toProvenance(row);
+    found.set(entry.recordId, entry);
+  }
+  return found;
+}
+
 export async function fetchProvenanceOfRecord(recordId: string): Promise<Provenance | null> {
   const { data, error } = await supabase
     .from('record_provenance')

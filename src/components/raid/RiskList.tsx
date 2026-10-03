@@ -34,6 +34,9 @@ import {
 import type { Risk, RiskCategory, RiskResponse } from '../../types';
 import { splitBySettled } from '../../lib/registerStates';
 import { SettledSection } from '../ui/SettledSection';
+import { useRecordOrigins } from '../../api/proposalHooks';
+import { RecordOrigin } from '../ui/RecordOrigin';
+import type { Provenance } from '../../api/proposals';
 
 interface Props {
   canKeep: boolean;
@@ -65,6 +68,9 @@ export const RiskList: React.FC<Props> = ({ canKeep, canAcknowledge }) => {
   // olmuş bir risk yönetilecek bir sorundur ve ilgiyi en çok o ister
   // (`lib/registerStates`).
   const { open: waiting, settled } = splitBySettled(rows, 'risk_state', (r) => r.state);
+  // Bir ekran dolusu için tek okuma: satırı çizen bileşen kendi sorgusunu
+  // yapsa, yirmi satır yirmi istek olurdu (M13-21).
+  const origins = useRecordOrigins(rows.map((r) => r.id));
   const withoutTrigger = live.filter((r) => !r.triggerEn).length;
 
   return (
@@ -205,6 +211,7 @@ export const RiskList: React.FC<Props> = ({ canKeep, canAcknowledge }) => {
               <RiskRow
                 key={risk.id}
                 risk={risk}
+                origin={origins.of(risk.id)}
                 open={openId === risk.id}
                 onToggle={() => setOpenId(openId === risk.id ? null : risk.id)}
                 canKeep={canKeep}
@@ -228,6 +235,7 @@ export const RiskList: React.FC<Props> = ({ canKeep, canAcknowledge }) => {
                   <RiskRow
                     key={risk.id}
                     risk={risk}
+                    origin={origins.of(risk.id)}
                     open={openId === risk.id}
                     onToggle={() => setOpenId(openId === risk.id ? null : risk.id)}
                     canKeep={canKeep}
@@ -244,12 +252,14 @@ export const RiskList: React.FC<Props> = ({ canKeep, canAcknowledge }) => {
 };
 
 const RiskRow: React.FC<{
+  /** Kaydın kökeni, ebeveynin tek okumasından. */
+  origin: Provenance | undefined;
   risk: Risk;
   open: boolean;
   onToggle: () => void;
   canKeep: boolean;
   canAcknowledge: boolean;
-}> = ({ risk, open, onToggle, canKeep, canAcknowledge }) => {
+}> = ({ risk, origin, open, onToggle, canKeep, canAcknowledge }) => {
   const { language } = useApp();
   const { user } = useAuth();
   const tr = language === 'tr';
@@ -333,6 +343,9 @@ const RiskRow: React.FC<{
 
       {open && (
         <div className="space-y-3 border-t border-slate-100 bg-slate-50/60 px-3 py-3 text-xs">
+          {/* Açılan satırın içinde: kapalı hâlde satırı uzatmıyor, ama "bu risk
+              nereden geldi" sorusu kaydın yanından cevaplanıyor (M13-21). */}
+          <RecordOrigin origin={origin} />
           {risk.triggerEn && (
             <p className="rounded-md border border-slate-200 bg-white px-2 py-1.5">
               <span className="font-semibold">{tr ? 'Tetikleyici: ' : 'Trigger: '}</span>

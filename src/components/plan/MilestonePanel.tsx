@@ -38,6 +38,8 @@ import type { Milestone, MilestoneProgress, UserRole } from '../../types';
 import { toneFor, wordFor } from '../../lib/labels';
 import { isSettled, splitBySettled } from '../../lib/registerStates';
 import { SettledSection } from '../ui/SettledSection';
+import { useRecordOrigins } from '../../api/proposalHooks';
+import { RecordOrigin } from '../ui/RecordOrigin';
 
 /** Mirrors app.can_keep_plan(). */
 const PLAN_KEEPERS: UserRole[] = [
@@ -129,6 +131,8 @@ export const MilestonePanel: React.FC = () => {
   // Ulaşılmış ya da bırakılmış taş geri çekiliyor; kaçırılmış olan kalıyor,
   // çünkü kaçırılmış bir taş bitmiş iş değil (hüküm `lib/registerStates`'te).
   const { open: waiting, settled } = splitBySettled(rows, 'milestone_progress', (m) => m.state);
+  // Bu ekranın bütün satırlarının kökeni, tek okumada (M13-21).
+  const origins = useRecordOrigins(rows.map((r) => r.id));
   const overdue = waiting.filter(pastTarget).length;
   // Gecikme bütün kütükten okunuyor, bekleyenden değil: doksan gün gecikmeyle
   // ulaşılmış bir taşın gecikmesi, ulaşıldığı için yok sayılacak bir şey değil.
@@ -196,6 +200,7 @@ export const MilestonePanel: React.FC = () => {
               )}
             </div>
             {m.note && <p className="mt-0.5 text-xs text-slate-600">{m.note}</p>}
+            <RecordOrigin origin={origins.of(m.id)} />
           </div>
 
           {mayKeep && !open && !isSettled('milestone_progress', m.state) && (

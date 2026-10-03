@@ -19,6 +19,8 @@ import { RISK_CATEGORIES, issueStateLabel, riskCategoryLabel } from '../../lib/r
 import type { Issue, RiskCategory } from '../../types';
 import { splitBySettled } from '../../lib/registerStates';
 import { SettledSection } from '../ui/SettledSection';
+import { useRecordOrigins } from '../../api/proposalHooks';
+import { RecordOrigin } from '../ui/RecordOrigin';
 
 export const IssueList: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
   const { language } = useApp();
@@ -38,6 +40,8 @@ export const IssueList: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
 
   // Çözülmüş ve kapatılmış olan geri çekiliyor (`lib/registerStates`).
   const { open: waiting, settled } = splitBySettled(rows, 'issue_state', (r) => r.state);
+  // Bu ekranın bütün satırlarının kökeni, tek okumada (M13-21).
+  const origins = useRecordOrigins(rows.map((r) => r.id));
   const foreseen = rows.filter((i) => i.materialisedFromRiskId != null).length;
 
   /** Bir satır; iki yerde çiziliyor (bekleyen ve geri çekilmiş). */
@@ -85,6 +89,7 @@ export const IssueList: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
         </span>
       </div>
 
+      <RecordOrigin origin={origins.of(issue.id)} />
       {canKeep && issue.resolvedAt == null && (
         <div className="mt-1.5">
           {resolving === issue.id ? (

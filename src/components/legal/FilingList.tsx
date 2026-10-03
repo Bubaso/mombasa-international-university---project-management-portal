@@ -16,6 +16,8 @@ import { ActionButton, Field, Pill, Select, TextInput, WriteError } from '../ui/
 import { SettledSection } from '../ui/SettledSection';
 import { EmptyState } from '../EmptyState';
 import type { Filing, FilingKind, FilingState } from '../../types';
+import { useRecordOrigins } from '../../api/proposalHooks';
+import { RecordOrigin } from '../ui/RecordOrigin';
 
 /**
  * Filings (M5-04).
@@ -62,6 +64,8 @@ export const FilingList: React.FC<{ caseId: string; canWrite: boolean }> = ({
   // Tebliğ edilmiş ya da geri çekilmiş layiha kimseden iş istemiyor; hangi
   // değerin son olduğu `lib/registerStates`'te, bir kez (CLAUDE.md §4).
   const { open: waiting, settled } = splitBySettled(rows, 'filing_state', (f) => f.state);
+  // Bu ekranın bütün satırlarının kökeni, tek okumada (M13-21).
+  const origins = useRecordOrigins(rows.map((r) => r.id));
   const late = waiting.filter(isLate).length;
 
   /** Bir satır; iki yerde çiziliyor (bekleyen ve sonuçlanmış). */
@@ -114,6 +118,7 @@ export const FilingList: React.FC<{ caseId: string; canWrite: boolean }> = ({
           </Pill>
         </div>
 
+        <RecordOrigin origin={origins.of(filing.id)} />
         {canWrite && (
           <StateControl
             id={filing.id}
