@@ -359,25 +359,30 @@ verilecek — zor olan iş o.
 
 Fonksiyonun kendini sınama çağrısından, gerçek anahtar ve gerçek şema ile:
 
-| Ölçülen                                     | Değer                            |
-| ------------------------------------------- | -------------------------------- |
-| Hedef tanımları (16 kütük, alanlarıyla)     | ~2.390 belirteç, her çağrıda     |
-| 150 karakterlik sınama metni, 5 hedefle     | 1.587 girdi / 539 çıktı belirteç |
-| Aynı metin, 16 hedefle                      | 2.857 girdi / 513 çıktı belirteç |
-| 30.000 karakterlik kesit (azami, bir belge) | ~10.400 girdi / ~800 çıktı       |
-| **Okuma + teklif, belge başına**            | **~$0,005**                      |
-| **Ayda 50 belge**                           | **~$0,25**                       |
+| Ölçülen                                     | Değer                             |
+| ------------------------------------------- | --------------------------------- |
+| Hedef tanımları (23 kütük, alanlarıyla)     | ~3.387 belirteç, her çağrıda      |
+| 150 karakterlik sınama metni, 5 hedefle     | 1.587 girdi / 539 çıktı belirteç  |
+| Aynı metin, 23 hedefle                      | 3.911 girdi / ~500 çıktı belirteç |
+| 30.000 karakterlik kesit (azami, bir belge) | ~10.400 girdi / ~800 çıktı        |
+| **Okuma + teklif, belge başına**            | **~$0,005**                       |
+| **Ayda 50 belge**                           | **~$0,25**                        |
 
 Yani teklif üretme dâhil, belge başına maliyet tablodaki Sonnet tahmininin
 (~$0,065) on üçte biri mertebesinde. Üç sebep: daha ucuz model, **tek geçiş**
 (sınıflandırma ve teklifler aynı çağrıda; rapor iki geçiş öngörüyordu), ve
 belgenin tamamı yerine ilk 30.000 karakteri.
 
-Sabit maliyet hedef sayısıyla büyüyor: 16 kütüğün tanımı her çağrıda ~2.390
-belirteç. Kütük sayısı iki katına çıkarsa bu da çıkar, ve o noktada hedefleri
-sınıflandırmaya göre daraltmak (önce ne olduğunu sor, sonra yalnız ilgili
-hedeflerin tanımını gönder) iki geçişi geri getirmeye değer hâle gelir.
-Bugünkü rakamlarda değmiyor: 50 belge ayda çeyrek dolar.
+Sabit maliyet hedef sayısıyla büyüyor: 23 kütüğün tanımı her çağrıda ~3.387
+belirteç, yani 150 karakterlik bir sınama metni bile 3.911 girdi belirteci
+tutuyor. Eğilim ölçüldü — 5 hedefte 1.587, 16'da 2.857, 23'te 3.911 — ve
+kütük başına kabaca 150 belirteç.
+
+Bu, raporun başta önerdiği iki geçişin ne zaman geri geleceğini söylüyor:
+hedef sayısı 40'ı aştığında sabit kısım 6.000 belirteci geçer ve tipik bir
+belgenin kendisinden büyük olur. O noktada önce "bu ne belgesi" diye sorup
+yalnız ilgili hedeflerin tanımını göndermek ucuzlar. Bugün değmiyor: 50 belge
+ayda yaklaşık yarım dolar, ve ikinci bir çağrı gecikmeyi iki katına çıkarır.
 
 ### 7.5 Maliyet tavanı
 
