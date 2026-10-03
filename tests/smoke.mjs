@@ -4508,11 +4508,20 @@ try {
     // ekranın doğru söylediğini değil, belli bir cümleyi kurduğunu.
     'and says plainly that approving is what writes',
   );
-  // Boş durum, sebebini söyleyen cümleyle: "henüz okunmamış" ile
-  // "okudum, bir şey yok" farklı şeylerdir (T5-05).
+  // Alım artık bir kuyruk (M13-20): okumalar durumlarına göre ayrı
+  // sekmelerde ve bitmiş iş bekleyen işle aynı yerde durmuyor. Tek düz
+  // listeyken yirmi belgede çalışılamaz hâle geliyordu.
   check(
-    /Henüz okunmuş belge yok|No document has been read yet/.test(assistant),
-    'with an empty state that says why it is empty',
+    /Karar bekleyen|Awaiting a decision/.test(assistant) &&
+      /Tamamlanan|Finished/.test(assistant) &&
+      /Okunamayan|Could not be read/.test(assistant),
+    'the intake is a queue with the states kept apart',
+  );
+  // Boş durum, sebebini söyleyen cümleyle, ve her sekmenin kendi cümlesi:
+  // "hiç okunmamış" ile "okundu, kararı bitti" farklı şeylerdir (T5-05).
+  check(
+    /Karar bekleyen bir şey yok|Nothing is waiting/.test(assistant),
+    'with an empty state that says why this tab is empty',
   );
   check(
     /Kısıtlı kayıtlar hiçbir koşulda|Restricted records never reach the model/.test(assistant),

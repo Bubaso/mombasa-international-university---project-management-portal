@@ -31,6 +31,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { vocabulariesAcross } from './case-vocabularies.mjs';
 
 let failures = 0;
 const check = (ok, label, detail = '') => {
@@ -194,6 +195,83 @@ for (const [name, typeName] of Object.entries(ALIAS)) {
   check(
     dbEnums.has(name) && clientUnions.has(typeName),
     `the ${name} → ${typeName} pairing names two things that exist`,
+  );
+}
+
+// ---------------------------------------------- hesaplanmış dağarcıklar
+//
+// Kapalı bir kelime dağarcığının ikinci doğma yolu: bir görünümün
+// `case … end as <kolon>` ifadesi. Kolon düz `text` olduğu için yukarıdaki
+// enum taraması onu göremiyor, ama istemci yine de sayılı bir birlik yazıyor
+// — `AmountVerdict`, `IntakeDisposition`. O birlik de veritabanı hakkında bir
+// iddia, ve hiçbir şey onu sınamıyordu.
+//
+// İsme göre eşleştirme burada yapılamaz: `kind` adında bir kolonun dağarcığı
+// hangi görünüme aitse ona aittir ve "Kind" diye bir istemci tipi yok. Bu
+// yüzden eşleşmeler açıkça yazılıyor, ve eşleşmeyen her tam dağarcık
+// gerekçesiyle listelenmek zorunda — "kimse bakmamış" ile "bakıldı, gerek
+// yok" aynı şey değil.
+
+const COMPUTED = {
+  amount_verdict: 'AmountVerdict',
+  bytes_verdict: 'BytesVerdict',
+  implementation: 'ImplementationState',
+  disposition: 'IntakeDisposition',
+};
+
+const COMPUTED_NOT_IN_THE_CLIENT = {
+  kind: 'Yönetişim atıf kütüğünün konu türü; ekranda gevşek tipli bir sözlükten okunuyor.',
+  subject_kind: 'Aynı dağarcık, aynı yerde okunuyor.',
+};
+
+const migrations = join(root, 'supabase', 'migrations');
+const vocabularies = vocabulariesAcross(
+  readdirSync(migrations)
+    .filter((f) => f.endsWith('.sql'))
+    .sort()
+    .map((f) => readFileSync(join(migrations, f), 'utf8')),
+);
+
+const complete = [...vocabularies].filter(([, entry]) => entry.complete);
+check(
+  complete.length >= 5,
+  'the view expressions parse into the vocabularies they compute',
+  `${complete.length} complete`,
+);
+
+for (const [column, entry] of complete.sort()) {
+  const typeName = COMPUTED[column];
+  if (!typeName) {
+    const reason = COMPUTED_NOT_IN_THE_CLIENT[column];
+    check(
+      Boolean(reason),
+      `${column}, computed by a view, is either declared in the client or listed as not being there`,
+      reason ? `(${reason})` : `no pairing for ${column} → ${[...entry.values].join('|')}`,
+    );
+    continue;
+  }
+  const union = clientUnions.get(typeName);
+  check(Boolean(union), `${typeName} exists for the column ${column} computes`);
+  if (!union) continue;
+
+  const missing = [...entry.values].filter((v) => !union.values.has(v));
+  const invented = [...union.values].filter((v) => !entry.values.has(v));
+  check(
+    missing.length === 0,
+    `${typeName} knows every value the ${column} expression can produce`,
+    missing.length ? `the view produces ${missing.join(', ')} and the client does not list it` : '',
+  );
+  check(
+    invented.length === 0,
+    `and claims none it cannot`,
+    invented.length ? `the client lists ${invented.join(', ')} and the view never produces it` : '',
+  );
+}
+
+for (const column of Object.keys(COMPUTED)) {
+  check(
+    vocabularies.has(column) && vocabularies.get(column).complete,
+    `the ${column} expression is still read as a complete vocabulary`,
   );
 }
 

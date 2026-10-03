@@ -3,6 +3,7 @@ import { X, Download, Eye, History, FileCheck2, FileX2, Upload, Copy, Users } fr
 import { useApp } from '../../context/AppContext';
 import * as vault from '../../api/documentHooks';
 import { CommentsAndVersions } from './CommentsAndVersions';
+import { DocumentOrigin } from './DocumentOrigin';
 import { useAuthority } from '../../api/adminHooks';
 import { AUDIT_READERS, actsAs, clearanceLabel, clearanceStyle } from '../../lib/authority';
 import { categoryLabel, fileSize, shortDigest } from '../../lib/documents';
@@ -216,6 +217,11 @@ export const DocumentDetail: React.FC<{
             and has not read, so they belong with the versions rather than on
             a screen of their own (M9-14, M7-17). */}
         <CommentsAndVersions documentId={doc.id} />
+
+        {/* Alımdan çıkanlar: açılan kayıtlar ve reddedilen teklifler. Asistan
+            ekranının iş kuyruğu olabilmesinin sebebi bu panel — kabul edilen
+            ve reddedilen, kuyrukta değil belgenin yanında duruyor. */}
+        <DocumentOrigin documentId={doc.id} />
       </div>
     </aside>
   );

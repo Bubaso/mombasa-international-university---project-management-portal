@@ -1,14 +1,11 @@
 import React from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { FileUp, Loader2, RefreshCw, TriangleAlert } from 'lucide-react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { FileUp, Loader2, TriangleAlert } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { fetchIntakes, intakeFile, type IntakeRecord } from '../../api/intake';
-import { fetchProposals, type Proposal } from '../../api/proposals';
-import { reanalyse } from '../../api/intake';
-import { ProposalCard } from './ProposalCard';
+import { intakeFile } from '../../api/intake';
+import { IntakeQueue } from './IntakeQueue';
 import { ActionButton, Field, Pill, Select, TextInput, WriteError } from '../ui/Controls';
 import { Explain } from '../ui/Explain';
-import { formatDate } from '../../lib/site';
 import type { Confidentiality, DocumentCategory } from '../../types';
 
 /**
@@ -72,14 +69,6 @@ export const IntakePanel: React.FC<{ canWrite: boolean }> = ({ canWrite }) => {
   const { language } = useApp();
   const tr = language === 'tr';
   const queryClient = useQueryClient();
-  const intakes = useQuery({ queryKey: ['documentIntake'], queryFn: () => fetchIntakes(20) });
-  const intakeIds = (intakes.data ?? []).map((row) => row.id);
-  const proposals = useQuery({
-    queryKey: ['intakeProposals', intakeIds],
-    queryFn: () => fetchProposals(intakeIds),
-    enabled: intakeIds.length > 0,
-  });
-
   const [file, setFile] = React.useState<File | null>(null);
   const [title, setTitle] = React.useState('');
   const [category, setCategory] = React.useState<DocumentCategory>('other');
@@ -209,192 +198,8 @@ export const IntakePanel: React.FC<{ canWrite: boolean }> = ({ canWrite }) => {
           </p>
         )}
 
-        <IntakeList
-          rows={intakes.data ?? []}
-          proposals={proposals.data ?? []}
-          loading={intakes.isLoading}
-        />
+        <IntakeQueue />
       </div>
     </section>
-  );
-};
-
-/**
- * Aynı sürümü yeniden okut.
- *
- * Belge kasada; yeniden yüklemek ikinci bir sürüm yaratır ve kasada aynı
- * belgenin iki kopyası durur. Okuma yeni bir alım satırı açıyor, eskisini
- * silmiyor: bir kanaatin ne zaman verildiği de kayıttır.
- */
-const ReadAgain: React.FC<{ versionId: string; note: string | null }> = ({ versionId, note }) => {
-  const { language } = useApp();
-  const tr = language === 'tr';
-  const queryClient = useQueryClient();
-  const again = useMutation({
-    mutationFn: () => reanalyse(versionId),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['documentIntake'] });
-      void queryClient.invalidateQueries({ queryKey: ['intakeProposals'] });
-    },
-  });
-
-  return (
-    <div className="mt-2">
-      {note && <p className="text-xs text-slate-500">{note}</p>}
-      <ActionButton
-        tone="quiet"
-        className="mt-1.5"
-        disabled={again.isPending}
-        onClick={() => again.mutate()}
-      >
-        <RefreshCw
-          className={`h-3.5 w-3.5 ${again.isPending ? 'animate-spin' : ''}`}
-          aria-hidden="true"
-        />
-        {again.isPending ? (tr ? 'Okunuyor…' : 'Reading…') : tr ? 'Yeniden oku' : 'Read again'}
-      </ActionButton>
-      {again.data?.note && <p className="mt-1.5 text-xs text-slate-500">{again.data.note}</p>}
-      {again.data?.error && <p className="mt-1.5 text-sm text-amber-900">{again.data.error}</p>}
-      <WriteError error={again.error} />
-    </div>
-  );
-};
-
-const IntakeList: React.FC<{
-  rows: IntakeRecord[];
-  proposals: Proposal[];
-  loading: boolean;
-}> = ({ rows, proposals, loading }) => {
-  const { language } = useApp();
-  const tr = language === 'tr';
-
-  if (loading) {
-    return (
-      <p className="flex items-center gap-2 text-sm text-slate-500">
-        <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-        {tr ? 'Okumalar yükleniyor…' : 'Loading readings…'}
-      </p>
-    );
-  }
-
-  if (rows.length === 0) {
-    return (
-      <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500">
-        {tr
-          ? 'Henüz okunmuş belge yok. Bir dosya yükleyince ne olduğu burada görünür.'
-          : 'No document has been read yet. Upload one and what it is will appear here.'}
-      </p>
-    );
-  }
-
-  return (
-    <ul className="space-y-2">
-      {rows.map((row) => {
-        const mine = proposals.filter((proposal) => proposal.intakeId === row.id);
-        return (
-          <li key={row.id} className="rounded-lg border border-slate-200 bg-white p-3">
-            <div className="flex flex-wrap items-start justify-between gap-2">
-              <div className="min-w-0">
-                {row.state === 'ready' && (
-                  <p className="text-sm font-semibold text-slate-900">{row.classifiedAs}</p>
-                )}
-                {row.state === 'analysing' && (
-                  <p className="flex items-center gap-1.5 text-sm font-semibold text-slate-700">
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
-                    {tr ? 'Okunuyor' : 'Being read'}
-                  </p>
-                )}
-                {row.state === 'failed' && (
-                  <p className="text-sm font-semibold text-rose-800">
-                    {tr ? 'Okunamadı' : 'Could not be read'}
-                  </p>
-                )}
-                <p className="text-xs text-slate-500">{formatDate(row.createdAt, language)}</p>
-              </div>
-              {row.state === 'ready' && row.pageCount !== null && (
-                <Pill>
-                  {row.pageCount} {tr ? 'sayfa' : 'pages'}
-                </Pill>
-              )}
-            </div>
-
-            {/* Gerekçe. Onsuz sınıflandırma denetlenemez. */}
-            {row.classificationWhy && (
-              <p className="mt-1.5 text-sm leading-relaxed text-slate-600">
-                {row.classificationWhy}
-              </p>
-            )}
-
-            {/* Sebep. "Olmadı" bir cevap değil. */}
-            {row.failureReason && (
-              <p className="mt-1.5 text-sm leading-relaxed text-rose-800">{row.failureReason}</p>
-            )}
-
-            {/* Belgenin ne dediği. Ne olduğu türünü, bu içeriğini söyler. */}
-            {row.aboutEn && (
-              <p className="mt-2 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-sm leading-relaxed text-slate-700">
-                {row.aboutEn}
-              </p>
-            )}
-
-            {mine.length > 0 && (
-              <div className="mt-2.5">
-                <p className="text-xs font-medium text-slate-600">
-                  {tr
-                    ? `${mine.length} kayıt teklifi — her biri onayınla açılır`
-                    : `${mine.length} proposed record${mine.length === 1 ? '' : 's'} — each is created when you approve`}
-                </p>
-                <ul className="mt-1.5 space-y-2">
-                  {mine.map((proposal) => (
-                    <ProposalCard key={proposal.id} proposal={proposal} />
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Hiç teklif çıkmaması bir cevaptır ve söylenir: aksi hâlde ekran
-              "henüz bakmadım" ile "baktım, açılacak kayıt yok"u birbirine
-              karıştırır.
-
-              Üçüncü bir hâl var ve ikisinden de farklı: teklif üretemeyen bir
-              sürümle okunmuş belge. Ona "açılacak kayıt yok" demek, sorulmamış
-              bir soruya cevap uydurmaktır. Eski satırların `aboutEn` alanı boş
-              — o sütun tekliflerle birlikte geldi — ve ayrımı o söylüyor. */}
-            {row.state === 'ready' && mine.length === 0 && row.aboutEn !== null && (
-              <p className="mt-2 text-xs text-slate-500">
-                {tr
-                  ? 'Bu belgenin metni hiçbir kütüğe kayıt açmayı desteklemiyor.'
-                  : 'Nothing in this document’s text supports adding a record to any register.'}
-              </p>
-            )}
-
-            {row.state === 'ready' && row.aboutEn === null && (
-              <ReadAgain
-                versionId={row.documentVersionId}
-                note={
-                  tr
-                    ? 'Bu okuma, modül henüz kayıt teklif edemezken yapıldı.'
-                    : 'This reading was made before the module could propose records.'
-                }
-              />
-            )}
-
-            {row.state === 'failed' && <ReadAgain versionId={row.documentVersionId} note={null} />}
-
-            {row.state === 'ready' && row.extractedChars !== null && (
-              <p className="mt-2 text-xs text-slate-500">
-                {row.extractedChars > 30_000
-                  ? tr
-                    ? `${row.extractedChars.toLocaleString('tr-TR')} karakter çıkarıldı; okuma ilk 30.000 karakterden yapıldı.`
-                    : `${row.extractedChars.toLocaleString('en-GB')} characters extracted; the reading used the first 30,000.`
-                  : tr
-                    ? `${row.extractedChars.toLocaleString('tr-TR')} karakterin tamamı okundu.`
-                    : `All ${row.extractedChars.toLocaleString('en-GB')} characters were read.`}
-              </p>
-            )}
-          </li>
-        );
-      })}
-    </ul>
   );
 };

@@ -460,20 +460,132 @@ export async function applyProposal(input: {
  * teklifi silmeye çalışmak sıfır satır siler ve hiçbir şey yükselmez —
  * sessiz kalmak, kullanıcıya olmayan bir şeyi olmuş göstermek olurdu.
  */
-export async function discardProposal(proposalId: string): Promise<void> {
-  const { data, error } = await supabase
-    .from('intake_proposals')
-    .delete()
-    .eq('id', proposalId)
-    .select('id');
+/**
+ * Reddet.
+ *
+ * Doğrudan silme değil, bir fonksiyon çağrısı (0050): reddin kaydı ile
+ * teklifin kuyruktan çıkması aynı işlemde olmak zorunda. Ayrı ayrı yapılsa
+ * arada kalan bir hata ya izi olmayan bir red ya da teklifi olmayan bir
+ * bastırma kaydı bırakırdı.
+ *
+ * Reddin iki sonucu var ve ikincisi kullanıcının kendi kararı: aynı belge
+ * yeniden okunduğunda bu cümle bir daha teklif edilmez (M13-19).
+ */
+export async function declineProposal(proposalId: string, note?: string): Promise<void> {
+  const { error } = await supabase.rpc('decline_proposal', {
+    p_proposal: proposalId,
+    p_note: note ?? null,
+  });
   if (error) throw new Error(error.message);
-  if ((data ?? []).length === 0) {
-    // Sıfır satırın birden fazla sebebi var ve tek sebep varmış gibi yazmak,
-    // kullanıcıyı yanlış yere bakmaya gönderir.
-    throw new Error(
-      'That proposal was not removed. Either it has already been recorded — those stay, because ' +
-        'a recorded proposal is what links the record to its document — or it is not yours to ' +
-        'remove.',
-    );
-  }
+}
+
+/**
+ * Kalanları tek gerekçeyle reddet.
+ *
+ * Toplu kabul karşılığı yok ve olmayacak: bir kaydın açılması, o kaydı
+ * birinin görmüş olmasını ister (M13-24). Toplu red bir kayıt açmıyor,
+ * açmamaya karar veriyor.
+ */
+export async function declineRemaining(intakeId: string, note?: string): Promise<number> {
+  const { data, error } = await supabase.rpc('decline_remaining_proposals', {
+    p_intake: intakeId,
+    p_note: note ?? null,
+  });
+  if (error) throw new Error(error.message);
+  return typeof data === 'number' ? data : 0;
+}
+
+/** Bir belgede reddedilmiş teklifler. Kuyrukta değil, belgenin yanında. */
+export interface Rejection {
+  id: string;
+  register: string;
+  why: string;
+  quote: string;
+  note: string | null;
+  decidedAt: string;
+}
+
+export async function fetchRejections(documentId: string): Promise<Rejection[]> {
+  const { data, error } = await supabase
+    .from('intake_rejections')
+    .select('id, register, why, quote, note, decided_at')
+    .eq('document_id', documentId)
+    .order('decided_at', { ascending: false });
+  if (error) throw new Error(error.message);
+  return (
+    (data ?? []) as {
+      id: string;
+      register: string;
+      why: string;
+      quote: string;
+      note: string | null;
+      decided_at: string;
+    }[]
+  ).map((row) => ({
+    id: row.id,
+    register: row.register,
+    why: row.why,
+    quote: row.quote,
+    note: row.note,
+    decidedAt: row.decided_at,
+  }));
+}
+
+/** Bir kaydın nereden geldiği (M13-21). */
+export interface Provenance {
+  recordId: string;
+  register: string;
+  documentId: string;
+  documentTitle: string;
+  quote: string;
+  why: string;
+  decidedAt: string | null;
+  decidedByName: string | null;
+}
+
+interface ProvenanceRow {
+  record_id: string;
+  register: string;
+  document_id: string;
+  document_title: string;
+  quote: string;
+  why: string;
+  decided_at: string | null;
+  decided_by_name: string | null;
+}
+
+const PROVENANCE_COLUMNS =
+  'record_id, register, document_id, document_title, quote, why, decided_at, decided_by_name';
+
+const toProvenance = (row: ProvenanceRow): Provenance => ({
+  recordId: row.record_id,
+  register: row.register,
+  documentId: row.document_id,
+  documentTitle: row.document_title,
+  quote: row.quote,
+  why: row.why,
+  decidedAt: row.decided_at,
+  decidedByName: row.decided_by_name,
+});
+
+/** Bu belgeden açılmış kayıtlar. */
+export async function fetchProvenanceOfDocument(documentId: string): Promise<Provenance[]> {
+  const { data, error } = await supabase
+    .from('record_provenance')
+    .select(PROVENANCE_COLUMNS)
+    .eq('document_id', documentId)
+    .order('decided_at', { ascending: false });
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as unknown as ProvenanceRow[]).map(toProvenance);
+}
+
+/** Bu kayıt hangi belgeden açıldı. Kütük ekranlarında gösterilmek için. */
+export async function fetchProvenanceOfRecord(recordId: string): Promise<Provenance | null> {
+  const { data, error } = await supabase
+    .from('record_provenance')
+    .select(PROVENANCE_COLUMNS)
+    .eq('record_id', recordId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data ? toProvenance(data as unknown as ProvenanceRow) : null;
 }

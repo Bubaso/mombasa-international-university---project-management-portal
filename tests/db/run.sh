@@ -16,9 +16,35 @@ SOCKET="${TMPDIR:-/tmp}/miu-policy-test-sock"
 PORT="${PGPORT:-55432}"
 STARTED_SERVER=0
 
+# initdb ve pg_ctl root'tan çalışmayı reddediyor, ve CI konteynerleri genelde
+# root. Hangi kullanıcı adına çalışılacağı burada belirleniyor, çünkü yalnız
+# başlatma değil **durdurma** da ona ihtiyaç duyuyor.
+RUNAS=""
+if [ "$(id -u)" = "0" ]; then
+  id -u postgres >/dev/null 2>&1 || useradd -m postgres
+  RUNAS="postgres"
+fi
+
+# Sunucuyu durdur.
+#
+# Bu fonksiyon bir kusurdan doğdu ve kusur sessizdi: `cleanup` doğrudan
+# `pg_ctl` çağırıyordu, root'tan çalışmadığı için her koşum arkasında ayakta
+# bir sunucu bırakıyordu, ve bir sonraki koşum `rm -rf` ile o sunucunun veri
+# dizinini altından siliyordu. Sunucu çökerken socket'i götürüyor, göç
+# uygulaması ortada kesiliyordu. Dışarıdan rastgele bir çökme gibi görünüyor;
+# aslında her koşum bir sonrakini bozuyordu.
+pg_stop() {
+  [ -n "$PGBIN" ] || return 0
+  if [ -n "$RUNAS" ]; then
+    su "$RUNAS" -c "$PGBIN/pg_ctl -D $DATADIR -s -m immediate stop" >/dev/null 2>&1 || true
+  else
+    "$PGBIN/pg_ctl" -D "$DATADIR" -s -m immediate stop >/dev/null 2>&1 || true
+  fi
+}
+
 cleanup() {
   if [ "$STARTED_SERVER" = "1" ]; then
-    "$PGBIN/pg_ctl" -D "$DATADIR" -s -m immediate stop >/dev/null 2>&1 || true
+    pg_stop
   fi
 }
 trap cleanup EXIT
@@ -29,16 +55,15 @@ if [ -z "${DATABASE_URL:-}" ]; then
     exit 1
   fi
 
+  # Kalmış bir sunucu varsa önce o durdurulur: dizini altından silmek onu
+  # çökertir ve bu koşum bir sonrakini bozar.
+  [ -f "$DATADIR/postmaster.pid" ] && pg_stop
+
   rm -rf "$DATADIR" "$SOCKET"
   mkdir -p "$DATADIR" "$SOCKET"
 
-  # initdb refuses to run as root, which is how CI containers usually run.
-  RUNAS=""
-  if [ "$(id -u)" = "0" ]; then
-    id -u postgres >/dev/null 2>&1 || useradd -m postgres
-    chown -R postgres "$DATADIR" "$SOCKET"
-    RUNAS="postgres"
-  fi
+  # Dizinler yeni oluştu; sahipliği o kullanıcıya geçmeli.
+  if [ -n "$RUNAS" ]; then chown -R "$RUNAS" "$DATADIR" "$SOCKET"; fi
 
   run() {
     if [ -n "$RUNAS" ]; then su "$RUNAS" -c "$*"; else eval "$*"; fi

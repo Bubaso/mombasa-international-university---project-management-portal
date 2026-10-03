@@ -9101,6 +9101,234 @@ select pg_temp.check('an applied proposal stays, because it is what links record
   (select count(*) from intake_proposals
     where id = '1e000000-0000-0000-0000-000000000001'), 1::bigint);
 
+-- ===========================================================================
+-- Alım bir kuyruk (M13-18 … M13-24)
+-- ===========================================================================
+--
+-- 0049 reddi siliyordu ve hiç iz bırakmıyordu; iz bırakmadığı için aynı belge
+-- yeniden okunduğunda aynı şey yeniden teklif edilebiliyordu. 0050 reddi bir
+-- karara çeviriyor: kuyruktan çıkar, kayıtta kalır, ve bir daha teklif
+-- edilmesini engeller.
+
+set role postgres;
+-- Tohumdaki alım okunuyor durumunda; kuyruğun durumu önce okumayı, sonra
+-- kararları bildiriyor, bu yüzden teklif sayılarını sınamak için bu okumanın
+-- bitmiş olması gerekiyor.
+update document_intake
+   set state = 'ready',
+       classified_as = 'court order',
+       classification_why = 'it is headed with a case number and carries orders',
+       finished_at = now()
+ where id = '1d000000-0000-0000-0000-000000000001';
+insert into intake_proposals (id, intake_id, document_id, register, why, quote, quote_found,
+                              proposed_values)
+values ('1e000000-0000-0000-0000-000000000051',
+        '1d000000-0000-0000-0000-000000000001',
+        '1b000000-0000-0000-0000-000000000001',
+        'risk', 'the order implies a risk',
+        '  The   RESPONDENT may appeal
+  within thirty days.  ', true,
+        '{"titleEn": "Appeal within thirty days"}'::jsonb),
+       ('1e000000-0000-0000-0000-000000000052',
+        '1d000000-0000-0000-0000-000000000001',
+        '1b000000-0000-0000-0000-000000000001',
+        'chronology', 'the order has a date',
+        'Delivered on 14 March 2026.', true,
+        '{"occurredOn": "2026-03-14"}'::jsonb);
+set role authenticated;
+
+-- Normalleştirme tek yerde. Boşluk, kenar ve büyük harf farkı aynı anahtarı
+-- vermeli, yoksa aynı cümle iki okumada iki ayrı şey sayılır.
+select pg_temp.check('a quote key ignores whitespace, edges and case',
+  app.quote_key('  The   RESPONDENT may appeal
+  within thirty days.  '),
+  app.quote_key('the respondent may appeal within thirty days.'));
+select pg_temp.check('and two genuinely different sentences keep different keys',
+  (app.quote_key('the first sentence') = app.quote_key('the second sentence')), false);
+
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- project director
+
+-- Teklifi olmayan bir cümle için mezar taşı yazılamaz. Yazılabilse, hiç
+-- teklif edilmemiş bir şey sessizce bastırılabilirdi.
+do $$
+begin
+  begin
+    insert into intake_rejections (intake_id, document_id, register, why, quote, decided_by)
+    values ('1d000000-0000-0000-0000-000000000001', '1b000000-0000-0000-0000-000000000001',
+            'obligation', 'nobody proposed this', 'a sentence no proposal ever carried',
+            '22222222-2222-2222-2222-222222222222');
+    raise exception 'FAIL a rejection was recorded for something never proposed';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   a rejection cannot be recorded for a quote nobody proposed';
+  end;
+end;
+$$;
+
+-- Reddin kendisi: taş konur, teklif kuyruktan çıkar, ikisi bir işlemde.
+select public.decline_proposal('1e000000-0000-0000-0000-000000000051', '  this is already covered  ');
+select pg_temp.check('a declined proposal leaves the queue',
+  (select count(*) from intake_proposals where id = '1e000000-0000-0000-0000-000000000051'),
+  0::bigint);
+select pg_temp.check('and its decision stays on the record',
+  (select count(*) from intake_rejections
+    where document_id = '1b000000-0000-0000-0000-000000000001' and register = 'risk'),
+  1::bigint);
+select pg_temp.check('with the decider named',
+  (select decided_by from intake_rejections
+    where document_id = '1b000000-0000-0000-0000-000000000001' and register = 'risk'),
+  '22222222-2222-2222-2222-222222222222'::uuid);
+select pg_temp.check('and the note trimmed rather than stored with its spaces',
+  (select note from intake_rejections
+    where document_id = '1b000000-0000-0000-0000-000000000001' and register = 'risk'),
+  'this is already covered');
+
+-- Reddedilen bir daha teklif edilmez (M13-19). Aynı cümle, başka boşluklarla.
+select pg_temp.check('the same sentence is recognised as already rejected',
+  public.candidates_already_rejected('1b000000-0000-0000-0000-000000000001',
+    '[{"register": "risk", "quote": "the respondent MAY appeal within thirty days."}]'::jsonb),
+  '{0}'::int[]);
+select pg_temp.check('a different register is not covered by that rejection',
+  public.candidates_already_rejected('1b000000-0000-0000-0000-000000000001',
+    '[{"register": "issue", "quote": "the respondent may appeal within thirty days."}]'::jsonb),
+  '{}'::int[]);
+select pg_temp.check('nor is a different sentence',
+  public.candidates_already_rejected('1b000000-0000-0000-0000-000000000001',
+    '[{"register": "risk", "quote": "something else entirely"}]'::jsonb),
+  '{}'::int[]);
+select pg_temp.check('and the answer carries the position of each rejected candidate',
+  public.candidates_already_rejected('1b000000-0000-0000-0000-000000000001',
+    '[{"register": "issue", "quote": "no"},
+      {"register": "risk", "quote": "The respondent may appeal within thirty days."}]'::jsonb),
+  '{1}'::int[]);
+
+-- Bir karar düzeltilen şey değil.
+do $$
+begin
+  begin
+    update intake_rejections set why = 'a different reason'
+     where document_id = '1b000000-0000-0000-0000-000000000001';
+    raise exception 'FAIL a recorded rejection was rewritten';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   a recorded rejection cannot be rewritten';
+  end;
+end;
+$$;
+do $$
+begin
+  begin
+    delete from intake_rejections where document_id = '1b000000-0000-0000-0000-000000000001';
+    raise exception 'FAIL a recorded rejection was deleted';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   nor deleted';
+  end;
+end;
+$$;
+
+-- Kuyruğun durumu hesaplanıyor.
+select pg_temp.check('an intake with a pending proposal is awaiting a decision',
+  (select disposition from intake_queue where intake_id = '1d000000-0000-0000-0000-000000000001'),
+  'awaiting_decision');
+-- Bekleyen bir, reddedilen bir, ve uygulanan bir: üçüncüsü yukarıdaki
+-- bölümden geliyor (0048'in onay testi aynı alımda bir teklifi uygulamıştı).
+select pg_temp.check('and its counts are the ones that can be seen',
+  (select pending || '/' || applied || '/' || rejected from intake_queue
+    where intake_id = '1d000000-0000-0000-0000-000000000001'),
+  '1/1/1');
+
+-- Kalanları tek kararla reddet. Toplu kabul karşılığı yok ve olmayacak.
+select pg_temp.check('the rest can be declined with one reason',
+  public.decline_remaining_proposals('1d000000-0000-0000-0000-000000000001', 'out of scope'),
+  1);
+select pg_temp.check('and then nothing of that reading is waiting',
+  (select pending from intake_queue where intake_id = '1d000000-0000-0000-0000-000000000001'),
+  0);
+
+-- Teklif aşaması hiç çalışmadıysa, bu sıfır teklifle aynı şey değil.
+select pg_temp.check('a reading whose proposal pass never ran says so',
+  (select disposition from intake_queue where intake_id = '1d000000-0000-0000-0000-000000000001'),
+  'read_before_proposals');
+set role postgres;
+update document_intake set proposals_at = now()
+ where id = '1d000000-0000-0000-0000-000000000001';
+set role authenticated;
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');
+select pg_temp.check('and once it has run with nothing left, the reading is settled',
+  (select disposition from intake_queue where intake_id = '1d000000-0000-0000-0000-000000000001'),
+  'settled');
+
+-- Görünürlük belgeyi takip ediyor, tıpkı tekliflerde olduğu gibi. Gizli
+-- belgenin reddi doğrudan yazılıyor: sınanan şey okuma politikası, ve yazma
+-- politikası yukarıda ayrıca sınandı.
+set role postgres;
+insert into intake_rejections (intake_id, document_id, register, why, quote, decided_by)
+values ('1d000000-0000-0000-0000-00000000000f', '1b000000-0000-0000-0000-000000000002',
+        'risk', 'the pack implies a dispute', 'A dispute over the assessment is likely.',
+        '22222222-2222-2222-2222-222222222222');
+set role authenticated;
+
+select pg_temp.act_as('44444444-4444-4444-4444-444444444444');  -- field team
+select pg_temp.check('the rejections of a document they may see are theirs to read',
+  (select count(*) from intake_rejections
+    where document_id = '1b000000-0000-0000-0000-000000000001'), 2::bigint);
+select pg_temp.check('and nobody reads the rejections of a document they may not',
+  (select count(*) from intake_rejections
+    where document_id = '1b000000-0000-0000-0000-000000000002'), 0::bigint);
+select pg_temp.check('nor does that reading appear in their queue',
+  (select count(*) from intake_queue
+    where intake_id = '1d000000-0000-0000-0000-00000000000f'), 0::bigint);
+
+-- Kabul edilen teklif kaydının nereden geldiğini gösteriyor (M13-21).
+set role postgres;
+insert into intake_proposals (id, intake_id, document_id, register, why, quote, quote_found,
+                              state, created_record_id, decided_by, decided_at)
+values ('1e000000-0000-0000-0000-000000000053',
+        '1d000000-0000-0000-0000-000000000001',
+        '1b000000-0000-0000-0000-000000000001',
+        'obligation', 'the order creates a duty', 'The respondent shall vacate.', true,
+        'applied', '1f000000-0000-0000-0000-000000000053',
+        '22222222-2222-2222-2222-222222222222', now());
+set role authenticated;
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');
+select pg_temp.check('a record created from a document can say which document',
+  (select document_id from record_provenance
+    where record_id = '1f000000-0000-0000-0000-000000000053'),
+  '1b000000-0000-0000-0000-000000000001'::uuid);
+select pg_temp.check('and which sentence it rests on',
+  (select quote from record_provenance
+    where record_id = '1f000000-0000-0000-0000-000000000053'),
+  'The respondent shall vacate.');
+select pg_temp.check('a proposal nobody applied has no provenance to show',
+  (select count(*) from record_provenance where intake_id = '1d000000-0000-0000-0000-00000000000f'),
+  0::bigint);
+
+-- Uygulanmış teklif reddedilemez: açtığı kaydın belgeye bağı o satır.
+--
+-- Hata kodu burada ölçülüyor ve bunun bir sebebi var. İlk hâli yalnız
+-- `check_violation` yakalıyordu ve mutasyonla sınandığında geçmeye devam
+-- etti: fonksiyondan guard'ı kaldırınca red bu kez mezar taşının insert
+-- politikasından geldi — doğru sonuç, yanlış sebep, ve test ikisini ayırt
+-- etmiyordu. Artık kodun kendisi sınanıyor (CLAUDE.md §3).
+do $$
+declare
+  v_state text;
+begin
+  begin
+    perform public.decline_proposal('1e000000-0000-0000-0000-000000000053', null);
+    v_state := 'not refused at all';
+  exception
+    when others then
+      v_state := sqlstate;
+  end;
+  if v_state <> '23514' then
+    raise exception 'FAIL an applied proposal was not refused as an applied one: %', v_state;
+  end if;
+  raise notice 'ok   an applied proposal cannot be declined, and the refusal says which rule';
+end;
+$$;
+
 reset role;
 
 \echo ''

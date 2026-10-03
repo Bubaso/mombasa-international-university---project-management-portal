@@ -586,18 +586,82 @@ check(columnOf('titleEn') === 'title_en', 'a field name becomes its column name'
 check(columnOf('fxRateToKes') === 'fx_rate_to_kes', 'including the awkward ones');
 
 // ---------------------------------------------------------------------------
-// Reddedilen teklif: durum değil, silme
+// Reddedilen teklif: kuyruktan çıkar, kararı kalır
 // ---------------------------------------------------------------------------
+//
+// Önceki hâli doğrudan `delete` yapıyordu ve sildiği satırı geri okuyordu,
+// çünkü RLS reddetmez filtreler. Doğruydu ama eksikti: silinen satır hiç iz
+// bırakmıyordu, ve iz bırakmadığı için aynı belge yeniden okunduğunda aynı
+// şey yeniden teklif edilebiliyordu. 0050 reddi bir karara çevirdi ve iki
+// yazmayı tek fonksiyona aldı: taş konur, satır silinir, ikisi bir işlemde.
 
 {
   const API = readFileSync(new URL('../src/api/proposals.ts', import.meta.url), 'utf8');
   check(
-    API.includes('discardProposal') && !API.includes("update({ state: 'declined' })"),
-    'rejecting a proposal removes the row rather than parking it',
+    API.includes("supabase.rpc('decline_proposal'") && !API.includes('.delete()'),
+    'rejecting a proposal goes through the function that records the decision',
   );
   check(
-    API.includes('.delete()') && API.includes(".select('id')"),
-    'and it reads back what was removed, because RLS filters rather than refuses',
+    !API.includes("update({ state: 'declined' })"),
+    'and it is not parked as a state the queue would keep showing',
+  );
+  check(
+    API.includes("supabase.rpc('decline_remaining_proposals'") &&
+      !/applyRemaining|approveAll|applyAll/.test(API),
+    'there is a bulk decline and no bulk approve (M13-24)',
+  );
+  check(
+    API.includes('fetchProvenanceOfRecord') && API.includes('record_provenance'),
+    'and a record can be asked which document it came from (M13-21)',
+  );
+}
+
+// Reddin yeniden teklif edilmesini engelleyen karşılaştırma veritabanında
+// (M13-19). Alım fonksiyonu kendi normalleştirme kopyasını tutmuyor: tutsaydı
+// iki taraf aynı cümleyi farklı sayabilirdi (CLAUDE.md §4).
+{
+  const FUNCTION = readFileSync(
+    new URL('../supabase/functions/document-intake/index.ts', import.meta.url),
+    'utf8',
+  );
+  check(
+    FUNCTION.includes("asCaller.rpc(\n    'candidates_already_rejected'") ||
+      FUNCTION.includes("'candidates_already_rejected'"),
+    'the intake asks the database which candidates were already rejected',
+  );
+  check(
+    FUNCTION.includes('previouslyRejected.has(index)'),
+    'and a rejected candidate is never proposed again',
+  );
+  check(
+    FUNCTION.includes('rejected on an earlier reading'),
+    'with its own reason, so "already recorded" and "you rejected this" are not one sentence',
+  );
+  check(
+    FUNCTION.includes('proposals_at:'),
+    'and the reading records that its proposal pass ran (M13-23)',
+  );
+}
+
+// Kuyruk ekranı tek düz liste değil: durumlar ayrı, sayfalı, ve sayılı.
+{
+  const QUEUE = readFileSync(
+    new URL('../src/components/assistant/IntakeQueue.tsx', import.meta.url),
+    'utf8',
+  );
+  check(
+    QUEUE.includes("disposition: 'awaiting_decision'") ||
+      QUEUE.includes("key: 'awaiting_decision'"),
+    'the queue separates what is waiting from what is finished (M13-20)',
+  );
+  check(
+    QUEUE.includes('rows.length < total') && QUEUE.includes('Show more'),
+    'and says how many there are rather than cutting silently (M13-22)',
+  );
+  check(
+    /awaiting_decision'\s*\?\s*rows\.map/.test(QUEUE) ||
+      QUEUE.includes("tab === 'awaiting_decision' ? rows.map"),
+    'proposals are fetched only for the tab that needs them',
   );
 }
 

@@ -563,7 +563,13 @@ Toplam **240 numaralandırılmış gereksinim**, 15 modül ve fonksiyonel olmaya
 | M13-15 | P0  | Teklif edilen her alan, belgede hangi cümleden geldiğini taşır. **Alıntısı olmayan değer teklif edilemez**                                                                                         |
 | M13-16 | P0  | Belirsiz bir değer uydurulmaz: `null` kalır ve neden belirsiz olduğu yazılır                                                                                                                       |
 | M13-17 | P1  | Modül her yazılabilir kayıt türüne teklif verebilir; kapsamı veritabanındaki kayıttan gelir, koddan değil                                                                                          |
-| M13-18 | P1  | Reddedilen teklif silinmez, gerekçesiyle kalır                                                                                                                                                     |
+| M13-18 | P0  | Reddedilen teklif **iş kuyruğundan çıkar, kararı kalır**: red, gerekçesi ve dayandığı alıntıyla kaydedilir — listede değil, belgenin yanında                                                       |
+| M13-19 | P0  | **Reddedilmiş bir şey yeniden teklif edilmez.** Aynı belge yeniden okunduğunda daha önce reddedilen alıntı bir daha önerilmez                                                                      |
+| M13-20 | P0  | Alım ekranı bir **iş kuyruğudur, arşiv değil**: karar bekleyen önce gelir ve en eskiden akar, kararı bitmiş okuma kuyruktan düşer                                                                  |
+| M13-21 | P1  | Kabul edilen teklifin açtığı kayıt, **hangi belgeden ve hangi alıntıdan** geldiğini gösterir                                                                                                       |
+| M13-22 | P1  | Kuyruk sayfalanır ve aranabilir; "en yeni N" diye sessizce kesilmez — kaç tane olduğu da yazar                                                                                                     |
+| M13-23 | P1  | Teklif üretemeyen bir sürümle yapılmış okuma, teklif üretip hiçbir şey bulamamış okumadan **kayıtla** ayırt edilir, tahminle değil                                                                 |
+| M13-24 | P1  | **Toplu red vardır, toplu kabul yoktur**: bir kaydın açılması, o kaydı birinin görmüş olmasını ister                                                                                               |
 
 ---
 

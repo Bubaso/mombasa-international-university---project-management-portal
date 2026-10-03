@@ -18,78 +18,146 @@ import type { Confidentiality, DocumentCategory } from '../types';
 
 export type IntakeState = 'analysing' | 'ready' | 'failed';
 
-export interface IntakeRecord {
-  id: string;
+/**
+ * Kuyruğun tek kelimelik durumu (0050).
+ *
+ * Sıra anlamlı: bir okuma henüz bitmediyse teklif sayısı bir cevap değil.
+ */
+export type IntakeDisposition =
+  'reading' | 'unreadable' | 'awaiting_decision' | 'read_before_proposals' | 'settled';
+
+/** Kuyrukta bir satır: okuma, kararlarının sayısı, ve durumu. */
+export interface QueueEntry {
+  intakeId: string;
   documentId: string;
   documentVersionId: string;
+  documentTitle: string;
+  documentCategory: DocumentCategory;
   state: IntakeState;
   classifiedAs: string | null;
   classificationWhy: string | null;
-  /** Belgenin ne dediği. Ne olduğu ile ne dediği ayrı şeyler. */
   aboutEn: string | null;
-  /** Hangi kütükleri ilgilendirdiği. Teklif değil, işaret. */
-  touches: string[];
   extractedChars: number | null;
   pageCount: number | null;
   failureReason: string | null;
-  model: string | null;
-  inputTokens: number | null;
-  outputTokens: number | null;
   createdAt: string;
   finishedAt: string | null;
+  proposalsAt: string | null;
+  pending: number;
+  applied: number;
+  rejected: number;
+  disposition: IntakeDisposition;
 }
 
-interface IntakeRow {
-  id: string;
+interface QueueRow {
+  intake_id: string;
   document_id: string;
   document_version_id: string;
+  document_title: string;
+  document_category: DocumentCategory;
   state: IntakeState;
   classified_as: string | null;
   classification_why: string | null;
   about_en: string | null;
-  touches: string[] | null;
   extracted_chars: number | null;
   page_count: number | null;
   failure_reason: string | null;
-  model: string | null;
-  input_tokens: number | null;
-  output_tokens: number | null;
   created_at: string;
   finished_at: string | null;
+  proposals_at: string | null;
+  pending: number;
+  applied: number;
+  rejected: number;
+  disposition: IntakeDisposition;
 }
 
-const COLUMNS =
-  'id, document_id, document_version_id, state, classified_as, classification_why, about_en, touches, ' +
-  'extracted_chars, page_count, failure_reason, model, input_tokens, output_tokens, created_at, ' +
-  'finished_at';
+const QUEUE_COLUMNS =
+  'intake_id, document_id, document_version_id, document_title, document_category, state, ' +
+  'classified_as, classification_why, about_en, extracted_chars, page_count, failure_reason, ' +
+  'created_at, finished_at, proposals_at, pending, applied, rejected, disposition';
 
-const toRecord = (row: IntakeRow): IntakeRecord => ({
-  id: row.id,
+const toEntry = (row: QueueRow): QueueEntry => ({
+  intakeId: row.intake_id,
   documentId: row.document_id,
   documentVersionId: row.document_version_id,
+  documentTitle: row.document_title,
+  documentCategory: row.document_category,
   state: row.state,
   classifiedAs: row.classified_as,
   classificationWhy: row.classification_why,
   aboutEn: row.about_en,
-  touches: row.touches ?? [],
   extractedChars: row.extracted_chars,
   pageCount: row.page_count,
   failureReason: row.failure_reason,
-  model: row.model,
-  inputTokens: row.input_tokens,
-  outputTokens: row.output_tokens,
   createdAt: row.created_at,
   finishedAt: row.finished_at,
+  proposalsAt: row.proposals_at,
+  pending: row.pending,
+  applied: row.applied,
+  rejected: row.rejected,
+  disposition: row.disposition,
 });
 
-export async function fetchIntakes(limit = 20): Promise<IntakeRecord[]> {
-  const { data, error } = await supabase
-    .from('document_intake')
-    .select(COLUMNS)
-    .order('created_at', { ascending: false })
-    .limit(limit);
+/**
+ * Kuyruğun bir sayfası.
+ *
+ * İki şey kasıtlı:
+ *
+ *   **Sıra duruma göre değişiyor.** Karar bekleyenler bir kuyruktur ve
+ *   kuyruk en eskiden akar; en yeniyi öne almak, en uzun bekleyeni en dibe
+ *   gömer. Bitmişler ise arşivdir ve orada en yeni önce gelir.
+ *
+ *   **Toplam sayı isteniyor.** "En yeni 20" diye sessizce kesmek, geri
+ *   kalanın var olmadığını sandırıyordu. Sayı bilinmezse sayfalama da
+ *   bilinmez.
+ */
+export async function fetchQueue(input: {
+  disposition: IntakeDisposition;
+  search?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<{ rows: QueueEntry[]; total: number }> {
+  const limit = input.limit ?? 10;
+  const offset = input.offset ?? 0;
+  const oldestFirst = input.disposition === 'awaiting_decision';
+
+  let query = supabase
+    .from('intake_queue')
+    .select(QUEUE_COLUMNS, { count: 'exact' })
+    .eq('disposition', input.disposition);
+
+  const search = (input.search ?? '').trim();
+  if (search !== '') query = query.ilike('document_title', `%${search}%`);
+
+  const { data, error, count } = await query
+    .order('created_at', { ascending: oldestFirst })
+    .range(offset, offset + limit - 1);
   if (error) throw new Error(error.message);
-  return ((data ?? []) as unknown as IntakeRow[]).map(toRecord);
+  return { rows: ((data ?? []) as unknown as QueueRow[]).map(toEntry), total: count ?? 0 };
+}
+
+/**
+ * Her durumda kaç okuma var.
+ *
+ * Sekme başlıklarındaki sayılar buradan geliyor; sayısı olmayan bir sekme,
+ * tıklanana kadar boş mu dolu mu olduğunu söylemiyor.
+ */
+export async function fetchQueueCounts(): Promise<Record<IntakeDisposition, number>> {
+  const { data, error } = await supabase.from('intake_queue').select('disposition');
+  if (error) throw new Error(error.message);
+  const counts: Record<IntakeDisposition, number> = {
+    reading: 0,
+    unreadable: 0,
+    awaiting_decision: 0,
+    read_before_proposals: 0,
+    settled: 0,
+  };
+  for (const row of (data ?? []) as { disposition: IntakeDisposition }[]) {
+    // Paketin tanımadığı bir durum sayılmıyor ama ekranı da düşürmüyor:
+    // veritabanı bu paketten bir göç önde olabilir.
+    if (row.disposition in counts) counts[row.disposition] += 1;
+  }
+  return counts;
 }
 
 export interface IntakeOutcome {

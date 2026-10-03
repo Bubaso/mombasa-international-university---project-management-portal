@@ -439,11 +439,45 @@ Deno.serve(async (req: Request): Promise<Response> => {
     if (row.quote) seenQuotes.add(quoteKey(row.register, row.quote));
   }
 
+  /**
+   * Daha önce reddedilmiş olanlar (M13-19).
+   *
+   * Karşılaştırmayı veritabanı yapıyor, bu fonksiyon değil: normalleştirmenin
+   * tanımı `app.quote_key`'de ve ikinci bir kopyası olsaydı iki taraf aynı
+   * cümleyi farklı sayabilirdi (CLAUDE.md §4). Çağrı çağıranın token'ıyla
+   * gidiyor, yani göremediği bir reddi onun için red saymıyoruz — kütük
+   * sorgusundaki gerekçenin aynısı.
+   *
+   * Bir hata hâlinde bastırma yapılmıyor ve bu kasıtlı: reddi okuyamadığımız
+   * için teklifi gizlemek, kullanıcıya göremediği bir sebeple eksik bir liste
+   * göstermek olurdu. Fazladan teklif görünür ve reddedilebilir; eksik teklif
+   * görünmez.
+   */
+  const { data: rejectedIndexes, error: rejectionError } = await asCaller.rpc(
+    'candidates_already_rejected',
+    {
+      p_document: version.document_id,
+      p_candidates: read.value.proposals.map((proposal) => ({
+        register: proposal.register,
+        quote: proposal.quote,
+      })),
+    },
+  );
+  if (rejectionError) {
+    console.error('Earlier rejections could not be read', rejectionError.message);
+  }
+  const previouslyRejected = new Set<number>((rejectedIndexes ?? []) as number[]);
+
   const keep: typeof read.value.proposals = [];
   const suppressed: { register: string; why: string }[] = [];
 
-  for (const proposal of read.value.proposals) {
+  for (const [index, proposal] of read.value.proposals.entries()) {
     const key = identityOf(proposal.register, proposal.values);
+
+    if (previouslyRejected.has(index)) {
+      suppressed.push({ register: proposal.register, why: 'rejected on an earlier reading' });
+      continue;
+    }
 
     if ((key && seen.has(key)) || seenQuotes.has(quoteKey(proposal.register, proposal.quote))) {
       suppressed.push({ register: proposal.register, why: 'already proposed for this document' });
@@ -482,6 +516,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
     classification_why: read.value.why,
     about_en: read.value.aboutEn,
     touches,
+    // Teklif aşamasının çalıştığı an (0050). Sıfır teklifle "bu sürüm teklif
+    // üretemiyordu" ekranda ayrı iki cevap; ayrımı bir sütunun boşluğundan
+    // çıkarmak tahmindi.
+    proposals_at: new Date().toISOString(),
     extracted_chars: extracted.text.length,
     page_count: extracted.pages,
     model: MODEL,
@@ -531,12 +569,24 @@ Deno.serve(async (req: Request): Promise<Response> => {
     suppressed,
     // Bastırılanlar sessiz kalmıyor: kaçının neden üretilmediği söyleniyor,
     // yoksa "bir şey bulamadı" ile "buldu ama zaten vardı" aynı görünür.
-    note:
-      suppressed.length > 0
-        ? `${suppressed.length} proposal(s) were not made because the record is already there: ` +
-          `${suppressed.filter((x) => x.why === 'already in the register').length} in the register, ` +
-          `${suppressed.filter((x) => x.why !== 'already in the register').length} from an earlier reading of this document.`
-        : null,
+    // Bastırılanlar sayılırken sebepleri ayrı duruyor: "zaten kayıtlı" ile
+    // "sen reddetmiştin" kullanıcı için aynı cümle değil. İkincisi onun
+    // kendi kararının çalıştığının kanıtı.
+    note: (() => {
+      const count = (why: string) => suppressed.filter((x) => x.why === why).length;
+      const parts: string[] = [];
+      if (count('already in the register') > 0)
+        parts.push(`${count('already in the register')} already in the register`);
+      if (count('already proposed for this document') > 0)
+        parts.push(
+          `${count('already proposed for this document')} proposed by an earlier reading of this document`,
+        );
+      if (count('rejected on an earlier reading') > 0)
+        parts.push(`${count('rejected on an earlier reading')} rejected by you earlier`);
+      return parts.length > 0
+        ? `${suppressed.length} proposal(s) were not made: ${parts.join(', ')}.`
+        : null;
+    })(),
     error: storageFailure,
     extractedChars: extracted.text.length,
     pageCount: extracted.pages,

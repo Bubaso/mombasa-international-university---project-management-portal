@@ -495,6 +495,53 @@ eklenen kütüğün unutulmasını engelliyor.
 
 ---
 
+## 10.1 Kuyruk kararı — 3 Ekim 2026
+
+Faz 3 canlıya çıktıktan sonra ekranın kendisi kullanılamaz hâle geldi ve
+sebebi bir ekran kusuru değildi: **hiçbir şey alım listesinden çıkmıyordu.**
+Tek düz liste, en yeni yirmi okuma, ve o listede okunuyor olan, kararı
+bekleyen, kararı bitmiş, okunamayan, teklif üretemeyen bir sürümle okunmuş
+olan hep birlikte duruyordu. Yirmiden sonrası sessizce yoktu.
+
+Kuyruğun boşalabilmesi için üç şeyin gidecek bir yeri olması gerekiyordu, ve
+üçü de 0050'de kuruldu:
+
+| Ne                  | Nereye gider                                                          | Neden orada                                                                                       |
+| ------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Kabul edilen teklif | Kaydını açtığı kütük; kökeni `record_provenance` ile belgenin yanında | Kartının kuyrukta kalmasının tek sebebi, kaydın nereden geldiğini başka hiçbir yerin bilmemesiydi |
+| Reddedilen teklif   | `intake_rejections`: karar, gerekçesi ve alıntısıyla                  | Red bir karardır; kararın kaydı kararların durduğu yerde durur, iş kuyruğunda değil               |
+| Kararı bitmiş okuma | "Tamamlanan" sekmesi: tek satır, sayılarıyla                          | Bitmiş iş, bekleyen işle aynı ağırlıkta görünmemeli                                               |
+
+Üç tasarım kararı kayda geçiyor:
+
+**Durum hesaplanıyor, saklanmıyor.** `intake_queue.disposition` bir `case`
+ifadesi. Saklanan bir "bitmiş" alanı, teklifler karar aldıkça eskir ve
+eskidiğini kimse görmez. Sıra da anlamlı: okuma bitmediyse teklif sayısı bir
+cevap değil, o yüzden `reading` ve `unreadable` sayılardan önce geliyor.
+
+**Toplu red var, toplu kabul yok** (M13-24). Bir kaydın açılması, o kaydı
+birinin görmüş olmasını ister — teklifin alanları düzenlenebilir ve zorunlu
+alanlar doldurulmadan onay verilemiyor, yani "hepsini kabul et" o kuralı
+anlamsızlaştırırdı. Toplu red bir kayıt açmıyor, açmamaya karar veriyor ve o
+kararın tek gerekçesi olabilir.
+
+**Normalleştirme tek yerde.** Reddin yeniden teklif edilmesini engelleyen
+karşılaştırma, alıntının boşluk ve harf farklarına dayanmıyor:
+`app.quote_key` tanımı veritabanında, tablo onunla üretilen bir sütun tutuyor
+ve alım fonksiyonu kendi kopyasını tutmak yerine
+`candidates_already_rejected`'ı çağırıyor. İstemcide ikinci bir kopyası
+olsaydı iki taraf aynı cümleyi farklı sayabilirdi (CLAUDE.md §4).
+
+Bir dürüstlük kusuru da burada kapandı: eski bir okumanın teklif üretmemiş
+olmasını `about_en`'in boşluğundan çıkarıyorduk. Bir sütunun boşluğundan
+başka bir şeyin yokluğunu çıkarmak tahmindir; `proposals_at` artık ölçümü
+kendisi tutuyor (M13-23).
+
+**Açık kalan:** kaydın kökeni şu an belgenin yanında görünüyor
+(`DocumentOrigin`), kütük ekranlarının kendisinde değil. Mekanizma hazır —
+`record_provenance` ve `fetchProvenanceOfRecord` — ve 23 kütüğün detay
+ekranına birer satırla bağlanacak; o tur ayrı yapılıyor.
+
 ## 11. Ölçmediğim, doğrulamadığım şeyler
 
 Bu raporun bilmediği şeyler:

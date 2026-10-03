@@ -8,7 +8,7 @@ import { useMeetings } from '../../api/meetingHooks';
 import { useStakeholders } from '../../api/stakeholderHooks';
 import { useBlocks } from '../../api/siteHooks';
 import { useBudgetCategories } from '../../api/moneyHooks';
-import { applyProposal, discardProposal, type Proposal } from '../../api/proposals';
+import { applyProposal, declineProposal, type Proposal } from '../../api/proposals';
 import { ActionButton, Field, Pill, Select, TextInput, WriteError } from '../ui/Controls';
 import { formatDate } from '../../lib/site';
 import { targetFor, type TargetField } from '../../../supabase/functions/ai-assistant/targets.js';
@@ -97,9 +97,21 @@ export const ProposalCard: React.FC<{ proposal: Proposal }> = ({ proposal }) => 
     },
   });
 
-  const discard = useMutation({
-    mutationFn: () => discardProposal(proposal.id),
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['intakeProposals'] }),
+  // Reddin gerekçesi isteğe bağlı. Zorunlu olsaydı gerekçesiz reddi
+  // engellemezdi, yalnız uydurulmuş gerekçe üretirdi — ve "bu kayıt
+  // açılmasın" başlı başına bir karar.
+  const [rejecting, setRejecting] = React.useState(false);
+  const [note, setNote] = React.useState('');
+
+  const decline = useMutation({
+    mutationFn: () => declineProposal(proposal.id, note),
+    onSuccess: () => {
+      // Teklif listesi ve kuyruğun sayıları; belgenin kendi paneli de reddi
+      // gösteriyor.
+      void queryClient.invalidateQueries({ queryKey: ['intakeProposals'] });
+      void queryClient.invalidateQueries({ queryKey: ['intakeQueue'] });
+      void queryClient.invalidateQueries({ queryKey: ['intakeRejections'] });
+    },
   });
 
   if (!target) {
@@ -193,24 +205,50 @@ export const ProposalCard: React.FC<{ proposal: Proposal }> = ({ proposal }) => 
                   ? 'Onayla ve kaydet'
                   : 'Approve and record'}
             </ActionButton>
-            <ActionButton
-              tone="danger"
-              disabled={discard.isPending}
-              onClick={() => discard.mutate()}
-            >
-              <X className="h-3.5 w-3.5" aria-hidden="true" />
-              {discard.isPending
-                ? tr
-                  ? 'Siliniyor…'
-                  : 'Removing…'
-                : tr
-                  ? 'Reddet ve sil'
-                  : 'Reject and remove'}
-            </ActionButton>
+            {rejecting ? (
+              <>
+                <TextInput
+                  className="w-56"
+                  value={note}
+                  placeholder={tr ? 'Gerekçe (isteğe bağlı)' : 'Reason (optional)'}
+                  onChange={(e) => setNote(e.target.value)}
+                />
+                <ActionButton
+                  tone="danger"
+                  disabled={decline.isPending}
+                  onClick={() => decline.mutate()}
+                >
+                  <X className="h-3.5 w-3.5" aria-hidden="true" />
+                  {decline.isPending
+                    ? tr
+                      ? 'Reddediliyor…'
+                      : 'Declining…'
+                    : tr
+                      ? 'Reddet'
+                      : 'Decline'}
+                </ActionButton>
+                <ActionButton tone="quiet" onClick={() => setRejecting(false)}>
+                  {tr ? 'Vazgeç' : 'Cancel'}
+                </ActionButton>
+              </>
+            ) : (
+              <ActionButton tone="quiet" onClick={() => setRejecting(true)}>
+                <X className="h-3.5 w-3.5" aria-hidden="true" />
+                {tr ? 'Reddet' : 'Decline'}
+              </ActionButton>
+            )}
           </div>
 
+          {rejecting && (
+            <p className="mt-1.5 text-xs text-slate-500">
+              {tr
+                ? 'Reddedilen teklif kuyruktan çıkar, kararı belgenin yanında kalır ve aynı cümle bir daha teklif edilmez.'
+                : 'A declined proposal leaves the queue, its decision stays with the document, and the same sentence is not proposed again.'}
+            </p>
+          )}
+
           <WriteError error={apply.error} />
-          <WriteError error={discard.error} />
+          <WriteError error={decline.error} />
         </>
       )}
     </li>
