@@ -17,6 +17,7 @@ import { QueryStatus } from '../QueryStatus';
 import { Pill } from '../ui/Controls';
 import { ACCREDITATION_TONE, accreditationLabel } from '../../lib/governance';
 import { formatDate } from '../../lib/site';
+import { isSettled } from '../../lib/registerStates';
 
 export const AccreditationPanel: React.FC = () => {
   const { language } = useApp();
@@ -28,7 +29,10 @@ export const AccreditationPanel: React.FC = () => {
   const inScope = rows.filter((r) => r.state !== 'not_applicable');
   const met = inScope.filter((r) => r.state === 'met').length;
   const overdue = inScope.filter(
-    (r) => r.state !== 'met' && r.targetOn != null && new Date(r.targetOn) < new Date(),
+    (r) =>
+      !isSettled('accreditation_state', r.state) &&
+      r.targetOn != null &&
+      new Date(r.targetOn) < new Date(),
   ).length;
 
   return (
@@ -71,7 +75,9 @@ export const AccreditationPanel: React.FC = () => {
         <ul className="divide-y divide-slate-100">
           {rows.map((row) => {
             const late =
-              row.state !== 'met' && row.targetOn != null && new Date(row.targetOn) < new Date();
+              !isSettled('accreditation_state', row.state) &&
+              row.targetOn != null &&
+              new Date(row.targetOn) < new Date();
             return (
               <li key={row.id} className="flex flex-wrap items-start gap-2 py-2">
                 <div className="min-w-0 flex-1">

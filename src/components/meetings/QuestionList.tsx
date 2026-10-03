@@ -13,7 +13,9 @@ import {
 } from '../../lib/meetings';
 import { ActionButton, Field, Pill, Select, TextInput, WriteError } from '../ui/Controls';
 import { NO_PARTY, PartyPicker, type PartyValue } from './PartyPicker';
-import type { Confidentiality, QuestionStatus } from '../../types';
+import type { Confidentiality, OpenQuestion, QuestionStatus } from '../../types';
+import { splitBySettled } from '../../lib/registerStates';
+import { SettledSection } from '../ui/SettledSection';
 
 const STATUS_STYLES: Record<QuestionStatus, string> = {
   open: 'border-amber-300 bg-amber-50 text-amber-800',
@@ -50,13 +52,18 @@ export const QuestionList: React.FC<{
     rows.map((q) => q.id),
   );
 
+  // Cevaplanmış ve düşülmüş olan geri çekiliyor; yukarı taşınmış (`escalated`)
+  // olan bekleyen tarafta kalıyor, çünkü daha yüksek sesle açıktır. Hüküm
+  // `lib/registerStates`'te.
+  const { open: waiting, settled } = splitBySettled(rows, 'question_status', (q) => q.status);
+
   return (
     <section className="rounded-xl border border-slate-200 bg-white shadow-xs">
       <header className="flex items-center justify-between gap-2 border-b border-slate-200 px-4 py-3">
         <h2 className="flex items-center gap-2 text-base font-semibold text-slate-900">
           <HelpCircle className="h-4 w-4 text-amber-600" aria-hidden="true" />
           {tr ? 'Açık sorular' : 'Open questions'}
-          <Pill>{rows.filter((q) => q.status === 'open' || q.status === 'escalated').length}</Pill>
+          <Pill>{waiting.length}</Pill>
         </h2>
         {canKeep && !adding && (
           <ActionButton onClick={() => setAdding(true)}>
@@ -82,67 +89,123 @@ export const QuestionList: React.FC<{
               : 'Nothing is waiting for an answer. This is where a disagreement lives so it does not vanish unresolved.'}
           </p>
         ) : (
-          rows.map((question) => {
-            const late = question.status === 'open' && isOverdue(question.targetResolutionDate);
-            return (
-              <article
+          <>
+            {waiting.map((question) => (
+              <QuestionRow
                 key={question.id}
-                className={`rounded-lg border px-3 py-2 ${
-                  late ? 'border-rose-200 bg-rose-50/60' : 'border-slate-200'
-                }`}
-              >
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <p className="min-w-0 flex-1 text-sm text-slate-900">
-                    {bilingual(question.questionEn, question.questionTr, language)}
-                    {marks.is(
-                      question.id,
-                      'question',
-                      bilingualFrom(question.questionEn, question.questionTr, language).side,
-                    ) && <MachineBadge className="ml-1.5" />}
-                  </p>
-                  <Pill className={STATUS_STYLES[question.status]}>
-                    {questionStatusLabel(question.status, language)}
-                  </Pill>
+                question={question}
+                canKeep={canKeep}
+                marks={marks}
+                onAnswer={(input) => answer.mutate(input)}
+                answering={answer.isPending}
+              />
+            ))}
+
+            {/* Bekleyen soru kalmadıysa söylenir: kapanmışların altındaki boş
+                alan, "hepsi cevaplandı" ile "hiç sorulmadı"yı karıştırır. */}
+            {waiting.length === 0 && settled.length > 0 && (
+              <p className="text-xs text-slate-500">
+                {tr
+                  ? 'Cevap bekleyen soru yok; sorulanların hepsi karara bağlanmış.'
+                  : 'No question is waiting; every one asked has been settled.'}
+              </p>
+            )}
+
+            <SettledSection rows={settled}>
+              {(shown) => (
+                <div className="space-y-2">
+                  {shown.map((question) => (
+                    <QuestionRow
+                      key={question.id}
+                      question={question}
+                      canKeep={canKeep}
+                      marks={marks}
+                      onAnswer={(input) => answer.mutate(input)}
+                      answering={answer.isPending}
+                    />
+                  ))}
                 </div>
-
-                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-slate-500">
-                  {question.name && (
-                    <span>
-                      {tr ? 'sorumlu: ' : 'owner: '}
-                      <span className="font-medium text-slate-700">{question.name}</span>
-                    </span>
-                  )}
-                  {question.targetResolutionDate && (
-                    <span className={late ? 'font-medium text-rose-700' : ''}>
-                      {tr ? 'hedef: ' : 'target: '}
-                      {question.targetResolutionDate}
-                    </span>
-                  )}
-                </div>
-
-                {question.answerEn && (
-                  <p className="mt-1 text-xs leading-relaxed text-slate-700">
-                    <span className="font-medium">{tr ? 'Cevap: ' : 'Answer: '}</span>
-                    {question.answerEn}
-                  </p>
-                )}
-
-                {canKeep && (
-                  <AnswerForm
-                    id={question.id}
-                    status={question.status}
-                    existingAnswer={question.answerEn}
-                    onSubmit={(input) => answer.mutate(input)}
-                    pending={answer.isPending}
-                  />
-                )}
-              </article>
-            );
-          })
+              )}
+            </SettledSection>
+          </>
         )}
         <WriteError error={answer.error} />
       </div>
     </section>
+  );
+};
+
+/**
+ * Bir açık soru satırı.
+ *
+ * Satır buraya çıkarıldı çünkü iki yerde çiziliyor: cevap bekleyenlerin
+ * arasında ve geri çekilmiş olanların arasında. Aynı altmış satırı iki kez
+ * yazmak, ikisinin ayrı düşmesine davetiyeydi.
+ */
+const QuestionRow: React.FC<{
+  question: OpenQuestion;
+  canKeep: boolean;
+  marks: ReturnType<typeof useMachineMarks>;
+  onAnswer: (input: { id: string; status: QuestionStatus; answerEn: string | null }) => void;
+  answering: boolean;
+}> = ({ question, canKeep, marks, onAnswer, answering }) => {
+  const { language } = useApp();
+  const tr = language === 'tr';
+  const late = question.status === 'open' && isOverdue(question.targetResolutionDate);
+
+  return (
+    <article
+      key={question.id}
+      className={`rounded-lg border px-3 py-2 ${
+        late ? 'border-rose-200 bg-rose-50/60' : 'border-slate-200'
+      }`}
+    >
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <p className="min-w-0 flex-1 text-sm text-slate-900">
+          {bilingual(question.questionEn, question.questionTr, language)}
+          {marks.is(
+            question.id,
+            'question',
+            bilingualFrom(question.questionEn, question.questionTr, language).side,
+          ) && <MachineBadge className="ml-1.5" />}
+        </p>
+        <Pill className={STATUS_STYLES[question.status]}>
+          {questionStatusLabel(question.status, language)}
+        </Pill>
+      </div>
+
+      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-slate-500">
+        {question.name && (
+          <span>
+            {tr ? 'sorumlu: ' : 'owner: '}
+            <span className="font-medium text-slate-700">{question.name}</span>
+          </span>
+        )}
+        {question.targetResolutionDate && (
+          <span className={late ? 'font-medium text-rose-700' : ''}>
+            {tr ? 'hedef: ' : 'target: '}
+            {question.targetResolutionDate}
+          </span>
+        )}
+      </div>
+
+      {question.answerEn && (
+        <p className="mt-1 text-xs leading-relaxed text-slate-700">
+          <span className="font-medium">{tr ? 'Cevap: ' : 'Answer: '}</span>
+          {question.answerEn}
+        </p>
+      )}
+
+      {canKeep && (
+        <AnswerForm
+          id={question.id}
+          status={question.status}
+          existingAnswer={question.answerEn}
+          onSubmit={onAnswer}
+          pending={answering}
+        />
+      )}
+    </article>
   );
 };
 

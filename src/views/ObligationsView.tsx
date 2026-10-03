@@ -31,7 +31,15 @@ import {
 } from '../components/ui/Controls';
 import { ObligationDetail } from '../components/obligations/ObligationDetail';
 import { ProhibitionPanel } from '../components/obligations/ProhibitionPanel';
-import type { Confidentiality, Obligation, ObligationSource, ObligationState } from '../types';
+import type {
+  Confidentiality,
+  Language,
+  Obligation,
+  ObligationSource,
+  ObligationState,
+} from '../types';
+import { splitBySettled } from '../lib/registerStates';
+import { SettledSection } from '../components/ui/SettledSection';
 
 /**
  * The obligations and commitments register (M2).
@@ -79,6 +87,13 @@ export const ObligationsView: React.FC = () => {
       (a, b) => OBLIGATION_SOURCES.indexOf(a[0]) - OBLIGATION_SOURCES.indexOf(b[0]),
     );
   }, [shown]);
+
+  // Hangi durumun son olduğu `lib/registerStates`'te, enum başına, bir kez.
+  // Burada yalnız bölme var.
+  const waitingOf = (items: Obligation[]) =>
+    splitBySettled(items, 'obligation_state', (o) => o.state).open;
+  const settledOf = (items: Obligation[]) =>
+    splitBySettled(items, 'obligation_state', (o) => o.state).settled;
 
   const selected = rows.find((o) => o.id === selectedId) ?? null;
   const unverified = rows.filter((o) => !o.verified).length;
@@ -186,79 +201,51 @@ export const ObligationsView: React.FC = () => {
                   <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
                     <Pill className={SOURCE_STYLES[group]}>{sourceLabel(group, language)}</Pill>
                   </h2>
-                  <span className="text-xs text-slate-500">{items.length}</span>
+                  {/* Bekleyen sayısı önce: grubun kaç işi olduğu o. Toplam
+                      da yazıyor, yoksa geri çekilenler yok sayılmış olur. */}
+                  <span className="text-xs text-slate-500">
+                    {state === '' && settledOf(items).length > 0
+                      ? `${waitingOf(items).length} / ${items.length}`
+                      : items.length}
+                  </span>
                 </header>
                 <ul className="divide-y divide-slate-100">
-                  {items.map((o) => {
-                    const band = o.state === 'fulfilled' ? null : thresholdBand(o.dueOn);
-                    return (
-                      <li key={o.id}>
-                        <button
-                          type="button"
-                          onClick={() => setSelectedId(o.id)}
-                          className={`flex w-full cursor-pointer flex-wrap items-start justify-between gap-2 px-4 py-2.5 text-left hover:bg-slate-50 ${
-                            o.id === selectedId ? 'bg-amber-50' : ''
-                          }`}
-                        >
-                          <div className="min-w-0 flex-1">
-                            <div className="flex flex-wrap items-center gap-1.5">
-                              {o.prohibits && (
-                                <ShieldAlert
-                                  className="h-3.5 w-3.5 shrink-0 text-rose-600"
-                                  aria-label={tr ? 'yasak' : 'a prohibition'}
-                                />
-                              )}
-                              <span className="text-sm font-medium text-slate-900">
-                                <Bilingual
-                                  table="obligations"
-                                  id={o.id}
-                                  base="title"
-                                  en={o.titleEn}
-                                  tr={o.titleTr}
-                                />
-                              </span>
-                            </div>
-                            <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-slate-500">
-                              <span>
-                                {tr ? 'yükümlü: ' : 'owed by: '}
-                                <span className="font-medium text-slate-700">{o.obligorName}</span>
-                              </span>
-                              {o.beneficiaryName && (
-                                <span>
-                                  {tr ? 'lehtar: ' : 'owed to: '}
-                                  {o.beneficiaryName}
-                                </span>
-                              )}
-                              {o.dueOn && <span className="font-mono">{o.dueOn}</span>}
-                            </div>
-                          </div>
-                          <div className="flex shrink-0 flex-wrap items-center gap-1.5">
-                            {band != null && (
-                              <Pill className={BAND_STYLES[band]}>{bandLabel(band, language)}</Pill>
-                            )}
-                            {o.verified ? (
-                              <span
-                                title={tr ? 'kaynak belgesi var' : 'a source document is attached'}
-                              >
-                                <FileCheck2
-                                  className="h-3.5 w-3.5 text-emerald-600"
-                                  aria-hidden="true"
-                                />
-                              </span>
-                            ) : (
-                              <span title={tr ? 'belgesiz' : 'no document behind it'}>
-                                <FileX2 className="h-3.5 w-3.5 text-amber-600" aria-hidden="true" />
-                              </span>
-                            )}
-                            <Pill className={STATE_STYLES[o.state]}>
-                              {stateLabel(o.state, language)}
-                            </Pill>
-                          </div>
-                        </button>
-                      </li>
-                    );
-                  })}
+                  {waitingOf(items).map((o) => (
+                    <ObligationRow
+                      key={o.id}
+                      o={o}
+                      language={language}
+                      selected={o.id === selectedId}
+                      onOpen={() => setSelectedId(o.id)}
+                    />
+                  ))}
                 </ul>
+                {/* Yerine getirilmiş olan geri çekiliyor — ama kullanıcı
+                    zaten bir duruma süzdüyse bölünmüyor: istediği tam o
+                    liste, ve onu "tamamlanan" diye kapatmak soruyu
+                    cevapsız bırakmak olurdu. */}
+                {state === '' && (
+                  <div className="px-4 pb-2">
+                    <SettledSection
+                      rows={settledOf(items)}
+                      label={{ tr: 'Yerine getirilmiş', en: 'Fulfilled' }}
+                    >
+                      {(rowsShown) => (
+                        <ul className="divide-y divide-slate-100">
+                          {rowsShown.map((o) => (
+                            <ObligationRow
+                              key={o.id}
+                              o={o}
+                              language={language}
+                              selected={o.id === selectedId}
+                              onOpen={() => setSelectedId(o.id)}
+                            />
+                          ))}
+                        </ul>
+                      )}
+                    </SettledSection>
+                  </div>
+                )}
               </section>
             ))
           )}
@@ -273,6 +260,76 @@ export const ObligationsView: React.FC = () => {
         )}
       </div>
     </div>
+  );
+};
+
+// ---------------------------------------------------------------------------
+
+/**
+ * Bir yükümlülük satırı.
+ *
+ * Buraya çıkarıldı çünkü iki yerde çiziliyor: bekleyenlerin arasında ve geri
+ * çekilmiş olanların arasında.
+ */
+const ObligationRow: React.FC<{
+  o: Obligation;
+  language: Language;
+  selected: boolean;
+  onOpen: () => void;
+}> = ({ o, language, selected, onOpen }) => {
+  const tr = language === 'tr';
+  const band = o.state === 'fulfilled' ? null : thresholdBand(o.dueOn);
+
+  return (
+    <li key={o.id}>
+      <button
+        type="button"
+        onClick={onOpen}
+        className={`flex w-full cursor-pointer flex-wrap items-start justify-between gap-2 px-4 py-2.5 text-left hover:bg-slate-50 ${
+          selected ? 'bg-amber-50' : ''
+        }`}
+      >
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-1.5">
+            {o.prohibits && (
+              <ShieldAlert
+                className="h-3.5 w-3.5 shrink-0 text-rose-600"
+                aria-label={tr ? 'yasak' : 'a prohibition'}
+              />
+            )}
+            <span className="text-sm font-medium text-slate-900">
+              <Bilingual table="obligations" id={o.id} base="title" en={o.titleEn} tr={o.titleTr} />
+            </span>
+          </div>
+          <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-slate-500">
+            <span>
+              {tr ? 'yükümlü: ' : 'owed by: '}
+              <span className="font-medium text-slate-700">{o.obligorName}</span>
+            </span>
+            {o.beneficiaryName && (
+              <span>
+                {tr ? 'lehtar: ' : 'owed to: '}
+                {o.beneficiaryName}
+              </span>
+            )}
+            {o.dueOn && <span className="font-mono">{o.dueOn}</span>}
+          </div>
+        </div>
+        <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+          {band != null && <Pill className={BAND_STYLES[band]}>{bandLabel(band, language)}</Pill>}
+          {o.verified ? (
+            <span title={tr ? 'kaynak belgesi var' : 'a source document is attached'}>
+              <FileCheck2 className="h-3.5 w-3.5 text-emerald-600" aria-hidden="true" />
+            </span>
+          ) : (
+            <span title={tr ? 'belgesiz' : 'no document behind it'}>
+              <FileX2 className="h-3.5 w-3.5 text-amber-600" aria-hidden="true" />
+            </span>
+          )}
+          <Pill className={STATE_STYLES[o.state]}>{stateLabel(o.state, language)}</Pill>
+        </div>
+      </button>
+    </li>
   );
 };
 

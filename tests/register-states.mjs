@@ -149,6 +149,99 @@ for (const name of Object.keys(NO_JUDGMENT_NEEDED)) {
   check(enums.has(name), `${name}, which the list excuses, still exists in the database`);
 }
 
+// ------------------------------------------ hüküm kullanılıyor, tekrarlanmıyor
+//
+// Bir ekranın "tam olarak bu durumda mı" diye sorması meşru: ödenmeye hazır
+// fişin düğmesi `approved` durumuna bakar ve bu bir hüküm tekrarı değil.
+// Kusur olan, **açık/kapalı hükmünün ikinci kez yazılması** — bir dosya bir
+// enum'un bütün son değerlerini satır içinde karşılaştırıyorsa o hükmü
+// kendisi vermiş olur, ve iki hüküm bir gün ayrı düşer (CLAUDE.md §4).
+//
+// Ölçüm, 3 Ekim 2026: bu kural yazıldığında üç dosya yakalandı —
+// `ActionList` (done + cancelled), `AccreditationPanel` (met +
+// not_applicable), `MilestonePanel` (achieved + abandoned). Üçü de
+// `isSettled`'a çevrildi.
+
+const clientFiles = [];
+const walk = (dir) => {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) walk(path);
+    else if (/\.tsx?$/.test(entry.name) && entry.name !== 'registerStates.ts')
+      clientFiles.push(path);
+  }
+};
+walk(join(root, 'src'));
+check(clientFiles.length > 100, 'the client files are there to read', `${clientFiles.length}`);
+
+const STATE_FIELD = /\b(?:state|status|outcome)\s*(?:===|!==|==|!=)\s*'([a-z_]+)'/g;
+
+/**
+ * Aynı ifadede bütün son değerler.
+ *
+ * İlk hâli dosyanın herhangi bir yerinde değerleri arıyordu ve yanlış alarm
+ * verdi: `AccreditationPanel` bir yerde kaçının `met` olduğunu sayıyor, başka
+ * bir yerde `not_applicable` olanları kapsam dışı bırakıyor — ikisi ayrı ve
+ * meşru soru, hükmün tekrarı değil. Aranan şey ikisinin **bir ifadede**
+ * birleşmesi, yani `&&` ya da `||` ile bağlanmış olması. İki satıra sarılmış
+ * olabileceği için pencere iki satır.
+ */
+const restatesIn = (text, settled) => {
+  const lines = text.split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    const window = lines.slice(i, i + 2).join(' ');
+    if (!/&&|\|\|/.test(window)) continue;
+    const compared = new Set([...window.matchAll(STATE_FIELD)].map((m) => m[1]));
+    if (settled.every((v) => compared.has(v))) return i + 1;
+  }
+  return null;
+};
+
+let restated = 0;
+for (const [name, rule] of [...rules].sort()) {
+  if (rule.settled.length < 2) continue; // tek değerli hüküm tekrarlanamaz
+  for (const file of clientFiles) {
+    const line = restatesIn(readFileSync(file, 'utf8'), rule.settled);
+    if (line === null) continue;
+    restated++;
+    check(
+      false,
+      `${file.slice(file.indexOf('src/'))}:${line} does not restate the ${name} judgment`,
+      `one expression compares against every settled value (${rule.settled.join(', ')}) — ask isSettled instead`,
+    );
+  }
+}
+check(restated === 0, 'no file decides open-or-finished for itself', `${restated} did`);
+
+// --------------------------------------------- geri çekilmiş olan geri çekildi
+//
+// Hükmün var olması yetmiyor; ekranın onu kullanması gerekiyor. Her çevrilmiş
+// kütük için üç şey sınanıyor: bölme doğru enum'la yapılıyor, bitmiş olanlar
+// `SettledSection` içinde (yani kapalı ve sayılı), ve başlıktaki sayı bekleyeni
+// sayıyor — toplamı değil.
+
+const CONVERTED = [
+  { file: 'src/components/meetings/ActionList.tsx', enumName: 'action_status' },
+  { file: 'src/components/meetings/QuestionList.tsx', enumName: 'question_status' },
+  { file: 'src/views/ObligationsView.tsx', enumName: 'obligation_state' },
+];
+
+for (const { file, enumName } of CONVERTED) {
+  const text = readFileSync(join(root, file), 'utf8');
+  check(
+    text.includes(`splitBySettled(`) && text.includes(`'${enumName}'`),
+    `${file.slice(file.indexOf('src/'))} splits on the ${enumName} judgment`,
+  );
+  check(
+    text.includes('<SettledSection'),
+    `and withdraws what is finished rather than listing it alongside`,
+  );
+  check(
+    /\{waiting\.length\}|waitingOf\(items\)\.length/.test(text),
+    `and counts what is waiting rather than everything`,
+  );
+}
+
 console.log('');
 if (failures > 0) {
   console.error(`${failures} register-state check(s) failed.`);

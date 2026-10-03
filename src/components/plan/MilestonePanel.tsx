@@ -36,6 +36,7 @@ import { formatDate } from '../../lib/site';
 import { todayIso } from '../../lib/date';
 import type { MilestoneProgress, UserRole } from '../../types';
 import { toneFor, wordFor } from '../../lib/labels';
+import { isSettled } from '../../lib/registerStates';
 
 /** Mirrors app.can_keep_plan(). */
 const PLAN_KEEPERS: UserRole[] = [
@@ -321,7 +322,7 @@ export const MilestonePanel: React.FC = () => {
                     {m.note && <p className="mt-0.5 text-xs text-slate-600">{m.note}</p>}
                   </div>
 
-                  {mayKeep && !open && m.state !== 'achieved' && m.state !== 'abandoned' && (
+                  {mayKeep && !open && !isSettled('milestone_progress', m.state) && (
                     <div className="flex shrink-0 items-center gap-2">
                       <button
                         type="button"

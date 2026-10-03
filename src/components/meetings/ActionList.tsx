@@ -21,6 +21,8 @@ import {
 import { ActionButton, Field, Pill, Select, TextInput, WriteError } from '../ui/Controls';
 import { NO_PARTY, PartyPicker, type PartyValue } from './PartyPicker';
 import type { ActionItem, ActionStatus, Confidentiality, PriorityLevel } from '../../types';
+import { isSettled, splitBySettled } from '../../lib/registerStates';
+import { SettledSection } from '../ui/SettledSection';
 
 /**
  * Actions: exactly one owner and one date, both required by the table (M3-05).
@@ -56,13 +58,19 @@ export const ActionList: React.FC<{
   const actionText = (notes.data ?? []).find((n) => n.section === 'actions');
   const needsTriage = rows.length === 0 && actionText != null && actionText.body.trim() !== '';
 
+  // Yapılmış ve iptal edilmiş olan geri çekiliyor. Hangi değerin son olduğu
+  // burada yazılı değil: hüküm `lib/registerStates`'te, enum başına, bir kez
+  // (CLAUDE.md §4). Sıra bozulmuyor — API vade tarihine göre sıralıyor, yani
+  // bekleyenlerin içinde en yakın olan en üstte.
+  const { open: waiting, settled } = splitBySettled(rows, 'action_status', (a) => a.status);
+
   return (
     <section className="rounded-xl border border-slate-200 bg-white shadow-xs">
       <header className="flex items-center justify-between gap-2 border-b border-slate-200 px-4 py-3">
         <h2 className="flex items-center gap-2 text-base font-semibold text-slate-900">
           <CircleAlert className="h-4 w-4 text-amber-600" aria-hidden="true" />
           {tr ? 'Aksiyonlar' : 'Actions'}
-          <Pill>{rows.filter((a) => a.status !== 'done' && a.status !== 'cancelled').length}</Pill>
+          <Pill>{waiting.length}</Pill>
         </h2>
         {canKeep && !adding && (
           <ActionButton onClick={() => setAdding(true)}>
@@ -104,18 +112,50 @@ export const ActionList: React.FC<{
               : 'Nothing came out of this meeting. If something should have, adding it now beats remembering later.'}
           </p>
         ) : (
-          rows.map((action) => (
-            <ActionRow
-              key={action.id}
-              action={action}
-              canKeep={canKeep}
-              machineWritten={marks.is(
-                action.id,
-                'text',
-                bilingualFrom(action.textEn, action.textTr, language).side,
+          <>
+            {waiting.map((action) => (
+              <ActionRow
+                key={action.id}
+                action={action}
+                canKeep={canKeep}
+                machineWritten={marks.is(
+                  action.id,
+                  'text',
+                  bilingualFrom(action.textEn, action.textTr, language).side,
+                )}
+              />
+            ))}
+
+            {/* Bekleyen kalmadıysa bunu söylemek gerekiyor: boş bir alan,
+                kapanmış işlerin altında "hepsi bitti" ile "hiç yoktu"yu
+                birbirine karıştırır. */}
+            {waiting.length === 0 && settled.length > 0 && (
+              <p className="text-xs text-slate-500">
+                {tr
+                  ? 'Bekleyen aksiyon yok; bu toplantıdan çıkanların hepsi karara bağlanmış.'
+                  : 'No action is waiting; everything from this meeting has been settled.'}
+              </p>
+            )}
+
+            <SettledSection rows={settled}>
+              {(shown) => (
+                <div className="space-y-2">
+                  {shown.map((action) => (
+                    <ActionRow
+                      key={action.id}
+                      action={action}
+                      canKeep={canKeep}
+                      machineWritten={marks.is(
+                        action.id,
+                        'text',
+                        bilingualFrom(action.textEn, action.textTr, language).side,
+                      )}
+                    />
+                  ))}
+                </div>
               )}
-            />
-          ))
+            </SettledSection>
+          </>
         )}
       </div>
     </section>
@@ -141,8 +181,7 @@ const ActionRow: React.FC<{
       (stakeholders.data ?? []).some(
         (s) => s.id === action.stakeholderId && s.profileId === user?.id,
       ));
-  const late =
-    action.status !== 'done' && action.status !== 'cancelled' && isOverdue(action.dueDate);
+  const late = !isSettled('action_status', action.status) && isOverdue(action.dueDate);
   const days = daysUntil(action.dueDate);
 
   return (
