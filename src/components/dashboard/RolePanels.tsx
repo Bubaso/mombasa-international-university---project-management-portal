@@ -492,9 +492,14 @@ export const AuditQueue: React.FC = () => {
   const tr = language === 'tr';
   const ledger = moneyQueries.useLedger();
 
-  const rows = ledger.data ?? [];
-  const unaudited = rows.filter((t) => t.auditedAt == null);
-  const undocumented = rows.filter((t) => !t.verified);
+  const rows = ledger.data?.rows ?? [];
+  // İki sayı da kütüğün tamamından. Panoda dilimin içinden sayılmış bir sayı,
+  // tam olarak panonun işe yaramaz olma şekli: küçük ve yanlış.
+  const gaps = moneyQueries.useLedgerGaps();
+  const unaudited = gaps.data?.unaudited ?? 0;
+  const undocumented = gaps.data?.undocumented ?? 0;
+  // Payda da kütüğün tamamı: dilimin boyu bir oranın altına yazılamaz.
+  const ledgerTotal = ledger.data?.total ?? 0;
 
   return (
     <Card
@@ -519,26 +524,23 @@ export const AuditQueue: React.FC = () => {
           <div className="flex items-center justify-between">
             <dt className="text-slate-600">{tr ? 'Denetlenmemiş' : 'Not audited'}</dt>
             <dd className="font-mono font-semibold text-slate-900">
-              {unaudited.length}/{rows.length}
+              {unaudited}/{ledgerTotal}
             </dd>
           </div>
           <div className="flex items-center justify-between">
             <dt className="text-slate-600">{tr ? 'Belgesiz' : 'No document attached'}</dt>
             <dd
               className={`font-mono font-semibold ${
-                undocumented.length > 0 ? 'text-amber-800' : 'text-slate-900'
+                undocumented > 0 ? 'text-amber-800' : 'text-slate-900'
               }`}
             >
-              {undocumented.length}/{rows.length}
+              {undocumented}/{ledgerTotal}
             </dd>
           </div>
           <div className="flex items-center justify-between border-t border-slate-100 pt-2">
             <dt className="text-slate-600">{tr ? 'Denetlenmiş toplam' : 'Audited value'}</dt>
             <dd className="font-mono font-semibold text-emerald-700">
-              {fmt(
-                rows.filter((t) => t.auditedAt != null).reduce((a, t) => a + t.amountKes, 0),
-                'KES',
-              )}
+              {fmt(gaps.data?.auditedKes ?? 0, 'KES')}
             </dd>
           </div>
         </dl>

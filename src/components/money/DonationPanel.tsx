@@ -14,7 +14,7 @@ import React, { useState } from 'react';
 import { ChevronDown, ChevronUp, HandCoins, Plus } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import * as money from '../../api/moneyHooks';
-import { useDocuments } from '../../api/documentHooks';
+import { useDocumentOptions } from '../../api/documentHooks';
 import { QueryStatus } from '../QueryStatus';
 import { EmptyState } from '../EmptyState';
 import { ActionButton, Field, Pill, Section, Select, TextInput, WriteError } from '../ui/Controls';
@@ -207,7 +207,7 @@ const DonationRow: React.FC<{
   const { language } = useApp();
   const tr = language === 'tr';
   const tranches = money.useTranches(open ? donation.id : null);
-  const documents = useDocuments();
+  const documents = useDocumentOptions();
   const record = money.useRecordTranche();
 
   const [receivedOn, setReceivedOn] = useState(new Date().toISOString().slice(0, 10));

@@ -12,7 +12,7 @@
  * this morning.
  */
 import { supabase } from '../lib/supabase';
-import type { ReportKind, ReportRow, ReportRun } from '../types';
+import type { Page, ReportKind, ReportRow, ReportRun } from '../types';
 
 function fail(error: { message: string } | null): void {
   if (error) throw new Error(error.message);
@@ -56,36 +56,42 @@ const RUN_COLUMNS =
   'meeting:meetings(title), ' +
   'donor:stakeholders(full_name)';
 
-export async function fetchReportRuns(): Promise<ReportRun[]> {
-  const { data, error } = await supabase
+export async function fetchReportRuns(limit = 20, offset = 0): Promise<Page<ReportRun>> {
+  const { data, error, count } = await supabase
     .from('report_runs')
-    .select(RUN_COLUMNS)
-    .order('prepared_at', { ascending: false });
+    .select(RUN_COLUMNS, { count: 'exact' })
+    .order('prepared_at', { ascending: false })
+    .range(offset, offset + limit - 1);
   fail(error);
 
-  return rows<Record<string, unknown>>(data).map((row) => {
-    const meeting = row.meeting as { title: string } | { title: string }[] | null;
-    return {
-      id: row.id as string,
-      kind: row.kind as ReportKind,
-      title: row.title as string,
-      periodFrom: row.period_from as string | null,
-      periodTo: row.period_to as string | null,
-      meetingId: row.meeting_id as string | null,
-      meetingTitle: Array.isArray(meeting) ? (meeting[0]?.title ?? null) : (meeting?.title ?? null),
-      stakeholderId: row.stakeholder_id as string | null,
-      stakeholderName: label(row.donor as NamedRef),
-      preparedByName: label(row.preparer as NamedRef),
-      preparedAt: row.prepared_at as string,
-      state: row.state as ReportRun['state'],
-      approvedByName: label(row.approver as NamedRef),
-      approvedAt: row.approved_at as string | null,
-      publishedAt: row.published_at as string | null,
-      withdrawnReason: row.withdrawn_reason as string | null,
-      rows: toRows(row.content),
-      confidentiality: row.confidentiality as ReportRun['confidentiality'],
-    };
-  });
+  return {
+    rows: rows<Record<string, unknown>>(data).map((row) => {
+      const meeting = row.meeting as { title: string } | { title: string }[] | null;
+      return {
+        id: row.id as string,
+        kind: row.kind as ReportKind,
+        title: row.title as string,
+        periodFrom: row.period_from as string | null,
+        periodTo: row.period_to as string | null,
+        meetingId: row.meeting_id as string | null,
+        meetingTitle: Array.isArray(meeting)
+          ? (meeting[0]?.title ?? null)
+          : (meeting?.title ?? null),
+        stakeholderId: row.stakeholder_id as string | null,
+        stakeholderName: label(row.donor as NamedRef),
+        preparedByName: label(row.preparer as NamedRef),
+        preparedAt: row.prepared_at as string,
+        state: row.state as ReportRun['state'],
+        approvedByName: label(row.approver as NamedRef),
+        approvedAt: row.approved_at as string | null,
+        publishedAt: row.published_at as string | null,
+        withdrawnReason: row.withdrawn_reason as string | null,
+        rows: toRows(row.content),
+        confidentiality: row.confidentiality as ReportRun['confidentiality'],
+      };
+    }),
+    total: count ?? 0,
+  };
 }
 
 export async function openReport(input: {

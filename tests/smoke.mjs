@@ -3101,6 +3101,24 @@ process.on('exit', stopServer);
 let browser;
 let failures = 0;
 
+/**
+ * PostgREST'in cevap başlıkları.
+ *
+ * `Content-Range` olmadan `count` null geliyor, ve `Access-Control-Expose-Headers`
+ * olmadan tarayıcı o başlığı sayfadan saklıyor — ikisi de olmazsa her ekranda
+ * toplam sıfır çıkar ve testler ekranın doğru sayıyı yazdığını hiç sınamaz.
+ * Mutasyon testinde tam olarak bu oldu: başlığı kaldırdım ve suite yeşil
+ * kaldı, yani yeşil olan şey ekran değil vekilin körlüğüydü (CLAUDE.md §3).
+ */
+const postgrestHeaders = (body) => {
+  const total = Array.isArray(body) ? body.length : 1;
+  return {
+    'content-type': 'application/json',
+    'content-range': `0-${total === 0 ? 0 : total - 1}/${total}`,
+    'access-control-expose-headers': 'content-range, content-profile',
+  };
+};
+
 const check = (ok, label, detail) => {
   if (!ok) failures++;
   console.log(`${ok ? 'ok  ' : 'FAIL'} ${label}${detail ? `  ${detail}` : ''}`);
@@ -3151,7 +3169,7 @@ try {
     const single = route.request().url().includes('id=eq.');
     return route.fulfill({
       status: 200,
-      contentType: 'application/json',
+      headers: postgrestHeaders(single ? TEST_PROFILE : [TEST_PROFILE]),
       body: JSON.stringify(single ? TEST_PROFILE : [TEST_PROFILE]),
     });
   });
@@ -3161,7 +3179,7 @@ try {
     page.route('**/rest/v1/rpc/current_authority', (route) =>
       route.fulfill({
         status: 200,
-        contentType: 'application/json',
+        headers: postgrestHeaders(authority),
         body: JSON.stringify(authority),
       }),
     );
@@ -3171,7 +3189,7 @@ try {
   await page.route('**/rest/v1/legal_cases**', (route) =>
     route.fulfill({
       status: 200,
-      contentType: 'application/json',
+      headers: postgrestHeaders([TEST_CASE]),
       body: JSON.stringify([TEST_CASE]),
     }),
   );
@@ -3179,7 +3197,7 @@ try {
   await page.route('**/rest/v1/pending_decisions**', (route) =>
     route.fulfill({
       status: 200,
-      contentType: 'application/json',
+      headers: postgrestHeaders(TEST_DECISIONS),
       body: JSON.stringify(TEST_DECISIONS),
     }),
   );
@@ -3187,7 +3205,7 @@ try {
   await page.route('**/rest/v1/risks**', (route) =>
     route.fulfill({
       status: 200,
-      contentType: 'application/json',
+      headers: postgrestHeaders(TEST_RISKS),
       body: JSON.stringify(TEST_RISKS),
     }),
   );
@@ -3195,7 +3213,7 @@ try {
   await page.route('**/rest/v1/risk_escalations**', (route) =>
     route.fulfill({
       status: 200,
-      contentType: 'application/json',
+      headers: postgrestHeaders(TEST_ESCALATIONS),
       body: JSON.stringify(TEST_ESCALATIONS),
     }),
   );
@@ -3203,7 +3221,7 @@ try {
   await page.route('**/rest/v1/risk_matrix**', (route) =>
     route.fulfill({
       status: 200,
-      contentType: 'application/json',
+      headers: postgrestHeaders(TEST_MATRIX),
       body: JSON.stringify(TEST_MATRIX),
     }),
   );
@@ -3211,7 +3229,7 @@ try {
   await page.route('**/rest/v1/dependency_status**', (route) =>
     route.fulfill({
       status: 200,
-      contentType: 'application/json',
+      headers: postgrestHeaders(TEST_DEPENDENCIES),
       body: JSON.stringify(TEST_DEPENDENCIES),
     }),
   );
@@ -3220,7 +3238,7 @@ try {
   await page.route('**/rest/v1/milestones**', (route) =>
     route.fulfill({
       status: 200,
-      contentType: 'application/json',
+      headers: postgrestHeaders(TEST_MILESTONES),
       body: JSON.stringify(TEST_MILESTONES),
     }),
   );
@@ -3228,7 +3246,7 @@ try {
   await page.route('**/rest/v1/phase_position**', (route) =>
     route.fulfill({
       status: 200,
-      contentType: 'application/json',
+      headers: postgrestHeaders(TEST_PHASES),
       body: JSON.stringify(TEST_PHASES),
     }),
   );
@@ -3236,7 +3254,7 @@ try {
   await page.route('**/rest/v1/plan_baselines**', (route) =>
     route.fulfill({
       status: 200,
-      contentType: 'application/json',
+      headers: postgrestHeaders(TEST_BASELINES),
       body: JSON.stringify(TEST_BASELINES),
     }),
   );
@@ -3244,7 +3262,7 @@ try {
   await page.route('**/rest/v1/baseline_variance**', (route) =>
     route.fulfill({
       status: 200,
-      contentType: 'application/json',
+      headers: postgrestHeaders(TEST_VARIANCE),
       body: JSON.stringify(TEST_VARIANCE),
     }),
   );
@@ -3252,7 +3270,7 @@ try {
   await page.route('**/rest/v1/project_chronology**', (route) =>
     route.fulfill({
       status: 200,
-      contentType: 'application/json',
+      headers: postgrestHeaders(TEST_CHRONOLOGY),
       body: JSON.stringify(TEST_CHRONOLOGY),
     }),
   );
@@ -3260,7 +3278,7 @@ try {
   await page.route('**/rest/v1/critical_dates**', (route) =>
     route.fulfill({
       status: 200,
-      contentType: 'application/json',
+      headers: postgrestHeaders(TEST_CRITICAL_DATES),
       body: JSON.stringify(TEST_CRITICAL_DATES),
     }),
   );
@@ -3268,7 +3286,7 @@ try {
   await page.route('**/rest/v1/financial_transactions**', (route) =>
     route.fulfill({
       status: 200,
-      contentType: 'application/json',
+      headers: postgrestHeaders(TEST_TRANSACTIONS),
       body: JSON.stringify(TEST_TRANSACTIONS),
     }),
   );
@@ -3276,7 +3294,7 @@ try {
   await page.route('**/rest/v1/donation_position**', (route) =>
     route.fulfill({
       status: 200,
-      contentType: 'application/json',
+      headers: postgrestHeaders(TEST_DONATIONS),
       body: JSON.stringify(TEST_DONATIONS),
     }),
   );
@@ -3284,7 +3302,7 @@ try {
   await page.route('**/rest/v1/construction_blocks**', (route) =>
     route.fulfill({
       status: 200,
-      contentType: 'application/json',
+      headers: postgrestHeaders([TEST_BLOCK, UNVISITED_BLOCK]),
       body: JSON.stringify([TEST_BLOCK, UNVISITED_BLOCK]),
     }),
   );
@@ -3292,7 +3310,7 @@ try {
   await page.route('**/rest/v1/block_progress**', (route) =>
     route.fulfill({
       status: 200,
-      contentType: 'application/json',
+      headers: postgrestHeaders(TEST_BLOCK_PROGRESS),
       body: JSON.stringify(TEST_BLOCK_PROGRESS),
     }),
   );
@@ -3300,7 +3318,7 @@ try {
   await page.route('**/rest/v1/watch_register**', (route) =>
     route.fulfill({
       status: 200,
-      contentType: 'application/json',
+      headers: postgrestHeaders(TEST_WATCHES),
       body: JSON.stringify(TEST_WATCHES),
     }),
   );
@@ -3308,7 +3326,7 @@ try {
   await page.route('**/rest/v1/gate_presence**', (route) =>
     route.fulfill({
       status: 200,
-      contentType: 'application/json',
+      headers: postgrestHeaders(TEST_GATE_PRESENCE),
       body: JSON.stringify(TEST_GATE_PRESENCE),
     }),
   );
@@ -3316,7 +3334,7 @@ try {
   await page.route('**/rest/v1/incident_register**', (route) =>
     route.fulfill({
       status: 200,
-      contentType: 'application/json',
+      headers: postgrestHeaders(TEST_INCIDENTS),
       body: JSON.stringify(TEST_INCIDENTS),
     }),
   );
@@ -3324,7 +3342,7 @@ try {
   await page.route('**/rest/v1/watch_health**', (route) =>
     route.fulfill({
       status: 200,
-      contentType: 'application/json',
+      headers: postgrestHeaders(TEST_WATCH_HEALTH),
       body: JSON.stringify(TEST_WATCH_HEALTH),
     }),
   );
@@ -3332,7 +3350,7 @@ try {
   await page.route('**/rest/v1/site_task_conflicts**', (route) =>
     route.fulfill({
       status: 200,
-      contentType: 'application/json',
+      headers: postgrestHeaders([TEST_CONFLICT]),
       body: JSON.stringify([TEST_CONFLICT]),
     }),
   );
@@ -3340,7 +3358,7 @@ try {
   await page.route('**/rest/v1/document_vault**', (route) =>
     route.fulfill({
       status: 200,
-      contentType: 'application/json',
+      headers: postgrestHeaders(TEST_DOCUMENTS),
       body: JSON.stringify(TEST_DOCUMENTS),
     }),
   );
@@ -3348,7 +3366,7 @@ try {
   await page.route('**/rest/v1/document_comment_register**', (route) =>
     route.fulfill({
       status: 200,
-      contentType: 'application/json',
+      headers: postgrestHeaders(TEST_DOC_COMMENTS),
       body: JSON.stringify(TEST_DOC_COMMENTS),
     }),
   );
@@ -3356,23 +3374,39 @@ try {
   await page.route('**/rest/v1/document_version_steps**', (route) =>
     route.fulfill({
       status: 200,
-      contentType: 'application/json',
+      headers: postgrestHeaders(TEST_VERSION_STEPS),
       body: JSON.stringify(TEST_VERSION_STEPS),
     }),
   );
 
-  await page.route('**/rest/v1/document_versions**', (route) =>
-    route.fulfill({
+  // `sha256=is.null` süzgecine uyuyor: özeti hesaplanmamış belge sayısı artık
+  // sunucudan isteniyor (kütük turu), ve her isteğe bütün sürümleri döndüren
+  // bir vekil o sayıyı iki katına çıkarırdı — yani testin ölçtüğü şey ekranın
+  // doğruluğu değil vekilin körlüğü olurdu.
+  await page.route('**/rest/v1/document_versions**', (route) => {
+    const url = new URL(route.request().url());
+    const digest = url.searchParams.get('sha256');
+    const rows =
+      digest === 'is.null'
+        ? TEST_VERSIONS.filter((v) => v.sha256 == null)
+        : digest === 'not.is.null'
+          ? TEST_VERSIONS.filter((v) => v.sha256 != null)
+          : TEST_VERSIONS;
+    return route.fulfill({
       status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(TEST_VERSIONS),
-    }),
-  );
+      headers: {
+        'content-type': 'application/json',
+        'content-range': `0-${rows.length === 0 ? 0 : rows.length - 1}/${rows.length}`,
+        'access-control-expose-headers': 'content-range, content-profile',
+      },
+      body: JSON.stringify(rows),
+    });
+  });
 
   await page.route('**/rest/v1/rpc/similar_records', (route) =>
     route.fulfill({
       status: 200,
-      contentType: 'application/json',
+      headers: postgrestHeaders(TEST_SIMILAR),
       body: JSON.stringify(TEST_SIMILAR),
     }),
   );
@@ -3380,7 +3414,7 @@ try {
   await page.route('**/rest/v1/rpc/search_records', (route) =>
     route.fulfill({
       status: 200,
-      contentType: 'application/json',
+      headers: postgrestHeaders(TEST_SEARCH_HITS),
       body: JSON.stringify(TEST_SEARCH_HITS),
     }),
   );
@@ -3388,7 +3422,7 @@ try {
   await page.route('**/rest/v1/ai_queries**', (route) =>
     route.fulfill({
       status: 200,
-      contentType: 'application/json',
+      headers: postgrestHeaders(TEST_AI_QUERIES),
       body: JSON.stringify(TEST_AI_QUERIES),
     }),
   );
@@ -3404,14 +3438,65 @@ try {
       }),
     );
 
+  /**
+   * PostgREST gibi cevap ver.
+   *
+   * `Content-Range` eklendi (kütük turu, 3 Ekim 2026): bir okuma artık dilim ve
+   * **toplam** döndürüyor, ve toplam bu başlıktan geliyor. Başlığı
+   * koymayan bir vekil her ekranda toplamı sıfır gösterirdi — yani ekranların
+   * doğru sayıyı yazdığını hiç sınamamış olurduk. `head: true` olan istekler
+   * (yalnız sayan okumalar) gövdesiz dönüyor, gerçeğinde olduğu gibi.
+   */
   const serve = (pattern, body) =>
-    page.route(pattern, (route) =>
-      route.fulfill({
+    page.route(pattern, (route) => {
+      const total = Array.isArray(body) ? body.length : 1;
+      const last = total === 0 ? 0 : total - 1;
+      const headOnly = route.request().method() === 'HEAD';
+      return route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify(body),
-      }),
-    );
+        headers: {
+          'content-type': 'application/json',
+          'content-range': `0-${last}/${total}`,
+          // `Content-Range` CORS'un güvenli listesinde değil: açıkça
+          // açılmazsa tarayıcı onu sayfadan saklıyor ve `count` null geliyor.
+          // Gerçek Supabase bu başlığı açıyor; vekil de açmak zorunda, yoksa
+          // her ekranda toplam sıfır çıkar ve testler sayıyı hiç sınamaz.
+          'access-control-expose-headers': 'content-range, content-profile',
+        },
+        body: headOnly ? '[]' : JSON.stringify(body),
+      });
+    });
+
+  /**
+   * Bir sütun üzerinde `eq`/`neq` süzen vekil.
+   *
+   * Aksiyon adayları artık sunucuda süzülüyor (kütük turu): ekran bekleyenleri
+   * ve karara bağlananları iki ayrı istekle alıyor. Her isteğe bütün satırları
+   * döndüren bir vekil, iki sekmeyi de yanlış doldurur ve "karara bağlanmış
+   * satır kuyruktan çıktı" iddiasını sınamaz hâle getirir — testin geçmesi
+   * ekranın doğruluğunu değil vekilin körlüğünü gösterirdi (CLAUDE.md §3).
+   */
+  const serveFiltered = (pattern, body, column) =>
+    page.route(pattern, (route) => {
+      const url = new URL(route.request().url());
+      const clause = url.searchParams.get(column);
+      let rows = body;
+      if (clause?.startsWith('eq.')) rows = body.filter((r) => r[column] === clause.slice(3));
+      else if (clause?.startsWith('neq.')) rows = body.filter((r) => r[column] !== clause.slice(4));
+      const last = rows.length === 0 ? 0 : rows.length - 1;
+      const headOnly = route.request().method() === 'HEAD';
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        headers: {
+          'content-type': 'application/json',
+          'content-range': `0-${last}/${rows.length}`,
+          'access-control-expose-headers': 'content-range, content-profile',
+        },
+        body: headOnly ? '[]' : JSON.stringify(rows),
+      });
+    });
 
   // The curve sources. Two of these tables are already served for the finance
   // screen, which asks for far more columns, so the curve's request is told
@@ -3421,7 +3506,7 @@ try {
     if (!/select=date/.test(url)) return route.fallback();
     return route.fulfill({
       status: 200,
-      contentType: 'application/json',
+      headers: postgrestHeaders(TEST_CURVE_LEDGER),
       body: JSON.stringify(TEST_CURVE_LEDGER),
     });
   });
@@ -3430,7 +3515,7 @@ try {
     if (!/select=amount_kes/.test(url)) return route.fallback();
     return route.fulfill({
       status: 200,
-      contentType: 'application/json',
+      headers: postgrestHeaders(TEST_CURVE_BUDGET),
       body: JSON.stringify(TEST_CURVE_BUDGET),
     });
   });
@@ -3456,13 +3541,13 @@ try {
     }
     return route.fulfill({
       status: 200,
-      contentType: 'application/json',
+      headers: postgrestHeaders(TEST_MACHINE_MARKS[table] ?? []),
       body: JSON.stringify(TEST_MACHINE_MARKS[table] ?? []),
     });
   });
   await serve('**/rest/v1/rpc/translation_review', TEST_TRANSLATIONS);
   await serve('**/rest/v1/rpc/translation_backlog', TEST_BACKLOG);
-  await serve('**/rest/v1/action_triage**', TEST_TRIAGE);
+  await serveFiltered('**/rest/v1/action_triage**', TEST_TRIAGE, 'state');
   await serve('**/rest/v1/stakeholders**', TEST_STAKEHOLDERS);
   await serve('**/rest/v1/report_runs**', TEST_REPORT_RUNS);
   await serve('**/rest/v1/thread_board**', TEST_THREADS);
@@ -3488,7 +3573,7 @@ try {
     }
     route.fulfill({
       status: 200,
-      contentType: 'application/json',
+      headers: postgrestHeaders(TEST_DIGEST[audience] ?? []),
       body: JSON.stringify(TEST_DIGEST[audience] ?? []),
     });
   });
@@ -3536,7 +3621,7 @@ try {
     const single = route.request().url().includes('id=eq.');
     return route.fulfill({
       status: 200,
-      contentType: 'application/json',
+      headers: postgrestHeaders(single ? TEST_MEETING : [TEST_MEETING]),
       body: JSON.stringify(single ? TEST_MEETING : [TEST_MEETING]),
     });
   });
@@ -3672,7 +3757,15 @@ try {
   const triage = (await page.textContent('body')) ?? '';
 
   check(
-    /2 karar bekliyor/.test(triage),
+    (console.log(
+      'TRIAGE-DEBUG:',
+      (triage.match(/.{0,40}karar bekliyor.{0,20}/) ?? ['(no match)'])[0],
+    ),
+    console.log(
+      'TRIAGE-DEBUG2:',
+      (triage.match(/bekleyenler \([0-9]+\)|karara bağlananlar \([0-9]+\)/g) ?? []).join(' | '),
+    ),
+    /2 karar bekliyor/.test(triage)),
     'the queue counts the sentences still awaiting a decision (M3-05)',
   );
   check(/1 tanesi hazır/.test(triage), 'and says how many arrived naming both a person and a date');
@@ -3989,6 +4082,17 @@ try {
       vaultView,
     ),
     'with the count stated where it cannot be missed',
+  );
+
+  // Kütük turunun ikinci sorusunun kendisi: liste kaç tanesini gösterdiğini
+  // söylüyor mu? Kasa okuması artık bir dilim ve toplam döndürüyor, ve bu
+  // satır toplamın ekrana **ulaştığını** sınıyor. Olmadığında bütün ekranlar
+  // sessizce "0 kayıt" der ve hiçbir test bunu fark etmez — mutasyon testinde
+  // tam olarak bu oldu: vekilin `Content-Range` başlığını açmayı bıraktım ve
+  // suite yeşil kaldı.
+  check(
+    /2 kayıt, hepsi burada|2 records, all of them/.test(vaultView),
+    'and the vault says how many documents there are, not just how many it drew',
   );
   check(/Belge ekle|Add a document/.test(vaultView), 'a director may put documents in the vault');
 
@@ -5607,7 +5711,7 @@ try {
     await new Promise((r) => setTimeout(r, 3000));
     await route.fulfill({
       status: 200,
-      contentType: 'application/json',
+      headers: postgrestHeaders(TEST_PUSH_HEALTH),
       body: JSON.stringify(TEST_PUSH_HEALTH),
     });
   });

@@ -4,7 +4,16 @@ import { useAutoTranslate } from './translateHooks';
 import * as api from './comms';
 import type { DigestAudience } from '../types';
 
-export const useThreads = () => useQuery({ queryKey: ['threads'], queryFn: api.fetchThreads });
+/** Okunmamış bildirim sayısı — dilimden değil kütükten. */
+export const useUnreadCount = () =>
+  useQuery({ queryKey: ['unreadCount'], queryFn: api.countUnread, staleTime: 1000 * 60 * 2 });
+
+/** Gönderilmiş ama teslimi teyit edilmemiş yazı sayısı. */
+export const useUnconfirmedOutgoing = () =>
+  useQuery({ queryKey: ['unconfirmedOutgoing'], queryFn: api.countUnconfirmedOutgoing });
+
+export const useThreads = (limit = 25) =>
+  useQuery({ queryKey: ['threads', limit], queryFn: () => api.fetchThreads(limit) });
 
 export const useMessages = (threadId: string | null) =>
   useQuery({
@@ -13,8 +22,8 @@ export const useMessages = (threadId: string | null) =>
     enabled: threadId != null,
   });
 
-export const useAnnouncementReach = () =>
-  useQuery({ queryKey: ['announcementReach'], queryFn: api.fetchReach });
+export const useAnnouncementReach = (limit = 20) =>
+  useQuery({ queryKey: ['announcementReach', limit], queryFn: () => api.fetchReach(limit) });
 
 export const useChannelMembers = () =>
   useQuery({ queryKey: ['channelMembers'], queryFn: api.fetchChannelMembers });
@@ -32,8 +41,8 @@ export const useInbox = (limit = 40) =>
 export const usePreferences = () =>
   useQuery({ queryKey: ['notificationPreferences'], queryFn: api.fetchPreferences });
 
-export const useCorrespondence = () =>
-  useQuery({ queryKey: ['correspondence'], queryFn: api.fetchCorrespondence });
+export const useCorrespondence = (limit = 25) =>
+  useQuery({ queryKey: ['correspondence', limit], queryFn: () => api.fetchCorrespondence(limit) });
 
 export const useDigest = (audience: DigestAudience, from: string, to: string) =>
   useQuery({

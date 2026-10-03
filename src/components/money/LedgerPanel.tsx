@@ -19,7 +19,7 @@ import React, { useState } from 'react';
 import { BadgeCheck, Download, FileWarning, Plus } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import * as money from '../../api/moneyHooks';
-import { useDocuments } from '../../api/documentHooks';
+import { useDocumentOptions } from '../../api/documentHooks';
 import { QueryStatus } from '../QueryStatus';
 import { EmptyState } from '../EmptyState';
 import {
@@ -42,6 +42,7 @@ import {
   transactionCategoryLabel,
 } from '../../lib/money';
 import type { CurrencyCode, FinancialTransaction } from '../../types';
+import { MoreRows } from '../ui/MoreRows';
 
 interface Props {
   canSpend: boolean;
@@ -52,9 +53,14 @@ export const LedgerPanel: React.FC<Props> = ({ canSpend, canAudit }) => {
   const { language } = useApp();
   const tr = language === 'tr';
 
-  const ledger = money.useLedger();
+  const PAGE = 40;
+
+  const [limit, setLimit] = React.useState(40);
+
+  const ledger = money.useLedger(limit);
+  const gaps = money.useLedgerGaps();
   const lines = money.useBudgetLines();
-  const documents = useDocuments();
+  const documents = useDocumentOptions();
   const record = money.useRecordTransaction();
   const attach = money.useAttachDocument();
   const audit = money.useMarkAudited();
@@ -71,8 +77,9 @@ export const LedgerPanel: React.FC<Props> = ({ canSpend, canAudit }) => {
   const [documentId, setDocumentId] = useState('');
   const [lineId, setLineId] = useState('');
 
-  const rows = ledger.data ?? [];
-  const unverified = rows.filter((t) => !t.verified).length;
+  const rows = ledger.data?.rows ?? [];
+  // Kütüğün tamamından; dilimin içinden saymak sayıyı sessizce küçültürdü.
+  const unverified = gaps.data?.undocumented ?? 0;
 
   const exportCsv = () => {
     const csv = toCsv(
@@ -390,6 +397,12 @@ export const LedgerPanel: React.FC<Props> = ({ canSpend, canAudit }) => {
           ))}
         </TableFrame>
       )}
+      <MoreRows
+        shown={(ledger.data?.rows ?? []).length}
+        total={ledger.data?.total ?? 0}
+        onMore={() => setLimit(limit + PAGE)}
+        busy={ledger.isFetching}
+      />
 
       <WriteError error={attach.error} />
       <WriteError error={audit.error} />

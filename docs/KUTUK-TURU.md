@@ -98,7 +98,62 @@ süzüyordu.** "Sözleşme" seçen biri, kütükte sözleşme kaydı olduğu hâ
 liste görebilirdi — çünkü aranan yer son 200 satırdı. Süzgeç sunucuya taşındı;
 açılır listedeki türler hâlâ görülenden çıkıyor ve etiket bunu söylüyor.
 
-**124 okuma hâlâ her satırı çekiyor** ve bu bugün kırılmıyor (en büyük kütük
+### İkinci parti: sayı dilimin değil kütüğün sayısı
+
+Büyüyen on üç ekran-genişliğinde okumanın sekizi dilime çevrildi: yazışmalar,
+duyuru erişimi, mesaj başlıkları, kasa listesi, çıkar çatışması beyanları, malî
+hareketler, rapor derlemeleri, aksiyon adayları.
+
+**Ve bu, bir dalga daha açtı.** Bir okumayı dilime çevirmek, o dilim üzerinde
+**sayan** her yeri sessizce yanlış yaptı — yedi yerde:
+
+| Nerede                   | Ne diyordu                        |
+| ------------------------ | --------------------------------- |
+| Kasa defteri             | belgesiz hareket sayısı           |
+| Pano, denetim kuyruğu    | denetlenmemiş ve belgesiz sayısı  |
+| Pano, denetlenmiş toplam | **bir para rakamı**               |
+| Bildirim kutusu          | okunmamış bildirim sayısı         |
+| Yazışmalar               | teyidi gelmemiş giden yazı sayısı |
+| Kronoloji                | belgesi olmayan kayıt sayısı      |
+| Belge kasası             | özeti hesaplanmamış belge sayısı  |
+
+Ayrım şu: **kesilmiş bir liste dürüst olabilir** — "412 kayıttan 40 tanesi"
+doğru bir cümledir. **Kesilmiş bir sayı olamaz,** çünkü kendisinin kesildiğini
+söylemiyor; küçük, kesin ve yetkili görünür. Bir para toplamında bu, listeyi
+kesmekten kötüdür (CLAUDE.md §2).
+
+Yedisi de sunucuya taşındı: `head: true` ile satır çekilmiyor, yalnız
+sayılıyor. Üç yer satır çekmeye devam ediyor ve gerekçesi kendi dosyasında:
+bir **toplam** bütün değerleri ister (denetlenmiş tutar), bir **seçici**
+kesilemez (`fetchDocumentOptions`, `fetchTransactionOptions` — var olan bir
+kaydı seçilemez kılmak, listeyi kesmekten kötü), ve bir **birleştirme**
+doğrulayamadığım sözdizimiyle yazılmaz (`countUndigestedDocuments`).
+
+Aksiyon adaylarında süzgeç de sunucuya taşındı: ekran bekleyenlerle karara
+bağlananlar arasında geçiş yapıyor ve bunu dilimin içinde yapmak iki listeyi
+birden yanlış yapardı.
+
+Takvim ve "yürürlükteki sürümler" okumaları **kasıtlı olarak sınırsız bırakıldı**:
+ikisinde de dilimlemek, dilimlenmemiş hâlinden daha yanlış. Satır sayısıyla
+kesilmiş bir takvim, ekim ayı on iki kayıt taşıdığı hâlde üç gösterir; sürüm
+arama tablosu kesilirse dilimin dışındaki belgeler "sürüm yok" görünür.
+Takvimin doğru sınırı tarih penceresi, sürümlerin doğru çözümü `document_vault`
+görünümüne katlamak — ikisi de o gün geldiğinde.
+
+**Test tarafında üç kusur mutasyonla çıktı,** ve üçü de aynı aileden: vekil
+veritabanı gibi davranmadığı sürece yeşil olan şey ekran değil vekilin
+körlüğü. (1) Vekiller `Content-Range` göndermiyordu, yani her ekranda toplam
+sıfırdı ve hiçbir test sayıyı sınamıyordu — 35 vekil cevabı düzeltildi.
+(2) `Access-Control-Expose-Headers` olmadan tarayıcı o başlığı sayfadan
+saklıyor; gerçek Supabase onu açıyor, vekil de açmak zorunda. (3) Süzgeç
+sunucuya taşındığında vekil de süzmek zorunda: her isteğe bütün satırları
+döndüren bir vekil, "karara bağlanmış satır kuyruktan çıktı" iddiasını
+sınanamaz hâle getiriyordu.
+
+Ve bir kural eklendi: **bir ekran `X.data?.rows` üzerinde sayı türetmiyor**
+(`tests/list-reads.mjs`). Bu turun kendi hatasının tekrarlanmaması için.
+
+**120 okuma hâlâ her satırı çekiyor** ve bu bugün kırılmıyor (en büyük kütük
 134 satır). `tests/list-reads.mjs` sayıyı tutuyor: yeni bir okuma eklenince
 sayı değişiyor, yani "buna sınır gerekiyor mu?" sorusuna cevap vermeden test
 geçmiyor. Kalanlar — `meeting_notes`, `meeting_attendees`, `correspondence`,

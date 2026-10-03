@@ -20,6 +20,7 @@ import { useApp } from '../../context/AppContext';
 import {
   useDeliveryMedia,
   useInbox,
+  useUnreadCount,
   useMarkNotificationRead,
   useNotificationHealth,
   usePreferences,
@@ -40,6 +41,7 @@ export const NotificationPanel: React.FC = () => {
   const PAGE = 40;
   const [limit, setLimit] = useState(PAGE);
   const inbox = useInbox(limit);
+  const unreadCount = useUnreadCount();
   const health = useNotificationHealth();
   const preferences = usePreferences();
   const sweep = useRunSweep();
@@ -52,7 +54,10 @@ export const NotificationPanel: React.FC = () => {
   const media = useDeliveryMedia();
 
   const rows = inbox.data?.rows ?? [];
-  const unread = rows.filter((r) => r.readAt == null).length;
+  // Sayı dilimden değil kütükten: kırk bildirimin ikisi okunmamışsa ekran "2"
+  // yazardı, oysa dört yüzün otuzu okunmamış olabilir. Kesilmiş bir liste
+  // dürüst olabilir; kesilmiş bir sayı olamaz.
+  const unread = unreadCount.data ?? 0;
 
   // What somebody has actually said, against the default the database applies
   // to everybody who has said nothing.

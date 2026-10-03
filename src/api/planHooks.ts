@@ -3,6 +3,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAutoTranslate } from './translateHooks';
 import * as api from './plan';
 
+/** Belgesi olmayan kayıtlı olay sayısı. */
+export const useUnevidencedCount = () =>
+  useQuery({ queryKey: ['unevidencedEvents'], queryFn: api.countUnevidencedEvents });
+
 export const usePlanMilestones = () =>
   useQuery({ queryKey: ['milestones'], queryFn: api.fetchMilestones });
 

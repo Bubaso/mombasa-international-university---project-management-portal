@@ -7,7 +7,7 @@
  * field: the suggestion columns carry only what the sentence itself says.
  */
 import { supabase } from '../lib/supabase';
-import type { ActionCandidate } from '../types';
+import type { Page, ActionCandidate } from '../types';
 
 function fail(error: { message: string } | null): void {
   if (error) throw new Error(error.message);
@@ -15,33 +15,74 @@ function fail(error: { message: string } | null): void {
 
 const rows = <T>(data: unknown): T[] => (data ?? []) as unknown as T[];
 
-export async function fetchCandidates(): Promise<ActionCandidate[]> {
-  const { data, error } = await supabase
-    .from('action_triage')
-    .select('*')
+/**
+ * Aksiyon adaylarının durum başına sayısı.
+ *
+ * Alım kuyruğundaki `fetchQueueCounts` ile aynı gerekçe: sekmedeki sayı
+ * dilimden gelirse, sekme kaç tane olduğunu değil kaç tanesinin çekildiğini
+ * söyler.
+ */
+export async function fetchCandidateCounts(): Promise<{ pending: number; settled: number }> {
+  const [pending, settled] = await Promise.all([
+    supabase
+      .from('action_triage')
+      .select('id', { count: 'exact', head: true })
+      .eq('state', 'pending'),
+    supabase
+      .from('action_triage')
+      .select('id', { count: 'exact', head: true })
+      .neq('state', 'pending'),
+  ]);
+  if (pending.error) throw new Error(pending.error.message);
+  if (settled.error) throw new Error(settled.error.message);
+  return { pending: pending.count ?? 0, settled: settled.count ?? 0 };
+}
+
+/**
+ * Aksiyon adayları, bir dilim hâlinde.
+ *
+ * **Süzgeç sunucuda** ve bu kasıtlı: ekran "karar bekleyen" ile "karara
+ * bağlanmış" arasında geçiş yapıyor, ve bunu çekilen dilimin içinde yapmak iki
+ * listeyi birden yanlış yapardı — bekleyenlerin bir kısmı dilimin dışında
+ * kalırdı ve ekran onları hiç görmezdi. Alım kuyruğundaki kalıbın aynısı
+ * (0050): hangi dilim isteniyorsa o çekiliyor.
+ */
+export async function fetchCandidates(
+  state: 'pending' | 'settled',
+  limit = 25,
+  offset = 0,
+): Promise<Page<ActionCandidate>> {
+  let query = supabase.from('action_triage').select('*', { count: 'exact' });
+  query = state === 'pending' ? query.eq('state', 'pending') : query.neq('state', 'pending');
+
+  const { data, error, count } = await query
     .order('held_at', { ascending: false })
-    .order('sequence');
+    .order('sequence')
+    .range(offset, offset + limit - 1);
   fail(error);
 
-  return rows<Record<string, unknown>>(data).map((row) => ({
-    id: row.id as string,
-    meetingId: row.meeting_id as string,
-    meetingTitle: row.meeting_title as string,
-    meetingTitleTr: row.meeting_title_tr as string | null,
-    heldAt: row.held_at as string,
-    sequence: Number(row.sequence),
-    textEn: row.text_en as string | null,
-    textTr: row.text_tr as string | null,
-    suggestedOwnerStakeholderId: row.suggested_owner_stakeholder_id as string | null,
-    suggestedOwnerName: row.suggested_owner_name as string | null,
-    suggestedDueOn: row.suggested_due_on as string | null,
-    state: row.state as ActionCandidate['state'],
-    actionItemId: row.action_item_id as string | null,
-    dismissedReason: row.dismissed_reason as string | null,
-    namesAnOwner: Boolean(row.names_an_owner),
-    namesADate: Boolean(row.names_a_date),
-    confidentiality: row.confidentiality as ActionCandidate['confidentiality'],
-  }));
+  return {
+    rows: rows<Record<string, unknown>>(data).map((row) => ({
+      id: row.id as string,
+      meetingId: row.meeting_id as string,
+      meetingTitle: row.meeting_title as string,
+      meetingTitleTr: row.meeting_title_tr as string | null,
+      heldAt: row.held_at as string,
+      sequence: Number(row.sequence),
+      textEn: row.text_en as string | null,
+      textTr: row.text_tr as string | null,
+      suggestedOwnerStakeholderId: row.suggested_owner_stakeholder_id as string | null,
+      suggestedOwnerName: row.suggested_owner_name as string | null,
+      suggestedDueOn: row.suggested_due_on as string | null,
+      state: row.state as ActionCandidate['state'],
+      actionItemId: row.action_item_id as string | null,
+      dismissedReason: row.dismissed_reason as string | null,
+      namesAnOwner: Boolean(row.names_an_owner),
+      namesADate: Boolean(row.names_a_date),
+      confidentiality: row.confidentiality as ActionCandidate['confidentiality'],
+    })),
+    total: count ?? 0,
+  };
 }
 
 /**

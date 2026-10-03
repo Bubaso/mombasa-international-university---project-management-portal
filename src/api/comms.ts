@@ -47,36 +47,40 @@ const label = (ref: NamedRef): string | null =>
 // Threads (M11-01, M11-04, M11-05, M11-11)
 // ---------------------------------------------------------------------------
 
-export async function fetchThreads(): Promise<CommunicationThread[]> {
-  const { data, error } = await supabase
+export async function fetchThreads(limit = 25, offset = 0): Promise<Page<CommunicationThread>> {
+  const { data, error, count } = await supabase
     .from('thread_board')
-    .select('*')
+    .select('*', { count: 'exact' })
     .order('pinned', { ascending: false })
     .order('last_message_at', { ascending: false, nullsFirst: false })
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
   fail(error);
 
-  return rows<Record<string, unknown>>(data).map((row) => ({
-    id: row.id as string,
-    title: row.title as string,
-    channel: row.channel as CommChannel,
-    kind: row.kind as ThreadKind,
-    urgent: Boolean(row.urgent),
-    pinned: Boolean(row.pinned),
-    closedAt: row.closed_at as string | null,
-    confidentiality: row.confidentiality as CommunicationThread['confidentiality'],
-    createdAt: row.created_at as string,
-    createdBy: row.created_by as string | null,
-    startedBy: row.started_by as string | null,
-    legalCaseId: row.legal_case_id as string | null,
-    constructionBlockId: row.construction_block_id as string | null,
-    obligationId: row.obligation_id as string | null,
-    transactionId: row.transaction_id as string | null,
-    messages: Number(row.messages ?? 0),
-    lastMessageAt: row.last_message_at as string | null,
-    lastSpeaker: row.last_speaker as string | null,
-    seenByMe: Boolean(row.seen_by_me),
-  }));
+  return {
+    rows: rows<Record<string, unknown>>(data).map((row) => ({
+      id: row.id as string,
+      title: row.title as string,
+      channel: row.channel as CommChannel,
+      kind: row.kind as ThreadKind,
+      urgent: Boolean(row.urgent),
+      pinned: Boolean(row.pinned),
+      closedAt: row.closed_at as string | null,
+      confidentiality: row.confidentiality as CommunicationThread['confidentiality'],
+      createdAt: row.created_at as string,
+      createdBy: row.created_by as string | null,
+      startedBy: row.started_by as string | null,
+      legalCaseId: row.legal_case_id as string | null,
+      constructionBlockId: row.construction_block_id as string | null,
+      obligationId: row.obligation_id as string | null,
+      transactionId: row.transaction_id as string | null,
+      messages: Number(row.messages ?? 0),
+      lastMessageAt: row.last_message_at as string | null,
+      lastSpeaker: row.last_speaker as string | null,
+      seenByMe: Boolean(row.seen_by_me),
+    })),
+    total: count ?? 0,
+  };
 }
 
 /**
@@ -282,23 +286,27 @@ export async function acknowledgeAnnouncement(threadId: string): Promise<void> {
   fail(error);
 }
 
-export async function fetchReach(): Promise<AnnouncementReach[]> {
-  const { data, error } = await supabase
+export async function fetchReach(limit = 20, offset = 0): Promise<Page<AnnouncementReach>> {
+  const { data, error, count } = await supabase
     .from('announcement_reach')
-    .select('*')
-    .order('created_at', { ascending: false });
+    .select('*', { count: 'exact' })
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
   fail(error);
 
-  return rows<Record<string, unknown>>(data).map((row) => ({
-    threadId: row.thread_id as string,
-    title: row.title as string,
-    channel: row.channel as CommChannel,
-    urgent: Boolean(row.urgent),
-    createdAt: row.created_at as string,
-    seen: Number(row.seen ?? 0),
-    couldSee: Number(row.could_see ?? 0),
-    seenBy: (row.seen_by as string[] | null) ?? [],
-  }));
+  return {
+    rows: rows<Record<string, unknown>>(data).map((row) => ({
+      threadId: row.thread_id as string,
+      title: row.title as string,
+      channel: row.channel as CommChannel,
+      urgent: Boolean(row.urgent),
+      createdAt: row.created_at as string,
+      seen: Number(row.seen ?? 0),
+      couldSee: Number(row.could_see ?? 0),
+      seenBy: (row.seen_by as string[] | null) ?? [],
+    })),
+    total: count ?? 0,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -339,6 +347,37 @@ export async function addChannelMember(input: {
 // ---------------------------------------------------------------------------
 // Notifications (M11-06, M11-07)
 // ---------------------------------------------------------------------------
+
+/**
+ * Sayı dilimin değil kütüğün sayısı.
+ *
+ * Bir okumayı dilime çevirmek, o dilim üzerinde **sayan** her yeri sessizce
+ * yanlış yapıyor: kırk hareketin üçü denetlenmemişse ekran "3" yazıyor, oysa
+ * kütükte otuz olabilir. Kesilmiş bir liste dürüst olabilir ("412 kayıttan 40
+ * tanesi"); kesilmiş bir **sayı** olamaz, çünkü kendisinin kesildiğini
+ * söylemiyor.
+ *
+ * Bu yüzden sayılar sunucudan geliyor: `head: true` ile satır çekilmiyor,
+ * yalnız sayılıyor. Bu, dilime çevirmenin bedeli değil — doğru yere taşınması.
+ */
+export async function countUnread(): Promise<number> {
+  const { count, error } = await supabase
+    .from('my_notifications')
+    .select('id', { count: 'exact', head: true })
+    .is('read_at', null);
+  fail(error);
+  return count ?? 0;
+}
+
+export async function countUnconfirmedOutgoing(): Promise<number> {
+  const { count, error } = await supabase
+    .from('correspondence')
+    .select('id', { count: 'exact', head: true })
+    .eq('direction', 'outgoing')
+    .is('delivery_confirmed_on', null);
+  fail(error);
+  return count ?? 0;
+}
 
 export async function fetchInbox(limit = 40, offset = 0): Promise<Page<NotificationItem>> {
   const { data, error, count } = await supabase
@@ -457,36 +496,43 @@ const CORRESPONDENCE_COLUMNS =
   'signatory:profiles!correspondence_signed_by_fkey(full_name), ' +
   'stakeholder:stakeholders(full_name), organization:organizations(name)';
 
-export async function fetchCorrespondence(): Promise<CorrespondenceEntry[]> {
-  const { data, error } = await supabase
+export async function fetchCorrespondence(
+  limit = 25,
+  offset = 0,
+): Promise<Page<CorrespondenceEntry>> {
+  const { data, error, count } = await supabase
     .from('correspondence')
-    .select(CORRESPONDENCE_COLUMNS)
-    .order('sent_on', { ascending: false });
+    .select(CORRESPONDENCE_COLUMNS, { count: 'exact' })
+    .order('sent_on', { ascending: false })
+    .range(offset, offset + limit - 1);
   fail(error);
 
-  return rows<Record<string, unknown>>(data).map((row) => {
-    const org = row.organization as { name: string } | { name: string }[] | null;
-    const orgName = Array.isArray(org) ? (org[0]?.name ?? null) : (org?.name ?? null);
-    return {
-      id: row.id as string,
-      referenceNo: row.reference_no as string | null,
-      direction: row.direction as CorrespondenceEntry['direction'],
-      route: row.route as CorrespondenceEntry['route'],
-      subjectEn: row.subject_en as string,
-      subjectTr: row.subject_tr as string | null,
-      summary: row.summary as string | null,
-      sentOn: row.sent_on as string,
-      counterparty:
-        label(row.stakeholder as NamedRef) ?? orgName ?? (row.counterparty_name as string | null),
-      signedByName: label(row.signatory as NamedRef),
-      documentId: row.document_id as string | null,
-      legalCaseId: row.legal_case_id as string | null,
-      deliveryConfirmedOn: row.delivery_confirmed_on as string | null,
-      deliveryEvidenceDocumentId: row.delivery_evidence_document_id as string | null,
-      deliveryNote: row.delivery_note as string | null,
-      confidentiality: row.confidentiality as CorrespondenceEntry['confidentiality'],
-    };
-  });
+  return {
+    rows: rows<Record<string, unknown>>(data).map((row) => {
+      const org = row.organization as { name: string } | { name: string }[] | null;
+      const orgName = Array.isArray(org) ? (org[0]?.name ?? null) : (org?.name ?? null);
+      return {
+        id: row.id as string,
+        referenceNo: row.reference_no as string | null,
+        direction: row.direction as CorrespondenceEntry['direction'],
+        route: row.route as CorrespondenceEntry['route'],
+        subjectEn: row.subject_en as string,
+        subjectTr: row.subject_tr as string | null,
+        summary: row.summary as string | null,
+        sentOn: row.sent_on as string,
+        counterparty:
+          label(row.stakeholder as NamedRef) ?? orgName ?? (row.counterparty_name as string | null),
+        signedByName: label(row.signatory as NamedRef),
+        documentId: row.document_id as string | null,
+        legalCaseId: row.legal_case_id as string | null,
+        deliveryConfirmedOn: row.delivery_confirmed_on as string | null,
+        deliveryEvidenceDocumentId: row.delivery_evidence_document_id as string | null,
+        deliveryNote: row.delivery_note as string | null,
+        confidentiality: row.confidentiality as CorrespondenceEntry['confidentiality'],
+      };
+    }),
+    total: count ?? 0,
+  };
 }
 
 export async function addCorrespondence(input: {

@@ -17,6 +17,7 @@ import {
 } from '../components/ui/Controls';
 import { DocumentDetail } from '../components/documents/DocumentDetail';
 import type { Confidentiality, DocumentCategory, DocumentItem, DocumentVersion } from '../types';
+import { MoreRows } from '../components/ui/MoreRows';
 
 /**
  * The document vault (M9).
@@ -37,8 +38,13 @@ export const DocumentVaultView: React.FC = () => {
   const { language } = useApp();
   const tr = language === 'tr';
 
-  const documents = vault.useDocuments();
+  const PAGE = 40;
+
+  const [limit, setLimit] = React.useState(40);
+
+  const documents = vault.useDocuments(limit);
   const versions = vault.useCurrentVersions();
+  const undigested = vault.useUndigestedCount();
   const authority = useAuthority();
 
   const canWrite =
@@ -52,7 +58,7 @@ export const DocumentVaultView: React.FC = () => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
 
-  const rows = documents.data ?? [];
+  const rows = documents.data?.rows ?? [];
 
   const versionById = useMemo(() => {
     const byId = new Map<string, DocumentVersion>();
@@ -79,10 +85,9 @@ export const DocumentVaultView: React.FC = () => {
   }, [rows, query, category, currentVersion]);
 
   const selected = rows.find((d) => d.id === selectedId) ?? null;
-  const unverified = rows.filter((doc) => {
-    const version = currentVersion(doc);
-    return version != null && version.sha256 == null;
-  }).length;
+  // Kasanın tamamından: dilimin içinden saymak bir bütünlük rakamını az
+  // gösterirdi, ki bu rozeti hiç koymamaktan kötü.
+  const unverified = undigested.data ?? 0;
 
   return (
     <div className="space-y-4">
@@ -260,6 +265,12 @@ export const DocumentVaultView: React.FC = () => {
                   );
                 })}
               </ul>
+              <MoreRows
+                shown={(documents.data?.rows ?? []).length}
+                total={documents.data?.total ?? 0}
+                onMore={() => setLimit(limit + PAGE)}
+                busy={documents.isFetching}
+              />
             </div>
           )}
         </div>

@@ -17,11 +17,14 @@ import { useConflicts, useDeclareInterest, useOrgans } from '../../api/governanc
 import { QueryStatus } from '../QueryStatus';
 import { ActionButton, Field, Pill, Select, TextInput, WriteError } from '../ui/Controls';
 import { formatDate } from '../../lib/site';
+import { MoreRows } from '../ui/MoreRows';
 
 export const ConflictPanel: React.FC = () => {
   const { language } = useApp();
   const tr = language === 'tr';
-  const conflicts = useConflicts();
+  const PAGE = 25;
+  const [limit, setLimit] = React.useState(25);
+  const conflicts = useConflicts(limit);
   const organs = useOrgans();
   const declare = useDeclareInterest();
 
@@ -30,7 +33,7 @@ export const ConflictPanel: React.FC = () => {
   const [organId, setOrganId] = useState('');
   const [coversFrom, setCoversFrom] = useState('');
 
-  const rows = conflicts.data ?? [];
+  const rows = conflicts.data?.rows ?? [];
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-4">
@@ -161,6 +164,12 @@ export const ConflictPanel: React.FC = () => {
           ))}
         </ul>
       )}
+      <MoreRows
+        shown={(conflicts.data?.rows ?? []).length}
+        total={conflicts.data?.total ?? 0}
+        onMore={() => setLimit(limit + PAGE)}
+        busy={conflicts.isFetching}
+      />
     </section>
   );
 };

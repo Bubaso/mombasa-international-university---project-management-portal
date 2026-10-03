@@ -695,49 +695,54 @@ export async function fetchObligationProgress(): Promise<ObligationProgress[]> {
   }));
 }
 
-export async function fetchConflicts(): Promise<ConflictDeclaration[]> {
-  const { data, error } = await supabase
+export async function fetchConflicts(limit = 25, offset = 0): Promise<Page<ConflictDeclaration>> {
+  const { data, error, count } = await supabase
     .from('conflict_declarations')
     .select(
       'id, trustee_id, profile_id, organ_id, interest_en, interest_tr, declared_on, ' +
         'covers_from, covers_to, document_id, recused_from_decision_id, note, ' +
         'confidentiality, trustee:trustees(full_name), profile:profiles(full_name)',
+      { count: 'exact' },
     )
-    .order('declared_on', { ascending: false });
+    .order('declared_on', { ascending: false })
+    .range(offset, offset + limit - 1);
   fail(error);
 
-  return rows<{
-    id: string;
-    trustee_id: string | null;
-    profile_id: string | null;
-    organ_id: string | null;
-    interest_en: string;
-    interest_tr: string | null;
-    declared_on: string;
-    covers_from: string | null;
-    covers_to: string | null;
-    document_id: string | null;
-    recused_from_decision_id: string | null;
-    note: string | null;
-    confidentiality: ConflictDeclaration['confidentiality'];
-    trustee: { full_name: string } | null;
-    profile: { full_name: string } | null;
-  }>(data).map((row) => ({
-    id: row.id,
-    trusteeId: row.trustee_id,
-    profileId: row.profile_id,
-    organId: row.organ_id,
-    personName: row.trustee?.full_name ?? row.profile?.full_name ?? null,
-    interestEn: row.interest_en,
-    interestTr: row.interest_tr,
-    declaredOn: row.declared_on,
-    coversFrom: row.covers_from,
-    coversTo: row.covers_to,
-    documentId: row.document_id,
-    recusedFromDecisionId: row.recused_from_decision_id,
-    note: row.note,
-    confidentiality: row.confidentiality,
-  }));
+  return {
+    rows: rows<{
+      id: string;
+      trustee_id: string | null;
+      profile_id: string | null;
+      organ_id: string | null;
+      interest_en: string;
+      interest_tr: string | null;
+      declared_on: string;
+      covers_from: string | null;
+      covers_to: string | null;
+      document_id: string | null;
+      recused_from_decision_id: string | null;
+      note: string | null;
+      confidentiality: ConflictDeclaration['confidentiality'];
+      trustee: { full_name: string } | null;
+      profile: { full_name: string } | null;
+    }>(data).map((row) => ({
+      id: row.id,
+      trusteeId: row.trustee_id,
+      profileId: row.profile_id,
+      organId: row.organ_id,
+      personName: row.trustee?.full_name ?? row.profile?.full_name ?? null,
+      interestEn: row.interest_en,
+      interestTr: row.interest_tr,
+      declaredOn: row.declared_on,
+      coversFrom: row.covers_from,
+      coversTo: row.covers_to,
+      documentId: row.document_id,
+      recusedFromDecisionId: row.recused_from_decision_id,
+      note: row.note,
+      confidentiality: row.confidentiality,
+    })),
+    total: count ?? 0,
+  };
 }
 
 export async function declareInterest(input: {

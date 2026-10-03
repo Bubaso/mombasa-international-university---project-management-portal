@@ -58,6 +58,7 @@ import { formatDate } from '../lib/site';
 import { todayIso } from '../lib/date';
 import type { ReportKind, UserRole } from '../types';
 import { toneFor, wordFor } from '../lib/labels';
+import { MoreRows } from '../components/ui/MoreRows';
 
 /** Mirrors app.can_approve_report(). */
 const APPROVERS: UserRole[] = ['admin', 'project_director', 'trustee', 'board_director'];
@@ -71,7 +72,9 @@ function monthsAgo(n: number): string {
 export const ReportsView: React.FC = () => {
   const { language } = useApp();
   const tr = language === 'tr';
-  const runs = useReportRuns();
+  const PAGE = 20;
+  const [limit, setLimit] = React.useState(20);
+  const runs = useReportRuns(limit);
   const meetings = useMeetings();
   const people = useStakeholders();
   const authority = useAuthority();
@@ -82,7 +85,7 @@ export const ReportsView: React.FC = () => {
   const withdraw = useWithdrawReport();
 
   const mayApprove = actsAs(authority.data, ...APPROVERS);
-  const list = runs.data ?? [];
+  const list = runs.data?.rows ?? [];
   const [chosen, setChosen] = useState<string | null>(null);
   const active = list.find((r) => r.id === chosen) ?? list[0] ?? null;
 
@@ -270,6 +273,12 @@ export const ReportsView: React.FC = () => {
               </li>
             ))}
           </ul>
+          <MoreRows
+            shown={list.length}
+            total={runs.data?.total ?? 0}
+            onMore={() => setLimit(limit + PAGE)}
+            busy={runs.isFetching}
+          />
 
           {active && (
             <article className="rounded-xl border border-slate-200 bg-white p-4 print:border-0 print:p-0">

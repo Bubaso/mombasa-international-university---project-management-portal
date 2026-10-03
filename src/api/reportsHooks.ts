@@ -3,8 +3,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as curvesApi from './curves';
 import * as api from './reports';
 
-export const useReportRuns = () =>
-  useQuery({ queryKey: ['reportRuns'], queryFn: api.fetchReportRuns });
+export const useReportRuns = (limit = 20) =>
+  useQuery({ queryKey: ['reportRuns', limit], queryFn: () => api.fetchReportRuns(limit) });
 
 function invalidate(client: ReturnType<typeof useQueryClient>) {
   client.invalidateQueries({ queryKey: ['reportRuns'] });

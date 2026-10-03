@@ -46,6 +46,7 @@ import { CHANNELS, channelName } from '../../lib/comms';
 import { formatDate } from '../../lib/site';
 import { useAuth } from '../../context/AuthContext';
 import type { CommChannel, MessageReaction, ThreadKind } from '../../types';
+import { MoreRows } from '../ui/MoreRows';
 
 /**
  * The four tokens a reaction may be. Not free text: a reaction that can
@@ -61,7 +62,9 @@ const REACTION_WORDS: Record<MessageReaction['reaction'], { tr: string; en: stri
 export const ThreadPanel: React.FC = () => {
   const { language } = useApp();
   const tr = language === 'tr';
-  const threads = useThreads();
+  const PAGE = 25;
+  const [limit, setLimit] = React.useState(25);
+  const threads = useThreads(limit);
   const start = useStartThread();
   const post = usePostMessage();
   const close = useCloseThread();
@@ -85,7 +88,7 @@ export const ThreadPanel: React.FC = () => {
     firstMessage: '',
   });
 
-  const all = threads.data ?? [];
+  const all = threads.data?.rows ?? [];
   const shown = channel === 'all' ? all : all.filter((t) => t.channel === channel);
   const open = all.find((t) => t.id === openId) ?? shown[0] ?? null;
   const { user } = useAuth();
@@ -321,6 +324,12 @@ export const ThreadPanel: React.FC = () => {
               </li>
             ))}
           </ul>
+          <MoreRows
+            shown={all.length}
+            total={threads.data?.total ?? 0}
+            onMore={() => setLimit(limit + PAGE)}
+            busy={threads.isFetching}
+          />
 
           {open && (
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">

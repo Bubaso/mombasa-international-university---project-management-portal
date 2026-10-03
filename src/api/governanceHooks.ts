@@ -37,8 +37,8 @@ export const useProgrammes = () =>
 export const useObligationProgress = () =>
   useQuery({ queryKey: ['obligationProgress'], queryFn: api.fetchObligationProgress });
 
-export const useConflicts = () =>
-  useQuery({ queryKey: ['conflicts'], queryFn: api.fetchConflicts });
+export const useConflicts = (limit = 25) =>
+  useQuery({ queryKey: ['conflicts', limit], queryFn: () => api.fetchConflicts(limit) });
 
 export const useReadiness = () =>
   useQuery({ queryKey: ['readiness'], queryFn: api.fetchReadiness });

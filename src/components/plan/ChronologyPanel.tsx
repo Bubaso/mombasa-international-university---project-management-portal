@@ -18,8 +18,8 @@ import { Bilingual } from '../ui/Bilingual';
 import { BookMarked, FileCheck2, Plus, Quote } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
-import { useAddChronologyEntry, useChronology } from '../../api/planHooks';
-import { useDocuments } from '../../api/documentHooks';
+import { useAddChronologyEntry, useChronology, useUnevidencedCount } from '../../api/planHooks';
+import { useDocumentOptions } from '../../api/documentHooks';
 import { useAuthority } from '../../api/adminHooks';
 import { QueryStatus } from '../QueryStatus';
 import { ActionButton, Field, Pill, Select, TextInput, WriteError } from '../ui/Controls';
@@ -84,7 +84,8 @@ export const ChronologyPanel: React.FC = () => {
   const PAGE = 50;
   const [limit, setLimit] = useState(PAGE);
   const chronology = useChronology(limit);
-  const documents = useDocuments();
+  const unevidencedCount = useUnevidencedCount();
+  const documents = useDocumentOptions();
   const authority = useAuthority();
   const add = useAddChronologyEntry();
 
@@ -103,7 +104,8 @@ export const ChronologyPanel: React.FC = () => {
 
   const all = chronology.data?.rows ?? [];
   const rows = filter ? all.filter((e) => e.category === filter) : all;
-  const unevidenced = all.filter((e) => e.source === 'recorded' && e.documentId == null).length;
+  // Kütüğün tamamından; dilim büyüdükçe artan bir sayı, sayı değildir.
+  const unevidenced = unevidencedCount.data ?? 0;
   const earliest = all.length > 0 ? all[all.length - 1] : null;
 
   return (

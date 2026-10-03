@@ -20,6 +20,7 @@
  */
 import { supabase } from '../lib/supabase';
 import type {
+  Page,
   ApprovalThreshold,
   BudgetCategory,
   BudgetLine,
@@ -383,53 +384,133 @@ const TRANSACTION_COLUMNS =
   'document_id, verified, audited_at, audit_note, confidentiality, ' +
   'auditor:profiles!financial_transactions_audited_by_fkey(full_name)';
 
-export async function fetchTransactions(): Promise<FinancialTransaction[]> {
+/**
+ * Hareketler, yalnız seçicide gereken üç sütun.
+ *
+ * `fetchDocumentOptions` ile aynı gerekçe: kayıt başına yetki veren ekran bir
+ * seçici, ve kesilmiş bir seçici insanın var olan bir kaydı seçememesine yol
+ * açar. Maliyet üç sütuna indiriliyor.
+ *
+ * Bu seçicinin asıl ihtiyacı arama, dilim değil: yüzlerce hareket arasından
+ * birini açılır listeden bulmak zaten iyi bir deneyim değil. Defter o boya
+ * geldiğinde yapılacak iş arama kutusu; bugün eksiği söylemek yeterli.
+ */
+/**
+ * Denetim kuyruğunun sayıları ve denetlenmiş toplam — dilimden değil kütükten.
+ *
+ * İki sayı `head: true` ile geliyor: satır çekilmiyor, sayılıyor.
+ *
+ * **Toplam öyle gelemiyor** ve bu bir eksiklik değil, aritmetiğin kendisi: bir
+ * toplam bütün değerleri ister. Panoda bu satır dilimin içinden toplanıyordu —
+ * yani kırk hareketin toplamını kütüğün toplamı gibi gösteriyordu, ki yanlış
+ * **ve** yetkili görünen bir para rakamıdır; kesilmiş bir listeden kötüdür
+ * (CLAUDE.md §2). Burada maliyet en aza indiriliyor: yalnız bir sütun, ve
+ * yalnız denetlenmiş satırlar.
+ *
+ * Doğru çözüm sunucuda toplamak (bir görünüm ya da PostgREST'in toplama
+ * desteği). Defter o boya geldiğinde yapılacak iş bu.
+ */
+export async function fetchLedgerGaps(): Promise<{
+  unaudited: number;
+  undocumented: number;
+  auditedKes: number;
+}> {
+  const [audited, verified, amounts] = await Promise.all([
+    supabase
+      .from('financial_transactions')
+      .select('id', { count: 'exact', head: true })
+      .is('audited_at', null),
+    supabase
+      .from('financial_transactions')
+      .select('id', { count: 'exact', head: true })
+      .eq('verified', false),
+    supabase.from('financial_transactions').select('amount_kes').not('audited_at', 'is', null),
+  ]);
+  fail(audited.error);
+  fail(verified.error);
+  fail(amounts.error);
+  const auditedKes = ((amounts.data ?? []) as { amount_kes: number | null }[]).reduce(
+    (sum, row) => sum + Number(row.amount_kes ?? 0),
+    0,
+  );
+  return {
+    unaudited: audited.count ?? 0,
+    undocumented: verified.count ?? 0,
+    auditedKes,
+  };
+}
+
+export async function fetchTransactionOptions(): Promise<
+  { id: string; referenceNo: string; description: string }[]
+> {
   const { data, error } = await supabase
     .from('financial_transactions')
-    .select(TRANSACTION_COLUMNS)
+    .select('id, reference_no, description')
     .order('date', { ascending: false });
   fail(error);
-  return (
-    (data ?? []) as unknown as {
-      id: string;
-      reference_no: string;
-      date: string;
-      category: FinancialTransaction['category'];
-      description: string;
-      payee: string;
-      amount: number;
-      currency: CurrencyCode;
-      fx_rate_to_kes: number;
-      amount_kes: number;
-      budget_line_id: string | null;
-      payment_voucher_id: string | null;
-      document_id: string | null;
-      verified: boolean;
-      audited_at: string | null;
-      audit_note: string | null;
-      confidentiality: FinancialTransaction['confidentiality'];
-      auditor: NamedRef | NamedRef[] | null;
-    }[]
-  ).map((row) => ({
-    id: row.id,
-    referenceNo: row.reference_no,
-    date: row.date,
-    category: row.category,
-    description: row.description,
-    payee: row.payee,
-    amount: num(row.amount),
-    currency: row.currency,
-    fxRateToKes: num(row.fx_rate_to_kes),
-    amountKes: num(row.amount_kes),
-    budgetLineId: row.budget_line_id,
-    paymentVoucherId: row.payment_voucher_id,
-    documentId: row.document_id,
-    verified: row.verified,
-    auditedAt: row.audited_at,
-    auditedByName: label(row.auditor),
-    auditNote: row.audit_note,
-    confidentiality: row.confidentiality,
-  }));
+  return ((data ?? []) as { id: string; reference_no: string; description: string }[]).map(
+    (row) => ({
+      id: row.id,
+      referenceNo: row.reference_no,
+      description: row.description,
+    }),
+  );
+}
+
+export async function fetchTransactions(
+  limit = 40,
+  offset = 0,
+): Promise<Page<FinancialTransaction>> {
+  const { data, error, count } = await supabase
+    .from('financial_transactions')
+    .select(TRANSACTION_COLUMNS, { count: 'exact' })
+    .order('date', { ascending: false })
+    .range(offset, offset + limit - 1);
+  fail(error);
+  return {
+    rows: (
+      (data ?? []) as unknown as {
+        id: string;
+        reference_no: string;
+        date: string;
+        category: FinancialTransaction['category'];
+        description: string;
+        payee: string;
+        amount: number;
+        currency: CurrencyCode;
+        fx_rate_to_kes: number;
+        amount_kes: number;
+        budget_line_id: string | null;
+        payment_voucher_id: string | null;
+        document_id: string | null;
+        verified: boolean;
+        audited_at: string | null;
+        audit_note: string | null;
+        confidentiality: FinancialTransaction['confidentiality'];
+        auditor: NamedRef | NamedRef[] | null;
+      }[]
+    ).map((row) => ({
+      id: row.id,
+      referenceNo: row.reference_no,
+      date: row.date,
+      category: row.category,
+      description: row.description,
+      payee: row.payee,
+      amount: num(row.amount),
+      currency: row.currency,
+      fxRateToKes: num(row.fx_rate_to_kes),
+      amountKes: num(row.amount_kes),
+      budgetLineId: row.budget_line_id,
+      paymentVoucherId: row.payment_voucher_id,
+      documentId: row.document_id,
+      verified: row.verified,
+      auditedAt: row.audited_at,
+      auditedByName: label(row.auditor),
+      auditNote: row.audit_note,
+      confidentiality: row.confidentiality,
+    })),
+    total: count ?? 0,
+  };
 }
 
 export async function recordTransaction(input: {

@@ -2,8 +2,16 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslatingInvalidator } from './translatingMutation';
 import * as documents from './documents';
 
-export const useDocuments = () =>
-  useQuery({ queryKey: ['documents'], queryFn: documents.fetchDocuments });
+export const useDocuments = (limit = 40) =>
+  useQuery({ queryKey: ['documents', limit], queryFn: () => documents.fetchDocuments(limit) });
+
+/** Özeti hesaplanmamış belge sayısı, kasanın tamamından. */
+export const useUndigestedCount = () =>
+  useQuery({ queryKey: ['undigestedDocuments'], queryFn: documents.countUndigestedDocuments });
+
+/** Seçiciler için: her belgenin kimliği ve başlığı, kesilmeden. */
+export const useDocumentOptions = () =>
+  useQuery({ queryKey: ['documentOptions'], queryFn: documents.fetchDocumentOptions });
 
 export const useCurrentVersions = () =>
   useQuery({ queryKey: ['documentVersionsAll'], queryFn: documents.fetchCurrentVersions });

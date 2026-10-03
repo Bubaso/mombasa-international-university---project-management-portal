@@ -243,6 +243,17 @@ export async function takeBaseline(name: string, note?: string | null): Promise<
 // The chronology (M15-07)
 // ---------------------------------------------------------------------------
 
+/** Kaydedilmiş ama belgesi olmayan olay sayısı — kütüğün tamamından. */
+export async function countUnevidencedEvents(): Promise<number> {
+  const { count, error } = await supabase
+    .from('project_chronology')
+    .select('id', { count: 'exact', head: true })
+    .eq('source', 'recorded')
+    .is('document_id', null);
+  fail(error);
+  return count ?? 0;
+}
+
 export async function fetchChronology(limit = 50, offset = 0): Promise<Page<ChronologyEvent>> {
   const { data, error, count } = await supabase
     .from('project_chronology')

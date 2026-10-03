@@ -67,6 +67,9 @@ for (const file of readdirSync(apiDir).filter((f) => f.endsWith('.ts'))) {
       bounded: text_body.includes('.limit(') || text_body.includes('.range('),
       counted: text_body.includes("count: 'exact'"),
       paged: /Promise<Page</.test(text_body),
+      // Yalnız sayan okuma: `head: true` ile satır çekilmiyor. Böyle bir
+      // okumaya sınır sormak anlamsız — zaten hiçbir satır taşımıyor.
+      headOnly: text_body.includes('head: true') && !/\.select\((?![^)]*head)/.test(text_body),
     });
   }
 }
@@ -104,10 +107,23 @@ for (const read of bounded) {
 // ki bu sessizce olmasından iyidir (0047'nin dersi).
 
 // Ölçüm, 3 Ekim 2026. İlk yazdığımda 125 demiştim ve ölçüm 124 dedi; sayı
-// ölçümden gelir, tahminden gelmez.
-const UNBOUNDED_TODAY = 124;
+// ölçümden gelir, tahminden gelmez. İkinci partiden sonra 118: sekiz okuma
+// dilime çevrildi, iki tanesi de yeni eklendi (`fetchDocumentOptions`,
+// `fetchTransactionOptions`) — ikisi kasıtlı olarak sınırsız, çünkü bir
+// **seçici** kesilemez: var olan bir kaydı seçilemez kılmak, listeyi
+// kesmekten kötüdür.
+// İkinci partiden sonra 120. Yol: 124 → sekiz okuma dilime çevrildi (116) →
+// dört yeni okuma satır çekiyor ve kasıtlı olarak sınırsız: iki seçici
+// (`fetchDocumentOptions`, `fetchTransactionOptions` — kesilmiş bir seçici,
+// var olan bir kaydı seçilemez kılar), bir toplam (`fetchLedgerGaps`'in
+// denetlenmiş tutarı — bir toplam bütün değerleri ister) ve bir bütünlük
+// sayımı (`countUndigestedDocuments` — birleştirmeyi doğrulayamadığım için iki
+// ucuz okuma). Dördünün gerekçesi kendi dosyasında yazılı.
+const UNBOUNDED_TODAY = 120;
 
-const unbounded = reads.filter((r) => !r.bounded);
+// Sayan okumalar sayılmıyor: sorumuz "kaç okuma her satırı çekiyor", ve
+// `head: true` olan hiç satır çekmiyor.
+const unbounded = reads.filter((r) => !r.bounded && !r.headOnly);
 check(
   unbounded.length === UNBOUNDED_TODAY,
   'the number of reads that fetch every row is the number this test records',
@@ -115,6 +131,53 @@ check(
     ? `${unbounded.length}`
     : `${unbounded.length} now, ${UNBOUNDED_TODAY} recorded — decide whether the new read needs a bound, then move the number`,
 );
+
+// ------------------------------------------- dilimin içinden sayan yer yok
+//
+// Bu turun kendi hatası, ve bedeli en pahalı olanı: bir okumayı dilime
+// çevirmek, o dilim üzerinde **sayan** her yeri sessizce yanlış yapıyor.
+// İkinci partide yedi yerde oldu — kasa defterinde belgesiz hareket sayısı,
+// panoda denetim kuyruğu ve **denetlenmiş toplam** (bir para rakamı),
+// bildirim kutusunda okunmamış sayısı, yazışmada teyit edilmemiş giden,
+// kronolojide belgesiz kayıt, kasada özeti olmayan belge.
+//
+// Kesilmiş bir **liste** dürüst olabilir: "412 kayıttan 40 tanesi" doğru bir
+// cümle. Kesilmiş bir **sayı** olamaz, çünkü kendisinin kesildiğini
+// söylemiyor — ve küçük, kesin, yetkili görünür. Bir para toplamında bu,
+// listeyi kesmekten kötüdür (CLAUDE.md §2).
+//
+// Kural: bir ekran `X.data?.rows` üzerinde sayı türetmiyor. Saymak isteyen
+// sunucudan sayı ister (`head: true`), ya da toplamı okur.
+
+const screens = [];
+const walk = (dir) => {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) walk(path);
+    else if (/\.tsx$/.test(entry.name)) screens.push(path);
+  }
+};
+walk(join(root, 'src'));
+check(screens.length > 90, 'the screens are there to read', `${screens.length}`);
+
+/** `rows` adlı bir dilimden türetilmiş sayı. İki satıra sarılmış olabilir. */
+const COUNTS_A_SLICE =
+  /(\w+)\.data\?\.rows\s*\?\?\s*\[\]\s*\)?\s*\.(?:filter|reduce)\([\s\S]{0,200}?\)\s*(?:\.length|,\s*0\s*\))/;
+
+let counted = 0;
+for (const file of screens) {
+  const text = readFileSync(file, 'utf8');
+  const m = COUNTS_A_SLICE.exec(text);
+  if (!m) continue;
+  counted++;
+  const line = text.slice(0, m.index).split('\n').length;
+  check(
+    false,
+    `${file.slice(file.indexOf('src/'))}:${line} does not count inside a slice`,
+    'it derives a number from the rows it happened to fetch — ask the server for the count',
+  );
+}
+check(counted === 0, 'no screen derives a number from the slice it fetched', `${counted} did`);
 
 console.log('');
 if (failures > 0) {

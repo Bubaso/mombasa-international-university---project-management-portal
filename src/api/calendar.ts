@@ -24,6 +24,20 @@ interface CalendarRow {
   confidentiality: Confidentiality;
 }
 
+/**
+ * Takvim: her kütükten doğan tarihler bir arada.
+ *
+ * **Bu okuma kasıtlı olarak sınırsız, ve bir satır sayısıyla sınırlanamaz.**
+ * Takvim zamanla gezilen bir şey: ekran ayları ve türleri kendi içinde
+ * grupluyor. Satır sayısıyla kesilirse ekim ayı on iki kayıt taşıdığı hâlde
+ * üç kayıt gösterir — yani yavaş olmak yerine **ayın hakkında yanlış** bir şey
+ * söylemiş olurduk. `fetchCurrentVersions` ile aynı aile: dilimlemek,
+ * dilimlenmemiş hâlinden daha yanlış.
+ *
+ * Doğru sınır burada satır değil **tarih penceresi** (`due_on` aralığı), ve o
+ * dört ekranın kendi süzme mantığına dokunmayı gerektiriyor. Takvim o kadar
+ * büyüdüğünde yapılacak iş bu; bugün 19 ekranın hiçbirinde kırılmıyor.
+ */
 export async function fetchCalendar(): Promise<CalendarEntry[]> {
   const { data, error } = await supabase
     .from('project_calendar')

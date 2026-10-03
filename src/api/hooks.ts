@@ -20,11 +20,11 @@ export const useConstructionBlocks = () =>
  * with no version count — which is the difference between "nothing has been
  * filed against this" and "we did not ask".
  */
-export const useDocumentVault = () =>
-  useQuery({ queryKey: ['documents'], queryFn: documents.fetchDocuments });
+export const useDocumentVault = (limit = 40) =>
+  useQuery({ queryKey: ['documents', limit], queryFn: () => documents.fetchDocuments(limit) });
 /** The same read the finance screens use; 0015 changed the ledger's shape. */
-export const useTransactions = () =>
-  useQuery({ queryKey: ['transactions'], queryFn: moneyApi.fetchTransactions });
+export const useTransactions = (limit = 40) =>
+  useQuery({ queryKey: ['transactions', limit], queryFn: () => moneyApi.fetchTransactions(limit) });
 /* useCommunicationThreads, useCreateThread and useAddThreadMessage are gone.
  * They called three functions that could not work: the first selected a
  * `messages` JSONB column 0002 replaced with rows, and the other two read

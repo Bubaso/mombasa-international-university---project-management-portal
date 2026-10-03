@@ -262,6 +262,13 @@ interface CommitmentRow {
   kept_percent: number | null;
 }
 
+/**
+ * Paydaş başına taahhüt sayısı: verilen, tutulan, bozulan, bekleyen.
+ *
+ * Büyüyen bir kütük değil — `stakeholder_commitments` paydaş başına **bir**
+ * satır veren bir toplamdır, yani paydaş sayısı kadar büyüyor. Sabit listelerle
+ * aynı sorunun parçası (üçüncü dalga), tarihçelerle değil.
+ */
 export async function fetchCommitmentRecords(): Promise<CommitmentRecord[]> {
   const { data, error } = await supabase.from('stakeholder_commitments').select('*');
   fail(error);

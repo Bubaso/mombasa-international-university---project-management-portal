@@ -15,7 +15,7 @@ import { Bilingual } from '../ui/Bilingual';
 import { CalendarClock, Camera, ChevronDown, ChevronUp, Plus } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import * as site from '../../api/siteHooks';
-import { useDocuments } from '../../api/documentHooks';
+import { useDocumentOptions } from '../../api/documentHooks';
 import { EmptyState } from '../EmptyState';
 import { QueryStatus } from '../QueryStatus';
 import { ActionButton, Field, Pill, Section, Select, TextInput, WriteError } from '../ui/Controls';
@@ -292,7 +292,7 @@ const TaskDetail: React.FC<{ task: SiteTask; canReport: boolean }> = ({ task, ca
 const ReportForm: React.FC<{ taskId: string; onDone: () => void }> = ({ taskId, onDone }) => {
   const { language } = useApp();
   const tr = language === 'tr';
-  const documents = useDocuments();
+  const documents = useDocumentOptions();
   const report = site.useReportProgress();
 
   const [documentId, setDocumentId] = useState('');

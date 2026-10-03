@@ -2,6 +2,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslatingInvalidator } from './translatingMutation';
 import * as money from './money';
 
+/** Denetim kuyruğunun sayıları, kütüğün tamamından. */
+export const useLedgerGaps = () =>
+  useQuery({ queryKey: ['ledgerGaps'], queryFn: money.fetchLedgerGaps });
+
 export const useBudgetCategories = () =>
   useQuery({ queryKey: ['budgetCategories'], queryFn: money.fetchCategories });
 
@@ -26,7 +30,12 @@ export const useApprovals = (voucherId: string | null) =>
     enabled: voucherId != null,
   });
 
-export const useLedger = () => useQuery({ queryKey: ['ledger'], queryFn: money.fetchTransactions });
+/** Seçiciler için: kesilmeden, üç sütun. */
+export const useTransactionOptions = () =>
+  useQuery({ queryKey: ['transactionOptions'], queryFn: money.fetchTransactionOptions });
+
+export const useLedger = (limit = 40) =>
+  useQuery({ queryKey: ['ledger', limit], queryFn: () => money.fetchTransactions(limit) });
 
 export const useDonations = () =>
   useQuery({ queryKey: ['donations'], queryFn: money.fetchDonations });

@@ -68,23 +68,78 @@ const DOCUMENT_COLUMNS =
   'current_version_id, ' +
   'versions:document_versions!document_versions_document_id_fkey(count)';
 
-export async function fetchDocuments(): Promise<DocumentItem[]> {
-  const { data, error } = await supabase
-    .from('document_vault')
-    .select(DOCUMENT_COLUMNS)
-    .order('title');
+/**
+ * Kasadaki belgeler, yalnız kimliği ve başlığı — bir seçici için.
+ *
+ * Neden ayrı bir okuma: `fetchDocuments` artık bir dilim döndürüyor ve bu
+ * doğru, çünkü kasa listesi bir ekran. Ama **seçici bir ekran değil.** Kırk
+ * belge gösterip kırk birincisini seçilemez kılmak, listeyi kesmekten daha
+ * kötü: insan kaydı kasada olduğu hâlde bağlayamaz, ve ekran ona sebebini
+ * söylemez.
+ *
+ * Yani seçici her belgeyi görmek zorunda. Maliyeti iki sütuna indiriliyor
+ * (`id, title`) — kasa satırının tamamı değil. Kasa gerçekten büyüdüğünde
+ * doğru cevap sunucu tarafında arama (alım kuyruğundaki `ilike` kalıbı); o gün
+ * geldiğinde burası o aramaya çevrilecek, dilime değil.
+ */
+/**
+ * Özeti hesaplanmamış belge sayısı — kasanın tamamından.
+ *
+ * Bu rakam bir bütünlük iddiası: kaç belgenin yürürlükteki sürümünün SHA-256
+ * özeti **yok**. Faz 0'da ekrandan kaldırılan şeylerden biri okunmamış
+ * dosyaların üzerindeki "SHA-256 verified" rozetiydi; onun tersi olan bu sayı
+ * dilimin içinden sayılırsa aynı kusuru başka yönden yapar — az gösterir.
+ *
+ * Neden tek bir sunucu sorgusu değil: cevap bir birleştirme istiyor
+ * (`document_vault.current_version_id` → `document_versions.sha256`) ve
+ * PostgREST'in gömülü süzme sözdizimini buradan **doğrulayamıyorum** —
+ * doğrulayamadığım bir sözdizimini bütünlük rakamının altına koymak, rakamın
+ * kendisinden daha kötü olurdu. Onun yerine iki ucuz okuma: kasadan tek sütun,
+ * sürümlerden özeti olmayanlar (küçük bir küme). Aritmetik tam.
+ *
+ * Kasa gerçekten büyüdüğünde doğru çözüm, yürürlükteki özeti `document_vault`
+ * görünümüne katlamak — `fetchCurrentVersions`'ın da beklediği aynı iş.
+ */
+export async function countUndigestedDocuments(): Promise<number> {
+  const [vault, undigested] = await Promise.all([
+    supabase.from('document_vault').select('current_version_id'),
+    supabase.from('document_versions').select('id').is('sha256', null),
+  ]);
+  fail(vault.error);
+  fail(undigested.error);
+  const withoutDigest = new Set(((undigested.data ?? []) as { id: string }[]).map((row) => row.id));
+  return ((vault.data ?? []) as { current_version_id: string | null }[]).filter(
+    (row) => row.current_version_id != null && withoutDigest.has(row.current_version_id),
+  ).length;
+}
+
+export async function fetchDocumentOptions(): Promise<{ id: string; title: string }[]> {
+  const { data, error } = await supabase.from('document_vault').select('id, title').order('title');
   fail(error);
-  return ((data ?? []) as unknown as DocumentRow[]).map((row) => ({
-    id: row.id,
-    title: row.title,
-    category: row.category,
-    status: row.status,
-    descriptionEn: row.description_en,
-    descriptionTr: row.description_tr,
-    confidentiality: row.confidentiality,
-    currentVersionId: row.current_version_id,
-    versionCount: row.versions?.[0]?.count ?? 0,
-  }));
+  return (data ?? []) as { id: string; title: string }[];
+}
+
+export async function fetchDocuments(limit = 40, offset = 0): Promise<Page<DocumentItem>> {
+  const { data, error, count } = await supabase
+    .from('document_vault')
+    .select(DOCUMENT_COLUMNS, { count: 'exact' })
+    .order('title')
+    .range(offset, offset + limit - 1);
+  fail(error);
+  return {
+    rows: ((data ?? []) as unknown as DocumentRow[]).map((row) => ({
+      id: row.id,
+      title: row.title,
+      category: row.category,
+      status: row.status,
+      descriptionEn: row.description_en,
+      descriptionTr: row.description_tr,
+      confidentiality: row.confidentiality,
+      currentVersionId: row.current_version_id,
+      versionCount: row.versions?.[0]?.count ?? 0,
+    })),
+    total: count ?? 0,
+  };
 }
 
 export async function createDocument(input: {
@@ -171,6 +226,19 @@ export async function fetchVersions(documentId: string): Promise<DocumentVersion
 }
 
 /** Every version in force, for listing documents without a query each. */
+/**
+ * Her belgenin yürürlükteki sürümü.
+ *
+ * **Bu okuma kasıtlı olarak sınırsız.** Kütük turunun ikinci sorusu "bir liste
+ * sessizce kesiyor mu" idi; burada kesmek daha kötü olurdu: bu bir liste değil,
+ * kasa listesinin yanına konulan bir arama tablosu. Dilimlenirse dilimin
+ * dışında kalan belgeler, sürümü olduğu hâlde "sürüm yok" görünür — yani
+ * yavaş olmak yerine **yanlış** söylemiş oluruz.
+ *
+ * Doğru çözüm sınır koymak değil, yürürlükteki sürümü `document_vault`
+ * görünümünün içine katlamak; o bir migration işi ve kasa büyüdüğünde
+ * yapılacak. Bugün belge sayısı bunu gerektirmiyor.
+ */
 export async function fetchCurrentVersions(): Promise<DocumentVersion[]> {
   const { data, error } = await supabase.from('document_versions').select(VERSION_COLUMNS);
   fail(error);

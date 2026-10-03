@@ -23,11 +23,14 @@ import { ActionButton, Field, Pill, Select, TextInput, WriteError } from '../ui/
 import { CHANNELS, channelName } from '../../lib/comms';
 import { formatDate } from '../../lib/site';
 import type { CommChannel } from '../../types';
+import { MoreRows } from '../ui/MoreRows';
 
 export const ReachPanel: React.FC = () => {
   const { language } = useApp();
   const tr = language === 'tr';
-  const reach = useAnnouncementReach();
+  const PAGE = 20;
+  const [limit, setLimit] = React.useState(20);
+  const reach = useAnnouncementReach(limit);
   const members = useChannelMembers();
   const people = useProfiles();
   const addMember = useAddChannelMember();
@@ -37,7 +40,7 @@ export const ReachPanel: React.FC = () => {
   const [profileId, setProfileId] = useState('');
   const [note, setNote] = useState('');
 
-  const announcements = reach.data ?? [];
+  const announcements = reach.data?.rows ?? [];
   const rows = members.data ?? [];
 
   // The reach view is visible only to those who may announce, so an empty
@@ -203,6 +206,12 @@ export const ReachPanel: React.FC = () => {
           ))}
         </ul>
       )}
+      <MoreRows
+        shown={(reach.data?.rows ?? []).length}
+        total={reach.data?.total ?? 0}
+        onMore={() => setLimit(limit + PAGE)}
+        busy={reach.isFetching}
+      />
     </section>
   );
 };

@@ -14,8 +14,13 @@
 import React, { useState } from 'react';
 import { FileCheck2, Mail, MailQuestion, Plus } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { useAddCorrespondence, useConfirmDelivery, useCorrespondence } from '../../api/commsHooks';
-import { useDocuments } from '../../api/documentHooks';
+import {
+  useAddCorrespondence,
+  useConfirmDelivery,
+  useCorrespondence,
+  useUnconfirmedOutgoing,
+} from '../../api/commsHooks';
+import { useDocumentOptions } from '../../api/documentHooks';
 import { useAuthority } from '../../api/adminHooks';
 import { QueryStatus } from '../QueryStatus';
 import {
@@ -34,6 +39,7 @@ import { ROUTES, routeName } from '../../lib/comms';
 import { formatDate } from '../../lib/site';
 import { todayIso } from '../../lib/date';
 import type { CorrespondenceEntry, UserRole } from '../../types';
+import { MoreRows } from '../ui/MoreRows';
 
 /** Mirrors app.can_keep_correspondence(). */
 const KEEPERS: UserRole[] = ['admin', 'project_director', 'trustee', 'board_director'];
@@ -41,8 +47,11 @@ const KEEPERS: UserRole[] = ['admin', 'project_director', 'trustee', 'board_dire
 export const CorrespondencePanel: React.FC = () => {
   const { language } = useApp();
   const tr = language === 'tr';
-  const letters = useCorrespondence();
-  const documents = useDocuments();
+  const PAGE = 25;
+  const [limit, setLimit] = React.useState(25);
+  const letters = useCorrespondence(limit);
+  const unconfirmedCount = useUnconfirmedOutgoing();
+  const documents = useDocumentOptions();
   const authority = useAuthority();
   const add = useAddCorrespondence();
   const confirm = useConfirmDelivery();
@@ -70,10 +79,9 @@ export const CorrespondencePanel: React.FC = () => {
     documentId: '',
   });
 
-  const rows = letters.data ?? [];
-  const unconfirmed = rows.filter(
-    (r) => r.direction === 'outgoing' && r.deliveryConfirmedOn == null,
-  ).length;
+  const rows = letters.data?.rows ?? [];
+  // Kütüğün tamamından sayılıyor; dilimin içinden saymak az gösterirdi.
+  const unconfirmed = unconfirmedCount.data ?? 0;
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-4">
@@ -336,6 +344,12 @@ export const CorrespondencePanel: React.FC = () => {
           ))}
         </TableFrame>
       )}
+      <MoreRows
+        shown={(letters.data?.rows ?? []).length}
+        total={letters.data?.total ?? 0}
+        onMore={() => setLimit(limit + PAGE)}
+        busy={letters.isFetching}
+      />
       <WriteError error={confirm.error} />
     </section>
   );

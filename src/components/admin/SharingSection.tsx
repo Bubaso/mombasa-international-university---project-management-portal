@@ -4,6 +4,8 @@ import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import * as domain from '../../api/hooks';
 import * as access from '../../api/adminHooks';
+import * as vault from '../../api/documentHooks';
+import * as ledger from '../../api/moneyHooks';
 import { roleLabel } from '../../lib/roles';
 import { isExpired } from '../../lib/authority';
 import {
@@ -66,8 +68,12 @@ export const SharingSection: React.FC<{ canManage: boolean }> = ({ canManage }) 
 
   const cases = domain.useLegalCases();
   const blocks = domain.useConstructionBlocks();
-  const documents = domain.useDocumentVault();
-  const transactions = domain.useTransactions();
+  // Seçici okumaları: bu ekran kayıt başına yetki veriyor, yani listelenen her
+  // kaydın seçilebilir olması gerekiyor. Kasa ve defter listesinin kendi
+  // ekranları dilimli; buradaki seçici kesilemez, çünkü kesilen kayıt var
+  // olduğu hâlde paylaşılamaz hâle gelir ve ekran sebebini söylemez.
+  const documents = vault.useDocumentOptions();
+  const transactions = ledger.useTransactionOptions();
 
   const [entityType, setEntityType] = useState<EntityType>('legal_cases');
   const [entityId, setEntityId] = useState('');
@@ -83,10 +89,7 @@ export const SharingSection: React.FC<{ canManage: boolean }> = ({ canManage }) 
       case 'construction_blocks':
         return (blocks.data ?? []).map((b) => ({ id: b.id, label: `${b.code} · ${b.name}` }));
       case 'document_vault':
-        return (documents.data ?? []).map((d) => ({
-          id: d.id,
-          label: d.versionCount > 1 ? `${d.title} (${d.versionCount})` : d.title,
-        }));
+        return (documents.data ?? []).map((d) => ({ id: d.id, label: d.title }));
       case 'financial_transactions':
         return (transactions.data ?? []).map((t) => ({
           id: t.id,

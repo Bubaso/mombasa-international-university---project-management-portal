@@ -2,8 +2,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as api from './candidates';
 
-export const useActionCandidates = () =>
-  useQuery({ queryKey: ['actionCandidates'], queryFn: api.fetchCandidates });
+/** Aksiyon adaylarının durum başına sayısı. */
+export const useCandidateCounts = () =>
+  useQuery({ queryKey: ['actionCandidateCounts'], queryFn: api.fetchCandidateCounts });
+
+export const useActionCandidates = (state: 'pending' | 'settled', limit = 25) =>
+  useQuery({
+    queryKey: ['actionCandidates', state, limit],
+    queryFn: () => api.fetchCandidates(state, limit),
+  });
 
 function settled(client: ReturnType<typeof useQueryClient>) {
   client.invalidateQueries({ queryKey: ['actionCandidates'] });

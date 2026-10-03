@@ -22,6 +22,7 @@ import { CircleCheck, CircleSlash, Inbox, TriangleAlert } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import {
   useActionCandidates,
+  useCandidateCounts,
   useAdoptCandidate,
   useDismissCandidate,
 } from '../../api/candidateHooks';
@@ -31,6 +32,7 @@ import { QueryStatus } from '../QueryStatus';
 import { ActionButton, Field, Pill, Select, TextInput, WriteError } from '../ui/Controls';
 import { formatDate } from '../../lib/site';
 import type { ActionCandidate } from '../../types';
+import { MoreRows } from '../ui/MoreRows';
 
 /** The owner picker: one list, two kinds of owner, exactly one choice. */
 const OWNER_SPLIT = '::';
@@ -38,7 +40,11 @@ const OWNER_SPLIT = '::';
 export const TriagePanel: React.FC = () => {
   const { language } = useApp();
   const tr = language === 'tr';
-  const candidates = useActionCandidates();
+  const PAGE = 25;
+  const [limit, setLimit] = React.useState(25);
+  const [filter, setFilter] = useState<'pending' | 'settled'>('pending');
+  const candidates = useActionCandidates(filter, limit);
+  const counts = useCandidateCounts();
   const profiles = useProfiles();
   const stakeholders = useStakeholders();
   const adopt = useAdoptCandidate();
@@ -50,14 +56,18 @@ export const TriagePanel: React.FC = () => {
   const [due, setDue] = useState('');
   const [priority, setPriority] = useState<'low' | 'normal' | 'high' | 'urgent'>('normal');
   const [reason, setReason] = useState('');
-  const [filter, setFilter] = useState<'pending' | 'settled'>('pending');
 
-  const all = candidates.data ?? [];
-  const pending = all.filter((c) => c.state === 'pending');
-  const settled = all.filter((c) => c.state !== 'pending');
-  const shown = filter === 'pending' ? pending : settled;
+  // Çekilen dilim zaten seçilen sekmenin dilimi: süzgeç sunucuda. Sekme
+  // sayıları da dilimden değil kütükten geliyor, yoksa "2 karar bekliyor"
+  // yazarken yirmi tane bekliyor olabilirdi.
+  const shown = candidates.data?.rows ?? [];
+  const pendingCount = counts.data?.pending ?? 0;
+  const settledCount = counts.data?.settled ?? 0;
 
-  const ready = pending.filter((c) => c.namesAnOwner && c.namesADate).length;
+  // "Hazır" olanlar: bir kişi ve bir tarih adıyla gelmiş adaylar. Bu sayı
+  // gösterilen dilim hakkında ve öyle yazılıyor — kütüğün tamamı için
+  // `action_triage` iki alanı birden süzen bir sayım istiyor ve o henüz yok.
+  const readyShown = shown.filter((c) => c.namesAnOwner && c.namesADate).length;
 
   // Grouped by the meeting they came out of, because that is the context a
   // person needs to decide who owns one.
@@ -117,16 +127,18 @@ export const TriagePanel: React.FC = () => {
         <div className="flex flex-wrap items-center gap-1.5">
           <Pill
             className={
-              pending.length > 0
+              pendingCount > 0
                 ? 'border-amber-300 bg-amber-50 text-amber-900'
                 : 'border-emerald-300 bg-emerald-50 text-emerald-900'
             }
           >
-            {tr ? `${pending.length} karar bekliyor` : `${pending.length} awaiting a decision`}
+            {tr ? `${pendingCount} karar bekliyor` : `${pendingCount} awaiting a decision`}
           </Pill>
-          {ready > 0 && (
+          {readyShown > 0 && (
             <Pill className="border-sky-300 bg-sky-50 text-sky-900">
-              {tr ? `${ready} tanesi hazır` : `${ready} arrive ready`}
+              {tr
+                ? `gösterilenlerden ${readyShown} tanesi hazır`
+                : `${readyShown} of those shown arrive ready`}
             </Pill>
           )}
           <button
@@ -136,11 +148,11 @@ export const TriagePanel: React.FC = () => {
           >
             {filter === 'pending'
               ? tr
-                ? `karara bağlananlar (${settled.length})`
-                : `settled (${settled.length})`
+                ? `karara bağlananlar (${settledCount})`
+                : `settled (${settledCount})`
               : tr
-                ? `bekleyenler (${pending.length})`
-                : `pending (${pending.length})`}
+                ? `bekleyenler (${pendingCount})`
+                : `pending (${pendingCount})`}
           </button>
         </div>
       </header>
@@ -351,6 +363,12 @@ export const TriagePanel: React.FC = () => {
                   </li>
                 ))}
               </ul>
+              <MoreRows
+                shown={(candidates.data?.rows ?? []).length}
+                total={candidates.data?.total ?? 0}
+                onMore={() => setLimit(limit + PAGE)}
+                busy={candidates.isFetching}
+              />
             </div>
           ))}
         </div>

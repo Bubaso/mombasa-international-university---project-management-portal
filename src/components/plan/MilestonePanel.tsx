@@ -27,7 +27,7 @@ import {
   usePhases,
   usePlanMilestones,
 } from '../../api/planHooks';
-import { useDocuments } from '../../api/documentHooks';
+import { useDocumentOptions } from '../../api/documentHooks';
 import { useAuthority } from '../../api/adminHooks';
 import { QueryStatus } from '../QueryStatus';
 import { ActionButton, Field, Pill, Select, TextInput, WriteError } from '../ui/Controls';
@@ -102,7 +102,7 @@ export const MilestonePanel: React.FC = () => {
   const tr = language === 'tr';
   const milestones = usePlanMilestones();
   const phases = usePhases();
-  const documents = useDocuments();
+  const documents = useDocumentOptions();
   const authority = useAuthority();
 
   const add = useAddMilestone();
