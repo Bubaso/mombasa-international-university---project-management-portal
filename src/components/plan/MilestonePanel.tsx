@@ -34,9 +34,10 @@ import { ActionButton, Field, Pill, Select, TextInput, WriteError } from '../ui/
 import { actsAs } from '../../lib/authority';
 import { formatDate } from '../../lib/site';
 import { todayIso } from '../../lib/date';
-import type { MilestoneProgress, UserRole } from '../../types';
+import type { Milestone, MilestoneProgress, UserRole } from '../../types';
 import { toneFor, wordFor } from '../../lib/labels';
-import { isSettled } from '../../lib/registerStates';
+import { isSettled, splitBySettled } from '../../lib/registerStates';
+import { SettledSection } from '../ui/SettledSection';
 
 /** Mirrors app.can_keep_plan(). */
 const PLAN_KEEPERS: UserRole[] = [
@@ -66,6 +67,20 @@ const STATE: Record<MilestoneProgress, { tr: string; en: string; tone: string }>
     tone: 'border-slate-300 bg-white text-slate-500',
   },
 };
+
+/**
+ * Hedef tarihi geçmiş ve hâlâ birinin işi olan.
+ *
+ * İlk hâli bunu `m.state === 'planned' || m.state === 'in_progress'` ile
+ * soruyordu, iki yerde. Soru artık hükme bağlı (`lib/registerStates`):
+ * ulaşılmış ya da bırakılmış taş tarihini geçmiş sayılmaz, geri kalanı sayılır.
+ * `missed` de sayılıyor ve bu kasıtlı — kaçırılmış bir taş kapanmış bir kayıt
+ * değil, ya yeni bir tarih ya bir karar isteyen iştir.
+ */
+const pastTarget = (m: Milestone) =>
+  m.targetOn != null &&
+  new Date(m.targetOn) < new Date() &&
+  !isSettled('milestone_progress', m.state);
 
 /** How a slip reads. The sign matters and the null matters more. */
 function slipText(slip: number | null, tr: boolean): { text: string; tone: string } | null {
@@ -111,14 +126,198 @@ export const MilestonePanel: React.FC = () => {
   const [reason, setReason] = useState('');
 
   const rows = milestones.data ?? [];
-  const overdue = rows.filter(
-    (m) =>
-      m.targetOn != null &&
-      new Date(m.targetOn) < new Date() &&
-      (m.state === 'planned' || m.state === 'in_progress'),
-  ).length;
-  const slipped = rows.filter((m) => (m.slipDays ?? 0) > 0);
-  const worstSlip = slipped.reduce((worst, m) => Math.max(worst, m.slipDays ?? 0), 0);
+  // Ulaşılmış ya da bırakılmış taş geri çekiliyor; kaçırılmış olan kalıyor,
+  // çünkü kaçırılmış bir taş bitmiş iş değil (hüküm `lib/registerStates`'te).
+  const { open: waiting, settled } = splitBySettled(rows, 'milestone_progress', (m) => m.state);
+  const overdue = waiting.filter(pastTarget).length;
+  // Gecikme bütün kütükten okunuyor, bekleyenden değil: doksan gün gecikmeyle
+  // ulaşılmış bir taşın gecikmesi, ulaşıldığı için yok sayılacak bir şey değil.
+  const worstSlip = rows.reduce((worst, m) => Math.max(worst, m.slipDays ?? 0), 0);
+
+  /** Bir satır; iki yerde çiziliyor (bekleyen ve kapanan). */
+  const row = (m: Milestone) => {
+    const slip = slipText(m.slipDays, tr);
+    // Durum zaten "kaçırıldı" diyorsa rozeti bir daha söylemiyor; rozetin
+    // işi, kimsenin bir şey kaydetmediği hâlde tarihin geçmiş olmasını
+    // söylemek.
+    const past = pastTarget(m) && m.state !== 'missed';
+    const open = closing?.id === m.id;
+    return (
+      <li key={m.id} className="py-2">
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-1.5">
+              {m.code && <span className="font-mono text-xs text-slate-500">{m.code}</span>}
+              <span className="text-sm font-medium text-slate-900">
+                <Bilingual
+                  table="milestones"
+                  id={m.id}
+                  base="title"
+                  en={m.titleEn}
+                  tr={m.titleTr}
+                />
+              </span>
+              <Pill className={toneFor(STATE, m.state)}>
+                {wordFor(STATE, m.state, tr ? 'tr' : 'en')}
+              </Pill>
+              {m.critical && (
+                <Pill className="border-amber-300 bg-amber-50 text-amber-900">
+                  {tr ? 'kritik' : 'critical'}
+                </Pill>
+              )}
+              {past && (
+                <Pill className="border-rose-300 bg-rose-50 text-rose-900">
+                  {tr ? 'tarihi geçti' : 'past its target'}
+                </Pill>
+              )}
+            </div>
+            <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
+              {m.phaseName && <span>{m.phaseName}</span>}
+              {m.ownerName && <span>{m.ownerName}</span>}
+              <span className="font-mono">
+                {tr ? 'hedef ' : 'target '}
+                {m.targetOn ? formatDate(m.targetOn, language) : tr ? 'yok' : 'none'}
+              </span>
+              {m.achievedOn && (
+                <span className="font-mono">
+                  {tr ? 'gerçekleşen ' : 'achieved '}
+                  {formatDate(m.achievedOn, language)}
+                </span>
+              )}
+              {/* The subtraction, which is the number anybody wanted. */}
+              {slip ? (
+                <span className={slip.tone}>{slip.text}</span>
+              ) : (
+                m.state !== 'achieved' && (
+                  <span className="text-slate-500">
+                    {tr ? 'gecikme henüz bilinmiyor' : 'slip not known yet'}
+                  </span>
+                )
+              )}
+            </div>
+            {m.note && <p className="mt-0.5 text-xs text-slate-600">{m.note}</p>}
+          </div>
+
+          {mayKeep && !open && !isSettled('milestone_progress', m.state) && (
+            <div className="flex shrink-0 items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setClosing({ id: m.id, how: 'achieved' });
+                  setAchievedOn(todayIso());
+                  setEvidence('');
+                }}
+                className="flex cursor-pointer items-center gap-1 text-xs text-emerald-800 hover:underline"
+              >
+                <CircleCheck className="h-3.5 w-3.5" aria-hidden="true" />
+                {tr ? 'ulaşıldı' : 'achieved'}
+              </button>
+              {m.targetOn && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setClosing({ id: m.id, how: 'missed' });
+                    setReason('');
+                  }}
+                  className="flex cursor-pointer items-center gap-1 text-xs text-slate-500 hover:underline"
+                >
+                  <CircleX className="h-3.5 w-3.5" aria-hidden="true" />
+                  {tr ? 'kaçırıldı' : 'missed'}
+                </button>
+              )}
+              <label className="flex cursor-pointer items-center gap-1 text-xs text-slate-500">
+                <CalendarClock className="h-3.5 w-3.5" aria-hidden="true" />
+                <span className="sr-only">
+                  {tr ? 'Hedef tarihi değiştir' : 'Move the target date'}
+                </span>
+                <input
+                  type="date"
+                  value={m.targetOn ?? ''}
+                  onChange={(e) => move.mutate({ id: m.id, targetOn: e.target.value || null })}
+                  className="rounded border border-slate-300 px-1 py-0.5 text-xs"
+                />
+              </label>
+            </div>
+          )}
+        </div>
+
+        {open && closing.how === 'achieved' && (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!evidence) return;
+              achieve.mutate(
+                { id: m.id, achievedOn, evidenceDocumentId: evidence },
+                { onSuccess: () => setClosing(null) },
+              );
+            }}
+            className="mt-2 flex flex-wrap items-end gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-2"
+          >
+            <Field label={tr ? 'Gerçekleşme tarihi' : 'Achieved on'}>
+              <TextInput
+                type="date"
+                value={achievedOn}
+                onChange={(e) => setAchievedOn(e.target.value)}
+                required
+              />
+            </Field>
+            {/* Required by the database, so it is asked for here
+                      rather than discovered as a constraint name. */}
+            <Field label={tr ? 'Kanıt belgesi' : 'Evidence document'}>
+              <Select value={evidence} onChange={(e) => setEvidence(e.target.value)} required>
+                <option value="">{tr ? 'kasadan seçin…' : 'choose from the vault…'}</option>
+                {(documents.data ?? []).map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.title}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <ActionButton type="submit" disabled={achieve.isPending}>
+              {tr ? 'Kaydet' : 'Record it'}
+            </ActionButton>
+            <button
+              type="button"
+              onClick={() => setClosing(null)}
+              className="cursor-pointer pb-1 text-xs text-slate-500 underline"
+            >
+              {tr ? 'vazgeç' : 'cancel'}
+            </button>
+          </form>
+        )}
+
+        {open && closing.how === 'missed' && (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!reason.trim()) return;
+              miss.mutate({ id: m.id, note: reason }, { onSuccess: () => setClosing(null) });
+            }}
+            className="mt-2 flex flex-wrap items-end gap-2 rounded-lg border border-rose-200 bg-rose-50 p-2"
+          >
+            <Field label={tr ? 'Neden kaçırıldı' : 'Why it was missed'}>
+              <TextInput
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                required
+                autoFocus
+              />
+            </Field>
+            <ActionButton type="submit" disabled={miss.isPending}>
+              {tr ? 'Kaydet' : 'Record it'}
+            </ActionButton>
+            <button
+              type="button"
+              onClick={() => setClosing(null)}
+              className="cursor-pointer pb-1 text-xs text-slate-500 underline"
+            >
+              {tr ? 'vazgeç' : 'cancel'}
+            </button>
+          </form>
+        )}
+      </li>
+    );
+  };
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-4">
@@ -126,8 +325,9 @@ export const MilestonePanel: React.FC = () => {
         <div className="flex items-start gap-2.5">
           <Flag className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" aria-hidden="true" />
           <div>
-            <h2 className="text-base font-bold text-slate-900">
+            <h2 className="flex flex-wrap items-center gap-1.5 text-base font-bold text-slate-900">
               {tr ? 'Kilometre taşları' : 'Milestones'}
+              <Pill>{waiting.length}</Pill>
             </h2>
             <Explain id="plan.milestones">
               {tr
@@ -258,200 +458,24 @@ export const MilestonePanel: React.FC = () => {
             : 'The plan has no milestones. The portal has fifteen registers and this is where the time axis joining them starts: without one, neither a countdown nor a variance can be computed.'}
         </p>
       ) : (
-        <ul className="divide-y divide-slate-100">
-          {rows.map((m) => {
-            const slip = slipText(m.slipDays, tr);
-            const past =
-              m.targetOn != null &&
-              new Date(m.targetOn) < new Date() &&
-              (m.state === 'planned' || m.state === 'in_progress');
-            const open = closing?.id === m.id;
-            return (
-              <li key={m.id} className="py-2">
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      {m.code && <span className="font-mono text-xs text-slate-500">{m.code}</span>}
-                      <span className="text-sm font-medium text-slate-900">
-                        <Bilingual
-                          table="milestones"
-                          id={m.id}
-                          base="title"
-                          en={m.titleEn}
-                          tr={m.titleTr}
-                        />
-                      </span>
-                      <Pill className={toneFor(STATE, m.state)}>
-                        {wordFor(STATE, m.state, tr ? 'tr' : 'en')}
-                      </Pill>
-                      {m.critical && (
-                        <Pill className="border-amber-300 bg-amber-50 text-amber-900">
-                          {tr ? 'kritik' : 'critical'}
-                        </Pill>
-                      )}
-                      {past && (
-                        <Pill className="border-rose-300 bg-rose-50 text-rose-900">
-                          {tr ? 'tarihi geçti' : 'past its target'}
-                        </Pill>
-                      )}
-                    </div>
-                    <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
-                      {m.phaseName && <span>{m.phaseName}</span>}
-                      {m.ownerName && <span>{m.ownerName}</span>}
-                      <span className="font-mono">
-                        {tr ? 'hedef ' : 'target '}
-                        {m.targetOn ? formatDate(m.targetOn, language) : tr ? 'yok' : 'none'}
-                      </span>
-                      {m.achievedOn && (
-                        <span className="font-mono">
-                          {tr ? 'gerçekleşen ' : 'achieved '}
-                          {formatDate(m.achievedOn, language)}
-                        </span>
-                      )}
-                      {/* The subtraction, which is the number anybody wanted. */}
-                      {slip ? (
-                        <span className={slip.tone}>{slip.text}</span>
-                      ) : (
-                        m.state !== 'achieved' && (
-                          <span className="text-slate-500">
-                            {tr ? 'gecikme henüz bilinmiyor' : 'slip not known yet'}
-                          </span>
-                        )
-                      )}
-                    </div>
-                    {m.note && <p className="mt-0.5 text-xs text-slate-600">{m.note}</p>}
-                  </div>
+        <>
+          <ul className="divide-y divide-slate-100">{waiting.map(row)}</ul>
 
-                  {mayKeep && !open && !isSettled('milestone_progress', m.state) && (
-                    <div className="flex shrink-0 items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setClosing({ id: m.id, how: 'achieved' });
-                          setAchievedOn(todayIso());
-                          setEvidence('');
-                        }}
-                        className="flex cursor-pointer items-center gap-1 text-xs text-emerald-800 hover:underline"
-                      >
-                        <CircleCheck className="h-3.5 w-3.5" aria-hidden="true" />
-                        {tr ? 'ulaşıldı' : 'achieved'}
-                      </button>
-                      {m.targetOn && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setClosing({ id: m.id, how: 'missed' });
-                            setReason('');
-                          }}
-                          className="flex cursor-pointer items-center gap-1 text-xs text-slate-500 hover:underline"
-                        >
-                          <CircleX className="h-3.5 w-3.5" aria-hidden="true" />
-                          {tr ? 'kaçırıldı' : 'missed'}
-                        </button>
-                      )}
-                      <label className="flex cursor-pointer items-center gap-1 text-xs text-slate-500">
-                        <CalendarClock className="h-3.5 w-3.5" aria-hidden="true" />
-                        <span className="sr-only">
-                          {tr ? 'Hedef tarihi değiştir' : 'Move the target date'}
-                        </span>
-                        <input
-                          type="date"
-                          value={m.targetOn ?? ''}
-                          onChange={(e) =>
-                            move.mutate({ id: m.id, targetOn: e.target.value || null })
-                          }
-                          className="rounded border border-slate-300 px-1 py-0.5 text-xs"
-                        />
-                      </label>
-                    </div>
-                  )}
-                </div>
+          {/* Bekleyen kalmadıysa bunu söylemek gerekiyor: boş bir alan,
+              kapananların altında "plan bitti" ile "planda taş yok"u birbirine
+              karıştırır. */}
+          {waiting.length === 0 && settled.length > 0 && (
+            <p className="text-xs text-slate-500">
+              {tr
+                ? 'Bekleyen kilometre taşı yok; plandaki her taşa ulaşılmış ya da bırakılmış.'
+                : 'No milestone is waiting; every one in the plan was achieved or abandoned.'}
+            </p>
+          )}
 
-                {open && closing.how === 'achieved' && (
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      if (!evidence) return;
-                      achieve.mutate(
-                        { id: m.id, achievedOn, evidenceDocumentId: evidence },
-                        { onSuccess: () => setClosing(null) },
-                      );
-                    }}
-                    className="mt-2 flex flex-wrap items-end gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-2"
-                  >
-                    <Field label={tr ? 'Gerçekleşme tarihi' : 'Achieved on'}>
-                      <TextInput
-                        type="date"
-                        value={achievedOn}
-                        onChange={(e) => setAchievedOn(e.target.value)}
-                        required
-                      />
-                    </Field>
-                    {/* Required by the database, so it is asked for here
-                        rather than discovered as a constraint name. */}
-                    <Field label={tr ? 'Kanıt belgesi' : 'Evidence document'}>
-                      <Select
-                        value={evidence}
-                        onChange={(e) => setEvidence(e.target.value)}
-                        required
-                      >
-                        <option value="">{tr ? 'kasadan seçin…' : 'choose from the vault…'}</option>
-                        {(documents.data ?? []).map((d) => (
-                          <option key={d.id} value={d.id}>
-                            {d.title}
-                          </option>
-                        ))}
-                      </Select>
-                    </Field>
-                    <ActionButton type="submit" disabled={achieve.isPending}>
-                      {tr ? 'Kaydet' : 'Record it'}
-                    </ActionButton>
-                    <button
-                      type="button"
-                      onClick={() => setClosing(null)}
-                      className="cursor-pointer pb-1 text-xs text-slate-500 underline"
-                    >
-                      {tr ? 'vazgeç' : 'cancel'}
-                    </button>
-                  </form>
-                )}
-
-                {open && closing.how === 'missed' && (
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      if (!reason.trim()) return;
-                      miss.mutate(
-                        { id: m.id, note: reason },
-                        { onSuccess: () => setClosing(null) },
-                      );
-                    }}
-                    className="mt-2 flex flex-wrap items-end gap-2 rounded-lg border border-rose-200 bg-rose-50 p-2"
-                  >
-                    <Field label={tr ? 'Neden kaçırıldı' : 'Why it was missed'}>
-                      <TextInput
-                        value={reason}
-                        onChange={(e) => setReason(e.target.value)}
-                        required
-                        autoFocus
-                      />
-                    </Field>
-                    <ActionButton type="submit" disabled={miss.isPending}>
-                      {tr ? 'Kaydet' : 'Record it'}
-                    </ActionButton>
-                    <button
-                      type="button"
-                      onClick={() => setClosing(null)}
-                      className="cursor-pointer pb-1 text-xs text-slate-500 underline"
-                    >
-                      {tr ? 'vazgeç' : 'cancel'}
-                    </button>
-                  </form>
-                )}
-              </li>
-            );
-          })}
-        </ul>
+          <SettledSection rows={settled} label={{ tr: 'Kapanan', en: 'Closed' }}>
+            {(shown) => <ul className="divide-y divide-slate-100">{shown.map(row)}</ul>}
+          </SettledSection>
+        </>
       )}
     </section>
   );

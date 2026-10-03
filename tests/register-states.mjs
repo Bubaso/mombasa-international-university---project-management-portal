@@ -50,13 +50,22 @@ const body = source.slice(source.indexOf('export const REGISTER_STATES'));
 /** @type {Map<string, {open: string[], settled: string[], why: string}>} */
 const rules = new Map();
 for (const entry of body.matchAll(
-  /^ {2}(\w+): \{\s*\n\s*open: \[([^\]]*)\],\s*\n\s*settled: \[([^\]]*)\],\s*\n\s*why:/gm,
+  /^ {2}(\w+): \{\s*\n\s*open: \[([^\]]*)\],\s*\n\s*settled: \[([^\]]*)\],\s*\n\s*why:([\s\S]*?)\n {2}\},/gm,
 )) {
   const values = (text) => [...text.matchAll(/'([^']*)'/g)].map((m) => m[1]);
-  rules.set(entry[1], { open: values(entry[2]), settled: values(entry[3]) });
+  rules.set(entry[1], {
+    open: values(entry[2]),
+    settled: values(entry[3]),
+    // Gerekçesiyle ekranda tutuluyor mu? Metnin kendisi değil, varlığı
+    // sınanıyor — gerekçenin ne dediğine bir test karar veremez.
+    keepOnScreen: /\n\s*keepOnScreen:/.test(entry[4]),
+  });
 }
 
 check(rules.size > 25, 'the judgment file parses into the rules it states', `${rules.size} enums`);
+
+/** İki küme aynı mı? Sıra önemsiz, eleman sayısı önemli. */
+const same = (values, list) => values.size === list.length && list.every((v) => values.has(v));
 
 // ------------------------------------------------------------------ the schema
 
@@ -229,6 +238,10 @@ const CONVERTED = [
   { file: 'src/components/raid/IssueList.tsx', enumName: 'issue_state' },
   { file: 'src/components/legal/FilingList.tsx', enumName: 'filing_state' },
   { file: 'src/components/legal/OrderList.tsx', enumName: 'order_state' },
+  { file: 'src/components/plan/MilestonePanel.tsx', enumName: 'milestone_progress' },
+  { file: 'src/components/procurement/RequestPanel.tsx', enumName: 'procurement_state' },
+  { file: 'src/components/site/CommercialPanel.tsx', enumName: 'valuation_state' },
+  { file: 'src/components/site/CommercialPanel.tsx', enumName: 'boq_state' },
 ];
 
 /** Listede yazılı yol gerçekten var mı? Yazım hatası testi çökertmemeli. */
@@ -256,6 +269,14 @@ for (const { file, enumName } of CONVERTED) {
     /\{waiting\.length\}|waitingOf\(items\)\.length/.test(text),
     `and counts what is waiting rather than everything`,
   );
+  // Bölmenin yapılması yetmiyor; **bekleyen listesinin çizilmesi** gerekiyor.
+  // Mutasyon testinde `waiting.map(row)` → `rows.map(row)` yakalanmadı:
+  // bölme, SettledSection ve başlıktaki sayı yerinde kalıyor ve ekran yine
+  // her şeyi bir arada gösteriyordu (CLAUDE.md §3).
+  check(
+    /waiting\.map\(|waitingOf\(/.test(text),
+    `and draws the waiting rows, not the whole register`,
+  );
 }
 
 // ------------------------------------- bölünmeyenler: gerekçe de sınanıyor
@@ -267,20 +288,50 @@ for (const { file, enumName } of CONVERTED) {
 // kazanırsa bu test ekranı geri çağırır.
 
 const NO_SPLIT_BY_ENUM = [
-  { file: 'src/components/raid/AssumptionList.tsx', enumName: 'assumption_state' },
-  { file: 'src/components/legal/HearingList.tsx', enumName: 'preparation_state' },
+  {
+    file: 'src/components/raid/AssumptionList.tsx',
+    enumName: 'assumption_state',
+    because: 'nothing-is-final',
+  },
+  {
+    file: 'src/components/legal/HearingList.tsx',
+    enumName: 'preparation_state',
+    because: 'nothing-is-final',
+  },
+  // Bunlar bir kuyruk değil: biri bir karşılaştırma, biri bir aritmetik.
+  // Gerekçe hükmün kendisinde, `keepOnScreen` alanında duruyor.
+  {
+    file: 'src/components/procurement/RequestPanel.tsx',
+    enumName: 'candidate_outcome',
+    because: 'kept-on-purpose',
+  },
+  {
+    file: 'src/components/procurement/ContractPanel.tsx',
+    enumName: 'milestone_state',
+    because: 'kept-on-purpose',
+  },
 ];
 
-for (const { file, enumName } of NO_SPLIT_BY_ENUM) {
+for (const { file, enumName, because } of NO_SPLIT_BY_ENUM) {
   const rule = rules.get(enumName);
   check(Boolean(rule), `${enumName} has a judgment at all`);
-  check(
-    rule?.settled.length === 0,
-    `${enumName} has no finished value, which is why ${file.slice(file.indexOf('src/'))} does not split on it`,
-    rule && rule.settled.length > 0
-      ? `it now has ${rule.settled.join(', ')} — the screen has to be revisited`
-      : '',
-  );
+  if (because === 'nothing-is-final') {
+    check(
+      rule?.settled.length === 0,
+      `${enumName} has no finished value, which is why ${file.slice(file.indexOf('src/'))} does not split on it`,
+      rule && rule.settled.length > 0
+        ? `it now has ${rule.settled.join(', ')} — the screen has to be revisited`
+        : '',
+    );
+  } else {
+    check(
+      rule?.keepOnScreen === true,
+      `${enumName} says in the judgment why ${file.slice(file.indexOf('src/'))} keeps the finished ones on screen`,
+      rule?.keepOnScreen
+        ? ''
+        : 'no keepOnScreen reason — then it is an unexplained omission, not a decision',
+    );
+  }
   const text = sourceOf(file);
   if (text === null) continue;
   check(
@@ -324,6 +375,119 @@ for (const { file, enumName } of NO_SPLIT_BY_ENUM) {
     'and that question is not asked with a hand-written list of states',
   );
 }
+
+// ------------------------------------------- hükmün SQL'deki kopyaları bağlı
+//
+// Hüküm istemcide bir kez duruyor, ama veritabanı da aynı soruyu soruyor:
+// takvim görünümü bitmiş aksiyonu listelemiyor, bildirim bitmiş işi
+// kovalamıyor. O filtreler meşru — ve ikisi de **hükmün ikinci kopyası.**
+//
+// Ölçüm, 3 Ekim 2026: migration'larda 22 yerde, bir durum sütunu bir enum'un
+// `open` ya da `settled` kümesinin tamamıyla karşılaştırılıyor. Hepsi elle
+// yazılı ve hiçbiri hükmü bilmiyor; `action_status` bir değer kazansa yedi
+// takvim görünümü sessizce yeni değeri dışarıda bırakırdı. Bunu yasaklamak
+// yanlış olurdu (SQL'de TypeScript sabitini okuyamıyor) — yapılacak şey
+// kopyayı **bağlamak**: aşağıdaki liste her birini adıyla tutuyor ve hüküm
+// değiştiğinde test hangi satırların artık uyuşmadığını söylüyor. Enum
+// sapmasında işe yarayan desenin aynısı.
+//
+// Not: 50 başka SQL listesi enum değerlerinin bir **alt kümesini** sayıyor ve
+// onlar hükmün kopyası değil, kendi soruları: "henüz sunulmamış layiha",
+// "bağlanmış para", "kimse hazırlanmamış". Ölçüldüler ve bırakıldılar.
+
+const BOUND_IN_SQL = [
+  {
+    file: '0007_meetings_decisions_actions.sql',
+    line: 779,
+    enumName: 'action_status',
+    side: 'open',
+  },
+  {
+    file: '0007_meetings_decisions_actions.sql',
+    line: 797,
+    enumName: 'question_status',
+    side: 'open',
+  },
+  { file: '0011_project_calendar.sql', line: 104, enumName: 'action_status', side: 'open' },
+  { file: '0011_project_calendar.sql', line: 123, enumName: 'question_status', side: 'open' },
+  { file: '0011_project_calendar.sql', line: 143, enumName: 'meeting_status', side: 'open' },
+  { file: '0021_governance.sql', line: 483, enumName: 'action_status', side: 'settled' },
+  { file: '0021_governance.sql', line: 487, enumName: 'action_status', side: 'settled' },
+  { file: '0021_governance.sql', line: 923, enumName: 'stage_state', side: 'settled' },
+  { file: '0022_procurement.sql', line: 352, enumName: 'procurement_state', side: 'settled' },
+  { file: '0022_procurement.sql', line: 627, enumName: 'contract_state', side: 'open' },
+  { file: '0023_contract_calendar.sql', line: 93, enumName: 'action_status', side: 'open' },
+  { file: '0023_contract_calendar.sql', line: 112, enumName: 'question_status', side: 'open' },
+  { file: '0023_contract_calendar.sql', line: 132, enumName: 'meeting_status', side: 'open' },
+  { file: '0023_contract_calendar.sql', line: 174, enumName: 'contract_state', side: 'open' },
+  { file: '0024_project_backbone.sql', line: 518, enumName: 'meeting_status', side: 'open' },
+  { file: '0025_backbone_calendar.sql', line: 92, enumName: 'action_status', side: 'open' },
+  { file: '0025_backbone_calendar.sql', line: 111, enumName: 'question_status', side: 'open' },
+  { file: '0025_backbone_calendar.sql', line: 131, enumName: 'meeting_status', side: 'open' },
+  { file: '0025_backbone_calendar.sql', line: 173, enumName: 'contract_state', side: 'open' },
+  { file: '0025_backbone_calendar.sql', line: 203, enumName: 'meeting_status', side: 'open' },
+  { file: '0025_backbone_calendar.sql', line: 207, enumName: 'milestone_progress', side: 'open' },
+  {
+    file: '0033_notifications_that_arrive.sql',
+    line: 462,
+    enumName: 'action_status',
+    side: 'open',
+  },
+];
+
+/** Bir SQL satırındaki `... in ('a', 'b')` değerleri. */
+const LIST = /(\w+)\s+(?:not\s+)?in\s*\(((?:\s*'[a-z_]+'\s*,?)+)\)/gi;
+
+const migrations = join(root, 'supabase', 'migrations');
+/** @type {Map<string, {enumName: string, side: string, values: Set<string>}>} */
+const foundInSql = new Map();
+for (const file of readdirSync(migrations).filter((f) => f.endsWith('.sql'))) {
+  const text = readFileSync(join(migrations, file), 'utf8');
+  let offset = 0;
+  for (const line of text.split('\n')) {
+    offset++;
+    for (const m of line.matchAll(LIST)) {
+      const values = new Set([...m[2].matchAll(/'([a-z_]+)'/g)].map((v) => v[1]));
+      if (values.size < 2) continue;
+      for (const [name, rule] of rules) {
+        const side = same(values, rule.open)
+          ? 'open'
+          : same(values, rule.settled)
+            ? 'settled'
+            : null;
+        if (!side) continue;
+        foundInSql.set(`${file}:${offset}`, { enumName: name, side, values });
+        break;
+      }
+    }
+  }
+}
+
+for (const entry of BOUND_IN_SQL) {
+  const key = `${entry.file}:${entry.line}`;
+  const found = foundInSql.get(key);
+  const ok = found != null && found.enumName === entry.enumName && found.side === entry.side;
+  check(
+    ok,
+    `${key} still asks for exactly ${entry.enumName}.${entry.side}`,
+    ok
+      ? ''
+      : found
+        ? `it now matches ${found.enumName}.${found.side} instead`
+        : 'that line no longer equals either side of the judgment — decide where the new value belongs',
+  );
+}
+
+// Ve listelenmemiş bir kopya kalmasın: yeni bir migration hükmü üçüncü kez
+// yazarsa bağlanmamış olur.
+const unlisted = [...foundInSql.keys()].filter(
+  (key) => !BOUND_IN_SQL.some((e) => `${e.file}:${e.line}` === key),
+);
+check(
+  unlisted.length === 0,
+  'every SQL copy of the judgment is bound by the list above',
+  unlisted.length ? `unlisted: ${unlisted.join(', ')}` : `${BOUND_IN_SQL.length} bound`,
+);
 
 console.log('');
 if (failures > 0) {

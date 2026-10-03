@@ -29,6 +29,19 @@ export interface RegisterStateRule {
   settled: string[];
   /** Neden böyle bölündüğü. */
   why: string;
+  /**
+   * Bitmiş hâli var, ama ekranda geri çekilmiyor — ve bunun gerekçesi.
+   *
+   * Her liste bir iş kuyruğu değil. Bir karşılaştırma tablosunda elenen aday,
+   * tablonun içeriğidir: neden seçilmediği kaybolan şeydi ve onu kapalı bir
+   * bölüme koymak, tabloyu var eden şeyi geri çekmek olurdu. Bir ödeme
+   * planında ödenmiş kalem, planın aritmetiğinin parçası.
+   *
+   * Bu alan dolduğunda `tests/register-states.mjs` o ekranda bölme aramıyor;
+   * boş olup da bölünmemiş bir ekran ise teste yakalanıyor. Yani "bakıldı,
+   * bölmek yanlış olurdu" ile "kimse bakmamış" ayrı kalıyor.
+   */
+  keepOnScreen?: string;
 }
 
 export const REGISTER_STATES: Record<string, RegisterStateRule> = {
@@ -56,6 +69,8 @@ export const REGISTER_STATES: Record<string, RegisterStateRule> = {
     open: ['under_review', 'shortlisted'],
     settled: ['selected', 'rejected', 'withdrawn'],
     why: 'Kısa listeye girmek bir karar değil, bir sonraki karara kalmaktır.',
+    keepOnScreen:
+      'Aday listesi bir iş kuyruğu değil, bir karşılaştırma. M14-02 bu kütüğü tam olarak kaybolan şey için istiyor: dört avukattan birinin neden seçildiği, yani diğer üçünün neden seçilmediği. Elenen adayı kapalı bir bölüme koymak, karşılaştırmayı var eden kaydı geri çekmek olurdu. Bir talepteki aday sayısı da zaten birikmiyor.',
   },
   candidate_state: {
     open: ['pending'],
@@ -116,6 +131,8 @@ export const REGISTER_STATES: Record<string, RegisterStateRule> = {
     open: ['planned', 'due', 'certified'],
     settled: ['paid', 'cancelled'],
     why: 'Onaylanmış hakediş ödenmeyi bekliyor ve bekleme bir iştir.',
+    keepOnScreen:
+      'Sözleşmenin ödeme planı bir kuyruk değil, bir aritmetik: sıra numarası, tutar ve altındaki "planlanan / ödenen" toplamı birlikte okunuyor. Ödenmiş kalemi geri çekmek, toplamı açıklayan satırları gizlemek olurdu. Plan sözleşme imzalanırken yazılıyor ve sonra büyümüyor.',
   },
   obligation_state: {
     open: ['open', 'in_progress', 'at_risk', 'breached', 'suspended'],

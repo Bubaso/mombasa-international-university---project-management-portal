@@ -4963,10 +4963,11 @@ try {
   await page.waitForTimeout(500);
   const procurement = (await page.textContent('body')) ?? '';
 
-  // M14-01: the need and the reason, together.
+  // M14-01: the need and the reason, together. Asked of PR-2026-02, which is
+  // `drafted` and therefore in the waiting list.
   check(
-    /Lead counsel for the appeal|Temyiz için baş avukat/.test(procurement) &&
-      /present advocate is retiring/.test(procurement),
+    /External auditor for the 2026 accounts|2026 hesapları için dış denetçi/.test(procurement) &&
+      /Cap 164 requires audited accounts/.test(procurement),
     'a request shows the need and the justification together (M14-01)',
   );
   check(
@@ -4977,6 +4978,23 @@ try {
     /aynı tutar bandı|same money bands as a payment/.test(procurement),
     'the screen says approval goes through the payment bands, not a second set',
   );
+
+  // The register round withdrew the awarded request: PR-2026-01 is `awarded`,
+  // so it is not waiting for anybody and does not sit in the queue — it is
+  // counted and one click away. That is asserted here rather than assumed,
+  // because the comparison it carries is the point of M14-02 and losing it
+  // behind a silent cut would be worse than listing everything.
+  check(
+    !/Lead counsel for the appeal|Temyiz için baş avukat/.test(procurement),
+    'an awarded request is withdrawn from the queue',
+  );
+  const concluded = page
+    .locator('button')
+    .filter({ hasText: /sonuçlanan|concluded/i })
+    .first();
+  check(await concluded.isVisible(), 'and counted in a section that opens on request');
+  await concluded.click();
+  await page.waitForTimeout(400);
 
   // M14-02: the comparison, including the reason the others were not chosen.
   await page
@@ -5658,10 +5676,35 @@ try {
   const plan = (await page.textContent('body')) ?? '';
 
   // M15-01: the target, the outcome, and the number between them.
+  //
+  // The roof milestone is `achieved`, so the register round withdrew it: an
+  // achieved milestone is not waiting for anybody. Its slip is the number the
+  // module exists for, so it is not hidden — the header carries the worst slip
+  // across the whole register without a click, and the row itself is one click
+  // away. Both are asserted, in that order.
   check(
-    /Block A roof closed|A blok çatısı kapandı/.test(plan) &&
-      /90 gün gecikmeli|90d late/.test(plan),
-    'a milestone says how late it was, not just that it is done (M15-01)',
+    /en büyük gecikme 90 gün|worst slip 90d/.test(plan),
+    'the plan says how late its worst milestone was before anything is opened (M15-01)',
+  );
+  // Geri çekilmenin kendisi burada sınanmıyor ve bu kasıtlı: /plan ekranında
+  // aynı kilometre taşı zaman çizgisinde ve kritik taş şeridinde de yazılı,
+  // yani sayfa metninde "yok" demek yanlış ölçüm olurdu — adı bir şeyi,
+  // ölçtüğü başka bir şeyi söyleyen test, yanlış sebeple geçen testtir
+  // (CLAUDE.md §3). Bölmenin yapıldığını `tests/register-states.mjs` yapıyla
+  // sınıyor; burada sınanan şey, sayının tıklamadan görünmesi ve satırın bir
+  // tıklama uzakta olması.
+  const closedMilestones = page
+    .locator('button')
+    .filter({ hasText: /kapanan|closed/i })
+    .first();
+  check(await closedMilestones.isVisible(), 'but counted in a section that opens on request');
+  await closedMilestones.click();
+  await page.waitForTimeout(400);
+  const planOpened = (await page.textContent('body')) ?? '';
+  check(
+    /Block A roof closed|A blok çatısı kapandı/.test(planOpened) &&
+      /90 gün gecikmeli|90d late/.test(planOpened),
+    'and the row itself says how late it was, not just that it is done',
   );
   check(
     /gecikme henüz bilinmiyor|slip not known yet/.test(plan),

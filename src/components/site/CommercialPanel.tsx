@@ -18,6 +18,8 @@ import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import * as site from '../../api/siteHooks';
 import { EmptyState } from '../EmptyState';
+import { SettledSection } from '../ui/SettledSection';
+import { splitBySettled } from '../../lib/registerStates';
 import { QueryStatus } from '../QueryStatus';
 import {
   ActionButton,
@@ -39,7 +41,7 @@ import {
   valuationStateLabel,
   valuationStateStyle,
 } from '../../lib/site';
-import type { CurrencyCode } from '../../types';
+import type { BoqVersion, CurrencyCode, Valuation } from '../../types';
 
 interface Props {
   blockId: string;
@@ -63,10 +65,55 @@ const BoqSection: React.FC<{ blockId: string; canPrice: boolean }> = ({ blockId,
   const [currency, setCurrency] = useState<CurrencyCode>('KES');
 
   const rows = versions.data ?? [];
+  // Yerine yenisi geçmiş sürüm artık kimseden bir şey istemiyor; yürürlükteki
+  // metraj `issued`. Sürüm geçmişi silinmiyor, geri çekiliyor.
+  const { open: waiting, settled } = splitBySettled(rows, 'boq_state', (v) => v.state);
+
+  /** Bir sürüm satırı; iki yerde çiziliyor (yürürlükte olan ve geçmiş). */
+  const row = (version: BoqVersion) => (
+    <li key={version.id} className="rounded-xl border border-slate-200 bg-white">
+      <button
+        type="button"
+        onClick={() => setOpenId(openId === version.id ? null : version.id)}
+        className="flex w-full cursor-pointer flex-wrap items-center justify-between gap-2 px-3 py-2.5 text-left hover:bg-slate-50"
+      >
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-sm font-medium text-slate-900">
+            {tr ? `Sürüm ${version.versionNo}` : `Version ${version.versionNo}`}
+          </span>
+          <Pill
+            className={
+              version.state === 'issued'
+                ? 'border-emerald-200 bg-emerald-100 text-emerald-800'
+                : 'border-slate-300 bg-slate-100 text-slate-700'
+            }
+          >
+            {boqStateLabel(version.state, language)}
+          </Pill>
+          <span className="text-xs text-slate-500">
+            {version.preparedByName ?? '—'} · {formatDate(version.preparedOn, language)}
+          </span>
+        </div>
+        <span className="font-mono text-sm font-semibold text-slate-900">
+          {money(version.total, version.currency)}
+        </span>
+      </button>
+
+      {openId === version.id && (
+        <BoqItems
+          versionId={version.id}
+          currency={version.currency}
+          editable={canPrice && version.state === 'draft'}
+          canIssue={canPrice && version.state === 'draft'}
+        />
+      )}
+    </li>
+  );
 
   return (
     <Section
       icon={Calculator}
+      waiting={waiting.length}
       title={tr ? 'Metraj ve keşif (BoQ)' : 'Bill of quantities'}
       subtitle={
         tr
@@ -114,47 +161,13 @@ const BoqSection: React.FC<{ blockId: string; canPrice: boolean }> = ({ blockId,
           }
         />
       ) : (
-        <ul className="space-y-2">
-          {rows.map((version) => (
-            <li key={version.id} className="rounded-xl border border-slate-200 bg-white">
-              <button
-                type="button"
-                onClick={() => setOpenId(openId === version.id ? null : version.id)}
-                className="flex w-full cursor-pointer flex-wrap items-center justify-between gap-2 px-3 py-2.5 text-left hover:bg-slate-50"
-              >
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="text-sm font-medium text-slate-900">
-                    {tr ? `Sürüm ${version.versionNo}` : `Version ${version.versionNo}`}
-                  </span>
-                  <Pill
-                    className={
-                      version.state === 'issued'
-                        ? 'border-emerald-200 bg-emerald-100 text-emerald-800'
-                        : 'border-slate-300 bg-slate-100 text-slate-700'
-                    }
-                  >
-                    {boqStateLabel(version.state, language)}
-                  </Pill>
-                  <span className="text-xs text-slate-500">
-                    {version.preparedByName ?? '—'} · {formatDate(version.preparedOn, language)}
-                  </span>
-                </div>
-                <span className="font-mono text-sm font-semibold text-slate-900">
-                  {money(version.total, version.currency)}
-                </span>
-              </button>
+        <>
+          <ul className="space-y-2">{waiting.map(row)}</ul>
 
-              {openId === version.id && (
-                <BoqItems
-                  versionId={version.id}
-                  currency={version.currency}
-                  editable={canPrice && version.state === 'draft'}
-                  canIssue={canPrice && version.state === 'draft'}
-                />
-              )}
-            </li>
-          ))}
-        </ul>
+          <SettledSection rows={settled} label={{ tr: 'Yerine yenisi geçmiş', en: 'Superseded' }}>
+            {(shown) => <ul className="space-y-2">{shown.map(row)}</ul>}
+          </SettledSection>
+        </>
       )}
     </Section>
   );
@@ -313,10 +326,86 @@ const ValuationSection: React.FC<{
   const [currency, setCurrency] = useState<CurrencyCode>('KES');
 
   const rows = valuations.data ?? [];
+  // Ödenmiş ya da reddedilmiş hakediş kimseden imza beklemiyor; direktör
+  // onayı bekleyen bekliyor. Hüküm `lib/registerStates`'te (CLAUDE.md §4).
+  const { open: waiting, settled } = splitBySettled(rows, 'valuation_state', (v) => v.state);
+
+  /** Bir satır; iki yerde çiziliyor (bekleyen ve kapanan). */
+  const row = (valuation: Valuation) => (
+    <li key={valuation.id} className="rounded-xl border border-slate-200 bg-white px-3 py-2.5">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-sm font-medium text-slate-900">
+              {formatDate(valuation.periodStart, language)} –{' '}
+              {formatDate(valuation.periodEnd, language)}
+            </span>
+            <Pill className={valuationStateStyle(valuation.state)}>
+              {valuationStateLabel(valuation.state, language)}
+            </Pill>
+          </div>
+          <div className="mt-0.5 text-xs text-slate-500">{valuation.contractorName ?? '—'}</div>
+          {/* Both signatures, named. An approval chain is only worth
+                    something if you can see whose it is. */}
+          <div className="mt-0.5 space-y-0.5 text-xs text-slate-500">
+            <div>
+              {tr ? 'QS: ' : 'Certified: '}
+              {valuation.qsCertifiedByName
+                ? `${valuation.qsCertifiedByName} · ${formatDate(valuation.qsCertifiedAt, language)}`
+                : tr
+                  ? 'bekliyor'
+                  : 'pending'}
+            </div>
+            <div>
+              {tr ? 'Direktör: ' : 'Approved: '}
+              {valuation.directorApprovedByName
+                ? `${valuation.directorApprovedByName} · ${formatDate(valuation.directorApprovedAt, language)}`
+                : tr
+                  ? 'bekliyor'
+                  : 'pending'}
+            </div>
+          </div>
+        </div>
+        <span className="shrink-0 font-mono text-sm font-semibold text-slate-900">
+          {money(valuation.amount, valuation.currency)}
+        </span>
+      </div>
+
+      {user && (
+        <div className="mt-2 flex flex-wrap gap-2">
+          {canPrice && valuation.qsCertifiedAt == null && (
+            <ActionButton
+              onClick={() => certify.mutate({ id: valuation.id, profileId: user.id })}
+              disabled={certify.isPending}
+            >
+              {tr ? 'Ölçtüm, onaylıyorum' : 'Certify as measured'}
+            </ActionButton>
+          )}
+          {canApprove && valuation.directorApprovedAt == null && (
+            <ActionButton
+              tone="primary"
+              onClick={() => approve.mutate({ id: valuation.id, profileId: user.id })}
+              disabled={approve.isPending}
+              title={
+                valuation.qsCertifiedAt == null
+                  ? tr
+                    ? 'Veritabanı QS onayı olmadan kabul etmez.'
+                    : 'The database will refuse this without the surveyor first.'
+                  : undefined
+              }
+            >
+              {tr ? 'Onayla' : 'Approve'}
+            </ActionButton>
+          )}
+        </div>
+      )}
+    </li>
+  );
 
   return (
     <Section
       icon={Receipt}
+      waiting={waiting.length}
       title={tr ? 'Hakedişler' : 'Interim valuations'}
       subtitle={
         tr
@@ -432,83 +521,24 @@ const ValuationSection: React.FC<{
           }
         />
       ) : (
-        <ul className="space-y-2">
-          {rows.map((valuation) => (
-            <li
-              key={valuation.id}
-              className="rounded-xl border border-slate-200 bg-white px-3 py-2.5"
-            >
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="text-sm font-medium text-slate-900">
-                      {formatDate(valuation.periodStart, language)} –{' '}
-                      {formatDate(valuation.periodEnd, language)}
-                    </span>
-                    <Pill className={valuationStateStyle(valuation.state)}>
-                      {valuationStateLabel(valuation.state, language)}
-                    </Pill>
-                  </div>
-                  <div className="mt-0.5 text-xs text-slate-500">
-                    {valuation.contractorName ?? '—'}
-                  </div>
-                  {/* Both signatures, named. An approval chain is only worth
-                      something if you can see whose it is. */}
-                  <div className="mt-0.5 space-y-0.5 text-xs text-slate-500">
-                    <div>
-                      {tr ? 'QS: ' : 'Certified: '}
-                      {valuation.qsCertifiedByName
-                        ? `${valuation.qsCertifiedByName} · ${formatDate(valuation.qsCertifiedAt, language)}`
-                        : tr
-                          ? 'bekliyor'
-                          : 'pending'}
-                    </div>
-                    <div>
-                      {tr ? 'Direktör: ' : 'Approved: '}
-                      {valuation.directorApprovedByName
-                        ? `${valuation.directorApprovedByName} · ${formatDate(valuation.directorApprovedAt, language)}`
-                        : tr
-                          ? 'bekliyor'
-                          : 'pending'}
-                    </div>
-                  </div>
-                </div>
-                <span className="shrink-0 font-mono text-sm font-semibold text-slate-900">
-                  {money(valuation.amount, valuation.currency)}
-                </span>
-              </div>
+        <>
+          <ul className="space-y-2">{waiting.map(row)}</ul>
 
-              {user && (
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {canPrice && valuation.qsCertifiedAt == null && (
-                    <ActionButton
-                      onClick={() => certify.mutate({ id: valuation.id, profileId: user.id })}
-                      disabled={certify.isPending}
-                    >
-                      {tr ? 'Ölçtüm, onaylıyorum' : 'Certify as measured'}
-                    </ActionButton>
-                  )}
-                  {canApprove && valuation.directorApprovedAt == null && (
-                    <ActionButton
-                      tone="primary"
-                      onClick={() => approve.mutate({ id: valuation.id, profileId: user.id })}
-                      disabled={approve.isPending}
-                      title={
-                        valuation.qsCertifiedAt == null
-                          ? tr
-                            ? 'Veritabanı QS onayı olmadan kabul etmez.'
-                            : 'The database will refuse this without the surveyor first.'
-                          : undefined
-                      }
-                    >
-                      {tr ? 'Onayla' : 'Approve'}
-                    </ActionButton>
-                  )}
-                </div>
-              )}
-            </li>
-          ))}
-        </ul>
+          {/* Bekleyen kalmadıysa bunu söylemek gerekiyor: boş bir alan,
+              kapananların altında "hepsi ödendi" ile "hiç hakediş yoktu"yu
+              birbirine karıştırır. */}
+          {waiting.length === 0 && settled.length > 0 && (
+            <p className="text-xs text-slate-500">
+              {tr
+                ? 'İmza bekleyen hakediş yok; düzenlenmiş olanların hepsi ödenmiş ya da reddedilmiş.'
+                : 'No valuation is waiting for a signature; every one raised was paid or rejected.'}
+            </p>
+          )}
+
+          <SettledSection rows={settled} label={{ tr: 'Kapanan', en: 'Closed' }}>
+            {(shown) => <ul className="space-y-2">{shown.map(row)}</ul>}
+          </SettledSection>
+        </>
       )}
       <WriteError error={certify.error} />
       <WriteError error={approve.error} />
