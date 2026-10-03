@@ -537,6 +537,23 @@ olmasını `about_en`'in boşluğundan çıkarıyorduk. Bir sütunun boşluğund
 başka bir şeyin yokluğunu çıkarmak tahmindir; `proposals_at` artık ölçümü
 kendisi tutuyor (M13-23).
 
+**Ölçüm, 3 Ekim 2026 akşamı — 26 silinmiş teklif, 18 karar.** 0051 reddi
+denetim kaydından geri getirdi ve ortaya 26 değil 18 satır çıktı. Fark
+ölçüldü, tahmin edilmedi: adayların hiçbiri eksik alan (0), kayıp alım (0)
+ya da kayıp belge (0) yüzünden atlanmadı; 26 adayın `(belge, kütük,
+alıntı anahtarı)` üçlüsü olarak 18 tanesi farklıydı. Yani sekizi aynı
+cümlenin ikinci kez reddedilmesiydi — alıntı bastırması gelmeden önce aynı
+belge yeniden okunduğunda mükerrer teklif üretiliyordu — ve 0050'nin tekillik
+kısıtı onları tek karara indirdi. Bastırma açısından sonuç aynı: o cümle bir
+daha teklif edilmiyor. Hiçbir karar kaybolmadı, ve bir karar iki kez
+sayılmıyor.
+
+Aynı ölçümde kuyruk şöyleydi: üç okuma `settled`, iki okuma
+`read_before_proposals`, karar bekleyen yok. O iki okumanın hiç kararı yok,
+yani teklif aşamasının çalışıp çalışmadığı gerçekten bilinmiyor; ekran onlara
+"yeniden oku" diyor ve bu doğru cevap — 0051'den sonra yeniden okumak
+reddedilmiş cümleleri geri getirmiyor.
+
 **Açık kalan:** kaydın kökeni şu an belgenin yanında görünüyor
 (`DocumentOrigin`), kütük ekranlarının kendisinde değil. Mekanizma hazır —
 `record_provenance` ve `fetchProvenanceOfRecord` — ve 23 kütüğün detay
