@@ -63,6 +63,13 @@ export const TrusteeRegister: React.FC = () => {
 
   const rows = register.data ?? [];
   const serving = rows.filter((t) => t.active);
+  // Görevde kayıtlı olup süresi dolmuş olanlar. Başlıkta duruyor çünkü nisap
+  // bu koltuklardan hesaplanıyor; sayı sıfır değilse kurulun geçerliliği
+  // hakkında sorulacak bir soru var.
+  const lapsed = serving.filter((t) => {
+    const left = daysUntil(t.termEndsOn);
+    return left != null && left < 0;
+  }).length;
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,6 +115,11 @@ export const TrusteeRegister: React.FC = () => {
           <Pill>
             {serving.length} {tr ? 'görevde' : 'serving'}
           </Pill>
+          {lapsed > 0 && (
+            <Pill className="border-rose-300 bg-rose-50 text-rose-900">
+              {tr ? `${lapsed} süresi dolmuş` : `${lapsed} with a lapsed term`}
+            </Pill>
+          )}
           {mayKeep && !adding && (
             <ActionButton onClick={() => setAdding(true)}>
               <Plus className="h-3.5 w-3.5" aria-hidden="true" />
@@ -194,7 +206,13 @@ export const TrusteeRegister: React.FC = () => {
         <ul className="divide-y divide-slate-100">
           {rows.map((trustee) => {
             const left = daysUntil(trustee.termEndsOn);
-            const ending = trustee.active && left != null && left <= TERM_WARNING_DAYS;
+            // İşaretin kendisi kusurdu: süresi dolmuş bir mütevelli için
+            // `left` negatif ve ekran "−200 gün kaldı" yazıyordu — hem
+            // anlamsız hem de **zaman varmış gibi** okunuyor. Kilometre taşı
+            // panelinin yorumunun söylediği şey: işaretli bir sayı yanlış
+            // okunur, "200 gün önce doldu" okunmaz.
+            const expired = trustee.active && left != null && left < 0;
+            const ending = trustee.active && left != null && left >= 0 && left <= TERM_WARNING_DAYS;
             return (
               <li key={trustee.id} className="py-2">
                 <div className="flex flex-wrap items-start justify-between gap-2">
@@ -248,6 +266,18 @@ export const TrusteeRegister: React.FC = () => {
                       <span className="flex items-center gap-1 text-xs font-semibold text-amber-800">
                         <CalendarClock className="h-3.5 w-3.5" aria-hidden="true" />
                         {tr ? `${left} gün kaldı` : `${left}d left`}
+                      </span>
+                    )}
+                    {/* Süresi dolmuş ama hâlâ görevde kayıtlı. Bu bir kusur
+                        değil, birinin önüne konması gereken bir soru: nisap
+                        tutulan koltuklardan hesaplanıyor, ve süresi dolmuş bir
+                        koltuk en azından sorulmayı hak ediyor (CLAUDE.md §2). */}
+                    {expired && left != null && (
+                      <span className="flex items-center gap-1 text-xs font-semibold text-rose-700">
+                        <CalendarClock className="h-3.5 w-3.5" aria-hidden="true" />
+                        {tr
+                          ? `görev süresi ${-left} gün önce doldu, hâlâ görevde kayıtlı`
+                          : `term ended ${-left} days ago, still recorded as serving`}
                       </span>
                     )}
                     {mayKeep && trustee.active && standingDown !== trustee.id && (

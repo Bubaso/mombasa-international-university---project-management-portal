@@ -53,16 +53,25 @@ for (const entry of body.matchAll(
   /^ {2}(\w+): \{\s*\n\s*open: \[([^\]]*)\],\s*\n\s*settled: \[([^\]]*)\],\s*\n\s*why:([\s\S]*?)\n {2}\},/gm,
 )) {
   const values = (text) => [...text.matchAll(/'([^']*)'/g)].map((m) => m[1]);
-  rules.set(entry[1], {
-    open: values(entry[2]),
-    settled: values(entry[3]),
-    // Gerekçesiyle ekranda tutuluyor mu? Metnin kendisi değil, varlığı
-    // sınanıyor — gerekçenin ne dediğine bir test karar veremez.
-    keepOnScreen: /\n\s*keepOnScreen:/.test(entry[4]),
-  });
+  rules.set(entry[1], { open: values(entry[2]), settled: values(entry[3]) });
 }
 
 check(rules.size > 25, 'the judgment file parses into the rules it states', `${rules.size} enums`);
+
+/**
+ * Ekranın geri çekmeme kararı, ekran **ve** enum ile anahtarlanmış.
+ *
+ * Karar enum'un değil ekranın: `work_state` iki ekranda iki ayrı şey (saha
+ * işleri bir kuyruk, inşaat blokları bir katalog), ve enum başına tek bir
+ * hüküm ikisinden birini zorunlu olarak yanlış yapardı. Gerekçenin ne dediğine
+ * bir test karar veremez; **var olduğuna** karar verebilir.
+ */
+const kept = new Set([...source.matchAll(/^ {2}'([^']+:[a-z_]+)':/gm)].map((m) => m[1]));
+check(
+  kept.size >= 5,
+  'the screens that keep what is finished are listed with their reasons',
+  `${kept.size}`,
+);
 
 /** İki küme aynı mı? Sıra önemsiz, eleman sayısı önemli. */
 const same = (values, list) => values.size === list.length && list.every((v) => values.has(v));
@@ -245,6 +254,7 @@ const CONVERTED = [
   { file: 'src/components/governance/AccreditationPanel.tsx', enumName: 'accreditation_state' },
   { file: 'src/views/MeetingsView.tsx', enumName: 'meeting_status' },
   { file: 'src/components/procurement/ContractPanel.tsx', enumName: 'contract_state' },
+  { file: 'src/components/site/ProgressPanel.tsx', enumName: 'work_state' },
 ];
 
 /** Listede yazılı yol gerçekten var mı? Yazım hatası testi çökertmemeli. */
@@ -302,7 +312,8 @@ const NO_SPLIT_BY_ENUM = [
     because: 'nothing-is-final',
   },
   // Bunlar bir kuyruk değil: biri bir karşılaştırma, biri bir aritmetik.
-  // Gerekçe hükmün kendisinde, `keepOnScreen` alanında duruyor.
+  // Gerekçe `KEPT_ON_SCREEN`'de, ekran **ve** enum ile anahtarlanmış — çünkü
+  // karar ekranın kararı, enum'un değil.
   {
     file: 'src/components/procurement/RequestPanel.tsx',
     enumName: 'candidate_outcome',
@@ -330,6 +341,14 @@ const NO_SPLIT_BY_ENUM = [
     enumName: 'report_state',
     because: 'kept-on-purpose',
   },
+  // Aynı enum'un iki yüzü: saha görevleri kuyruk (bölündü), inşaat blokları
+  // katalog. Bu çift, gerekçenin neden enum'da değil ekranda durduğunu
+  // gösteren örnek.
+  {
+    file: 'src/views/ConstructionView.tsx',
+    enumName: 'work_state',
+    because: 'kept-on-purpose',
+  },
 ];
 
 for (const { file, enumName, because } of NO_SPLIT_BY_ENUM) {
@@ -344,12 +363,17 @@ for (const { file, enumName, because } of NO_SPLIT_BY_ENUM) {
         : '',
     );
   } else {
+    // Anahtar ekranın yolundan: `src/components/a/B.tsx` → `a/B`,
+    // `src/views/C.tsx` → `views/C`.
+    const screen = file
+      .replace(/^src\/components\//, '')
+      .replace(/^src\//, '')
+      .replace(/\.tsx$/, '');
+    const listed = kept.has(`${screen}:${enumName}`);
     check(
-      rule?.keepOnScreen === true,
-      `${enumName} says in the judgment why ${file.slice(file.indexOf('src/'))} keeps the finished ones on screen`,
-      rule?.keepOnScreen
-        ? ''
-        : 'no keepOnScreen reason — then it is an unexplained omission, not a decision',
+      listed,
+      `${screen} says why it keeps the finished ${enumName} rows on screen`,
+      listed ? '' : 'KEPT_ON_SCREEN has no entry — an unexplained omission, not a decision',
     );
   }
   const text = sourceOf(file);

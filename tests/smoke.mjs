@@ -896,6 +896,28 @@ const TEST_TRUSTEES = [
     may_delete: false,
   },
   {
+    // Görev süresi dolmuş, ama hâlâ görevde kayıtlı. Bu satır bir kusur için
+    // değil, bir kusurun **tekrarlanmaması** için burada: ekran bunu
+    // "−NNN gün kaldı" diye yazıyordu, yani zaman varmış gibi.
+    id: '00000000-0000-0000-0000-0000000009b4',
+    stakeholder_id: null,
+    full_name: 'Lapsed Trustee',
+    appointing_body: 'Universal Education Foundation',
+    appointed_on: '2019-01-10',
+    term_ends_on: '2024-01-10',
+    seat_en: 'Member',
+    seat_tr: 'Üye',
+    email: null,
+    phone: null,
+    identity_document_id: null,
+    active: true,
+    stood_down_on: null,
+    note: null,
+    confidentiality: 'internal',
+    on_the_record: false,
+    may_delete: false,
+  },
+  {
     id: '00000000-0000-0000-0000-0000000009b2',
     stakeholder_id: null,
     full_name: 'English Seat Only',
@@ -4833,6 +4855,25 @@ try {
   check(
     /kimlik belgesi yok|no ID document/.test(governance),
     'and flags a trustee whose identity document is not in the vault',
+  );
+
+  // Görev süresi dolmuş mütevelli. Nisap tutulan koltuklardan hesaplanıyor,
+  // yani süresi dolmuş bir koltuk kurulun geçerliliği hakkında bir soru.
+  check(
+    /görev süresi \d+ gün önce doldu, hâlâ görevde kayıtlı|term ended \d+ days ago, still recorded as serving/.test(
+      governance,
+    ),
+    'a trustee whose term ran out is named rather than counted quietly as serving',
+  );
+  check(
+    /1 süresi dolmuş|1 with a lapsed term/.test(governance),
+    'and the header says how many seats are in that position',
+  );
+  // İşaretin kendisi: "−1700 gün kaldı" hem anlamsız hem de zaman varmış gibi
+  // okunuyordu. Negatif bir "kaldı" bu ekranda bir daha yazılmayacak.
+  check(
+    !/-\d+ gün kaldı|-\d+d left/.test(governance),
+    'and never prints a negative number of days left',
   );
 
   // --- 0046: the three gaps somebody found by trying to use this screen ----

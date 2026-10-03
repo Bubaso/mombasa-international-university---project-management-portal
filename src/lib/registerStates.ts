@@ -29,19 +29,6 @@ export interface RegisterStateRule {
   settled: string[];
   /** Neden böyle bölündüğü. */
   why: string;
-  /**
-   * Bitmiş hâli var, ama ekranda geri çekilmiyor — ve bunun gerekçesi.
-   *
-   * Her liste bir iş kuyruğu değil. Bir karşılaştırma tablosunda elenen aday,
-   * tablonun içeriğidir: neden seçilmediği kaybolan şeydi ve onu kapalı bir
-   * bölüme koymak, tabloyu var eden şeyi geri çekmek olurdu. Bir ödeme
-   * planında ödenmiş kalem, planın aritmetiğinin parçası.
-   *
-   * Bu alan dolduğunda `tests/register-states.mjs` o ekranda bölme aramıyor;
-   * boş olup da bölünmemiş bir ekran ise teste yakalanıyor. Yani "bakıldı,
-   * bölmek yanlış olurdu" ile "kimse bakmamış" ayrı kalıyor.
-   */
-  keepOnScreen?: string;
 }
 
 export const REGISTER_STATES: Record<string, RegisterStateRule> = {
@@ -69,8 +56,6 @@ export const REGISTER_STATES: Record<string, RegisterStateRule> = {
     open: ['under_review', 'shortlisted'],
     settled: ['selected', 'rejected', 'withdrawn'],
     why: 'Kısa listeye girmek bir karar değil, bir sonraki karara kalmaktır.',
-    keepOnScreen:
-      'Aday listesi bir iş kuyruğu değil, bir karşılaştırma. M14-02 bu kütüğü tam olarak kaybolan şey için istiyor: dört avukattan birinin neden seçildiği, yani diğer üçünün neden seçilmediği. Elenen adayı kapalı bir bölüme koymak, karşılaştırmayı var eden kaydı geri çekmek olurdu. Bir talepteki aday sayısı da zaten birikmiyor.',
   },
   candidate_state: {
     open: ['pending'],
@@ -131,8 +116,6 @@ export const REGISTER_STATES: Record<string, RegisterStateRule> = {
     open: ['planned', 'due', 'certified'],
     settled: ['paid', 'cancelled'],
     why: 'Onaylanmış hakediş ödenmeyi bekliyor ve bekleme bir iştir.',
-    keepOnScreen:
-      'Sözleşmenin ödeme planı bir kuyruk değil, bir aritmetik: sıra numarası, tutar ve altındaki "planlanan / ödenen" toplamı birlikte okunuyor. Ödenmiş kalemi geri çekmek, toplamı açıklayan satırları gizlemek olurdu. Plan sözleşme imzalanırken yazılıyor ve sonra büyümüyor.',
   },
   obligation_state: {
     open: ['open', 'in_progress', 'at_risk', 'breached', 'suspended'],
@@ -163,8 +146,6 @@ export const REGISTER_STATES: Record<string, RegisterStateRule> = {
     open: ['proposed', 'curriculum_drafted', 'submitted_to_cue', 'deferred'],
     settled: ['approved', 'withdrawn'],
     why: 'Ertelenmiş program bitmiş değil: "sonra dönülecek" demek, dönülmesi gereken bir şey olduğu anlamına gelir.',
-    keepOnScreen:
-      'Program kütüğü bir iş kuyruğu değil, üniversitenin ne vereceğinin listesi: ad, derece, kadro, müfredat, hedef alım bir arada okunuyor. Onaylanmış program bu tablonun en önemli satırı — kapanmış bir iş değil, projenin amacının kendisi (M10-08). Kadro aritmetiği de bütün kütükten hesaplanıyor.',
   },
   proposal_state: {
     open: ['proposed'],
@@ -180,8 +161,6 @@ export const REGISTER_STATES: Record<string, RegisterStateRule> = {
     open: ['draft', 'approved'],
     settled: ['published', 'withdrawn'],
     why: 'Onaylanmış ama yayımlanmamış rapor yayımlanmayı bekliyor.',
-    keepOnScreen:
-      'Rapor listesi bir kuyruk değil, arşivin seçicisi: soldaki listeden bir derleme seçilip sağda okunuyor. Yayımlanmış rapor, insanın okumaya geldiği şeydir — onu kapalı bir bölüme koymak, bitmiş işi geri çekmek değil, ekranın amacını geri çekmek olurdu. Bu kütüğün asıl sorusu hacim ve o ikinci dalgada (büyüyen kütükler) sorulacak.',
   },
   risk_state: {
     open: ['open', 'mitigating', 'materialised'],
@@ -197,8 +176,6 @@ export const REGISTER_STATES: Record<string, RegisterStateRule> = {
     open: ['not_started', 'in_progress', 'blocked'],
     settled: ['done', 'abandoned'],
     why: 'Tıkanmış aşama bitmiş değil; tıkanmanın kendisi iştir.',
-    keepOnScreen:
-      'Yol haritası bir kuyruk değil, bir güzergâh: aşamalar sıralı, aralarında ok var ve her biri kendinden öncekine bakıyor (M10-07). Bitmiş aşamayı geri çekmek, zincirin yarısını görünmez kılar — "önceki bitmedi" diyen bir satırın öncesi ekranda olmaz, oklar yanlış şeyleri birleştirir. Güzergâhın geçilmiş kısmı, nerede olunduğunu söyleyen şeydir.',
   },
   stance: {
     open: ['champion', 'supporter', 'neutral', 'sceptic', 'opponent', 'unknown'],
@@ -220,6 +197,38 @@ export const REGISTER_STATES: Record<string, RegisterStateRule> = {
     settled: ['completed'],
     why: 'Hukukî olarak durdurulmuş ya da acil koruma altındaki iş bitmiş değil: durma hâli, ilgilenilmesi gereken hâldir.',
   },
+};
+
+/**
+ * Bitmiş kaydı **geri çekmeyen** ekranlar, ve her birinin gerekçesi.
+ *
+ * Anahtar ekran **ve** enum, çünkü karar ekranın kararı — enum'un değil. İlk
+ * hâlinde yanlış yerdeydi: gerekçe enum kuralının içinde duruyordu, ve
+ * `work_state` bunu kırdı. Aynı enum iki ekranda iki ayrı şey: saha işleri bir
+ * kuyruk (bitmiş iş geri çekilir), inşaat blokları bir katalog (tamamlanmış
+ * blok bir binadır, kapanmış bir iş değil). Enum başına tek bir "geri çekme"
+ * hükmü, ikisinden birini zorunlu olarak yanlış yapardı.
+ *
+ * Hangi değerin **son** olduğu enum hakkında bir olgu ve yukarıda duruyor. Son
+ * olanı **göstermeye devam etmek** bir ekran kararı, ve burada duruyor.
+ *
+ * `tests/register-states.mjs` bunu zorluyor: gerekçesi olmayan ve bölünmemiş
+ * bir ekran teste yakalanıyor, yani "bakıldı, bölmek yanlış olurdu" ile
+ * "kimse bakmamış" ayrı kalıyor (0047'nin dersi).
+ */
+export const KEPT_ON_SCREEN: Record<string, string> = {
+  'procurement/RequestPanel:candidate_outcome':
+    'Aday listesi bir iş kuyruğu değil, bir karşılaştırma. M14-02 bu kütüğü tam olarak kaybolan şey için istiyor: dört avukattan birinin neden seçildiği, yani diğer üçünün neden seçilmediği. Elenen adayı kapalı bir bölüme koymak, karşılaştırmayı var eden kaydı geri çekmek olurdu. Bir talepteki aday sayısı da zaten birikmiyor.',
+  'procurement/ContractPanel:milestone_state':
+    'Sözleşmenin ödeme planı bir kuyruk değil, bir aritmetik: sıra numarası, tutar ve altındaki "planlanan / ödenen" toplamı birlikte okunuyor. Ödenmiş kalemi geri çekmek, toplamı açıklayan satırları gizlemek olurdu. Plan sözleşme imzalanırken yazılıyor ve sonra büyümüyor.',
+  'governance/RoadmapPanel:stage_state':
+    'Yol haritası bir kuyruk değil, bir güzergâh: aşamalar sıralı, aralarında ok var ve her biri kendinden öncekine bakıyor (M10-07). Bitmiş aşamayı geri çekmek, zincirin yarısını görünmez kılar — "önceki bitmedi" diyen bir satırın öncesi ekranda olmaz, oklar yanlış şeyleri birleştirir. Güzergâhın geçilmiş kısmı, nerede olunduğunu söyleyen şeydir.',
+  'governance/ProgrammePanel:programme_state':
+    'Program kütüğü bir iş kuyruğu değil, üniversitenin ne vereceğinin listesi: ad, derece, kadro, müfredat, hedef alım bir arada okunuyor. Onaylanmış program bu tablonun en önemli satırı — kapanmış bir iş değil, projenin amacının kendisi (M10-08). Kadro aritmetiği de bütün kütükten hesaplanıyor.',
+  'views/ConstructionView:work_state':
+    'İnşaat blokları bir iş kuyruğu değil, projenin yapılarının listesi: A bloğu, eğitim bloğu, çevre duvarı. Tamamlanmış bir blok bir **binadır** — kapanmış bir iş değil, projenin var olma sebebi. Geri çekilmiş bir blok, bitmiş işi gizlemek değil, projenin yarısını gizlemek olurdu. Aynı enum saha görevlerinde kuyruk olarak davranıyor ve orada bölünüyor; karar ekranın.',
+  'views/ReportsView:report_state':
+    'Rapor listesi bir kuyruk değil, arşivin seçicisi: soldaki listeden bir derleme seçilip sağda okunuyor. Yayımlanmış rapor, insanın okumaya geldiği şeydir — onu kapalı bir bölüme koymak, bitmiş işi geri çekmek değil, ekranın amacını geri çekmek olurdu. Bu kütüğün asıl sorusu hacim ve o ikinci dalgada (büyüyen kütükler) sorulacak.',
 };
 
 /** Bu değer, kaydın işinin bittiğini söylüyor mu? */

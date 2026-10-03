@@ -29,6 +29,8 @@ import {
   workStateStyle,
 } from '../../lib/site';
 import type { SiteTask, WorkKind, WorkState } from '../../types';
+import { splitBySettled } from '../../lib/registerStates';
+import { SettledSection } from '../ui/SettledSection';
 
 interface Props {
   blockId: string;
@@ -136,65 +138,88 @@ const TaskGroup: React.FC<{
   canReport: boolean;
 }> = ({ heading, note, tasks, openTask, onToggle, canReport }) => {
   const { language } = useApp();
+  const tr = language === 'tr';
   if (tasks.length === 0) return null;
+
+  // Tamamlanmış görev kimseden iş istemiyor; hukukî olarak durdurulmuş ya da
+  // acil koruma altındaki iş istiyor — hüküm `lib/registerStates`'te
+  // (`work_state`). Bölme grubun **içinde**: inşaat ile koruma ayrı sayılıyor
+  // ve ikisinin bekleyeni ayrı okunuyor.
+  const { open: waiting, settled } = splitBySettled(tasks, 'work_state', (t) => t.state);
+
+  /** Bir satır; iki yerde çiziliyor (bekleyen ve tamamlanmış). */
+  const row = (task: SiteTask) => (
+    <li key={task.id}>
+      <button
+        type="button"
+        onClick={() => onToggle(task.id)}
+        className="flex w-full cursor-pointer flex-wrap items-start justify-between gap-2 px-3 py-2.5 text-left hover:bg-slate-50"
+      >
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-sm font-medium text-slate-900">
+              <Bilingual
+                table="site_tasks"
+                id={task.id}
+                base="title"
+                en={task.titleEn}
+                tr={task.titleTr}
+              />
+            </span>
+            <Pill className={workStateStyle(task.state)}>
+              {workStateLabel(task.state, language)}
+            </Pill>
+            {task.kind === 'preservation' && <Pill>{workKindLabel(task.kind, language)}</Pill>}
+          </div>
+          <div className="mt-0.5 flex flex-wrap items-center gap-x-3 text-xs text-slate-500">
+            {task.workPackageTitle && <span>{task.workPackageTitle}</span>}
+            {task.plannedEnd && <span>{formatDate(task.plannedEnd, language)}</span>}
+            {task.ownerName && <span>{task.ownerName}</span>}
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <span
+            className={`font-mono text-sm ${
+              task.percentComplete == null ? 'text-amber-700' : 'text-slate-800'
+            }`}
+          >
+            {progressLabel(task.percentComplete, language)}
+          </span>
+          {openTask === task.id ? (
+            <ChevronUp className="h-3.5 w-3.5 text-slate-500" aria-hidden="true" />
+          ) : (
+            <ChevronDown className="h-3.5 w-3.5 text-slate-500" aria-hidden="true" />
+          )}
+        </div>
+      </button>
+      {openTask === task.id && <TaskDetail task={task} canReport={canReport} />}
+    </li>
+  );
 
   return (
     <div>
       <div className="mb-1.5 flex flex-wrap items-baseline gap-2">
         <h3 className="text-sm font-semibold text-slate-800">{heading}</h3>
+        <Pill>{waiting.length}</Pill>
         {note && <p className="text-xs text-slate-500">{note}</p>}
       </div>
       <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white">
-        {tasks.map((task) => (
-          <li key={task.id}>
-            <button
-              type="button"
-              onClick={() => onToggle(task.id)}
-              className="flex w-full cursor-pointer flex-wrap items-start justify-between gap-2 px-3 py-2.5 text-left hover:bg-slate-50"
-            >
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="text-sm font-medium text-slate-900">
-                    <Bilingual
-                      table="site_tasks"
-                      id={task.id}
-                      base="title"
-                      en={task.titleEn}
-                      tr={task.titleTr}
-                    />
-                  </span>
-                  <Pill className={workStateStyle(task.state)}>
-                    {workStateLabel(task.state, language)}
-                  </Pill>
-                  {task.kind === 'preservation' && (
-                    <Pill>{workKindLabel(task.kind, language)}</Pill>
-                  )}
-                </div>
-                <div className="mt-0.5 flex flex-wrap items-center gap-x-3 text-xs text-slate-500">
-                  {task.workPackageTitle && <span>{task.workPackageTitle}</span>}
-                  {task.plannedEnd && <span>{formatDate(task.plannedEnd, language)}</span>}
-                  {task.ownerName && <span>{task.ownerName}</span>}
-                </div>
-              </div>
-              <div className="flex shrink-0 items-center gap-2">
-                <span
-                  className={`font-mono text-sm ${
-                    task.percentComplete == null ? 'text-amber-700' : 'text-slate-800'
-                  }`}
-                >
-                  {progressLabel(task.percentComplete, language)}
-                </span>
-                {openTask === task.id ? (
-                  <ChevronUp className="h-3.5 w-3.5 text-slate-500" aria-hidden="true" />
-                ) : (
-                  <ChevronDown className="h-3.5 w-3.5 text-slate-500" aria-hidden="true" />
-                )}
-              </div>
-            </button>
-            {openTask === task.id && <TaskDetail task={task} canReport={canReport} />}
-          </li>
-        ))}
+        {waiting.map(row)}
       </ul>
+      {waiting.length === 0 && settled.length > 0 && (
+        <p className="mt-1.5 text-xs text-slate-500">
+          {tr
+            ? 'Bu grupta bekleyen görev yok; hepsi tamamlanmış.'
+            : 'No task is waiting in this group; every one is complete.'}
+        </p>
+      )}
+      <SettledSection rows={settled} label={{ tr: 'Tamamlanan', en: 'Complete' }}>
+        {(shown) => (
+          <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white">
+            {shown.map(row)}
+          </ul>
+        )}
+      </SettledSection>
     </div>
   );
 };
