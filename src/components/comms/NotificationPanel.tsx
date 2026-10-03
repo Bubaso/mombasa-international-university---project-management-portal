@@ -14,7 +14,7 @@
  * database with its own message — enforcing it here as well would be a second
  * copy of the rule, and the copy is what drifts.
  */
-import React from 'react';
+import React, { useState } from 'react';
 import { Bell, BellOff, CircleCheck, Inbox, RefreshCw, TriangleAlert } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import {
@@ -32,11 +32,14 @@ import { ActionButton, Pill, WriteError } from '../ui/Controls';
 import { MEDIA, TOPICS, mediumName, topicName } from '../../lib/comms';
 import { formatDate } from '../../lib/site';
 import type { NotificationMedium, NotificationTopic } from '../../types';
+import { MoreRows } from '../ui/MoreRows';
 
 export const NotificationPanel: React.FC = () => {
   const { language } = useApp();
   const tr = language === 'tr';
-  const inbox = useInbox();
+  const PAGE = 40;
+  const [limit, setLimit] = useState(PAGE);
+  const inbox = useInbox(limit);
   const health = useNotificationHealth();
   const preferences = usePreferences();
   const sweep = useRunSweep();
@@ -48,7 +51,7 @@ export const NotificationPanel: React.FC = () => {
   // noticed. app.configured_media() is the one place that changes.
   const media = useDeliveryMedia();
 
-  const rows = inbox.data ?? [];
+  const rows = inbox.data?.rows ?? [];
   const unread = rows.filter((r) => r.readAt == null).length;
 
   // What somebody has actually said, against the default the database applies
@@ -217,6 +220,14 @@ export const NotificationPanel: React.FC = () => {
               ))}
             </ul>
           )}
+          {/* Kesilen neyse söylenecek: kırk bildirim gösterip dört yüz tane
+              olduğunu söylememek, okuyana hepsini gördüğünü sandırır. */}
+          <MoreRows
+            shown={rows.length}
+            total={inbox.data?.total ?? 0}
+            onMore={() => setLimit(limit + PAGE)}
+            busy={inbox.isFetching}
+          />
           <WriteError error={markRead.error} />
         </div>
 

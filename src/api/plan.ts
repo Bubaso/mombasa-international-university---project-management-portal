@@ -15,6 +15,7 @@
  */
 import { supabase } from '../lib/supabase';
 import type {
+  Page,
   BaselineVariance,
   ChronologyEvent,
   CriticalDate,
@@ -242,28 +243,31 @@ export async function takeBaseline(name: string, note?: string | null): Promise<
 // The chronology (M15-07)
 // ---------------------------------------------------------------------------
 
-export async function fetchChronology(limit = 200): Promise<ChronologyEvent[]> {
-  const { data, error } = await supabase
+export async function fetchChronology(limit = 50, offset = 0): Promise<Page<ChronologyEvent>> {
+  const { data, error, count } = await supabase
     .from('project_chronology')
-    .select('*')
+    .select('*', { count: 'exact' })
     .order('occurred_on', { ascending: false })
-    .limit(limit);
+    .range(offset, offset + limit - 1);
   fail(error);
 
-  return rows<Record<string, unknown>>(data).map((row) => ({
-    source: row.source as string,
-    category: row.category as string,
-    id: row.id as string,
-    occurredOn: row.occurred_on as string,
-    precision: row.precision as ChronologyEvent['precision'],
-    titleEn: row.title_en as string | null,
-    titleTr: row.title_tr as string | null,
-    detailEn: row.detail_en as string | null,
-    documentId: row.document_id as string | null,
-    sourceNote: row.source_note as string | null,
-    legalCaseId: row.legal_case_id as string | null,
-    confidentiality: row.confidentiality as ChronologyEvent['confidentiality'],
-  }));
+  return {
+    rows: rows<Record<string, unknown>>(data).map((row) => ({
+      source: row.source as string,
+      category: row.category as string,
+      id: row.id as string,
+      occurredOn: row.occurred_on as string,
+      precision: row.precision as ChronologyEvent['precision'],
+      titleEn: row.title_en as string | null,
+      titleTr: row.title_tr as string | null,
+      detailEn: row.detail_en as string | null,
+      documentId: row.document_id as string | null,
+      sourceNote: row.source_note as string | null,
+      legalCaseId: row.legal_case_id as string | null,
+      confidentiality: row.confidentiality as ChronologyEvent['confidentiality'],
+    })),
+    total: count ?? 0,
+  };
 }
 
 export async function addChronologyEntry(input: {
@@ -305,29 +309,32 @@ export async function addChronologyEntry(input: {
 // The countdown strip (M15-04)
 // ---------------------------------------------------------------------------
 
-export async function fetchCriticalDates(limit = 3): Promise<CriticalDate[]> {
-  const { data, error } = await supabase
+export async function fetchCriticalDates(limit = 3, offset = 0): Promise<Page<CriticalDate>> {
+  const { data, error, count } = await supabase
     .from('critical_dates')
-    .select('*')
+    .select('*', { count: 'exact' })
     .order('due_on')
-    .limit(limit);
+    .range(offset, offset + limit - 1);
   fail(error);
 
-  return rows<Record<string, unknown>>(data).map((row) => ({
-    kind: row.kind as string,
-    id: row.id as string,
-    titleEn: row.title_en as string | null,
-    titleTr: row.title_tr as string | null,
-    dueOn: row.due_on as string,
-    dueAt: row.due_at as string | null,
-    detail: row.detail as string | null,
-    legalCaseId: row.legal_case_id as string | null,
-    meetingId: row.meeting_id as string | null,
-    state: row.state as string | null,
-    needsAttention: Boolean(row.needs_attention),
-    daysAway: Number(row.days_away),
-    confidentiality: row.confidentiality as CriticalDate['confidentiality'],
-  }));
+  return {
+    rows: rows<Record<string, unknown>>(data).map((row) => ({
+      kind: row.kind as string,
+      id: row.id as string,
+      titleEn: row.title_en as string | null,
+      titleTr: row.title_tr as string | null,
+      dueOn: row.due_on as string,
+      dueAt: row.due_at as string | null,
+      detail: row.detail as string | null,
+      legalCaseId: row.legal_case_id as string | null,
+      meetingId: row.meeting_id as string | null,
+      state: row.state as string | null,
+      needsAttention: Boolean(row.needs_attention),
+      daysAway: Number(row.days_away),
+      confidentiality: row.confidentiality as CriticalDate['confidentiality'],
+    })),
+    total: count ?? 0,
+  };
 }
 
 /**

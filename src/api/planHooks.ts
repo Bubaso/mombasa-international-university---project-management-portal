@@ -18,7 +18,7 @@ export const useVariance = (baselineId: string | null) =>
     enabled: baselineId != null,
   });
 
-export const useChronology = (limit = 200) =>
+export const useChronology = (limit = 50) =>
   useQuery({ queryKey: ['chronology', limit], queryFn: () => api.fetchChronology(limit) });
 
 export const useCriticalDates = (limit = 3) =>

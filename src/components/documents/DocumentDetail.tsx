@@ -9,6 +9,7 @@ import { AUDIT_READERS, actsAs, clearanceLabel, clearanceStyle } from '../../lib
 import { categoryLabel, fileSize, shortDigest } from '../../lib/documents';
 import { ActionButton, Field, Pill, TextInput, WriteError } from '../ui/Controls';
 import type { DocumentItem } from '../../types';
+import { MoreRows } from '../ui/MoreRows';
 
 /**
  * One document: every version of it, who has read it, and what it is attached
@@ -30,7 +31,9 @@ export const DocumentDetail: React.FC<{
   const versions = vault.useVersions(doc.id);
   const authority = useAuthority();
   const canReadLog = actsAs(authority.data, ...AUDIT_READERS);
-  const access = vault.useAccessLog(canReadLog ? doc.id : null);
+  const ACCESS_PAGE = 40;
+  const [accessLimit, setAccessLimit] = useState(ACCESS_PAGE);
+  const access = vault.useAccessLog(canReadLog ? doc.id : null, accessLimit);
   const download = vault.useRequestDownload();
 
   const [uploading, setUploading] = useState(false);
@@ -183,13 +186,13 @@ export const DocumentDetail: React.FC<{
               <Users className="h-3.5 w-3.5 text-slate-500" aria-hidden="true" />
               {tr ? 'Kim okudu' : 'Who has read it'}
             </h3>
-            {(access.data ?? []).length === 0 ? (
+            {(access.data?.rows ?? []).length === 0 ? (
               <p className="text-xs text-slate-500">
                 {tr ? 'Henüz kimse açmamış.' : 'Nobody has opened it yet.'}
               </p>
             ) : (
               <ul className="space-y-0.5">
-                {(access.data ?? []).map((entry) => (
+                {(access.data?.rows ?? []).map((entry) => (
                   <li key={entry.id} className="flex items-baseline gap-2 text-xs">
                     <span className="shrink-0 font-mono text-slate-500">
                       {entry.at.slice(0, 16).replace('T', ' ')}
@@ -210,6 +213,12 @@ export const DocumentDetail: React.FC<{
                 ))}
               </ul>
             )}
+            <MoreRows
+              shown={(access.data?.rows ?? []).length}
+              total={access.data?.total ?? 0}
+              onMore={() => setAccessLimit(accessLimit + ACCESS_PAGE)}
+              busy={access.isFetching}
+            />
           </section>
         )}
 

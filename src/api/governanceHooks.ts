@@ -11,7 +11,7 @@ export const useMemberships = (organId?: string | null) =>
     queryFn: () => api.fetchMemberships(organId),
   });
 
-export const useSittings = (limit = 20) =>
+export const useSittings = (limit = 12) =>
   useQuery({ queryKey: ['sittings', limit], queryFn: () => api.fetchSittings(limit) });
 
 export const useTrusteeRegister = () =>

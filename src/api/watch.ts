@@ -13,6 +13,7 @@
  */
 import { supabase } from '../lib/supabase';
 import type {
+  Page,
   AuthorityNotice,
   GateEntry,
   IncidentKind,
@@ -54,34 +55,37 @@ interface ShiftRow {
   confidentiality: WatchShift['confidentiality'];
 }
 
-export async function fetchWatches(limit = 60): Promise<WatchShift[]> {
-  const { data, error } = await supabase
+export async function fetchWatches(limit = 20, offset = 0): Promise<Page<WatchShift>> {
+  const { data, error, count } = await supabase
     .from('watch_register')
-    .select('*')
+    .select('*', { count: 'exact' })
     .order('began_at', { ascending: false })
-    .limit(limit);
+    .range(offset, offset + limit - 1);
   fail(error);
-  return ((data ?? []) as ShiftRow[]).map((row) => ({
-    watchShiftId: row.watch_shift_id,
-    post: row.post,
-    constructionBlockId: row.construction_block_id,
-    blockCode: row.block_code,
-    onWatch: row.on_watch,
-    watchFirm: row.watch_firm,
-    beganAt: row.began_at,
-    endedAt: row.ended_at,
-    // Null stays null. The screen says "beklenen tur sayısı kayıtlı değil"
-    // rather than printing a shortfall against a figure nobody gave.
-    roundsExpected: row.rounds_expected == null ? null : Number(row.rounds_expected),
-    roundsRecorded: num(row.rounds_recorded),
-    roundsMissing: row.rounds_missing == null ? null : Number(row.rounds_missing),
-    lastRoundAt: row.last_round_at,
-    loggedHoursAfterStart:
-      row.logged_hours_after_start == null ? null : Number(row.logged_hours_after_start),
-    neverClosed: row.never_closed,
-    handoverNote: row.handover_note,
-    confidentiality: row.confidentiality,
-  }));
+  return {
+    rows: ((data ?? []) as ShiftRow[]).map((row) => ({
+      watchShiftId: row.watch_shift_id,
+      post: row.post,
+      constructionBlockId: row.construction_block_id,
+      blockCode: row.block_code,
+      onWatch: row.on_watch,
+      watchFirm: row.watch_firm,
+      beganAt: row.began_at,
+      endedAt: row.ended_at,
+      // Null stays null. The screen says "beklenen tur sayısı kayıtlı değil"
+      // rather than printing a shortfall against a figure nobody gave.
+      roundsExpected: row.rounds_expected == null ? null : Number(row.rounds_expected),
+      roundsRecorded: num(row.rounds_recorded),
+      roundsMissing: row.rounds_missing == null ? null : Number(row.rounds_missing),
+      lastRoundAt: row.last_round_at,
+      loggedHoursAfterStart:
+        row.logged_hours_after_start == null ? null : Number(row.logged_hours_after_start),
+      neverClosed: row.never_closed,
+      handoverNote: row.handover_note,
+      confidentiality: row.confidentiality,
+    })),
+    total: count ?? 0,
+  };
 }
 
 export async function fetchRounds(shiftId: string): Promise<WatchRound[]> {
@@ -290,39 +294,42 @@ interface IncidentRow {
   confidentiality: SiteIncident['confidentiality'];
 }
 
-export async function fetchIncidents(limit = 80): Promise<SiteIncident[]> {
-  const { data, error } = await supabase
+export async function fetchIncidents(limit = 20, offset = 0): Promise<Page<SiteIncident>> {
+  const { data, error, count } = await supabase
     .from('incident_register')
-    .select('*')
+    .select('*', { count: 'exact' })
     .order('occurred_at', { ascending: false })
-    .limit(limit);
+    .range(offset, offset + limit - 1);
   fail(error);
-  return ((data ?? []) as IncidentRow[]).map((row) => ({
-    siteIncidentId: row.site_incident_id,
-    kind: row.kind,
-    occurredAt: row.occurred_at,
-    constructionBlockId: row.construction_block_id,
-    blockCode: row.block_code,
-    watchShiftId: row.watch_shift_id,
-    descriptionEn: row.description_en,
-    descriptionTr: row.description_tr,
-    interventionEn: row.intervention_en,
-    interventionTr: row.intervention_tr,
-    interventionUnrecorded: row.intervention_unrecorded,
-    injuredCount: row.injured_count == null ? null : Number(row.injured_count),
-    severity: row.severity == null ? null : Number(row.severity),
-    policeObNumber: row.police_ob_number,
-    authorityNotice: row.authority_notice,
-    notifiedAt: row.notified_at,
-    notificationDocumentId: row.notification_document_id,
-    riskId: row.risk_id,
-    legalCaseId: row.legal_case_id,
-    confirmed: row.confirmed,
-    confirmedAt: row.confirmed_at,
-    evidenceCount: num(row.evidence_count),
-    loggedHoursAfter: row.logged_hours_after == null ? null : Number(row.logged_hours_after),
-    confidentiality: row.confidentiality,
-  }));
+  return {
+    rows: ((data ?? []) as IncidentRow[]).map((row) => ({
+      siteIncidentId: row.site_incident_id,
+      kind: row.kind,
+      occurredAt: row.occurred_at,
+      constructionBlockId: row.construction_block_id,
+      blockCode: row.block_code,
+      watchShiftId: row.watch_shift_id,
+      descriptionEn: row.description_en,
+      descriptionTr: row.description_tr,
+      interventionEn: row.intervention_en,
+      interventionTr: row.intervention_tr,
+      interventionUnrecorded: row.intervention_unrecorded,
+      injuredCount: row.injured_count == null ? null : Number(row.injured_count),
+      severity: row.severity == null ? null : Number(row.severity),
+      policeObNumber: row.police_ob_number,
+      authorityNotice: row.authority_notice,
+      notifiedAt: row.notified_at,
+      notificationDocumentId: row.notification_document_id,
+      riskId: row.risk_id,
+      legalCaseId: row.legal_case_id,
+      confirmed: row.confirmed,
+      confirmedAt: row.confirmed_at,
+      evidenceCount: num(row.evidence_count),
+      loggedHoursAfter: row.logged_hours_after == null ? null : Number(row.logged_hours_after),
+      confidentiality: row.confidentiality,
+    })),
+    total: count ?? 0,
+  };
 }
 
 export async function recordIncident(input: {

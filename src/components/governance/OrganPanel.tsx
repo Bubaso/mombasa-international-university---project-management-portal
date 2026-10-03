@@ -31,13 +31,16 @@ import { GOVERNANCE_KEEPERS, actsAs } from '../../lib/authority';
 import { todayIso } from '../../lib/date';
 import { cadenceLabel, organLabel } from '../../lib/governance';
 import { formatDate } from '../../lib/site';
+import { MoreRows } from '../ui/MoreRows';
 
 export const OrganPanel: React.FC = () => {
   const { language } = useApp();
   const tr = language === 'tr';
   const navigate = useNavigate();
   const organs = useOrgans();
-  const sittings = useSittings(12);
+  const PAGE = 12;
+  const [sittingLimit, setSittingLimit] = useState(PAGE);
+  const sittings = useSittings(sittingLimit);
   const [open, setOpen] = useState<string | null>(null);
   const members = useMemberships(open);
   const register = useTrusteeRegister();
@@ -430,7 +433,7 @@ export const OrganPanel: React.FC = () => {
           </p>
         </div>
         <QueryStatus queries={[sittings]} />
-        {(sittings.data ?? []).length === 0 ? (
+        {(sittings.data?.rows ?? []).length === 0 ? (
           <p className="text-xs text-slate-500">
             {tr
               ? 'Henüz bir organ oturumu kaydedilmemiş. Bir toplantıyı organa bağlayınca burada nisabıyla görünür.'
@@ -438,7 +441,7 @@ export const OrganPanel: React.FC = () => {
           </p>
         ) : (
           <ul className="divide-y divide-slate-100">
-            {(sittings.data ?? []).map((sitting) => (
+            {(sittings.data?.rows ?? []).map((sitting) => (
               <li key={sitting.meetingId}>
                 <button
                   type="button"
@@ -476,6 +479,12 @@ export const OrganPanel: React.FC = () => {
             ))}
           </ul>
         )}
+        <MoreRows
+          shown={(sittings.data?.rows ?? []).length}
+          total={sittings.data?.total ?? 0}
+          onMore={() => setSittingLimit(sittingLimit + PAGE)}
+          busy={sittings.isFetching}
+        />
       </div>
     </section>
   );

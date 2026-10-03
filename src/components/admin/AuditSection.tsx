@@ -3,6 +3,7 @@ import { ScrollText } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import * as access from '../../api/adminHooks';
 import { Pill, Section, Select, TableFrame, Td, Th } from '../ui/Controls';
+import { MoreRows } from '../ui/MoreRows';
 
 const ACTION_STYLES: Record<string, string> = {
   INSERT: 'border-emerald-200 bg-emerald-50 text-emerald-800',
@@ -27,17 +28,19 @@ const ACTION_LABELS: Record<string, { tr: string; en: string }> = {
 export const AuditSection: React.FC = () => {
   const { language } = useApp();
   const tr = language === 'tr';
-  const log = access.useAuditLog(200);
+  const PAGE = 50;
+  const [limit, setLimit] = useState(PAGE);
   const [entityType, setEntityType] = useState('');
+  const log = access.useAuditLog(limit, entityType);
 
-  const entries = log.data ?? [];
+  const shown = log.data?.rows ?? [];
+  const total = log.data?.total ?? 0;
 
-  const types = useMemo(
-    () => Array.from(new Set(entries.map((e) => e.entityType))).sort(),
-    [entries],
-  );
-
-  const shown = entityType ? entries.filter((e) => e.entityType === entityType) : entries;
+  // Açılır listedeki türler görülen dilimden çıkıyor, bütün kütükten değil —
+  // ve etiket bunu söylüyor. Bütün kütükten çıkarmak için her satırın
+  // `entity_type`'ını çekmek gerekir, ki o da tam olarak kaçındığımız şey.
+  // Süzgecin kendisi sunucuda, yani seçilen tür bütün kütükte aranıyor.
+  const types = useMemo(() => Array.from(new Set(shown.map((e) => e.entityType))).sort(), [shown]);
 
   return (
     <Section
@@ -45,8 +48,8 @@ export const AuditSection: React.FC = () => {
       title={tr ? 'Denetim kaydı' : 'Audit trail'}
       subtitle={
         tr
-          ? 'Son 200 işlem. Kayıtlar yalnızca veritabanı tarafından yazılır; hiç kimse silemez veya değiştiremez.'
-          : 'The last 200 writes. Only the database appends to this, and nobody can edit or delete a row.'
+          ? 'Kayıtlar yalnızca veritabanı tarafından yazılır; hiç kimse silemez veya değiştiremez. Liste en yenisinden başlıyor ve kaç kaydın olduğunu altında yazıyor.'
+          : 'Only the database appends to this, and nobody can edit or delete a row. The list starts with the newest and says underneath how many there are.'
       }
       whoMayUse={tr ? 'Salt okunur' : 'Read-only for everyone'}
       canUse
@@ -54,7 +57,7 @@ export const AuditSection: React.FC = () => {
       <div className="mb-2.5 flex items-end gap-2">
         <label className="flex flex-col gap-1">
           <span className="text-xs font-medium text-slate-600">
-            {tr ? 'Kayıt türü' : 'Record type'}
+            {tr ? 'Kayıt türü (görülenlerden)' : 'Record type (of those shown)'}
           </span>
           <Select
             value={entityType}
@@ -70,7 +73,13 @@ export const AuditSection: React.FC = () => {
           </Select>
         </label>
         <span className="pb-1.5 text-xs text-slate-500">
-          {tr ? `${shown.length} kayıt` : `${shown.length} entries`}
+          {entityType
+            ? tr
+              ? `bu türde ${total} kayıt`
+              : `${total} of this type`
+            : tr
+              ? `kütükte ${total} kayıt`
+              : `${total} in the log`}
         </span>
       </div>
 
@@ -116,6 +125,15 @@ export const AuditSection: React.FC = () => {
           ))}
         </TableFrame>
       )}
+
+      {/* Kesilen neyse söylenecek. Bu ekran "son 200 işlem" diyordu ve 200'ün
+          kaçtan geldiğini söylemiyordu. */}
+      <MoreRows
+        shown={shown.length}
+        total={total}
+        onMore={() => setLimit(limit + PAGE)}
+        busy={log.isFetching}
+      />
     </Section>
   );
 };

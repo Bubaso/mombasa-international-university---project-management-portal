@@ -26,6 +26,7 @@ import { ActionButton, Field, Pill, Select, TextInput, WriteError } from '../ui/
 import { actsAs } from '../../lib/authority';
 import { formatDate } from '../../lib/site';
 import type { ChronologyEvent, UserRole } from '../../types';
+import { MoreRows } from '../ui/MoreRows';
 
 const PLAN_KEEPERS: UserRole[] = [
   'admin',
@@ -80,7 +81,9 @@ export const ChronologyPanel: React.FC = () => {
   const { language } = useApp();
   const tr = language === 'tr';
   const navigate = useNavigate();
-  const chronology = useChronology(200);
+  const PAGE = 50;
+  const [limit, setLimit] = useState(PAGE);
+  const chronology = useChronology(limit);
   const documents = useDocuments();
   const authority = useAuthority();
   const add = useAddChronologyEntry();
@@ -98,7 +101,7 @@ export const ChronologyPanel: React.FC = () => {
     sourceNote: '',
   });
 
-  const all = chronology.data ?? [];
+  const all = chronology.data?.rows ?? [];
   const rows = filter ? all.filter((e) => e.category === filter) : all;
   const unevidenced = all.filter((e) => e.source === 'recorded' && e.documentId == null).length;
   const earliest = all.length > 0 ? all[all.length - 1] : null;
@@ -347,6 +350,12 @@ export const ChronologyPanel: React.FC = () => {
           ))}
         </ol>
       )}
+      <MoreRows
+        shown={rows.length}
+        total={chronology.data?.total ?? 0}
+        onMore={() => setLimit(limit + PAGE)}
+        busy={chronology.isFetching}
+      />
     </section>
   );
 };

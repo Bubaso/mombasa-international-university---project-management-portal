@@ -2,8 +2,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslatingInvalidator } from './translatingMutation';
 import * as watch from './watch';
 
-export const useWatches = () =>
-  useQuery({ queryKey: ['watches'], queryFn: () => watch.fetchWatches() });
+export const useWatches = (limit = 20) =>
+  useQuery({ queryKey: ['watches', limit], queryFn: () => watch.fetchWatches(limit) });
 
 export const useWatchRounds = (shiftId: string | null) =>
   useQuery({
@@ -15,8 +15,8 @@ export const useWatchRounds = (shiftId: string | null) =>
 export const useOpenEntries = () =>
   useQuery({ queryKey: ['gatePresence'], queryFn: watch.fetchOpenEntries });
 
-export const useIncidents = () =>
-  useQuery({ queryKey: ['siteIncidents'], queryFn: () => watch.fetchIncidents() });
+export const useIncidents = (limit = 20) =>
+  useQuery({ queryKey: ['siteIncidents', limit], queryFn: () => watch.fetchIncidents(limit) });
 
 export const useWatchHealth = () =>
   useQuery({ queryKey: ['watchHealth'], queryFn: watch.fetchWatchHealth });

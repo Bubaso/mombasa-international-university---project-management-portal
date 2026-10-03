@@ -14,7 +14,7 @@
  */
 import { supabase } from '../lib/supabase';
 import { createDocument, uploadVersion } from './documents';
-import type { Confidentiality, DocumentCategory } from '../types';
+import type { Confidentiality, DocumentCategory, Page } from '../types';
 
 export type IntakeState = 'analysing' | 'ready' | 'failed';
 
@@ -116,7 +116,7 @@ export async function fetchQueue(input: {
   search?: string;
   limit?: number;
   offset?: number;
-}): Promise<{ rows: QueueEntry[]; total: number }> {
+}): Promise<Page<QueueEntry>> {
   const limit = input.limit ?? 10;
   const offset = input.offset ?? 0;
   const oldestFirst = input.disposition === 'awaiting_decision';

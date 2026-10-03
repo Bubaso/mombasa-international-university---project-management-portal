@@ -16,7 +16,7 @@
  * generated answer into a register. The screen offers it for copying.
  */
 import { supabase } from '../lib/supabase';
-import type { AiAnswer, AiSource, AiTask, Confidentiality, SearchKind } from '../types';
+import type { Page, AiAnswer, AiSource, AiTask, Confidentiality, SearchKind } from '../types';
 
 const AI_PROXY_URL = (import.meta.env.VITE_AI_PROXY_URL as string | undefined) ?? '';
 
@@ -127,38 +127,42 @@ export interface AiQuery {
  * see everybody's, which is what the requirement asks the log for. The policy
  * decides that, so this reads the same table either way.
  */
-export async function fetchAiQueries(limit = 25): Promise<AiQuery[]> {
-  const { data, error } = await supabase
+export async function fetchAiQueries(limit = 25, offset = 0): Promise<Page<AiQuery>> {
+  const { data, error, count } = await supabase
     .from('ai_queries')
     .select(
       'id, asked_by, task, question, source_count, refusal, model, asked_at, ' +
         'asker:profiles!ai_queries_asked_by_fkey(full_name)',
+      { count: 'exact' },
     )
     .order('asked_at', { ascending: false })
-    .limit(limit);
+    .range(offset, offset + limit - 1);
   if (error) throw new Error(error.message);
 
-  return (
-    (data ?? []) as unknown as {
-      id: string;
-      asked_by: string;
-      task: AiTask;
-      question: string;
-      source_count: number;
-      refusal: string | null;
-      model: string | null;
-      asked_at: string;
-      asker: { full_name: string } | null;
-    }[]
-  ).map((row) => ({
-    id: row.id,
-    askedBy: row.asked_by,
-    task: row.task,
-    question: row.question,
-    sourceCount: row.source_count,
-    refusal: row.refusal,
-    model: row.model,
-    askedAt: row.asked_at,
-    askerName: row.asker?.full_name ?? null,
-  }));
+  return {
+    rows: (
+      (data ?? []) as unknown as {
+        id: string;
+        asked_by: string;
+        task: AiTask;
+        question: string;
+        source_count: number;
+        refusal: string | null;
+        model: string | null;
+        asked_at: string;
+        asker: { full_name: string } | null;
+      }[]
+    ).map((row) => ({
+      id: row.id,
+      askedBy: row.asked_by,
+      task: row.task,
+      question: row.question,
+      sourceCount: row.source_count,
+      refusal: row.refusal,
+      model: row.model,
+      askedAt: row.asked_at,
+      askerName: row.asker?.full_name ?? null,
+    })),
+    total: count ?? 0,
+  };
 }

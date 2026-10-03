@@ -13,6 +13,7 @@
  */
 import { supabase } from '../lib/supabase';
 import type {
+  Page,
   AnnouncementReach,
   ChannelMember,
   CommChannel,
@@ -339,30 +340,33 @@ export async function addChannelMember(input: {
 // Notifications (M11-06, M11-07)
 // ---------------------------------------------------------------------------
 
-export async function fetchInbox(limit = 40): Promise<NotificationItem[]> {
-  const { data, error } = await supabase
+export async function fetchInbox(limit = 40, offset = 0): Promise<Page<NotificationItem>> {
+  const { data, error, count } = await supabase
     .from('my_notifications')
-    .select('*')
+    .select('*', { count: 'exact' })
     .order('raised_at', { ascending: false })
-    .limit(limit);
+    .range(offset, offset + limit - 1);
   fail(error);
 
-  return rows<Record<string, unknown>>(data).map((row) => ({
-    id: row.id as string,
-    topic: row.topic as NotificationTopic,
-    urgent: Boolean(row.urgent),
-    titleEn: row.title_en as string,
-    titleTr: row.title_tr as string | null,
-    body: row.body as string | null,
-    entityKind: row.entity_kind as string | null,
-    entityId: row.entity_id as string | null,
-    threadId: row.thread_id as string | null,
-    raisedAt: row.raised_at as string,
-    deliveryId: row.delivery_id as string,
-    readAt: row.read_at as string | null,
-    awaitingAProvider: (row.awaiting_a_provider as string[] | null) ?? [],
-    raisedBy: row.raised_by as string | null,
-  }));
+  return {
+    rows: rows<Record<string, unknown>>(data).map((row) => ({
+      id: row.id as string,
+      topic: row.topic as NotificationTopic,
+      urgent: Boolean(row.urgent),
+      titleEn: row.title_en as string,
+      titleTr: row.title_tr as string | null,
+      body: row.body as string | null,
+      entityKind: row.entity_kind as string | null,
+      entityId: row.entity_id as string | null,
+      threadId: row.thread_id as string | null,
+      raisedAt: row.raised_at as string,
+      deliveryId: row.delivery_id as string,
+      readAt: row.read_at as string | null,
+      awaitingAProvider: (row.awaiting_a_provider as string[] | null) ?? [],
+      raisedBy: row.raised_by as string | null,
+    })),
+    total: count ?? 0,
+  };
 }
 
 /**

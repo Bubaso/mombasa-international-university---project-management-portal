@@ -78,10 +78,33 @@ Burada karara bağlanan bir şey yok ve birikme doğru: bir tarihçe birikmek
 için vardır. Soru yalnız hacim ve toplam — birinci ve üçüncü soru bu dalgaya
 sorulmuyor.
 
-`meeting_notes`, `meeting_attendees`, `correspondence`, mesajlar,
-`document_vault` ve sürümleri, `financial_transactions`,
-`stakeholder_stance_changes`, `risk_score_changes`, `exhibit_custody`,
-devriye kayıtları.
+**Ölçüm, 3 Ekim 2026 (ikinci tur):** `src/api`'de 134 okuma fonksiyonu var.
+Onu bir dilim çekiyor, **dokuzu toplamı hiç söylemiyordu.** Bu, beklediğimin
+tersiydi: kütüklerde sorunun "hiç kesmemek" olduğunu sanıyordum, ama dokuz
+yerde tam olarak asistan sayfasının kusuru vardı — sessizce kesmek. Kırk
+bildirim gösterip dört yüz tane olduğunu söylemeyen bir ekran, okuyana her
+şeyi gördüğünü sandırıyor, ve bu bilinmeyeni bilinmiş gibi göstermenin en
+sessiz hâli (CLAUDE.md §2).
+
+Dokuzu çevrildi: denetim kaydı, yapay zekâ sorgu kütüğü, bildirim kutusu,
+belge erişim kütüğü, kurul oturumları, kronoloji, kritik tarih şeridi, devriye
+kütüğü, olay kütüğü. Her biri artık `Page<T>` döndürüyor — dilim ve **toplam**
+— ve ekran `MoreRows` ile kaç tanesini gösterdiğini yazıyor. Şerit üçü
+gösteriyor ve "+8 tarih daha" diyor; üçte kalmak gereksinimin kendisi, sayıyı
+söylememek değil.
+
+Bir de ikinci kusur: **denetim kaydının tür süzgeci çekilen dilimin içinde
+süzüyordu.** "Sözleşme" seçen biri, kütükte sözleşme kaydı olduğu hâlde boş
+liste görebilirdi — çünkü aranan yer son 200 satırdı. Süzgeç sunucuya taşındı;
+açılır listedeki türler hâlâ görülenden çıkıyor ve etiket bunu söylüyor.
+
+**124 okuma hâlâ her satırı çekiyor** ve bu bugün kırılmıyor (en büyük kütük
+134 satır). `tests/list-reads.mjs` sayıyı tutuyor: yeni bir okuma eklenince
+sayı değişiyor, yani "buna sınır gerekiyor mu?" sorusuna cevap vermeden test
+geçmiyor. Kalanlar — `meeting_notes`, `meeting_attendees`, `correspondence`,
+mesajlar, `document_vault` ve sürümleri, `financial_transactions`,
+`stakeholder_stance_changes`, `risk_score_changes`, `exhibit_custody` — büyüme
+şekline göre sırayla aynı kalıba geçiyor.
 
 ### Üçüncü dalga — sabit listeler
 

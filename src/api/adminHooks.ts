@@ -24,8 +24,11 @@ export const useGrants = () => useQuery({ queryKey: ['grants'], queryFn: admin.f
 export const useDelegations = () =>
   useQuery({ queryKey: ['delegations'], queryFn: admin.fetchDelegations });
 
-export const useAuditLog = (limit?: number) =>
-  useQuery({ queryKey: ['auditLog', limit ?? 200], queryFn: () => admin.fetchAuditLog(limit) });
+export const useAuditLog = (limit = 50, entityType = '') =>
+  useQuery({
+    queryKey: ['auditLog', limit, entityType],
+    queryFn: () => admin.fetchAuditLog(limit, 0, entityType || undefined),
+  });
 
 /** Refreshes the queries a write can plausibly have changed. */
 function useInvalidator(keys: string[]) {

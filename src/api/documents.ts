@@ -18,6 +18,7 @@
  */
 import { supabase } from '../lib/supabase';
 import type {
+  Page,
   BytesVerdict,
   Confidentiality,
   DocumentAccessEntry,
@@ -289,26 +290,34 @@ interface AccessRow {
   reader: NamedRef | NamedRef[] | null;
 }
 
-export async function fetchAccessLog(documentId: string): Promise<DocumentAccessEntry[]> {
-  const { data, error } = await supabase
+export async function fetchAccessLog(
+  documentId: string,
+  limit = 40,
+  offset = 0,
+): Promise<Page<DocumentAccessEntry>> {
+  const { data, error, count } = await supabase
     .from('document_access')
     .select(
       'id, document_id, version_id, profile_id, action, at, ' +
         'reader:profiles!document_access_profile_id_fkey(full_name)',
+      { count: 'exact' },
     )
     .eq('document_id', documentId)
     .order('at', { ascending: false })
-    .limit(100);
+    .range(offset, offset + limit - 1);
   fail(error);
-  return ((data ?? []) as unknown as AccessRow[]).map((row) => ({
-    id: row.id,
-    documentId: row.document_id,
-    versionId: row.version_id,
-    profileId: row.profile_id,
-    readerName: label(row.reader),
-    action: row.action,
-    at: row.at,
-  }));
+  return {
+    rows: ((data ?? []) as unknown as AccessRow[]).map((row) => ({
+      id: row.id,
+      documentId: row.document_id,
+      versionId: row.version_id,
+      profileId: row.profile_id,
+      readerName: label(row.reader),
+      action: row.action,
+      at: row.at,
+    })),
+    total: count ?? 0,
+  };
 }
 
 export async function fetchLinks(documentId: string): Promise<DocumentLink[]> {

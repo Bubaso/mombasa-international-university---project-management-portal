@@ -2021,6 +2021,25 @@ export type ValueBasis = 'fixed' | 'estimated' | 'capped' | 'rate_based';
 export type NoticeBand = 'overdue' | 'within_30' | 'within_60' | 'within_90' | 'later';
 
 /**
+ * Bir listenin bir dilimi, **toplamıyla birlikte**.
+ *
+ * Kütük turunun ikinci sorusu buydu: bir liste sessizce kesiyor mu? Ölçüm,
+ * 3 Ekim 2026: `src/api`'deki 134 okuma fonksiyonundan 10'u sınır koyuyordu ve
+ * **dokuzu toplamı hiç söylemiyordu.** Kırk bildirim gösterip dört yüz tane
+ * olduğunu söylemeyen bir ekran, okuyana her şeyi gördüğünü sandırıyor — bu,
+ * bilinmeyeni bilinmiş gibi göstermenin en sessiz hâli (CLAUDE.md §2).
+ *
+ * Bir dilim döndüren her okuma bu şekli döndürüyor, ve `tests/list-reads.mjs`
+ * sınırlı bir okumanın toplamı istemeden geçmesine izin vermiyor.
+ */
+export interface Page<T> {
+  /** Bu dilimdeki satırlar. */
+  rows: T[];
+  /** Kütükteki **toplam** satır sayısı; gösterilen değil. */
+  total: number;
+}
+
+/**
  * A contract on the register, with its warning bands (M14-03, M14-05).
  *
  * This was called ContractAlert until 0052, and the name was the bug: the

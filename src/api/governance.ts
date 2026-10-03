@@ -16,6 +16,7 @@
  */
 import { supabase } from '../lib/supabase';
 import type {
+  Page,
   Language,
   AcademicProgramme,
   AccreditationRequirement,
@@ -132,44 +133,47 @@ export async function fetchMemberships(organId?: string | null): Promise<OrganMe
   }));
 }
 
-export async function fetchSittings(limit = 20): Promise<SittingQuorum[]> {
-  const { data, error } = await supabase
+export async function fetchSittings(limit = 20, offset = 0): Promise<Page<SittingQuorum>> {
+  const { data, error, count } = await supabase
     .from('governance_sitting_quorum')
-    .select('*')
+    .select('*', { count: 'exact' })
     .order('held_at', { ascending: false })
-    .limit(limit);
+    .range(offset, offset + limit - 1);
   fail(error);
 
-  return rows<{
-    meeting_id: string;
-    title: string;
-    held_at: string;
-    minutes_status: string;
-    organ_id: string;
-    organ_kind: SittingQuorum['organKind'];
-    organ_name_en: string;
-    organ_name_tr: string;
-    seats_held: number;
-    voting_present: number;
-    quorum_required: number;
-    quorum_met: boolean | null;
-    confidentiality: SittingQuorum['confidentiality'];
-  }>(data).map((row) => ({
-    meetingId: row.meeting_id,
-    title: row.title,
-    heldAt: row.held_at,
-    minutesStatus: row.minutes_status,
-    organId: row.organ_id,
-    organKind: row.organ_kind,
-    organNameEn: row.organ_name_en,
-    organNameTr: row.organ_name_tr,
-    seatsHeld: row.seats_held,
-    votingPresent: row.voting_present,
-    quorumRequired: row.quorum_required,
-    // Deliberately not coalesced. Null is "no rule recorded".
-    quorumMet: row.quorum_met,
-    confidentiality: row.confidentiality,
-  }));
+  return {
+    rows: rows<{
+      meeting_id: string;
+      title: string;
+      held_at: string;
+      minutes_status: string;
+      organ_id: string;
+      organ_kind: SittingQuorum['organKind'];
+      organ_name_en: string;
+      organ_name_tr: string;
+      seats_held: number;
+      voting_present: number;
+      quorum_required: number;
+      quorum_met: boolean | null;
+      confidentiality: SittingQuorum['confidentiality'];
+    }>(data).map((row) => ({
+      meetingId: row.meeting_id,
+      title: row.title,
+      heldAt: row.held_at,
+      minutesStatus: row.minutes_status,
+      organId: row.organ_id,
+      organKind: row.organ_kind,
+      organNameEn: row.organ_name_en,
+      organNameTr: row.organ_name_tr,
+      seatsHeld: row.seats_held,
+      votingPresent: row.voting_present,
+      quorumRequired: row.quorum_required,
+      // Deliberately not coalesced. Null is "no rule recorded".
+      quorumMet: row.quorum_met,
+      confidentiality: row.confidentiality,
+    })),
+    total: count ?? 0,
+  };
 }
 
 // ---------------------------------------------------------------------------

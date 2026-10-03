@@ -19,10 +19,10 @@ export const useVersions = (documentId: string | null) =>
  * Only fetched when a document is open. Most people cannot read this at all —
  * it is for those who answer for the project, plus your own trail.
  */
-export const useAccessLog = (documentId: string | null) =>
+export const useAccessLog = (documentId: string | null, limit = 40) =>
   useQuery({
-    queryKey: ['documentAccess', documentId],
-    queryFn: () => documents.fetchAccessLog(documentId as string),
+    queryKey: ['documentAccess', documentId, limit],
+    queryFn: () => documents.fetchAccessLog(documentId as string, limit),
     enabled: documentId != null,
   });
 

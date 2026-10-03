@@ -38,7 +38,11 @@ export const DeadlineAlertBanner: React.FC = () => {
   const dates = useCriticalDates(3);
   const acknowledge = useAcknowledgeDate();
 
-  const rows = dates.data ?? [];
+  const rows = dates.data?.rows ?? [];
+  // Üçü gösterip kaç tane olduğunu söylememek, şeridi okuyana "sırada bunlar
+  // var" dedirtir — oysa sırada on bir tane olabilir. Sayı, kesmenin kendisi
+  // kadar şeridin işi.
+  const beyond = (dates.data?.total ?? 0) - rows.length;
   if (rows.length === 0) return null;
 
   return (
@@ -112,6 +116,17 @@ export const DeadlineAlertBanner: React.FC = () => {
               </li>
             );
           })}
+          {beyond > 0 && (
+            <li className="shrink-0">
+              <button
+                type="button"
+                onClick={() => navigate('/plan')}
+                className="cursor-pointer text-xs font-medium text-amber-800 hover:underline"
+              >
+                {tr ? `+${beyond} tarih daha` : `+${beyond} more`}
+              </button>
+            </li>
+          )}
         </ul>
       </div>
     </div>

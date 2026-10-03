@@ -13,6 +13,7 @@
  */
 import { supabase } from '../lib/supabase';
 import type {
+  Page,
   Assignment,
   Authority,
   AuditEntry,
@@ -463,20 +464,36 @@ interface AuditRow {
  * Append-only and read-only: no policy grants insert, update or delete to
  * anyone, and two triggers refuse the last two outright.
  */
-export async function fetchAuditLog(limit = 200): Promise<AuditEntry[]> {
-  const { data, error } = await supabase
+export async function fetchAuditLog(
+  limit = 50,
+  offset = 0,
+  entityType?: string,
+): Promise<Page<AuditEntry>> {
+  let query = supabase
     .from('audit_log')
-    .select('id, actor_id, action, entity_type, entity_id, at, actor:profiles(full_name)')
+    .select('id, actor_id, action, entity_type, entity_id, at, actor:profiles(full_name)', {
+      count: 'exact',
+    });
+  // Süzgeç burada, istemcide değil. Önce çekilen dilimin içinde süzülüyordu:
+  // "sözleşme" seçen biri, kütükte sözleşme kaydı olduğu hâlde boş bir liste
+  // görebiliyordu — çünkü aranan yer son 200 satırdı. Kesilmiş bir veri
+  // üzerinde arama yapmak, aramanın kendisi hakkında yanlış bir şey söyler.
+  if (entityType) query = query.eq('entity_type', entityType);
+
+  const { data, error, count } = await query
     .order('id', { ascending: false })
-    .limit(limit);
+    .range(offset, offset + limit - 1);
   fail(error);
-  return ((data ?? []) as unknown as AuditRow[]).map((row) => ({
-    id: row.id,
-    actorId: row.actor_id,
-    actorName: name(row.actor),
-    action: row.action,
-    entityType: row.entity_type,
-    entityId: row.entity_id,
-    at: row.at,
-  }));
+  return {
+    rows: ((data ?? []) as unknown as AuditRow[]).map((row) => ({
+      id: row.id,
+      actorId: row.actor_id,
+      actorName: name(row.actor),
+      action: row.action,
+      entityType: row.entity_type,
+      entityId: row.entity_id,
+      at: row.at,
+    })),
+    total: count ?? 0,
+  };
 }

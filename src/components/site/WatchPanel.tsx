@@ -39,6 +39,7 @@ import {
 } from '../../lib/watch';
 import type { IncidentKind, WatchHealth } from '../../types';
 import { wordFor } from '../../lib/labels';
+import { MoreRows } from '../ui/MoreRows';
 
 const when = (iso: string | null): string =>
   iso == null
@@ -98,9 +99,12 @@ export const WatchPanel: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
   const tr = language === 'tr';
   const { user } = useAuth();
 
-  const watches = watchApi.useWatches();
+  const PAGE = 20;
+  const [shiftLimit, setShiftLimit] = useState(PAGE);
+  const [incidentLimit, setIncidentLimit] = useState(PAGE);
+  const watches = watchApi.useWatches(shiftLimit);
   const entries = watchApi.useOpenEntries();
-  const incidents = watchApi.useIncidents();
+  const incidents = watchApi.useIncidents(incidentLimit);
   const health = watchApi.useWatchHealth();
 
   const recordExit = watchApi.useRecordExit();
@@ -111,9 +115,9 @@ export const WatchPanel: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
   const [occurred, setOccurred] = useState('');
   const record = watchApi.useRecordIncident();
 
-  const watchRows = watches.data ?? [];
+  const watchRows = watches.data?.rows ?? [];
   const entryRows = entries.data ?? [];
-  const incidentRows = incidents.data ?? [];
+  const incidentRows = incidents.data?.rows ?? [];
   const unfinished = health.data ? gaps(health.data, tr) : [];
 
   return (
@@ -407,6 +411,12 @@ export const WatchPanel: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
             })}
           </ul>
         )}
+        <MoreRows
+          shown={incidentRows.length}
+          total={incidents.data?.total ?? 0}
+          onMore={() => setIncidentLimit(incidentLimit + PAGE)}
+          busy={incidents.isFetching}
+        />
       </div>
 
       {/* Watches and their rounds. */}
@@ -479,6 +489,12 @@ export const WatchPanel: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
             })}
           </ul>
         )}
+        <MoreRows
+          shown={watchRows.length}
+          total={watches.data?.total ?? 0}
+          onMore={() => setShiftLimit(shiftLimit + PAGE)}
+          busy={watches.isFetching}
+        />
       </div>
     </div>
   );

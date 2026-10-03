@@ -46,6 +46,7 @@ import { Pill, WriteError } from '../components/ui/Controls';
 import { kindLabel, routeFor } from '../lib/search';
 import { formatDate } from '../lib/site';
 import type { AiAnswer, AiTask, Confidentiality, SearchKind } from '../types';
+import { MoreRows } from '../components/ui/MoreRows';
 
 interface TaskShape {
   icon: React.ElementType;
@@ -176,7 +177,9 @@ export const AssistantView: React.FC = () => {
   const [copied, setCopied] = useState(false);
 
   const askIt = useAsk();
-  const log = useAiQueries(12);
+  const PAGE = 12;
+  const [limit, setLimit] = useState(PAGE);
+  const log = useAiQueries(limit);
   const shape = TASKS[task];
   const answer = askIt.data ?? null;
 
@@ -501,13 +504,13 @@ export const AssistantView: React.FC = () => {
             : 'Your own questions. An administrator and the auditors see everybody’s — that is what the log is for.'}
         </p>
         <QueryStatus queries={[log]} />
-        {(log.data ?? []).length === 0 ? (
+        {(log.data?.rows ?? []).length === 0 ? (
           <p className="text-xs text-slate-500">
             {tr ? 'Henüz bir şey sorulmadı.' : 'Nothing has been asked yet.'}
           </p>
         ) : (
           <ul className="divide-y divide-slate-100">
-            {(log.data ?? []).map((row) => (
+            {(log.data?.rows ?? []).map((row) => (
               <li key={row.id} className="flex flex-wrap items-start justify-between gap-2 py-1.5">
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm text-slate-900">{row.question}</p>
@@ -534,6 +537,12 @@ export const AssistantView: React.FC = () => {
             ))}
           </ul>
         )}
+        <MoreRows
+          shown={(log.data?.rows ?? []).length}
+          total={log.data?.total ?? 0}
+          onMore={() => setLimit(limit + PAGE)}
+          busy={log.isFetching}
+        />
       </section>
     </div>
   );
