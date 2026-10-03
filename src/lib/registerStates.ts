@@ -163,6 +163,8 @@ export const REGISTER_STATES: Record<string, RegisterStateRule> = {
     open: ['proposed', 'curriculum_drafted', 'submitted_to_cue', 'deferred'],
     settled: ['approved', 'withdrawn'],
     why: 'Ertelenmiş program bitmiş değil: "sonra dönülecek" demek, dönülmesi gereken bir şey olduğu anlamına gelir.',
+    keepOnScreen:
+      'Program kütüğü bir iş kuyruğu değil, üniversitenin ne vereceğinin listesi: ad, derece, kadro, müfredat, hedef alım bir arada okunuyor. Onaylanmış program bu tablonun en önemli satırı — kapanmış bir iş değil, projenin amacının kendisi (M10-08). Kadro aritmetiği de bütün kütükten hesaplanıyor.',
   },
   proposal_state: {
     open: ['proposed'],
@@ -178,6 +180,8 @@ export const REGISTER_STATES: Record<string, RegisterStateRule> = {
     open: ['draft', 'approved'],
     settled: ['published', 'withdrawn'],
     why: 'Onaylanmış ama yayımlanmamış rapor yayımlanmayı bekliyor.',
+    keepOnScreen:
+      'Rapor listesi bir kuyruk değil, arşivin seçicisi: soldaki listeden bir derleme seçilip sağda okunuyor. Yayımlanmış rapor, insanın okumaya geldiği şeydir — onu kapalı bir bölüme koymak, bitmiş işi geri çekmek değil, ekranın amacını geri çekmek olurdu. Bu kütüğün asıl sorusu hacim ve o ikinci dalgada (büyüyen kütükler) sorulacak.',
   },
   risk_state: {
     open: ['open', 'mitigating', 'materialised'],
@@ -193,6 +197,8 @@ export const REGISTER_STATES: Record<string, RegisterStateRule> = {
     open: ['not_started', 'in_progress', 'blocked'],
     settled: ['done', 'abandoned'],
     why: 'Tıkanmış aşama bitmiş değil; tıkanmanın kendisi iştir.',
+    keepOnScreen:
+      'Yol haritası bir kuyruk değil, bir güzergâh: aşamalar sıralı, aralarında ok var ve her biri kendinden öncekine bakıyor (M10-07). Bitmiş aşamayı geri çekmek, zincirin yarısını görünmez kılar — "önceki bitmedi" diyen bir satırın öncesi ekranda olmaz, oklar yanlış şeyleri birleştirir. Güzergâhın geçilmiş kısmı, nerede olunduğunu söyleyen şeydir.',
   },
   stance: {
     open: ['champion', 'supporter', 'neutral', 'sceptic', 'opponent', 'unknown'],

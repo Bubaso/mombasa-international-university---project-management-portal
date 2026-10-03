@@ -12,6 +12,8 @@ import { TriagePanel } from '../components/meetings/TriagePanel';
 import { useMachineMarks } from '../api/translateHooks';
 import { MachineBadge } from '../components/ui/MachineBadge';
 import { bilingualFrom } from '../lib/meetings';
+import { splitBySettled } from '../lib/registerStates';
+import { SettledSection } from '../components/ui/SettledSection';
 import { MINUTE_KEEPERS, actsAs, clearanceLabel, clearanceStyle } from '../lib/authority';
 import {
   MEETING_KIND_VALUES,
@@ -29,7 +31,7 @@ import {
   TextInput,
   WriteError,
 } from '../components/ui/Controls';
-import type { Confidentiality, MeetingKind, MeetingStatus } from '../types';
+import type { Confidentiality, Meeting, MeetingKind, MeetingStatus } from '../types';
 
 /**
  * The meeting record (M3).
@@ -53,6 +55,66 @@ export const MeetingsView: React.FC = () => {
   const marks = useMachineMarks(
     'meetings',
     rows.map((m) => m.id),
+  );
+  // Yapılmış ya da iptal edilmiş toplantı kimseden bir şey istemiyor;
+  // planlanmış olan istiyor. Toplantıdan çıkan aksiyonlar kendi kütüğünde
+  // duruyor, yani geri çekilen şey kaydın kendisi, işi değil. Hüküm
+  // `lib/registerStates`'te, bir kez (CLAUDE.md §4).
+  const { open: waiting, settled } = splitBySettled(rows, 'meeting_status', (m) => m.status);
+
+  /** Bir satır; iki yerde çiziliyor (önümüzdeki ve yapılmış). */
+  const row = (meeting: Meeting) => (
+    <li key={meeting.id}>
+      <button
+        type="button"
+        onClick={() => navigate(`/meetings/${meeting.id}`)}
+        className="flex w-full cursor-pointer flex-wrap items-start justify-between gap-2 px-1 py-2.5 text-left hover:bg-slate-50"
+      >
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-sm font-semibold text-slate-900">
+              {/* The record is bilingual where the migration
+                        found both minutes; the reader's own language
+                        wins, and the English title is the fallback
+                        because it is the one that is never null. */}
+              {(tr ? meeting.titleTr : meeting.title) ?? meeting.title}
+            </span>
+            {marks.is(
+              meeting.id,
+              'title',
+              bilingualFrom(meeting.title, meeting.titleTr, language).side,
+            ) && <MachineBadge />}
+            <Pill>{meetingKindLabel(meeting.kind, language)}</Pill>
+            <Pill className={MINUTES_STATUS_STYLES[meeting.minutesStatus]}>
+              {minutesStatusLabel(meeting.minutesStatus, language)}
+            </Pill>
+            {meeting.confidentiality !== 'internal' && (
+              <Pill className={clearanceStyle(meeting.confidentiality)}>
+                {clearanceLabel(meeting.confidentiality, language)}
+              </Pill>
+            )}
+          </div>
+          <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-slate-500">
+            <span className="font-mono">{meeting.heldAt.slice(0, 16).replace('T', ' ')}</span>
+            <span className="flex items-center gap-1">
+              <Users className="h-3 w-3" aria-hidden="true" />
+              {meeting.attendeeCount}
+            </span>
+            {meeting.location && <span>{meeting.location}</span>}
+            {meeting.continuesMeetingTitle && (
+              <span className="flex items-center gap-1">
+                <Link2 className="h-3 w-3" aria-hidden="true" />
+                {tr ? 'devamı: ' : 'continues: '}
+                {meeting.continuesMeetingTitle}
+              </span>
+            )}
+          </div>
+        </div>
+        <span className="shrink-0 text-xs text-slate-500">
+          {meetingStatusLabel(meeting.status, language)}
+        </span>
+      </button>
+    </li>
   );
 
   return (
@@ -112,6 +174,7 @@ export const MeetingsView: React.FC = () => {
         <header className="border-b border-slate-200 px-4 py-3">
           <h2 className="text-base font-semibold text-slate-900">
             {tr ? 'Kayıtlı toplantılar' : 'Recorded meetings'}
+            <Pill className="ml-1.5">{waiting.length}</Pill>
           </h2>
         </header>
         <div className="p-4">
@@ -126,63 +189,24 @@ export const MeetingsView: React.FC = () => {
               }
             />
           ) : (
-            <ul className="divide-y divide-slate-100">
-              {rows.map((meeting) => (
-                <li key={meeting.id}>
-                  <button
-                    type="button"
-                    onClick={() => navigate(`/meetings/${meeting.id}`)}
-                    className="flex w-full cursor-pointer flex-wrap items-start justify-between gap-2 px-1 py-2.5 text-left hover:bg-slate-50"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="text-sm font-semibold text-slate-900">
-                          {/* The record is bilingual where the migration
-                              found both minutes; the reader's own language
-                              wins, and the English title is the fallback
-                              because it is the one that is never null. */}
-                          {(tr ? meeting.titleTr : meeting.title) ?? meeting.title}
-                        </span>
-                        {marks.is(
-                          meeting.id,
-                          'title',
-                          bilingualFrom(meeting.title, meeting.titleTr, language).side,
-                        ) && <MachineBadge />}
-                        <Pill>{meetingKindLabel(meeting.kind, language)}</Pill>
-                        <Pill className={MINUTES_STATUS_STYLES[meeting.minutesStatus]}>
-                          {minutesStatusLabel(meeting.minutesStatus, language)}
-                        </Pill>
-                        {meeting.confidentiality !== 'internal' && (
-                          <Pill className={clearanceStyle(meeting.confidentiality)}>
-                            {clearanceLabel(meeting.confidentiality, language)}
-                          </Pill>
-                        )}
-                      </div>
-                      <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-slate-500">
-                        <span className="font-mono">
-                          {meeting.heldAt.slice(0, 16).replace('T', ' ')}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Users className="h-3 w-3" aria-hidden="true" />
-                          {meeting.attendeeCount}
-                        </span>
-                        {meeting.location && <span>{meeting.location}</span>}
-                        {meeting.continuesMeetingTitle && (
-                          <span className="flex items-center gap-1">
-                            <Link2 className="h-3 w-3" aria-hidden="true" />
-                            {tr ? 'devamı: ' : 'continues: '}
-                            {meeting.continuesMeetingTitle}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <span className="shrink-0 text-xs text-slate-500">
-                      {meetingStatusLabel(meeting.status, language)}
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
+            <>
+              <ul className="divide-y divide-slate-100">{waiting.map(row)}</ul>
+
+              {/* Önümüzde toplantı kalmadıysa bunu söylemek gerekiyor: boş bir
+                  alan, yapılmışların altında "takvim boş" ile "hiç toplantı
+                  yok"u birbirine karıştırır. */}
+              {waiting.length === 0 && settled.length > 0 && (
+                <p className="text-xs text-slate-500">
+                  {tr
+                    ? 'Önümüzde toplantı yok; kayıtlı olanların hepsi yapılmış ya da iptal edilmiş.'
+                    : 'No meeting is ahead; every one recorded has been held or cancelled.'}
+                </p>
+              )}
+
+              <SettledSection rows={settled} label={{ tr: 'Yapılmış', en: 'Held' }}>
+                {(shown) => <ul className="divide-y divide-slate-100">{shown.map(row)}</ul>}
+              </SettledSection>
+            </>
           )}
         </div>
       </section>

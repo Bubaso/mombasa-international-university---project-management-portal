@@ -242,6 +242,8 @@ const CONVERTED = [
   { file: 'src/components/procurement/RequestPanel.tsx', enumName: 'procurement_state' },
   { file: 'src/components/site/CommercialPanel.tsx', enumName: 'valuation_state' },
   { file: 'src/components/site/CommercialPanel.tsx', enumName: 'boq_state' },
+  { file: 'src/components/governance/AccreditationPanel.tsx', enumName: 'accreditation_state' },
+  { file: 'src/views/MeetingsView.tsx', enumName: 'meeting_status' },
 ];
 
 /** Listede yazılı yol gerçekten var mı? Yazım hatası testi çökertmemeli. */
@@ -308,6 +310,23 @@ const NO_SPLIT_BY_ENUM = [
   {
     file: 'src/components/procurement/ContractPanel.tsx',
     enumName: 'milestone_state',
+    because: 'kept-on-purpose',
+  },
+  // Bir güzergâh, bir katalog ve bir arşiv seçicisi. Üçü de liste, hiçbiri
+  // kuyruk değil.
+  {
+    file: 'src/components/governance/RoadmapPanel.tsx',
+    enumName: 'stage_state',
+    because: 'kept-on-purpose',
+  },
+  {
+    file: 'src/components/governance/ProgrammePanel.tsx',
+    enumName: 'programme_state',
+    because: 'kept-on-purpose',
+  },
+  {
+    file: 'src/views/ReportsView.tsx',
+    enumName: 'report_state',
     because: 'kept-on-purpose',
   },
 ];

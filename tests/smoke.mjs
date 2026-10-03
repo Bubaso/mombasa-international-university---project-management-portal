@@ -3659,6 +3659,18 @@ try {
   // still show are on the meeting title. The positive case and the
   // follows-the-source-column case are asserted on the resolution register,
   // which does hold machine text.
+  //
+  // The meeting that carries the badge has been held, so the register round
+  // withdrew it: the recorded-meetings list keeps what is ahead and counts
+  // what is behind. Opening that section is part of the assertion now — it
+  // also proves the withdrawal is a disclosure rather than a cut.
+  const heldMeetings = page
+    .locator('button')
+    .filter({ hasText: /yapılmış|held/i })
+    .first();
+  check(await heldMeetings.isVisible(), 'a held meeting is withdrawn from the list but counted');
+  await heldMeetings.click();
+  await page.waitForTimeout(400);
   check(
     (await page
       .locator('li', { hasText: 'Duman toplantısı' })

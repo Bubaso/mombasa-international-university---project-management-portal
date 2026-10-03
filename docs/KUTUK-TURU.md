@@ -96,6 +96,52 @@ Her kütüğün detay ekranına bir satır: bu kayıt hangi belgeden, hangi
 alıntıdan açıldı (M13-21). Mekanizma asistan turunda kuruldu
 (`record_provenance`, `fetchProvenanceOfRecord`, `DocumentOrigin` kalıbı).
 
+## Birinci dalganın sonucu: her liste kuyruk değil
+
+Dalga "on iki iş kuyruğu" varsayımıyla başladı ve **beşinde varsayım yanlış
+çıktı.** Bir listeyi kuyruk yapan şey satır sayısı ya da durum sütununun
+varlığı değil, listenin cevapladığı soru:
+
+- **Kuyruk** — "sırada ne var?" Bitmiş olan geri çekilir. Aksiyonlar,
+  yükümlülükler, açık sorular, ödeme fişleri, riskler, sorunlar, layihalar,
+  mahkeme kararları, kilometre taşları, tedarik talepleri, hakedişler, metraj
+  sürümleri, akreditasyon kontrol listesi, toplantılar. **On dört liste.**
+- **Karşılaştırma** — "hangisi, neden?" Elenen satır karşılaştırmanın
+  içeriğidir. Tedarik adayları (M14-02 tam olarak geri çekilecek kaydı
+  istiyor: diğer üçünün neden seçilmediği).
+- **Aritmetik** — "toplam tutuyor mu?" Ödenmiş kalem toplamı açıklar.
+  Sözleşmenin ödeme planı.
+- **Güzergâh** — "neredeyiz?" Geçilmiş kısım konumu söyleyen şeydir. Berat yol
+  haritası: aşamalar sıralı, aralarında ok var, her biri öncekine bakıyor.
+- **Katalog** — "ne var?" Onaylanmış satır en önemli satırdır. Akademik
+  programlar: üniversitenin ne vereceğinin listesi.
+- **Arşiv seçicisi** — "hangisini okuyacağım?" Yayımlanmış olan okunmaya
+  gelinen şeydir. Rapor derlemeleri.
+
+Son beşinde bitmiş hâl ekranda kalıyor, ve **gerekçesi hükmün kendisinde**
+duruyor (`registerStates.ts`, `keepOnScreen`). Bu bir kaçış kapısı değil: alan
+boşsa ve ekran bölünmemişse test başarısız oluyor, yani "bakıldı, bölmek yanlış
+olurdu" ile "kimse bakmamış" ayrı kalıyor (0047'nin dersi). İki listede ise
+bölünecek bir şey yok, çünkü enum'un son değeri yok: varsayımlar ve duruşma
+hazırlığı.
+
+Duruşmalar bir istisna: bitmişliği enum söylemiyor, **tarih ve kaydedilmiş
+sonuç** söylüyor. Geçmiş ama sonucu yazılmamış duruşma bitmiş sayılmıyor —
+ekranda kalıyor ve kaç tanesinin sonucunun kayıtlı olmadığı başlıkta yazıyor
+(CLAUDE.md §2).
+
+## Sözleşme kütüğü bitmiş sözleşmeyi gösteremiyor
+
+Tur sırasında çıkan kusur, geri çekmenin tersi: `ContractPanel` "Sözleşme
+kütüğü" başlığıyla `contract_alerts` görünümünü okuyor ve o görünüm
+`where c.state in ('draft', 'signed', 'active', 'suspended')` ile süzüyor
+(0022:627). Yani **süresi dolmuş ya da feshedilmiş her sözleşme portalın
+hiçbir yerinde görünmüyor**: şartları, doğurduğu yükümlülükler, ödeme planı,
+performans değerlendirmeleri. Görünümün kendisi dürüst — adı "alerts" ve
+bitmiş sözleşme için 90/60/30 uyarısı üretmemesi doğru. Kusur, uyarı akışının
+kütük yerine kullanılması. Düzeltmesi bir migration istiyor (0052) ve
+istemci tarafı ona kadar bekliyor.
+
 ## Kuralı bir yere yazmak
 
 On iki ekranı on iki ayrı şekilde düzeltmek, "bitmiş hâl" listesini on iki
@@ -105,3 +151,14 @@ olduğunu bilmiyor. Bu yüzden hüküm tek yerde, gerekçesiyle duruyor
 (`src/lib/registerStates.ts`), ve bir test onu şemadaki enum değerlerine
 bağlıyor: enum büyüdüğünde yeni değerin son olup olmadığına karar verilmeden
 derleme geçmiyor. Enum sapmasında işe yarayan desenin aynısı.
+
+**Ama hüküm veritabanında da yazılı.** Ölçüm, 3 Ekim 2026: migration'larda 22
+yerde bir durum sütunu bir enum'un `open` ya da `settled` kümesinin tamamıyla
+karşılaştırılıyor — yedi takvim görünümü, bildirim koşucusu, tedarik ihale
+koruması. Hepsi meşru (bitmiş aksiyonu listeleyen bir takvim yanlış olurdu) ve
+hepsi hükmün ikinci kopyası. SQL bir TypeScript sabitini okuyamadığı için
+kopyalar kalıyor; test onları adıyla ve satırıyla tutuyor, ve hüküm
+değiştiğinde artık uyuşmayan her satırı tek tek söylüyor. Elli başka SQL
+listesi enum'un bir **alt kümesini** sayıyor ve onlar hükmün kopyası değil,
+kendi soruları ("henüz sunulmamış layiha", "bağlanmış para", "kimse
+hazırlanmamış"); ölçüldüler ve bırakıldılar.

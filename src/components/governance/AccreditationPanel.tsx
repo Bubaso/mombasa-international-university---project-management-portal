@@ -17,7 +17,9 @@ import { QueryStatus } from '../QueryStatus';
 import { Pill } from '../ui/Controls';
 import { ACCREDITATION_TONE, accreditationLabel } from '../../lib/governance';
 import { formatDate } from '../../lib/site';
-import { isSettled } from '../../lib/registerStates';
+import { isSettled, splitBySettled } from '../../lib/registerStates';
+import { SettledSection } from '../ui/SettledSection';
+import type { AccreditationRequirement } from '../../types';
 
 export const AccreditationPanel: React.FC = () => {
   const { language } = useApp();
@@ -34,6 +36,79 @@ export const AccreditationPanel: React.FC = () => {
       r.targetOn != null &&
       new Date(r.targetOn) < new Date(),
   ).length;
+  // Bu liste bir kuyruk: ekranın kendi işi eksik olanı göstermek (M10-06).
+  // Karşılanmış ve kapsam dışı şartlar geri çekiliyor, sayıları başlıkta
+  // kalıyor. Hüküm `lib/registerStates`'te, bir kez (CLAUDE.md §4).
+  const { open: waiting, settled } = splitBySettled(rows, 'accreditation_state', (r) => r.state);
+
+  /** Bir satır; iki yerde çiziliyor (bekleyen ve karşılanmış). */
+  const row = (item: AccreditationRequirement) => {
+    const late =
+      !isSettled('accreditation_state', item.state) &&
+      item.targetOn != null &&
+      new Date(item.targetOn) < new Date();
+    return (
+      <li key={item.id} className="flex flex-wrap items-start gap-2 py-2">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-1.5">
+            {item.code && <span className="font-mono text-xs text-slate-500">{item.code}</span>}
+            <span className="text-sm font-medium text-slate-900">
+              <Bilingual
+                table="accreditation_requirements"
+                id={item.id}
+                base="title"
+                en={item.titleEn}
+                tr={item.titleTr}
+              />
+            </span>
+            <Pill className={ACCREDITATION_TONE[item.state]}>
+              {accreditationLabel(item.state, language)}
+            </Pill>
+          </div>
+          {/* "mevcut durum": what is true today, in words, which the
+                    state machine above cannot carry. */}
+          {(tr ? item.positionTr : item.positionEn) && (
+            <p className="mt-0.5 text-xs text-slate-600">
+              {tr ? item.positionTr : item.positionEn}
+            </p>
+          )}
+          <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
+            {item.responsibleName && <span>{item.responsibleName}</span>}
+            {item.targetOn && (
+              <span className={late ? 'font-semibold text-rose-700' : undefined}>
+                {tr ? 'hedef ' : 'target '}
+                {formatDate(item.targetOn, language)}
+              </span>
+            )}
+            {item.metOn && (
+              <span className="text-emerald-800">
+                {tr ? 'karşılandı ' : 'met '}
+                {formatDate(item.metOn, language)}
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="flex shrink-0 items-center gap-2">
+          {item.evidenceDocumentId ? (
+            <button
+              type="button"
+              onClick={() => navigate('/documents')}
+              className="flex cursor-pointer items-center gap-1 text-xs text-indigo-700 hover:underline"
+            >
+              <FileCheck2 className="h-3.5 w-3.5" aria-hidden="true" />
+              {tr ? 'kanıt' : 'evidence'}
+            </button>
+          ) : (
+            <span className="flex items-center gap-1 text-xs text-amber-800">
+              <TriangleAlert className="h-3.5 w-3.5" aria-hidden="true" />
+              {tr ? 'kanıt yok' : 'no evidence'}
+            </span>
+          )}
+        </div>
+      </li>
+    );
+  };
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-4">
@@ -55,6 +130,11 @@ export const AccreditationPanel: React.FC = () => {
           <Pill>
             {met}/{inScope.length} {tr ? 'karşılandı' : 'met'}
           </Pill>
+          {waiting.length > 0 && (
+            <Pill className="border-amber-300 bg-amber-50 text-amber-900">
+              {tr ? `${waiting.length} kaldı` : `${waiting.length} left`}
+            </Pill>
+          )}
           {overdue > 0 && (
             <Pill className="border-rose-300 bg-rose-50 text-rose-900">
               {tr ? `${overdue} gecikmiş` : `${overdue} overdue`}
@@ -72,77 +152,27 @@ export const AccreditationPanel: React.FC = () => {
             : 'The checklist is empty. Until the CUE standards are entered, nothing can be said about where accreditation stands — which is why this screen says nothing instead.'}
         </p>
       ) : (
-        <ul className="divide-y divide-slate-100">
-          {rows.map((row) => {
-            const late =
-              !isSettled('accreditation_state', row.state) &&
-              row.targetOn != null &&
-              new Date(row.targetOn) < new Date();
-            return (
-              <li key={row.id} className="flex flex-wrap items-start gap-2 py-2">
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    {row.code && (
-                      <span className="font-mono text-xs text-slate-500">{row.code}</span>
-                    )}
-                    <span className="text-sm font-medium text-slate-900">
-                      <Bilingual
-                        table="accreditation_requirements"
-                        id={row.id}
-                        base="title"
-                        en={row.titleEn}
-                        tr={row.titleTr}
-                      />
-                    </span>
-                    <Pill className={ACCREDITATION_TONE[row.state]}>
-                      {accreditationLabel(row.state, language)}
-                    </Pill>
-                  </div>
-                  {/* "mevcut durum": what is true today, in words, which the
-                      state machine above cannot carry. */}
-                  {(tr ? row.positionTr : row.positionEn) && (
-                    <p className="mt-0.5 text-xs text-slate-600">
-                      {tr ? row.positionTr : row.positionEn}
-                    </p>
-                  )}
-                  <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
-                    {row.responsibleName && <span>{row.responsibleName}</span>}
-                    {row.targetOn && (
-                      <span className={late ? 'font-semibold text-rose-700' : undefined}>
-                        {tr ? 'hedef ' : 'target '}
-                        {formatDate(row.targetOn, language)}
-                      </span>
-                    )}
-                    {row.metOn && (
-                      <span className="text-emerald-800">
-                        {tr ? 'karşılandı ' : 'met '}
-                        {formatDate(row.metOn, language)}
-                      </span>
-                    )}
-                  </div>
-                </div>
+        <>
+          <ul className="divide-y divide-slate-100">{waiting.map(row)}</ul>
 
-                <div className="flex shrink-0 items-center gap-2">
-                  {row.evidenceDocumentId ? (
-                    <button
-                      type="button"
-                      onClick={() => navigate('/documents')}
-                      className="flex cursor-pointer items-center gap-1 text-xs text-indigo-700 hover:underline"
-                    >
-                      <FileCheck2 className="h-3.5 w-3.5" aria-hidden="true" />
-                      {tr ? 'kanıt' : 'evidence'}
-                    </button>
-                  ) : (
-                    <span className="flex items-center gap-1 text-xs text-amber-800">
-                      <TriangleAlert className="h-3.5 w-3.5" aria-hidden="true" />
-                      {tr ? 'kanıt yok' : 'no evidence'}
-                    </span>
-                  )}
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+          {/* Bekleyen kalmadıysa bunu söylemek gerekiyor: boş bir alan,
+              karşılananların altında "hepsi tamam" ile "liste boş"u birbirine
+              karıştırır. */}
+          {waiting.length === 0 && settled.length > 0 && (
+            <p className="text-xs text-slate-500">
+              {tr
+                ? 'Bekleyen şart yok; listedeki her şart karşılanmış ya da kapsam dışı.'
+                : 'No requirement is waiting; every one on the list is met or out of scope.'}
+            </p>
+          )}
+
+          <SettledSection
+            rows={settled}
+            label={{ tr: 'Karşılanan ve kapsam dışı', en: 'Met or out of scope' }}
+          >
+            {(shown) => <ul className="divide-y divide-slate-100">{shown.map(row)}</ul>}
+          </SettledSection>
+        </>
       )}
     </section>
   );
