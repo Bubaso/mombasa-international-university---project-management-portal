@@ -9246,10 +9246,13 @@ select pg_temp.check('and then nothing of that reading is waiting',
   (select pending from intake_queue where intake_id = '1d000000-0000-0000-0000-000000000001'),
   0);
 
--- Teklif aşaması hiç çalışmadıysa, bu sıfır teklifle aynı şey değil.
-select pg_temp.check('a reading whose proposal pass never ran says so',
+-- Kararları bitmiş bir okuma, `proposals_at` boş olsa bile "eski okuma"
+-- değil: verilmiş kararın varlığı aşamanın çalıştığının kanıtı (0051). Hiç
+-- kanıtı olmayan okumanın "yeniden oku" dediği aşağıdaki 0051 bölümünde
+-- sınanıyor — bu alımın bir reddi var, dolayısıyla kanıtı var.
+select pg_temp.check('a reading whose proposals were all decided is settled',
   (select disposition from intake_queue where intake_id = '1d000000-0000-0000-0000-000000000001'),
-  'read_before_proposals');
+  'settled');
 set role postgres;
 update document_intake set proposals_at = now()
  where id = '1d000000-0000-0000-0000-000000000001';
@@ -9328,6 +9331,89 @@ begin
   raise notice 'ok   an applied proposal cannot be declined, and the refusal says which rule';
 end;
 $$;
+
+-- ===========================================================================
+-- Verilmiş kararlar (0051)
+-- ===========================================================================
+--
+-- 0050 canlıya uygulandığında ölçüm iki şey gösterdi ve ikisi de burada
+-- sınanıyor: dokuz kaydı olan bir okuma "eski okuma" görünüyordu, ve eski
+-- yolla reddedilmiş 26 teklif hiçbir iz bırakmadığı için yeniden teklif
+-- edilebilirdi.
+
+set role postgres;
+-- Kararı olan ama `proposals_at`'i olmayan bir okuma: 0050 öncesinden kalma
+-- satırların şekli bu.
+update document_intake set proposals_at = null
+ where id = '1d000000-0000-0000-0000-000000000001';
+set role authenticated;
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');
+
+select pg_temp.check('a reading with no recorded pass but a record it opened is settled, not old',
+  (select disposition from intake_queue where intake_id = '1d000000-0000-0000-0000-000000000001'),
+  'settled');
+
+-- Kararsız ve kanıtsız olan, gerçekten bilinmiyor: "yeniden oku" doğru
+-- teklif, ve bu satır onu koruyor.
+set role postgres;
+insert into document_intake (id, document_version_id, document_id, state, classified_as,
+                             classification_why, requested_by, finished_at)
+values ('1d000000-0000-0000-0000-000000000051',
+        (select id from document_versions where document_id = '1b000000-0000-0000-0000-000000000001' limit 1),
+        '1b000000-0000-0000-0000-000000000001', 'ready', 'a letter',
+        'it opens with an address block', '22222222-2222-2222-2222-222222222222', now());
+set role authenticated;
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');
+select pg_temp.check('a reading with no pass and no decision still asks to be read again',
+  (select disposition from intake_queue where intake_id = '1d000000-0000-0000-0000-000000000051'),
+  'read_before_proposals');
+
+-- Reddin denetim kaydından geri getirilmesi. Silinen satır `before`'da
+-- tamamıyla duruyor (0001), yani karar kurtarılabilir.
+set role postgres;
+insert into intake_proposals (id, intake_id, document_id, register, why, quote, quote_found,
+                              proposed_values)
+values ('1e000000-0000-0000-0000-000000000061',
+        '1d000000-0000-0000-0000-000000000051',
+        '1b000000-0000-0000-0000-000000000001',
+        'question', 'the letter asks something', 'What is the position on the boundary?', true,
+        '{"questionEn": "What is the position on the boundary?"}'::jsonb);
+-- Eski yol: doğrudan silme, mezar taşı yok. 0049 böyle çalışıyordu.
+delete from intake_proposals where id = '1e000000-0000-0000-0000-000000000061';
+set role authenticated;
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');
+select pg_temp.check('a proposal deleted the old way leaves nothing behind',
+  (select count(*) from intake_rejections
+    where document_id = '1b000000-0000-0000-0000-000000000001' and register = 'question'),
+  0::bigint);
+select pg_temp.check('and so it would be proposed again',
+  public.candidates_already_rejected('1b000000-0000-0000-0000-000000000001',
+    '[{"register": "question", "quote": "What is the position on the boundary?"}]'::jsonb),
+  '{}'::int[]);
+
+-- Göçün çağırdığı fonksiyonun aynısı — kopyası değil, kendisi. Göç bir kez
+-- çalıştı ve bu testin kendi satırları ondan sonra oluştu, bu yüzden burada
+-- yeniden çağrılıyor: fonksiyon yeniden çağrılabilir olmak zorunda.
+set role postgres;
+select app.recover_rejections_from_audit();
+set role authenticated;
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');
+
+select pg_temp.check('the decision is recovered from the audit log',
+  (select count(*) from intake_rejections
+    where document_id = '1b000000-0000-0000-0000-000000000001' and register = 'question'),
+  1::bigint);
+select pg_temp.check('and the same sentence is no longer proposed',
+  public.candidates_already_rejected('1b000000-0000-0000-0000-000000000001',
+    '[{"register": "question", "quote": "What is the position on the boundary?"}]'::jsonb),
+  '{0}'::int[]);
+select pg_temp.check('a recovered rejection carries no invented reason of its own',
+  (select note from intake_rejections
+    where document_id = '1b000000-0000-0000-0000-000000000001' and register = 'question'),
+  null::text);
+select pg_temp.check('and the reading it belongs to is settled now that a decision exists',
+  (select disposition from intake_queue where intake_id = '1d000000-0000-0000-0000-000000000051'),
+  'settled');
 
 reset role;
 
