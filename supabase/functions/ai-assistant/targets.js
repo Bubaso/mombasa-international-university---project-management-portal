@@ -848,6 +848,217 @@ export const PROPOSAL_TARGETS = [
       },
     ],
   },
+
+  // --- Hukukî görüş ve delil ---------------------------------------------
+
+  {
+    key: 'legal_opinion',
+    table: 'legal_opinions',
+    label: { en: 'Legal opinion', tr: 'Hukukî görüş' },
+    what:
+      'Advice from counsel, as the document records it: a question put to a lawyer and the ' +
+      'conclusion they reached. A letter from an advocate advising a course of action is one.',
+    fields: [
+      {
+        name: 'question',
+        type: 'longtext',
+        required: true,
+        label: { en: 'The question put', tr: 'Sorulan soru' },
+        about: 'What counsel was asked, as a question.',
+      },
+      {
+        name: 'conclusion',
+        type: 'longtext',
+        label: { en: 'The conclusion', tr: 'Vardığı sonuç' },
+        about: 'What they advised, in their own terms where you can.',
+      },
+      {
+        name: 'givenByName',
+        type: 'text',
+        label: { en: 'Given by', tr: 'Veren' },
+        about: 'The lawyer or firm, as the document names them.',
+      },
+      {
+        name: 'givenOn',
+        type: 'date',
+        label: { en: 'Dated', tr: 'Tarihi' },
+        about: 'Only a date the document states, YYYY-MM-DD.',
+      },
+      {
+        name: 'legalCaseId',
+        type: 'legalCase',
+        human: true,
+        label: { en: 'Case', tr: 'Dava' },
+        about: 'The case it concerns, if it concerns one. The approver picks it.',
+      },
+    ],
+  },
+
+  {
+    key: 'exhibit',
+    table: 'exhibits',
+    label: { en: 'Exhibit', tr: 'Delil' },
+    what:
+      'A document or thing produced as evidence in a case, with the mark it carries. Propose ' +
+      'one for each exhibit the text lists or refers to by mark.',
+    fields: [
+      {
+        name: 'legalCaseId',
+        type: 'legalCase',
+        required: true,
+        human: true,
+        label: { en: 'Case', tr: 'Dava' },
+        about: 'Which case. The approver picks it.',
+      },
+      {
+        name: 'mark',
+        type: 'text',
+        required: true,
+        label: { en: 'Mark', tr: 'İşaret' },
+        about: 'The exhibit mark, such as "TAH-1", exactly as written.',
+      },
+      {
+        name: 'description',
+        type: 'text',
+        required: true,
+        label: { en: 'What it is', tr: 'Ne olduğu' },
+        about: 'What the exhibit is, in one line.',
+      },
+      {
+        name: 'source',
+        type: 'text',
+        label: { en: 'Where it came from', tr: 'Kaynağı' },
+        about: 'Who produced it or where it was obtained, if said.',
+      },
+      {
+        name: 'relevance',
+        type: 'text',
+        label: { en: 'Why it matters', tr: 'Neden önemli' },
+        about: 'What it is said to prove.',
+      },
+    ],
+  },
+
+  // --- Para ---------------------------------------------------------------
+
+  {
+    key: 'transaction',
+    table: 'financial_transactions',
+    label: { en: 'Financial transaction', tr: 'Malî işlem' },
+    what:
+      'A payment the document records: an invoice, a receipt, a fee note, a bank advice. One ' +
+      'per amount paid or demanded, with who it went to.',
+    fields: [
+      {
+        name: 'referenceNo',
+        type: 'text',
+        required: true,
+        label: { en: 'Reference', tr: 'Referans no' },
+        about: 'The invoice or voucher number, as printed.',
+      },
+      {
+        name: 'date',
+        type: 'date',
+        required: true,
+        label: { en: 'Date', tr: 'Tarih' },
+        about: 'The date on the document, YYYY-MM-DD.',
+      },
+      {
+        name: 'category',
+        type: 'enum',
+        required: true,
+        values: [
+          'civil_construction',
+          'architectural_qs',
+          'legal_defence',
+          'site_security',
+          'land_administration',
+          'statutory_compliance',
+        ],
+        label: { en: 'Category', tr: 'Kategori' },
+        about: 'What the money was for.',
+      },
+      {
+        name: 'description',
+        type: 'text',
+        required: true,
+        label: { en: 'What for', tr: 'Ne için' },
+        about: 'What was paid for, in one line.',
+      },
+      {
+        name: 'payee',
+        type: 'text',
+        required: true,
+        label: { en: 'Paid to', tr: 'Ödenen' },
+        about: 'Who received it, as named.',
+      },
+      {
+        name: 'amount',
+        type: 'number',
+        required: true,
+        min: 0,
+        max: 1000000000,
+        label: { en: 'Amount', tr: 'Tutar' },
+        about: 'The figure as printed, in the currency it is printed in. Do not convert it.',
+      },
+      {
+        name: 'currency',
+        type: 'enum',
+        required: true,
+        values: ['KES', 'USD', 'TRY'],
+        label: { en: 'Currency', tr: 'Para birimi' },
+        about: 'The currency the amount is written in.',
+      },
+      {
+        // Kur belgede yazmaz ve uydurulması, geçmişi sessizce yeniden yazmak
+        // olur (M8-03: kur satırın üzerinde durur). Onaylayan girer.
+        name: 'fxRateToKes',
+        type: 'number',
+        required: true,
+        human: true,
+        min: 0,
+        max: 10000,
+        label: { en: 'Rate used to KES', tr: 'Kullanılan kur (KES)' },
+        about:
+          'The rate this amount was converted at. It is not in the document and is never ' +
+          'guessed: the approver enters the rate that was actually used.',
+      },
+    ],
+  },
+
+  // --- Saha ---------------------------------------------------------------
+
+  {
+    key: 'inspection',
+    table: 'site_inspections',
+    label: { en: 'Site inspection', tr: 'Saha denetimi' },
+    what:
+      'A visit to a block that was inspected and reported. Propose one when the document is, ' +
+      'or reports, an inspection of construction work.',
+    fields: [
+      {
+        name: 'constructionBlockId',
+        type: 'constructionBlock',
+        required: true,
+        human: true,
+        label: { en: 'Block', tr: 'Blok' },
+        about: 'Which block was inspected. The approver picks it.',
+      },
+      {
+        name: 'inspectedOn',
+        type: 'date',
+        required: true,
+        label: { en: 'Inspected on', tr: 'Denetim tarihi' },
+        about: 'The date of the visit, YYYY-MM-DD.',
+      },
+      {
+        name: 'summaryEn',
+        type: 'longtext',
+        label: { en: 'What was found', tr: 'Ne bulundu' },
+        about: 'What the inspection reports, in two or three sentences.',
+      },
+    ],
+  },
 ];
 
 export const PROPOSAL_KEYS = PROPOSAL_TARGETS.map((t) => t.key);

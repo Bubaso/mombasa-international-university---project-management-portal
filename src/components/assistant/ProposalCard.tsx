@@ -6,6 +6,7 @@ import { useProfiles } from '../../api/adminHooks';
 import { useLegalCases } from '../../api/hooks';
 import { useMeetings } from '../../api/meetingHooks';
 import { useStakeholders } from '../../api/stakeholderHooks';
+import { useBlocks } from '../../api/siteHooks';
 import { applyProposal, declineProposal, type Proposal } from '../../api/proposals';
 import { ActionButton, Field, Pill, Select, TextInput, WriteError } from '../ui/Controls';
 import { formatDate } from '../../lib/site';
@@ -53,6 +54,7 @@ export const ProposalCard: React.FC<{ proposal: Proposal }> = ({ proposal }) => 
   const cases = useLegalCases();
   const meetings = useMeetings();
   const stakeholders = useStakeholders();
+  const blocks = useBlocks();
 
   /** Bir seçici alanın seçenekleri: kimlik ve ekranda görünecek ad. */
   const optionsFor = (type: TargetField['type']): { id: string; label: string }[] => {
@@ -64,6 +66,8 @@ export const ProposalCard: React.FC<{ proposal: Proposal }> = ({ proposal }) => 
       return (cases.data ?? []).map((x) => ({ id: x.id, label: `${x.caseNumber} — ${x.title}` }));
     if (type === 'meeting')
       return (meetings.data ?? []).map((x) => ({ id: x.id, label: `${x.title} (${x.heldAt})` }));
+    if (type === 'constructionBlock')
+      return (blocks.data ?? []).map((x) => ({ id: x.id, label: `${x.code} — ${x.name}` }));
     return [];
   };
 
@@ -232,7 +236,9 @@ const ProposalField: React.FC<{
 
   // Portaldaki bir kaydı seçtiren alanlar. Hepsi aynı biçimde çiziliyor:
   // belge bir ad yazabilir, portaldaki hangi kayıt olduğunu söyleyemez.
-  if (['profile', 'stakeholder', 'legalCase', 'meeting'].includes(field.type)) {
+  if (
+    ['profile', 'stakeholder', 'legalCase', 'meeting', 'constructionBlock'].includes(field.type)
+  ) {
     return (
       <Field label={label}>
         <Select value={asText} onChange={(e) => onChange(e.target.value)}>

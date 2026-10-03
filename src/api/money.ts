@@ -438,20 +438,25 @@ export async function recordTransaction(input: {
   fxRateToKes: number;
   budgetLineId: string | null;
   documentId: string | null;
-}): Promise<void> {
-  const { error } = await supabase.from('financial_transactions').insert({
-    reference_no: input.referenceNo,
-    date: input.date,
-    category: input.category,
-    description: input.description,
-    payee: input.payee,
-    amount: input.amount,
-    currency: input.currency,
-    fx_rate_to_kes: input.fxRateToKes,
-    budget_line_id: input.budgetLineId,
-    document_id: input.documentId,
-  });
+}): Promise<string> {
+  const { data, error } = await supabase
+    .from('financial_transactions')
+    .insert({
+      reference_no: input.referenceNo,
+      date: input.date,
+      category: input.category,
+      description: input.description,
+      payee: input.payee,
+      amount: input.amount,
+      currency: input.currency,
+      fx_rate_to_kes: input.fxRateToKes,
+      budget_line_id: input.budgetLineId,
+      document_id: input.documentId,
+    })
+    .select('id')
+    .single();
   fail(error);
+  return (data as { id: string }).id;
 }
 
 /** Attaching the paper is what makes a transaction verified (M8-07). */

@@ -570,13 +570,18 @@ export async function createInspection(input: {
   constructionBlockId: string;
   inspectedOn: string;
   summaryEn: string | null;
-}): Promise<void> {
-  const { error } = await supabase.from('site_inspections').insert({
-    construction_block_id: input.constructionBlockId,
-    inspected_on: input.inspectedOn,
-    summary_en: input.summaryEn,
-  });
+}): Promise<string> {
+  const { data, error } = await supabase
+    .from('site_inspections')
+    .insert({
+      construction_block_id: input.constructionBlockId,
+      inspected_on: input.inspectedOn,
+      summary_en: input.summaryEn,
+    })
+    .select('id')
+    .single();
   fail(error);
+  return (data as { id: string }).id;
 }
 
 export async function addFinding(input: {

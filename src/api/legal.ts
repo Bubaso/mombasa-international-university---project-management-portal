@@ -310,15 +310,20 @@ export async function createExhibit(input: {
   description: string;
   source: string | null;
   relevance: string | null;
-}): Promise<void> {
-  const { error } = await supabase.from('exhibits').insert({
-    legal_case_id: input.legalCaseId,
-    mark: input.mark,
-    description: input.description,
-    source: input.source,
-    relevance: input.relevance,
-  });
+}): Promise<string> {
+  const { data, error } = await supabase
+    .from('exhibits')
+    .insert({
+      legal_case_id: input.legalCaseId,
+      mark: input.mark,
+      description: input.description,
+      source: input.source,
+      relevance: input.relevance,
+    })
+    .select('id')
+    .single();
   fail(error);
+  return (data as { id: string }).id;
 }
 
 interface CustodyRow {
@@ -494,14 +499,19 @@ export async function recordOpinion(input: {
   givenByName: string | null;
   givenOn: string | null;
   conclusion: string | null;
-}): Promise<void> {
-  const { error } = await supabase.from('legal_opinions').insert({
-    legal_case_id: input.legalCaseId,
-    question: input.question,
-    given_by_stakeholder_id: input.givenByStakeholderId,
-    given_by_name: input.givenByName,
-    given_on: input.givenOn,
-    conclusion: input.conclusion,
-  });
+}): Promise<string> {
+  const { data, error } = await supabase
+    .from('legal_opinions')
+    .insert({
+      legal_case_id: input.legalCaseId,
+      question: input.question,
+      given_by_stakeholder_id: input.givenByStakeholderId,
+      given_by_name: input.givenByName,
+      given_on: input.givenOn,
+      conclusion: input.conclusion,
+    })
+    .select('id')
+    .single();
   fail(error);
+  return (data as { id: string }).id;
 }

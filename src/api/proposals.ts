@@ -22,10 +22,14 @@ import { addChronologyEntry, addMilestone } from './plan';
 import { addCorrespondence } from './comms';
 import { createAction, createDecision, createMeeting, createQuestion } from './meetings';
 import { createAssumption, createIssue, createRisk } from './raid';
-import { createFiling, createHearing, createOrder } from './legal';
+import { createExhibit, createFiling, createHearing, createOrder, recordOpinion } from './legal';
+import { recordTransaction } from './money';
+import { createInspection } from './site';
 import { createStakeholder, logInteraction } from './stakeholders';
 import type {
   ChronologyCategory,
+  CurrencyCode,
+  FinancialTransaction,
   Confidentiality,
   ContactChannel,
   CorrespondenceDirection,
@@ -315,6 +319,50 @@ const WRITERS: Record<
     createAssumption({
       statementEn: required(values, 'statementEn', 'The assumption'),
       riskCategory: (text(values, 'riskCategory') ?? 'legal') as RiskCategory,
+    }),
+
+  legal_opinion: (values) =>
+    recordOpinion({
+      legalCaseId: text(values, 'legalCaseId'),
+      question: required(values, 'question', 'The question'),
+      givenByStakeholderId: null,
+      givenByName: text(values, 'givenByName'),
+      givenOn: text(values, 'givenOn'),
+      conclusion: text(values, 'conclusion'),
+    }),
+
+  exhibit: (values) =>
+    createExhibit({
+      legalCaseId: required(values, 'legalCaseId', 'A case'),
+      mark: required(values, 'mark', 'A mark'),
+      description: required(values, 'description', 'What it is'),
+      source: text(values, 'source'),
+      relevance: text(values, 'relevance'),
+    }),
+
+  transaction: (values, documentId) =>
+    recordTransaction({
+      referenceNo: required(values, 'referenceNo', 'A reference'),
+      date: required(values, 'date', 'A date'),
+      category: (text(values, 'category') ??
+        'statutory_compliance') as FinancialTransaction['category'],
+      description: required(values, 'description', 'What it was for'),
+      payee: required(values, 'payee', 'Who was paid'),
+      amount: number(values, 'amount', 0),
+      currency: (text(values, 'currency') ?? 'KES') as CurrencyCode,
+      // Varsayılanı yok: kur onaylayanın girdiği şey, ve 1 varsaymak
+      // dönüşümü sessizce yanlış yapar (M8-03).
+      fxRateToKes: number(values, 'fxRateToKes', 0),
+      budgetLineId: null,
+      // Belge kasada; işlemin dayanağı olarak bağlanıyor.
+      documentId,
+    }),
+
+  inspection: (values) =>
+    createInspection({
+      constructionBlockId: required(values, 'constructionBlockId', 'A block'),
+      inspectedOn: required(values, 'inspectedOn', 'A date'),
+      summaryEn: text(values, 'summaryEn'),
     }),
 
   risk: (values) =>

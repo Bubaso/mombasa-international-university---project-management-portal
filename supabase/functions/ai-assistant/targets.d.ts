@@ -17,7 +17,8 @@ export type FieldType =
   | 'profile'
   | 'stakeholder'
   | 'legalCase'
-  | 'meeting';
+  | 'meeting'
+  | 'constructionBlock';
 
 export interface TargetField {
   name: string;
