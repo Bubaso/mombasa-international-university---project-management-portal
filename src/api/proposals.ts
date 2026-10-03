@@ -23,12 +23,14 @@ import { addCorrespondence } from './comms';
 import { createAction, createDecision, createMeeting, createQuestion } from './meetings';
 import { createAssumption, createIssue, createRisk } from './raid';
 import { createExhibit, createFiling, createHearing, createOrder, recordOpinion } from './legal';
-import { recordTransaction } from './money';
-import { createInspection } from './site';
+import { createBudgetLine, recordTransaction } from './money';
+import { addRequest } from './procurement';
+import { createInspection, createValuation } from './site';
 import { createStakeholder, logInteraction } from './stakeholders';
 import type {
   ChronologyCategory,
   CurrencyCode,
+  ProcurementKind,
   FinancialTransaction,
   Confidentiality,
   ContactChannel,
@@ -363,6 +365,38 @@ const WRITERS: Record<
       constructionBlockId: required(values, 'constructionBlockId', 'A block'),
       inspectedOn: required(values, 'inspectedOn', 'A date'),
       summaryEn: text(values, 'summaryEn'),
+    }),
+
+  procurement_request: (values) =>
+    addRequest({
+      kind: (text(values, 'kind') ?? 'other') as ProcurementKind,
+      referenceNo: text(values, 'referenceNo'),
+      needEn: required(values, 'needEn', 'The need'),
+      justificationEn: required(values, 'justificationEn', 'A reason'),
+      estimatedAmount: number(values, 'estimatedAmount', 0),
+      estimatedCurrency: text(values, 'estimatedCurrency') ?? 'KES',
+      neededBy: text(values, 'neededBy'),
+    }),
+
+  budget_line: (values) =>
+    createBudgetLine({
+      budgetCategoryId: required(values, 'budgetCategoryId', 'A category'),
+      titleEn: required(values, 'titleEn', 'A title'),
+      amount: number(values, 'amount', 0),
+      currency: (text(values, 'currency') ?? 'KES') as CurrencyCode,
+      fxRateToKes: number(values, 'fxRateToKes', 0),
+      constructionBlockId: null,
+    }),
+
+  valuation: (values) =>
+    createValuation({
+      constructionBlockId: required(values, 'constructionBlockId', 'A block'),
+      contractorId: null,
+      periodStart: required(values, 'periodStart', 'A start date'),
+      periodEnd: required(values, 'periodEnd', 'An end date'),
+      amount: number(values, 'amount', 0),
+      currency: (text(values, 'currency') ?? 'KES') as CurrencyCode,
+      summary: text(values, 'summary'),
     }),
 
   risk: (values) =>

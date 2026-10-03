@@ -879,17 +879,22 @@ export async function createValuation(input: {
   amount: number;
   currency: CurrencyCode;
   summary: string | null;
-}): Promise<void> {
-  const { error } = await supabase.from('valuations').insert({
-    construction_block_id: input.constructionBlockId,
-    contractor_id: input.contractorId,
-    period_start: input.periodStart,
-    period_end: input.periodEnd,
-    amount: input.amount,
-    currency: input.currency,
-    summary: input.summary,
-  });
+}): Promise<string> {
+  const { data, error } = await supabase
+    .from('valuations')
+    .insert({
+      construction_block_id: input.constructionBlockId,
+      contractor_id: input.contractorId,
+      period_start: input.periodStart,
+      period_end: input.periodEnd,
+      amount: input.amount,
+      currency: input.currency,
+      summary: input.summary,
+    })
+    .select('id')
+    .single();
   fail(error);
+  return (data as { id: string }).id;
 }
 
 /**

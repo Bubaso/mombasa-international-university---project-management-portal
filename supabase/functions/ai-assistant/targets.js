@@ -1059,6 +1059,181 @@ export const PROPOSAL_TARGETS = [
       },
     ],
   },
+
+  // --- Tedarik, bütçe, hakediş ------------------------------------------
+
+  {
+    key: 'procurement_request',
+    table: 'procurement_requests',
+    label: { en: 'Procurement request', tr: 'Tedarik talebi' },
+    what:
+      'A need for somebody to be engaged or something bought, which the document states: ' +
+      'counsel to be instructed, a contractor to be appointed, an auditor, a consultant, a ' +
+      'supplier. Only where the document asks for it, not where it would be sensible.',
+    fields: [
+      {
+        name: 'kind',
+        type: 'enum',
+        required: true,
+        values: ['legal_counsel', 'contractor', 'auditor', 'consultant', 'supplier', 'other'],
+        label: { en: 'What is needed', tr: 'Ne gerekiyor' },
+        about: 'Which kind of engagement.',
+      },
+      {
+        name: 'needEn',
+        type: 'text',
+        required: true,
+        label: { en: 'The need', tr: 'İhtiyaç' },
+        about: 'What is required, in one line.',
+      },
+      {
+        name: 'justificationEn',
+        type: 'longtext',
+        required: true,
+        label: { en: 'Why', tr: 'Gerekçe' },
+        about: 'The reason the document gives. If it gives none, this is not a request yet.',
+      },
+      {
+        name: 'estimatedAmount',
+        type: 'number',
+        required: true,
+        min: 0,
+        max: 1000000000,
+        label: { en: 'Estimated amount', tr: 'Tahminî tutar' },
+        about: 'The figure the document states. Do not estimate one it does not give.',
+      },
+      {
+        name: 'estimatedCurrency',
+        type: 'enum',
+        required: true,
+        values: ['KES', 'USD', 'TRY'],
+        label: { en: 'Currency', tr: 'Para birimi' },
+        about: 'The currency that figure is written in.',
+      },
+      {
+        name: 'referenceNo',
+        type: 'text',
+        label: { en: 'Reference', tr: 'Referans' },
+        about: 'The reference it carries, if any.',
+      },
+      {
+        name: 'neededBy',
+        type: 'date',
+        label: { en: 'Needed by', tr: 'Ne zamana kadar' },
+        about: 'Only a date the document states, YYYY-MM-DD.',
+      },
+    ],
+  },
+
+  {
+    key: 'budget_line',
+    table: 'budget_lines',
+    label: { en: 'Budget line', tr: 'Bütçe kalemi' },
+    what:
+      'A sum set aside for something, as a budget or a board paper records it. Not a payment ' +
+      'already made — that is a transaction.',
+    fields: [
+      {
+        name: 'budgetCategoryId',
+        type: 'budgetCategory',
+        required: true,
+        human: true,
+        label: { en: 'Category', tr: 'Kategori' },
+        about: 'Which budget category it belongs under. The approver picks it.',
+      },
+      {
+        name: 'titleEn',
+        type: 'text',
+        required: true,
+        label: { en: 'What it is for', tr: 'Ne için' },
+        about: 'What the line covers, in one line.',
+      },
+      {
+        name: 'amount',
+        type: 'number',
+        required: true,
+        min: 0,
+        max: 1000000000,
+        label: { en: 'Amount', tr: 'Tutar' },
+        about: 'The figure as written, in the currency it is written in.',
+      },
+      {
+        name: 'currency',
+        type: 'enum',
+        required: true,
+        values: ['KES', 'USD', 'TRY'],
+        label: { en: 'Currency', tr: 'Para birimi' },
+        about: 'The currency of that figure.',
+      },
+      {
+        // Aynı kural: kur belgede yazmaz, uydurulmaz (M8-03).
+        name: 'fxRateToKes',
+        type: 'number',
+        required: true,
+        human: true,
+        min: 0,
+        max: 10000,
+        label: { en: 'Rate used to KES', tr: 'Kullanılan kur (KES)' },
+        about: 'Not in the document and never guessed: the approver enters the rate used.',
+      },
+    ],
+  },
+
+  {
+    key: 'valuation',
+    table: 'valuations',
+    label: { en: 'Valuation', tr: 'Hakediş' },
+    what:
+      'A measured claim for work done in a period, as a valuation certificate or a QS report ' +
+      'states it. The portal requires two separate signatures afterwards; this only records it.',
+    fields: [
+      {
+        name: 'constructionBlockId',
+        type: 'constructionBlock',
+        required: true,
+        human: true,
+        label: { en: 'Block', tr: 'Blok' },
+        about: 'Which block the work was on. The approver picks it.',
+      },
+      {
+        name: 'periodStart',
+        type: 'date',
+        required: true,
+        label: { en: 'Period from', tr: 'Dönem başı' },
+        about: 'The first day of the period valued, YYYY-MM-DD.',
+      },
+      {
+        name: 'periodEnd',
+        type: 'date',
+        required: true,
+        label: { en: 'Period to', tr: 'Dönem sonu' },
+        about: 'The last day of the period valued, YYYY-MM-DD.',
+      },
+      {
+        name: 'amount',
+        type: 'number',
+        required: true,
+        min: 0,
+        max: 1000000000,
+        label: { en: 'Amount', tr: 'Tutar' },
+        about: 'The figure claimed, as written.',
+      },
+      {
+        name: 'currency',
+        type: 'enum',
+        required: true,
+        values: ['KES', 'USD', 'TRY'],
+        label: { en: 'Currency', tr: 'Para birimi' },
+        about: 'The currency of that figure.',
+      },
+      {
+        name: 'summary',
+        type: 'longtext',
+        label: { en: 'What it covers', tr: 'Neyi kapsıyor' },
+        about: 'What work the valuation is for.',
+      },
+    ],
+  },
 ];
 
 export const PROPOSAL_KEYS = PROPOSAL_TARGETS.map((t) => t.key);

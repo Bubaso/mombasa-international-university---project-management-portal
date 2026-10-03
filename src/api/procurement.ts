@@ -98,24 +98,29 @@ export async function addRequest(input: {
   estimatedAmount: number;
   estimatedCurrency: string;
   neededBy?: string | null;
-}): Promise<void> {
+}): Promise<string> {
   const { data: session } = await supabase.auth.getSession();
   const me = session.session?.user.id;
   if (!me) throw new Error('Sign in again — your session has expired.');
 
   // requested_by is the caller's own, and the policy insists on it: the
   // approval rule later turns on who asked.
-  const { error } = await supabase.from('procurement_requests').insert({
-    kind: input.kind,
-    reference_no: input.referenceNo?.trim() || null,
-    need_en: input.needEn.trim(),
-    justification_en: input.justificationEn.trim(),
-    estimated_amount: input.estimatedAmount,
-    estimated_currency: input.estimatedCurrency,
-    needed_by: input.neededBy || null,
-    requested_by: me,
-  });
+  const { data, error } = await supabase
+    .from('procurement_requests')
+    .insert({
+      kind: input.kind,
+      reference_no: input.referenceNo?.trim() || null,
+      need_en: input.needEn.trim(),
+      justification_en: input.justificationEn.trim(),
+      estimated_amount: input.estimatedAmount,
+      estimated_currency: input.estimatedCurrency,
+      needed_by: input.neededBy || null,
+      requested_by: me,
+    })
+    .select('id')
+    .single();
   fail(error);
+  return (data as { id: string }).id;
 }
 
 /** Approves against 0015's bands, server-side (M14-01). */

@@ -191,16 +191,21 @@ export async function createBudgetLine(input: {
   currency: CurrencyCode;
   fxRateToKes: number;
   constructionBlockId: string | null;
-}): Promise<void> {
-  const { error } = await supabase.from('budget_lines').insert({
-    budget_category_id: input.budgetCategoryId,
-    title_en: input.titleEn,
-    amount: input.amount,
-    currency: input.currency,
-    fx_rate_to_kes: input.fxRateToKes,
-    construction_block_id: input.constructionBlockId,
-  });
+}): Promise<string> {
+  const { data, error } = await supabase
+    .from('budget_lines')
+    .insert({
+      budget_category_id: input.budgetCategoryId,
+      title_en: input.titleEn,
+      amount: input.amount,
+      currency: input.currency,
+      fx_rate_to_kes: input.fxRateToKes,
+      construction_block_id: input.constructionBlockId,
+    })
+    .select('id')
+    .single();
   fail(error);
+  return (data as { id: string }).id;
 }
 
 export async function createCategory(input: { code: string; nameEn: string }): Promise<void> {
