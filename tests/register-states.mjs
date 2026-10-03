@@ -224,21 +224,104 @@ const CONVERTED = [
   { file: 'src/components/meetings/ActionList.tsx', enumName: 'action_status' },
   { file: 'src/components/meetings/QuestionList.tsx', enumName: 'question_status' },
   { file: 'src/views/ObligationsView.tsx', enumName: 'obligation_state' },
+  { file: 'src/components/money/VoucherPanel.tsx', enumName: 'voucher_state' },
+  { file: 'src/components/raid/RiskList.tsx', enumName: 'risk_state' },
+  { file: 'src/components/raid/IssueList.tsx', enumName: 'issue_state' },
+  { file: 'src/components/legal/FilingList.tsx', enumName: 'filing_state' },
+  { file: 'src/components/legal/OrderList.tsx', enumName: 'order_state' },
 ];
 
+/** Listede yazılı yol gerçekten var mı? Yazım hatası testi çökertmemeli. */
+const sourceOf = (file) => {
+  const path = join(root, file);
+  if (!existsSync(path)) {
+    check(false, `${file} is a file this repository actually has`);
+    return null;
+  }
+  return readFileSync(path, 'utf8');
+};
+
 for (const { file, enumName } of CONVERTED) {
-  const text = readFileSync(join(root, file), 'utf8');
+  const text = sourceOf(file);
+  if (text === null) continue;
   check(
     text.includes(`splitBySettled(`) && text.includes(`'${enumName}'`),
     `${file.slice(file.indexOf('src/'))} splits on the ${enumName} judgment`,
   );
   check(
-    text.includes('<SettledSection'),
+    /<SettledSection[\s>]/.test(text),
     `and withdraws what is finished rather than listing it alongside`,
   );
   check(
     /\{waiting\.length\}|waitingOf\(items\)\.length/.test(text),
     `and counts what is waiting rather than everything`,
+  );
+}
+
+// ------------------------------------- bölünmeyenler: gerekçe de sınanıyor
+//
+// Bir ekranın bölünmemesi iki şey olabilir: kimse bakmamış, ya da bakılmış ve
+// bölmenin kendisi yanlış olurdu. İkisi aynı şey değil (0047). Aşağıdaki
+// listedeki her ekran ikinci gruptan, ve gerekçesi hükmün kendisinde durmak
+// zorunda: o enum'un `settled`'ı boş olmalı. Enum bir gün son bir değer
+// kazanırsa bu test ekranı geri çağırır.
+
+const NO_SPLIT_BY_ENUM = [
+  { file: 'src/components/raid/AssumptionList.tsx', enumName: 'assumption_state' },
+  { file: 'src/components/legal/HearingList.tsx', enumName: 'preparation_state' },
+];
+
+for (const { file, enumName } of NO_SPLIT_BY_ENUM) {
+  const rule = rules.get(enumName);
+  check(Boolean(rule), `${enumName} has a judgment at all`);
+  check(
+    rule?.settled.length === 0,
+    `${enumName} has no finished value, which is why ${file.slice(file.indexOf('src/'))} does not split on it`,
+    rule && rule.settled.length > 0
+      ? `it now has ${rule.settled.join(', ')} — the screen has to be revisited`
+      : '',
+  );
+  const text = sourceOf(file);
+  if (text === null) continue;
+  check(
+    !text.includes(`splitBySettled(rows, '${enumName}'`),
+    `and ${file.slice(file.indexOf('src/'))} does not pretend otherwise`,
+  );
+}
+
+// Duruşma bitmişliğini enum söylemiyor, tarih ve kaydedilmiş sonuç söylüyor.
+// Geçmiş ama sonucu yazılmamış duruşmanın "bitmiş"e düşmemesi bu turun
+// dürüstlük kuralı (CLAUDE.md §2) ve ekranda bir satırla söyleniyor.
+{
+  const text = readFileSync(join(root, 'src/components/legal/HearingList.tsx'), 'utf8');
+  check(
+    /const isOver = \(h: Hearing\) => hasHappened\(h\) && hasOutcome\(h\)/.test(text),
+    'a hearing counts as finished only once it has happened AND its outcome is written',
+  );
+  check(
+    /<SettledSection[\s>]/.test(text),
+    'and HearingList withdraws the finished ones all the same',
+  );
+  check(
+    text.includes('sonucu kayıtlı değil'),
+    'and says on screen that a past hearing has no outcome recorded',
+  );
+}
+
+// Süresi geçmiş layiha: `late` durumu kaydedilmiş olanı da sayıyor. İlk hâli
+// saymıyordu ve başlıktaki rozet, süresinin geçtiği açıkça yazılmış layihayı
+// atlıyordu (ölçüm, 3 Ekim 2026).
+{
+  const text = readFileSync(join(root, 'src/components/legal/FilingList.tsx'), 'utf8');
+  check(
+    /const isLate = \(f: Filing\) =>\s*\n?\s*f\.state === 'late' \|\|/.test(text),
+    'a filing whose state records that it missed its date counts as late',
+  );
+  check(
+    // Yalnız kod: ölçümü anlatan yorum eski ifadeyi **yazıyor** ve onu kusur
+    // saymak, neyi düzelttiğini yazmayı cezalandırmak olurdu.
+    !/\.includes\(f\.state\)/.test(text),
+    'and that question is not asked with a hand-written list of states',
   );
 }
 

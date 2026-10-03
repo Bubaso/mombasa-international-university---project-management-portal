@@ -23,6 +23,8 @@ import { CURRENCIES, formatDate, money as fmt } from '../../lib/site';
 import { voucherStateLabel, voucherStateStyle } from '../../lib/money';
 import { roleLabel } from '../../lib/roles';
 import type { CurrencyCode, PaymentVoucher, UserRole } from '../../types';
+import { splitBySettled } from '../../lib/registerStates';
+import { SettledSection } from '../ui/SettledSection';
 
 export const VoucherPanel: React.FC<{ canRule: boolean }> = ({ canRule }) => {
   const { language } = useApp();
@@ -46,6 +48,10 @@ export const VoucherPanel: React.FC<{ canRule: boolean }> = ({ canRule }) => {
 
   const rows = vouchers.data ?? [];
 
+  // Bitmiş olan geri çekiliyor; hangi değerin son olduğu
+  // `lib/registerStates`'te, enum başına, bir kez (CLAUDE.md §4).
+  const { open: waiting, settled } = splitBySettled(rows, 'voucher_state', (r) => r.state);
+
   return (
     <Section
       icon={Receipt}
@@ -61,6 +67,7 @@ export const VoucherPanel: React.FC<{ canRule: boolean }> = ({ canRule }) => {
           : 'Anybody may ask to be paid; the ruling belongs to whoever the band names.'
       }
       canUse
+      waiting={waiting.length}
     >
       <QueryStatus queries={[vouchers]} />
 
@@ -190,17 +197,45 @@ export const VoucherPanel: React.FC<{ canRule: boolean }> = ({ canRule }) => {
           }
         />
       ) : (
-        <ul className="space-y-2">
-          {rows.map((voucher) => (
-            <VoucherRow
-              key={voucher.id}
-              voucher={voucher}
-              open={openId === voucher.id}
-              onToggle={() => setOpenId(openId === voucher.id ? null : voucher.id)}
-              canRule={canRule}
-            />
-          ))}
-        </ul>
+        <>
+          <ul className="space-y-2">
+            {waiting.map((voucher) => (
+              <VoucherRow
+                key={voucher.id}
+                voucher={voucher}
+                open={openId === voucher.id}
+                onToggle={() => setOpenId(openId === voucher.id ? null : voucher.id)}
+                canRule={canRule}
+              />
+            ))}
+          </ul>
+
+          {/* Bekleyen kalmadıysa söylenir: kapanmışların altındaki boşluk,
+              "hepsi ödendi" ile "hiç talep yok"u karıştırır. */}
+          {waiting.length === 0 && settled.length > 0 && (
+            <p className="text-xs text-slate-500">
+              {tr
+                ? 'Bekleyen ödeme fişi yok; hepsi karara bağlanmış.'
+                : 'No voucher is waiting; every one has been settled.'}
+            </p>
+          )}
+
+          <SettledSection rows={settled} label={{ tr: 'Kapanmış', en: 'Settled' }}>
+            {(shown) => (
+              <ul className="space-y-2">
+                {shown.map((voucher) => (
+                  <VoucherRow
+                    key={voucher.id}
+                    voucher={voucher}
+                    open={openId === voucher.id}
+                    onToggle={() => setOpenId(openId === voucher.id ? null : voucher.id)}
+                    canRule={canRule}
+                  />
+                ))}
+              </ul>
+            )}
+          </SettledSection>
+        </>
       )}
     </Section>
   );

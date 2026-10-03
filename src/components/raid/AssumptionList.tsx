@@ -43,6 +43,15 @@ export const AssumptionList: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
   const rows = assumptions.data ?? [];
   const unchecked = rows.filter((a) => a.state === 'unverified').length;
 
+  // Burada **kasıtlı olarak** bitmiş/bekleyen ayrımı yok. Kütük turunda on iki
+  // ekran bölündü; bu onlardan biri değil, çünkü bir varsayımın bitmiş hâli
+  // yok: kırılmış bir varsayım tamamlanmış bir iş değil, planın dayandığı şeyin
+  // çöktüğü andır. Hüküm ve gerekçesi `lib/registerStates`'te
+  // (`assumption_state`, `settled: []`); `tests/register-states.mjs` bu boşluğu
+  // zorluyor, yani enum bir gün son bir değer kazanırsa test bu ekranı geri
+  // çağırıyor. "Kimse bakmamış" ile "bakıldı, bölünmesi yanlış olurdu" aynı şey
+  // değil (0047'nin dersi).
+
   return (
     <Section
       icon={HelpCircle}

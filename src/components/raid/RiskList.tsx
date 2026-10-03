@@ -32,6 +32,8 @@ import {
   scoreBand,
 } from '../../lib/raid';
 import type { Risk, RiskCategory, RiskResponse } from '../../types';
+import { splitBySettled } from '../../lib/registerStates';
+import { SettledSection } from '../ui/SettledSection';
 
 interface Props {
   canKeep: boolean;
@@ -53,7 +55,16 @@ export const RiskList: React.FC<Props> = ({ canKeep, canAcknowledge }) => {
   const [trigger, setTrigger] = useState('');
 
   const rows = risks.data ?? [];
+  // `live` burada açık/kapalı hükmü değil, başka bir soru: gerçekleşmiş bir
+  // riskin "tetiği yazılmış mı" diye sorulması anlamsız, çünkü tetik olaydan
+  // önce izlenen şeydir. Bu yüzden `materialised` buradan dışarıda ve öyle
+  // kalıyor.
   const live = rows.filter((r) => r.state === 'open' || r.state === 'mitigating');
+
+  // Kapanmış risk geri çekiliyor. Gerçekleşmiş olan bekleyen tarafta kalıyor:
+  // olmuş bir risk yönetilecek bir sorundur ve ilgiyi en çok o ister
+  // (`lib/registerStates`).
+  const { open: waiting, settled } = splitBySettled(rows, 'risk_state', (r) => r.state);
   const withoutTrigger = live.filter((r) => !r.triggerEn).length;
 
   return (
@@ -71,6 +82,7 @@ export const RiskList: React.FC<Props> = ({ canKeep, canAcknowledge }) => {
           : 'Inside the organisation: management, trustees, the site team.'
       }
       canUse={canKeep}
+      waiting={waiting.length}
     >
       <QueryStatus queries={[risks]} />
 
@@ -187,18 +199,45 @@ export const RiskList: React.FC<Props> = ({ canKeep, canAcknowledge }) => {
           }
         />
       ) : (
-        <ul className="space-y-2">
-          {rows.map((risk) => (
-            <RiskRow
-              key={risk.id}
-              risk={risk}
-              open={openId === risk.id}
-              onToggle={() => setOpenId(openId === risk.id ? null : risk.id)}
-              canKeep={canKeep}
-              canAcknowledge={canAcknowledge}
-            />
-          ))}
-        </ul>
+        <>
+          <ul className="space-y-2">
+            {waiting.map((risk) => (
+              <RiskRow
+                key={risk.id}
+                risk={risk}
+                open={openId === risk.id}
+                onToggle={() => setOpenId(openId === risk.id ? null : risk.id)}
+                canKeep={canKeep}
+                canAcknowledge={canAcknowledge}
+              />
+            ))}
+          </ul>
+
+          {waiting.length === 0 && settled.length > 0 && (
+            <p className="text-xs text-slate-500">
+              {tr
+                ? 'Açık risk yok; kütükteki her risk kapatılmış.'
+                : 'No risk is open; every one in the register has been closed.'}
+            </p>
+          )}
+
+          <SettledSection rows={settled} label={{ tr: 'Kapatılmış', en: 'Closed' }}>
+            {(shown) => (
+              <ul className="space-y-2">
+                {shown.map((risk) => (
+                  <RiskRow
+                    key={risk.id}
+                    risk={risk}
+                    open={openId === risk.id}
+                    onToggle={() => setOpenId(openId === risk.id ? null : risk.id)}
+                    canKeep={canKeep}
+                    canAcknowledge={canAcknowledge}
+                  />
+                ))}
+              </ul>
+            )}
+          </SettledSection>
+        </>
       )}
     </Section>
   );

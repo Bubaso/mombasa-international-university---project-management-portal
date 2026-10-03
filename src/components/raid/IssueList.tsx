@@ -16,7 +16,9 @@ import { EmptyState } from '../EmptyState';
 import { ActionButton, Field, Pill, Section, Select, TextInput, WriteError } from '../ui/Controls';
 import { formatDate } from '../../lib/site';
 import { RISK_CATEGORIES, issueStateLabel, riskCategoryLabel } from '../../lib/raid';
-import type { RiskCategory } from '../../types';
+import type { Issue, RiskCategory } from '../../types';
+import { splitBySettled } from '../../lib/registerStates';
+import { SettledSection } from '../ui/SettledSection';
 
 export const IssueList: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
   const { language } = useApp();
@@ -33,7 +35,93 @@ export const IssueList: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
   const [resolution, setResolution] = useState('');
 
   const rows = issues.data ?? [];
+
+  // Çözülmüş ve kapatılmış olan geri çekiliyor (`lib/registerStates`).
+  const { open: waiting, settled } = splitBySettled(rows, 'issue_state', (r) => r.state);
   const foreseen = rows.filter((i) => i.materialisedFromRiskId != null).length;
+
+  /** Bir satır; iki yerde çiziliyor (bekleyen ve geri çekilmiş). */
+  const row = (issue: Issue) => (
+    <li key={issue.id} className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-sm font-medium text-slate-900">
+              <Bilingual
+                table="issues"
+                id={issue.id}
+                base="title"
+                en={issue.titleEn}
+                tr={issue.titleTr}
+              />
+            </span>
+            <Pill>{riskCategoryLabel(issue.category, language)}</Pill>
+            <Pill>{issueStateLabel(issue.state, language)}</Pill>
+            {/* The trace back. Kept by the database, not by anybody
+                        remembering to mention it. */}
+            {issue.materialisedFromRiskId && (
+              <Pill className="border-sky-200 bg-sky-100 text-sky-800">
+                <span className="flex items-center gap-1">
+                  <Link2 className="h-3 w-3" aria-hidden="true" />
+                  {tr ? 'risk kütüğündeydi' : 'was on the register'}
+                </span>
+              </Pill>
+            )}
+          </div>
+          <div className="mt-0.5 text-slate-500">
+            {issue.ownerName ?? (tr ? 'sahipsiz' : 'unowned')} ·{' '}
+            {formatDate(issue.openedOn, language)}
+            {issue.detailEn && <span className="block text-slate-600">{issue.detailEn}</span>}
+            {issue.resolutionEn && (
+              <span className="block text-emerald-700">
+                {tr ? 'Çözüm: ' : 'Resolved: '}
+                {issue.resolutionEn}
+              </span>
+            )}
+          </div>
+        </div>
+        <span className="shrink-0 font-mono text-sm font-semibold text-slate-700">
+          {tr ? `şiddet ${issue.severity}` : `severity ${issue.severity}`}
+        </span>
+      </div>
+
+      {canKeep && issue.resolvedAt == null && (
+        <div className="mt-1.5">
+          {resolving === issue.id ? (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                resolve.mutate(
+                  { id: issue.id, resolutionEn: resolution },
+                  { onSuccess: () => setResolving(null) },
+                );
+              }}
+              className="space-y-1.5"
+            >
+              <TextInput
+                required
+                value={resolution}
+                onChange={(e) => setResolution(e.target.value)}
+                placeholder={tr ? 'Ne yapıldı?' : 'What was done?'}
+              />
+              <div className="flex gap-2">
+                <ActionButton type="submit" tone="primary">
+                  {tr ? 'Çözüldü' : 'Resolve'}
+                </ActionButton>
+                <ActionButton type="button" onClick={() => setResolving(null)}>
+                  {tr ? 'Vazgeç' : 'Cancel'}
+                </ActionButton>
+              </div>
+            </form>
+          ) : (
+            <ActionButton onClick={() => setResolving(issue.id)}>
+              {tr ? 'Çözüldü olarak işaretle' : 'Mark resolved'}
+            </ActionButton>
+          )}
+        </div>
+      )}
+    </li>
+  );
 
   return (
     <Section
@@ -46,6 +134,7 @@ export const IssueList: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
       }
       whoMayUse={tr ? 'Kurum içi.' : 'Inside the organisation.'}
       canUse={canKeep}
+      waiting={waiting.length}
     >
       <QueryStatus queries={[issues]} />
 
@@ -126,94 +215,21 @@ export const IssueList: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
           }
         />
       ) : (
-        <ul className="space-y-2">
-          {rows.map((issue) => (
-            <li
-              key={issue.id}
-              className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs"
-            >
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="text-sm font-medium text-slate-900">
-                      <Bilingual
-                        table="issues"
-                        id={issue.id}
-                        base="title"
-                        en={issue.titleEn}
-                        tr={issue.titleTr}
-                      />
-                    </span>
-                    <Pill>{riskCategoryLabel(issue.category, language)}</Pill>
-                    <Pill>{issueStateLabel(issue.state, language)}</Pill>
-                    {/* The trace back. Kept by the database, not by anybody
-                        remembering to mention it. */}
-                    {issue.materialisedFromRiskId && (
-                      <Pill className="border-sky-200 bg-sky-100 text-sky-800">
-                        <span className="flex items-center gap-1">
-                          <Link2 className="h-3 w-3" aria-hidden="true" />
-                          {tr ? 'risk kütüğündeydi' : 'was on the register'}
-                        </span>
-                      </Pill>
-                    )}
-                  </div>
-                  <div className="mt-0.5 text-slate-500">
-                    {issue.ownerName ?? (tr ? 'sahipsiz' : 'unowned')} ·{' '}
-                    {formatDate(issue.openedOn, language)}
-                    {issue.detailEn && (
-                      <span className="block text-slate-600">{issue.detailEn}</span>
-                    )}
-                    {issue.resolutionEn && (
-                      <span className="block text-emerald-700">
-                        {tr ? 'Çözüm: ' : 'Resolved: '}
-                        {issue.resolutionEn}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <span className="shrink-0 font-mono text-sm font-semibold text-slate-700">
-                  {tr ? `şiddet ${issue.severity}` : `severity ${issue.severity}`}
-                </span>
-              </div>
+        <>
+          <ul className="space-y-2">{waiting.map(row)}</ul>
 
-              {canKeep && issue.resolvedAt == null && (
-                <div className="mt-1.5">
-                  {resolving === issue.id ? (
-                    <form
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        resolve.mutate(
-                          { id: issue.id, resolutionEn: resolution },
-                          { onSuccess: () => setResolving(null) },
-                        );
-                      }}
-                      className="space-y-1.5"
-                    >
-                      <TextInput
-                        required
-                        value={resolution}
-                        onChange={(e) => setResolution(e.target.value)}
-                        placeholder={tr ? 'Ne yapıldı?' : 'What was done?'}
-                      />
-                      <div className="flex gap-2">
-                        <ActionButton type="submit" tone="primary">
-                          {tr ? 'Çözüldü' : 'Resolve'}
-                        </ActionButton>
-                        <ActionButton type="button" onClick={() => setResolving(null)}>
-                          {tr ? 'Vazgeç' : 'Cancel'}
-                        </ActionButton>
-                      </div>
-                    </form>
-                  ) : (
-                    <ActionButton onClick={() => setResolving(issue.id)}>
-                      {tr ? 'Çözüldü olarak işaretle' : 'Mark resolved'}
-                    </ActionButton>
-                  )}
-                </div>
-              )}
-            </li>
-          ))}
-        </ul>
+          {waiting.length === 0 && settled.length > 0 && (
+            <p className="text-xs text-slate-500">
+              {tr
+                ? 'Açık sorun yok; kütükteki hepsi çözülmüş.'
+                : 'No issue is open; every one in the register has been resolved.'}
+            </p>
+          )}
+
+          <SettledSection rows={settled} label={{ tr: 'Kapatılmış', en: 'Closed' }}>
+            {(shown) => <ul className="space-y-2">{shown.map(row)}</ul>}
+          </SettledSection>
+        </>
       )}
       <WriteError error={resolve.error} />
     </Section>

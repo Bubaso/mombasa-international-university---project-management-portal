@@ -11,8 +11,9 @@ import {
 } from '../../lib/legal';
 import { daysUntil } from '../../lib/meetings';
 import { ActionButton, Field, Pill, Select, TextInput, WriteError } from '../ui/Controls';
+import { SettledSection } from '../ui/SettledSection';
 import { EmptyState } from '../EmptyState';
-import type { HearingKind, PreparationState } from '../../types';
+import type { Hearing, HearingKind, PreparationState } from '../../types';
 
 /**
  * Hearings (M5-03).
@@ -21,6 +22,29 @@ import type { HearingKind, PreparationState } from '../../types';
  * the column that matters is not the date — it is whether anybody has
  * prepared, and what has to be in hand on the day.
  */
+
+/** Duruşma saati geçti mi? Gün değil saat: sabah dokuzdaki iş akşam geçmiştir. */
+const hasHappened = (h: Hearing) => new Date(h.scheduledFor) < new Date();
+
+/** Sonucu yazılmış mı? Boş metin yazılmamış sayılıyor. */
+const hasOutcome = (h: Hearing) =>
+  (h.outcomeTr ?? '').trim() !== '' || (h.outcomeEn ?? '').trim() !== '';
+
+/**
+ * Bir duruşmanın işi bitti mi?
+ *
+ * Bu kütükte hüküm enum'dan gelmiyor, ve gelemez: `preparation` hazırlığı
+ * anlatıyor, duruşmayı bitirmiyor — hükmün kendisi bunu söylüyor
+ * (`lib/registerStates`, `preparation_state`, `settled: []`). Bir duruşmanın
+ * bitmişliği iki şeydir: **tarihi geçmiş** olmak ve **sonucunun kaydedilmiş**
+ * olması.
+ *
+ * İkincisi kasıtlı: geçmiş ama sonucu yazılmamış duruşma bitmiş bir iş değil,
+ * kimsenin yazmadığı bir sonuçtur, ve onu "tamamlanan"ın altına koymak
+ * bilinmeyeni bilinmiş gibi göstermek olurdu (CLAUDE.md §2). Ekranda kalır ve
+ * sonucunun kayıtlı olmadığını söyler.
+ */
+const isOver = (h: Hearing) => hasHappened(h) && hasOutcome(h);
 export const HearingList: React.FC<{ caseId: string; canWrite: boolean }> = ({
   caseId,
   canWrite,
@@ -32,7 +56,114 @@ export const HearingList: React.FC<{ caseId: string; canWrite: boolean }> = ({
   const [adding, setAdding] = useState(false);
 
   const rows = hearings.data ?? [];
-  const upcoming = rows.filter((h) => new Date(h.scheduledFor) >= new Date());
+  const waiting = rows.filter((h) => !isOver(h));
+  const settled = rows.filter(isOver);
+  const upcoming = waiting.filter((h) => !hasHappened(h));
+  // Geçmiş ama sonucu yazılmamış olanlar. Bu sayı bir kusur değil, sorunun
+  // birinin önüne konmasıdır.
+  const unwritten = waiting.length - upcoming.length;
+
+  /** Bir satır; iki yerde çiziliyor (bekleyen ve bitmiş). */
+  const row = (hearing: Hearing) => {
+    const days = daysUntil(hearing.scheduledFor.slice(0, 10));
+    const future = !hasHappened(hearing);
+    const unready = future && hearing.preparation === 'not_started';
+    return (
+      <article
+        key={hearing.id}
+        className={`rounded-lg border px-3 py-2 ${
+          unready ? 'border-rose-200 bg-rose-50/60' : 'border-slate-200'
+        }`}
+      >
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="font-mono text-sm font-semibold text-slate-900">
+                {hearing.scheduledFor.slice(0, 16).replace('T', ' ')}
+              </span>
+              <Pill>{hearingKindLabel(hearing.kind, language)}</Pill>
+              {future && days != null && (
+                <span
+                  className={`text-xs ${
+                    days <= 7 ? 'font-semibold text-rose-700' : 'text-slate-500'
+                  }`}
+                >
+                  {days === 0 ? (tr ? 'bugün' : 'today') : tr ? `${days} gün` : `in ${days} days`}
+                </span>
+              )}
+            </div>
+            {hearing.bench && (
+              <p className="mt-0.5 text-xs text-slate-500">
+                {tr ? 'Heyet: ' : 'Bench: '}
+                {hearing.bench}
+              </p>
+            )}
+          </div>
+          <Pill className={PREPARATION_STYLES[hearing.preparation]}>
+            {preparationLabel(hearing.preparation, language)}
+          </Pill>
+        </div>
+
+        {hearing.requiredDocuments.length > 0 && (
+          <div className="mt-1.5">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              {tr ? 'O gün elde olması gerekenler' : 'What has to be in hand'}
+            </p>
+            <ul className="mt-0.5 space-y-0.5">
+              {hearing.requiredDocuments.map((doc, i) => (
+                <li key={i} className="flex items-start gap-1.5 text-xs text-slate-700">
+                  <CircleAlert
+                    className="mt-0.5 h-2.5 w-2.5 shrink-0 text-slate-500"
+                    aria-hidden="true"
+                  />
+                  {doc}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {hasOutcome(hearing) ? (
+          <p className="mt-1.5 text-xs leading-relaxed text-slate-700">
+            <span className="font-medium">{tr ? 'Sonuç: ' : 'Outcome: '}</span>
+            {(tr ? hearing.outcomeTr : hearing.outcomeEn) ?? hearing.outcomeEn ?? hearing.outcomeTr}
+          </p>
+        ) : (
+          !future && (
+            <p className="mt-1.5 text-xs text-amber-800">
+              {tr
+                ? 'Duruşma geçti, sonucu kayıtlı değil.'
+                : 'The hearing has passed; its outcome is not recorded.'}
+            </p>
+          )
+        )}
+
+        {canWrite && (
+          <div className="mt-2">
+            <Field label={tr ? 'Hazırlık' : 'Preparation'}>
+              <Select
+                value={hearing.preparation}
+                disabled={setPreparation.isPending}
+                onChange={(e) =>
+                  setPreparation.mutate({
+                    id: hearing.id,
+                    preparation: e.target.value as PreparationState,
+                  })
+                }
+                className="w-auto"
+              >
+                {PREPARATION_VALUES.map((s) => (
+                  <option key={s} value={s}>
+                    {preparationLabel(s, language)}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          </div>
+        )}
+      </article>
+    );
+  };
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white shadow-xs">
@@ -42,6 +173,11 @@ export const HearingList: React.FC<{ caseId: string; canWrite: boolean }> = ({
           {tr ? 'Duruşmalar' : 'Hearings'}
           {upcoming.length > 0 && (
             <Pill>{tr ? `${upcoming.length} önümüzde` : `${upcoming.length} ahead`}</Pill>
+          )}
+          {unwritten > 0 && (
+            <Pill className="border-amber-300 bg-amber-50 text-amber-800">
+              {tr ? `${unwritten} sonucu kayıtlı değil` : `${unwritten} with no outcome recorded`}
+            </Pill>
           )}
         </h2>
         {canWrite && !adding && (
@@ -66,100 +202,24 @@ export const HearingList: React.FC<{ caseId: string; canWrite: boolean }> = ({
             }
           />
         ) : (
-          rows.map((hearing) => {
-            const days = daysUntil(hearing.scheduledFor.slice(0, 10));
-            const future = days != null && days >= 0;
-            const unready = future && hearing.preparation === 'not_started';
-            return (
-              <article
-                key={hearing.id}
-                className={`rounded-lg border px-3 py-2 ${
-                  unready ? 'border-rose-200 bg-rose-50/60' : 'border-slate-200'
-                }`}
-              >
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="font-mono text-sm font-semibold text-slate-900">
-                        {hearing.scheduledFor.slice(0, 16).replace('T', ' ')}
-                      </span>
-                      <Pill>{hearingKindLabel(hearing.kind, language)}</Pill>
-                      {future && days != null && (
-                        <span
-                          className={`text-xs ${
-                            days <= 7 ? 'font-semibold text-rose-700' : 'text-slate-500'
-                          }`}
-                        >
-                          {tr ? `${days} gün` : `in ${days} days`}
-                        </span>
-                      )}
-                    </div>
-                    {hearing.bench && (
-                      <p className="mt-0.5 text-xs text-slate-500">
-                        {tr ? 'Heyet: ' : 'Bench: '}
-                        {hearing.bench}
-                      </p>
-                    )}
-                  </div>
-                  <Pill className={PREPARATION_STYLES[hearing.preparation]}>
-                    {preparationLabel(hearing.preparation, language)}
-                  </Pill>
-                </div>
+          <>
+            {waiting.map(row)}
 
-                {hearing.requiredDocuments.length > 0 && (
-                  <div className="mt-1.5">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      {tr ? 'O gün elde olması gerekenler' : 'What has to be in hand'}
-                    </p>
-                    <ul className="mt-0.5 space-y-0.5">
-                      {hearing.requiredDocuments.map((doc, i) => (
-                        <li key={i} className="flex items-start gap-1.5 text-xs text-slate-700">
-                          <CircleAlert
-                            className="mt-0.5 h-2.5 w-2.5 shrink-0 text-slate-500"
-                            aria-hidden="true"
-                          />
-                          {doc}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+            {/* Bekleyen kalmadıysa bunu söylemek gerekiyor: boş bir alan,
+                bitmişlerin altında "hepsi oldu" ile "hiç duruşma yoktu"yu
+                birbirine karıştırır. */}
+            {waiting.length === 0 && settled.length > 0 && (
+              <p className="text-xs text-slate-500">
+                {tr
+                  ? 'Önümüzde duruşma yok; kayıtlı olanların hepsi yapılmış ve sonucu yazılmış.'
+                  : 'No hearing is ahead; every one recorded here has happened and its outcome is written.'}
+              </p>
+            )}
 
-                {(hearing.outcomeEn || hearing.outcomeTr) && (
-                  <p className="mt-1.5 text-xs leading-relaxed text-slate-700">
-                    <span className="font-medium">{tr ? 'Sonuç: ' : 'Outcome: '}</span>
-                    {(tr ? hearing.outcomeTr : hearing.outcomeEn) ??
-                      hearing.outcomeEn ??
-                      hearing.outcomeTr}
-                  </p>
-                )}
-
-                {canWrite && (
-                  <div className="mt-2">
-                    <Field label={tr ? 'Hazırlık' : 'Preparation'}>
-                      <Select
-                        value={hearing.preparation}
-                        disabled={setPreparation.isPending}
-                        onChange={(e) =>
-                          setPreparation.mutate({
-                            id: hearing.id,
-                            preparation: e.target.value as PreparationState,
-                          })
-                        }
-                        className="w-auto"
-                      >
-                        {PREPARATION_VALUES.map((s) => (
-                          <option key={s} value={s}>
-                            {preparationLabel(s, language)}
-                          </option>
-                        ))}
-                      </Select>
-                    </Field>
-                  </div>
-                )}
-              </article>
-            );
-          })
+            <SettledSection rows={settled} label={{ tr: 'Yapılmış', en: 'Held' }}>
+              {(shown) => <div className="space-y-2">{shown.map(row)}</div>}
+            </SettledSection>
+          </>
         )}
         <WriteError error={setPreparation.error} />
       </div>

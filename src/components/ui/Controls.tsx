@@ -17,6 +17,14 @@ interface SectionProps {
   whoMayUse: string;
   /** Whether this reader is one of them. */
   canUse: boolean;
+  /**
+   * Kaç kayıt **bekliyor**.
+   *
+   * Toplam değil, ve adı bu yüzden `waiting`: bitmiş işi de sayan bir başlık,
+   * kuyruğun boşalıp boşalmadığını söylemiyor. Asistan sayfasının kusuru tam
+   * olarak buydu (kütük turu, 3 Ekim 2026).
+   */
+  waiting?: number;
   children: React.ReactNode;
 }
 
@@ -26,6 +34,7 @@ export const Section: React.FC<SectionProps> = ({
   subtitle,
   whoMayUse,
   canUse,
+  waiting,
   children,
 }) => (
   <section className="rounded-xl border border-slate-200 bg-white shadow-xs">
@@ -33,7 +42,10 @@ export const Section: React.FC<SectionProps> = ({
       <div className="flex items-start gap-2.5 min-w-0">
         <Icon className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />
         <div className="min-w-0">
-          <h2 className="text-base font-semibold text-slate-900">{title}</h2>
+          <h2 className="flex flex-wrap items-center gap-1.5 text-base font-semibold text-slate-900">
+            {title}
+            {waiting != null && <Pill>{waiting}</Pill>}
+          </h2>
           <p className="text-xs leading-relaxed text-slate-500">{subtitle}</p>
         </div>
       </div>

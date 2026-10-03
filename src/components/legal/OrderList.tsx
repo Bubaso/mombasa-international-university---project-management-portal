@@ -8,7 +8,9 @@ import { useCaseOrders } from '../../api/hooks';
 import { useCreateObligation, useObligations } from '../../api/obligationHooks';
 import { todayIso } from '../../lib/date';
 import { ORDER_STATE_STYLES, ORDER_STATE_VALUES, orderStateLabel } from '../../lib/legal';
+import { splitBySettled } from '../../lib/registerStates';
 import { ActionButton, Field, Pill, Select, TextInput, WriteError } from '../ui/Controls';
+import { SettledSection } from '../ui/SettledSection';
 import { EmptyState } from '../EmptyState';
 import type { LegalOrder, OrderState } from '../../types';
 
@@ -39,13 +41,84 @@ export const OrderList: React.FC<{ caseId: string; canWrite: boolean; canOblige:
   const obligationsFrom = (orderId: string) =>
     (obligations.data ?? []).filter((o) => o.sourceLegalOrderId === orderId);
 
+  // Kaldırılmış ya da hükmünü yitirmiş karar artık kimseyi bağlamıyor;
+  // değiştirilmiş ve temyizdeki karar bağlıyor. Hüküm `lib/registerStates`'te,
+  // bir kez (CLAUDE.md §4).
+  const { open: waiting, settled } = splitBySettled(rows, 'order_state', (o) => o.state);
+
+  /** Bir satır; iki yerde çiziliyor (yürürlükte olanlar ve çıkanlar). */
+  const row = (order: LegalOrder) => {
+    const derived = obligationsFrom(order.id);
+    return (
+      <article key={order.id} className="rounded-lg border border-slate-200 px-3 py-2">
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="font-mono text-sm font-semibold text-slate-900">{order.madeOn}</span>
+              {order.referenceNo && <Pill>{order.referenceNo}</Pill>}
+              {order.madeBy && <span className="text-xs text-slate-500">{order.madeBy}</span>}
+            </div>
+            <p className="mt-1 text-sm leading-relaxed text-slate-700">
+              <Bilingual
+                table="legal_orders"
+                id={order.id}
+                base="text"
+                en={order.textEn}
+                tr={order.textTr}
+              />
+            </p>
+          </div>
+          <Pill className={ORDER_STATE_STYLES[order.state]}>
+            {orderStateLabel(order.state, language)}
+          </Pill>
+        </div>
+
+        {derived.length > 0 && <DerivedObligations orderId={order.id} count={derived.length} />}
+
+        <div className="mt-2 flex flex-wrap items-end gap-2">
+          {canWrite && (
+            <Field label={tr ? 'Durum' : 'State'}>
+              <Select
+                value={order.state}
+                disabled={setState.isPending}
+                onChange={(e) =>
+                  setState.mutate({
+                    id: order.id,
+                    state: e.target.value as OrderState,
+                  })
+                }
+                className="w-auto"
+              >
+                {ORDER_STATE_VALUES.map((s) => (
+                  <option key={s} value={s}>
+                    {orderStateLabel(s, language)}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          )}
+          {canOblige && convertingId !== order.id && (
+            <ActionButton tone="primary" onClick={() => setConvertingId(order.id)}>
+              <ScrollText className="h-3 w-3" aria-hidden="true" />
+              <span>{tr ? 'Bu karardan yükümlülük çıkar' : 'Turn this into an obligation'}</span>
+            </ActionButton>
+          )}
+        </div>
+
+        {convertingId === order.id && (
+          <ConvertForm order={order} onDone={() => setConvertingId(null)} />
+        )}
+      </article>
+    );
+  };
+
   return (
     <section className="rounded-xl border border-slate-200 bg-white shadow-xs">
       <header className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-4 py-3">
         <h2 className="flex items-center gap-2 text-base font-semibold text-slate-900">
           <ShieldCheck className="h-4 w-4 text-amber-600" aria-hidden="true" />
           {tr ? 'Mahkeme kararları' : 'Court orders'}
-          <Pill>{rows.length}</Pill>
+          <Pill>{waiting.length}</Pill>
         </h2>
         {canWrite && !adding && (
           <ActionButton onClick={() => setAdding(true)}>
@@ -69,78 +142,27 @@ export const OrderList: React.FC<{ caseId: string; canWrite: boolean; canOblige:
             }
           />
         ) : (
-          rows.map((order) => {
-            const derived = obligationsFrom(order.id);
-            return (
-              <article key={order.id} className="rounded-lg border border-slate-200 px-3 py-2">
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="font-mono text-sm font-semibold text-slate-900">
-                        {order.madeOn}
-                      </span>
-                      {order.referenceNo && <Pill>{order.referenceNo}</Pill>}
-                      {order.madeBy && (
-                        <span className="text-xs text-slate-500">{order.madeBy}</span>
-                      )}
-                    </div>
-                    <p className="mt-1 text-sm leading-relaxed text-slate-700">
-                      <Bilingual
-                        table="legal_orders"
-                        id={order.id}
-                        base="text"
-                        en={order.textEn}
-                        tr={order.textTr}
-                      />
-                    </p>
-                  </div>
-                  <Pill className={ORDER_STATE_STYLES[order.state]}>
-                    {orderStateLabel(order.state, language)}
-                  </Pill>
-                </div>
+          <>
+            {waiting.map(row)}
 
-                {derived.length > 0 && (
-                  <DerivedObligations orderId={order.id} count={derived.length} />
-                )}
+            {/* Yürürlükte karar kalmadıysa bunu söylemek gerekiyor: boş bir
+                alan, "hepsi kaldırıldı" ile "hiç karar yoktu"yu birbirine
+                karıştırır. */}
+            {waiting.length === 0 && settled.length > 0 && (
+              <p className="text-xs text-slate-500">
+                {tr
+                  ? 'Yürürlükte karar yok; kayıtlı olanların hepsi kaldırılmış ya da hükmünü yitirmiş.'
+                  : 'No order is in force; every one recorded here was discharged or has spent its effect.'}
+              </p>
+            )}
 
-                <div className="mt-2 flex flex-wrap items-end gap-2">
-                  {canWrite && (
-                    <Field label={tr ? 'Durum' : 'State'}>
-                      <Select
-                        value={order.state}
-                        disabled={setState.isPending}
-                        onChange={(e) =>
-                          setState.mutate({
-                            id: order.id,
-                            state: e.target.value as OrderState,
-                          })
-                        }
-                        className="w-auto"
-                      >
-                        {ORDER_STATE_VALUES.map((s) => (
-                          <option key={s} value={s}>
-                            {orderStateLabel(s, language)}
-                          </option>
-                        ))}
-                      </Select>
-                    </Field>
-                  )}
-                  {canOblige && convertingId !== order.id && (
-                    <ActionButton tone="primary" onClick={() => setConvertingId(order.id)}>
-                      <ScrollText className="h-3 w-3" aria-hidden="true" />
-                      <span>
-                        {tr ? 'Bu karardan yükümlülük çıkar' : 'Turn this into an obligation'}
-                      </span>
-                    </ActionButton>
-                  )}
-                </div>
-
-                {convertingId === order.id && (
-                  <ConvertForm order={order} onDone={() => setConvertingId(null)} />
-                )}
-              </article>
-            );
-          })
+            <SettledSection
+              rows={settled}
+              label={{ tr: 'Yürürlükten çıkan', en: 'No longer in force' }}
+            >
+              {(shown) => <div className="space-y-2">{shown.map(row)}</div>}
+            </SettledSection>
+          </>
         )}
         <WriteError error={setState.error} />
       </div>
