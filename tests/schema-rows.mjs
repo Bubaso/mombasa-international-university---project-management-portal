@@ -116,7 +116,7 @@ export function rowsFor(columns, vocabularies) {
   //
   // Uydurma değil, ölçülmüş bir durum: göç canlıya uygulandığı an veritabanı
   // yeni değeri üretmeye başlıyor, yayınlanmış paket onu bir sonraki
-  // deploy'da öğreniyor. 3 Ekim'de bu satır eklendiğinde 19 ekranın 12'si
+  // deploy'da öğreniyor. 3 Ekim'de bu satır eklendiğinde 19 rotanın 11'i
   // hata sınırına düştü — hepsi aynı şekilden, `Record<Birlik, …>` üzerinde
   // korumasız bir erişimden. Ekranın beklenen davranışı değeri kendi adıyla
   // göstermek; tanımamak bir bölümü kaybetmek için sebep değil.

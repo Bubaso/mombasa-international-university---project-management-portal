@@ -5,7 +5,7 @@ import type { Language } from '../types';
  *
  * Bu dosya ölçülmüş bir kusurdan doğdu. 3 Ekim 2026'da şemadan türeyen
  * veriyle her ekran gezildi ve enum'larına istemcinin tanımadığı **tek** bir
- * değer konuldu: 19 ekranın 12'si hata sınırına düştü. Hepsinin şekli aynıydı
+ * değer konuldu: 19 rotanın 11'i hata sınırına düştü. Hepsinin şekli aynıydı
  *
  *     export const sourceLabel = (s: ObligationSource, l: Language) => SOURCES[s][l];
  *
