@@ -22,6 +22,7 @@ import { REGISTERS, readClassification } from '../supabase/functions/ai-assistan
 import { readProposals } from '../supabase/functions/ai-assistant/rules.js';
 import {
   PROPOSAL_TARGETS,
+  columnOf,
   modelFields,
   targetFor,
   targetsBriefing,
@@ -539,6 +540,88 @@ for (const target of PROPOSAL_TARGETS) {
   check(
     !PANEL.includes("'writes nothing'") && !PANEL.includes("'yazma yok'"),
     'the panel no longer claims it writes nothing, because approving writes',
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Kimlik: "bu aynı kayıt mı" sorusunun cevabı
+// ---------------------------------------------------------------------------
+//
+// Bastırma buna dayanıyor: kimliği olmayan bir hedef hiçbir mükerreri
+// yakalamaz, ve kimliği var olmayan bir alanı gösteren hedef de aynı kapıya
+// çıkar — ikisi de sessizce çalışmaz. Kullanıcının isteği "zaten olan bir şey
+// sakın yeniden teklif edilmesin" olduğuna göre, sessizce çalışmayan bir
+// bastırma en kötü sonuç.
+
+for (const target of PROPOSAL_TARGETS) {
+  check(
+    Array.isArray(target.identity) && target.identity.length > 0,
+    `${target.key} says what makes a record the same one`,
+    JSON.stringify(target.identity),
+  );
+  const fields = modelFields(target).map((f) => f.name);
+  const unreal = (target.identity ?? []).filter((name) => !fields.includes(name));
+  check(
+    unreal.length === 0,
+    `and every part of it is a field ${target.key} actually has`,
+    unreal.join(', '),
+  );
+}
+
+// Kimlik yalnız modelin doldurduğu alanlardan kurulabilir: seçiciler teklif
+// anında boş, ve boş bir parça kimliği hiç kurmuyor (yani bastırma kapanır).
+for (const target of PROPOSAL_TARGETS) {
+  const human = target.fields.filter((f) => f.human).map((f) => f.name);
+  const leaning = (target.identity ?? []).filter((name) => human.includes(name));
+  check(
+    leaning.length === 0,
+    `${target.key}'s identity does not lean on a field the approver fills later`,
+    leaning.join(', '),
+  );
+}
+
+// Alan adı sütun adına çevrilirken kütükte karşılığı olmalı; `columnOf`
+// tek dönüşüm ve hedefler ona uyuyor.
+check(columnOf('titleEn') === 'title_en', 'a field name becomes its column name');
+check(columnOf('fxRateToKes') === 'fx_rate_to_kes', 'including the awkward ones');
+
+// ---------------------------------------------------------------------------
+// Reddedilen teklif: durum değil, silme
+// ---------------------------------------------------------------------------
+
+{
+  const API = readFileSync(new URL('../src/api/proposals.ts', import.meta.url), 'utf8');
+  check(
+    API.includes('discardProposal') && !API.includes("update({ state: 'declined' })"),
+    'rejecting a proposal removes the row rather than parking it',
+  );
+  check(
+    API.includes('.delete()') && API.includes(".select('id')"),
+    'and it reads back what was removed, because RLS filters rather than refuses',
+  );
+}
+
+// Aynı belgenin mükerrerini alan kimliği tek başına yakalamıyor: model her
+// okumada başlığı biraz farklı yazıyor. Ölçüm, 3 Ekim 2026 — on sekiz
+// teklifin dokuzu geçmişti. Alıntı değişmiyor, ve kütük artı alıntı sıfıra
+// indirdi. Kural kaynakta duruyor, burada bağlanıyor.
+{
+  const FUNCTION = readFileSync(
+    new URL('../supabase/functions/document-intake/index.ts', import.meta.url),
+    'utf8',
+  );
+  check(FUNCTION.includes('quoteKey'), 'the same document is de-duplicated on its own sentences');
+  const branch = FUNCTION.slice(
+    FUNCTION.indexOf('const keep:'),
+    FUNCTION.indexOf('// Hangi kütükleri'),
+  );
+  check(
+    branch.includes('seenQuotes.has(') && branch.includes('seen.has('),
+    'and on both keys, not one of them',
+  );
+  check(
+    branch.includes('asCaller') || FUNCTION.includes('asCaller.from(target.table)'),
+    'the register is checked through the caller, so an invisible record is not called existing',
   );
 }
 

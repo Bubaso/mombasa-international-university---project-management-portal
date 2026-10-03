@@ -96,6 +96,12 @@ export interface IntakeOutcome {
   intakeId: string | null;
   /** Fonksiyonun reddi ya da okuma hatası, kelimesi kelimesine. */
   error: string | null;
+  /**
+   * Hata olmayan ama söylenmesi gereken şey: kaç teklifin zaten kayıtlı
+   * olduğu için üretilmediği. Sessiz kalınsa "bir şey bulamadı" ile "buldu,
+   * zaten vardı" ekranda aynı görünür.
+   */
+  note: string | null;
 }
 
 /**
@@ -124,10 +130,11 @@ export async function intakeFile(input: {
     note: null,
   });
 
-  const { data, error } = await supabase.functions.invoke<{ intakeId?: string; error?: string }>(
-    'document-intake',
-    { body: { versionId: uploaded.versionId } },
-  );
+  const { data, error } = await supabase.functions.invoke<{
+    intakeId?: string;
+    error?: string;
+    note?: string;
+  }>('document-intake', { body: { versionId: uploaded.versionId } });
 
   if (error) {
     // Fonksiyonun kendi cümlesi, varsa. Supabase'in sarmaladığı genel
@@ -138,20 +145,29 @@ export async function intakeFile(input: {
       const body: unknown = await context.json().catch(() => null);
       const named = (body as { error?: string; intakeId?: string } | null) ?? null;
       if (named?.error) message = named.error;
-      if (named?.intakeId) return { intakeId: named.intakeId, error: message };
+      if (named?.intakeId) return { intakeId: named.intakeId, error: message, note: null };
     }
-    return { intakeId: null, error: message };
+    return { intakeId: null, error: message, note: null };
   }
 
-  return { intakeId: data?.intakeId ?? null, error: data?.error ?? null };
+  return {
+    intakeId: data?.intakeId ?? null,
+    error: data?.error ?? null,
+    note: data?.note ?? null,
+  };
 }
 
 /** Yeniden okut: aynı sürüm, yeni bir alım. */
 export async function reanalyse(versionId: string): Promise<IntakeOutcome> {
-  const { data, error } = await supabase.functions.invoke<{ intakeId?: string; error?: string }>(
-    'document-intake',
-    { body: { versionId } },
-  );
-  if (error) return { intakeId: null, error: error.message };
-  return { intakeId: data?.intakeId ?? null, error: data?.error ?? null };
+  const { data, error } = await supabase.functions.invoke<{
+    intakeId?: string;
+    error?: string;
+    note?: string;
+  }>('document-intake', { body: { versionId } });
+  if (error) return { intakeId: null, error: error.message, note: null };
+  return {
+    intakeId: data?.intakeId ?? null,
+    error: data?.error ?? null,
+    note: data?.note ?? null,
+  };
 }

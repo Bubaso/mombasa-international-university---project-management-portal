@@ -27,7 +27,13 @@
  */
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { proposeInstruction, readProposals } from '../ai-assistant/rules.js';
-import { answerSchema, modelFields, targetFor, targetsBriefing } from '../ai-assistant/targets.js';
+import {
+  answerSchema,
+  columnOf,
+  modelFields,
+  targetFor,
+  targetsBriefing,
+} from '../ai-assistant/targets.js';
 import { extract } from './extract.js';
 
 const CORS_HEADERS: Record<string, string> = {
@@ -367,10 +373,108 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return await givingUp(`The model's answer was not usable: ${read.why}`);
   }
 
+  // ---------------------------------------------------------------------
+  // Zaten olan bir şey yeniden teklif edilmez
+  // ---------------------------------------------------------------------
+  //
+  // İki yerde olabilir ve ikisi de bastırılıyor:
+  //
+  //   **Aynı belgenin önceki okumalarında.** Bir belge yeniden okutulduğunda
+  //   aynı teklifler yeniden çıkar ve liste ikiye katlanır. Ölçüldü: aynı
+  //   mektup üç kez okundu, her seferinde on beş teklif.
+  //
+  //   **Kütüğün kendisinde.** Kayıt zaten açılmışsa — bu belgeden onaylanmış
+  //   ya da başka bir yoldan girilmiş — teklif etmek, kullanıcıya yapılmış
+  //   bir işi yeniden yaptırmaya çalışmaktır.
+  //
+  // Kütük sorgusu **çağıranın token'ıyla** yapılıyor, servis anahtarıyla
+  // değil. Göremediği bir kaydı "zaten var" diye bastırmak hem o kaydın
+  // varlığını ima eder hem kullanıcıyı göremediği bir şeye karşı çaresiz
+  // bırakır. Göremiyorsa, onun için yoktur.
+  //
+  // Eşleştirme birebir: benzerlik eşiği gerçekten yeni bir kaydı sessizce
+  // düşürür ve kimse öğrenmez.
+
+  const { data: earlier } = await asCaller
+    .from('intake_proposals')
+    .select('register, quote, proposed_values')
+    .eq('document_id', version.document_id);
+
+  const identityOf = (register: string, values: Record<string, unknown>): string | null => {
+    const target = targetFor(register);
+    if (!target || target.identity.length === 0) return null;
+    const parts: string[] = [];
+    for (const field of target.identity) {
+      const value = values[field];
+      // Kimliğin bir parçası boşsa "aynı kayıt" denemez.
+      if (value === undefined || value === null || String(value).trim() === '') return null;
+      parts.push(String(value).trim().toLowerCase());
+    }
+    return [register, ...parts].join('\u0000');
+  };
+
+  /**
+   * Aynı belgede aynı cümleden aynı kütüğe ikinci bir kayıt.
+   *
+   * Ölçüm, 3 Ekim 2026: aynı mektup yeniden okutulduğunda on sekiz teklifin
+   * dokuzu alan kimliğiyle yakalandı, dokuzu geçti — model her okumada
+   * başlığı biraz farklı yazıyor ve birebir eşleşme tutmuyor. Alıntı
+   * değişmiyor: belgenin kendi cümlesi. Kütük artı alıntı, aynı belge için
+   * alan kimliğinden sağlam bir anahtar.
+   *
+   * Hâlâ birebir, hâlâ açıklanabilir: benzerlik eşiği değil.
+   */
+  const quoteKey = (register: string, quote: string): string =>
+    [register, quote.replace(/\s+/g, ' ').trim().toLowerCase()].join('\u0000');
+
+  const seen = new Set<string>();
+  const seenQuotes = new Set<string>();
+  for (const row of (earlier ?? []) as {
+    register: string;
+    quote: string;
+    proposed_values: Record<string, unknown>;
+  }[]) {
+    const key = identityOf(row.register, row.proposed_values ?? {});
+    if (key) seen.add(key);
+    if (row.quote) seenQuotes.add(quoteKey(row.register, row.quote));
+  }
+
+  const keep: typeof read.value.proposals = [];
+  const suppressed: { register: string; why: string }[] = [];
+
+  for (const proposal of read.value.proposals) {
+    const key = identityOf(proposal.register, proposal.values);
+
+    if ((key && seen.has(key)) || seenQuotes.has(quoteKey(proposal.register, proposal.quote))) {
+      suppressed.push({ register: proposal.register, why: 'already proposed for this document' });
+      continue;
+    }
+
+    const target = targetFor(proposal.register);
+    if (key && target) {
+      let query = asCaller.from(target.table).select('id').limit(1);
+      for (const field of target.identity) {
+        const column = columnOf(field);
+        const value = proposal.values[field];
+        query =
+          typeof value === 'string' ? query.ilike(column, value) : query.eq(column, value as never);
+      }
+      const { data: found } = await query;
+      if (found && found.length > 0) {
+        suppressed.push({ register: proposal.register, why: 'already in the register' });
+        continue;
+      }
+    }
+
+    if (key) seen.add(key);
+    seenQuotes.add(quoteKey(proposal.register, proposal.quote));
+    keep.push(proposal);
+  }
+
   // Hangi kütükleri ilgilendirdiği artık sorulmuyor, teklif edilenlerden
   // türetiliyor. Sorulduğunda model dokuz kütük sayıyordu (ölçüm, 2 Ekim
   // 2026); somut bir teklif üretmeden bir kütüğü işaret etmenin yolu kalmadı.
-  const touches = [...new Set(read.value.proposals.map((proposal) => proposal.register))];
+  const touches = [...new Set(keep.map((proposal) => proposal.register))];
 
   await settle({
     state: 'ready',
@@ -389,9 +493,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
   // yetkisi yok, çünkü teklifin modelden geldiği satırın nasıl oluştuğuyla
   // belli olmalı. Onayı veren ve kaydı açan taraf kullanıcıdır.
   let storageFailure: string | null = null;
-  if (read.value.proposals.length > 0) {
+  if (keep.length > 0) {
     const { error: proposalError } = await admin.from('intake_proposals').insert(
-      read.value.proposals.map((proposal) => ({
+      keep.map((proposal) => ({
         intake_id: intake.id,
         document_id: version.document_id,
         register: proposal.register,
@@ -411,7 +515,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       // kaldığı için satıra sebep yazılamıyor (kısıt gereği), o yüzden
       // cevapta söyleniyor ve ekran onu olduğu gibi gösteriyor.
       storageFailure =
-        `${read.value.proposals.length} record proposal(s) were found but could not be stored: ` +
+        `${keep.length} record proposal(s) were found but could not be stored: ` +
         proposalError.message;
     }
   }
@@ -422,8 +526,17 @@ Deno.serve(async (req: Request): Promise<Response> => {
     why: read.value.why,
     aboutEn: read.value.aboutEn,
     touches,
-    proposals: read.value.proposals.length,
+    proposals: keep.length,
     rejected: read.value.rejected,
+    suppressed,
+    // Bastırılanlar sessiz kalmıyor: kaçının neden üretilmediği söyleniyor,
+    // yoksa "bir şey bulamadı" ile "buldu ama zaten vardı" aynı görünür.
+    note:
+      suppressed.length > 0
+        ? `${suppressed.length} proposal(s) were not made because the record is already there: ` +
+          `${suppressed.filter((x) => x.why === 'already in the register').length} in the register, ` +
+          `${suppressed.filter((x) => x.why !== 'already in the register').length} from an earlier reading of this document.`
+        : null,
     error: storageFailure,
     extractedChars: extracted.text.length,
     pageCount: extracted.pages,

@@ -37,6 +37,8 @@ export interface TargetField {
 export interface ProposalTarget {
   key: string;
   table: string;
+  /** "Bu aynı kayıt mı" sorusunu cevaplayan alan adları. */
+  identity: string[];
   label: { en: string; tr: string };
   what: string;
   fields: TargetField[];
@@ -48,3 +50,4 @@ export function targetFor(key: string): ProposalTarget | null;
 export function modelFields(target: ProposalTarget): TargetField[];
 export function targetsBriefing(): string;
 export function answerSchema(): unknown;
+export function columnOf(fieldName: string): string;

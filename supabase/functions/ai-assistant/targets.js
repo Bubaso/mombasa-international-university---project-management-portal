@@ -1236,6 +1236,61 @@ export const PROPOSAL_TARGETS = [
   },
 ];
 
+/**
+ * "Bu aynı kayıt mı?" sorusunu hangi alanlar cevaplar.
+ *
+ * Kullanıcının isteği: zaten olan bir şey yeniden teklif edilmesin. Bunun
+ * için bir teklifin kütükte karşılığı olup olmadığına bakmak gerekiyor, ve
+ * o karşılaştırmanın neye bakacağı her kütük için ayrı bir karardır — bir
+ * yükümlülüğü başlığı ve yükümlüsü ayırt eder, bir faturayı referans
+ * numarası, bir kronoloji kaydını tarihi ve başlığı.
+ *
+ * Eşleştirme **birebir** (kırpılmış, büyük/küçük harf duyarsız), benzerlik
+ * değil. Benzerlik eşiği, gerçekten yeni bir kaydı sessizce düşürür ve
+ * kullanıcı bunu hiç öğrenmez; birebir eşleşme ne bastırdığını açıklayabilir.
+ *
+ * Yalnız modelin doldurduğu alanlar kullanılabilir: teklif anındaki hâli
+ * karşılaştırılıyor, ve seçiciler (dava, blok, toplantı) o anda boş.
+ *
+ * Ayrı bir tablo, hedefin içine gömülü değil, çünkü bu liste bir arada
+ * okunduğunda anlam kazanıyor — hangi kütüğün neyle ayırt edildiği tek
+ * bakışta görülmeli. İkisini bağlayan şey testteki assertion: her hedefin
+ * bir kimliği olmak, ve kimliğin her alanı o hedefte gerçekten bulunmak
+ * zorunda.
+ */
+const IDENTITY = {
+  obligation: ['titleEn', 'obligorName'],
+  chronology: ['occurredOn', 'titleEn'],
+  correspondence: ['sentOn', 'counterpartyName', 'subjectEn'],
+  action: ['textEn'],
+  risk: ['titleEn'],
+  hearing: ['scheduledFor', 'kind'],
+  filing: ['title', 'kind'],
+  order: ['madeOn', 'textEn'],
+  meeting: ['title', 'heldAt'],
+  decision: ['decidedOn', 'textEn'],
+  question: ['questionEn'],
+  stakeholder: ['fullName'],
+  interaction: ['occurredAt', 'summary'],
+  milestone: ['titleEn'],
+  issue: ['titleEn'],
+  assumption: ['statementEn'],
+  legal_opinion: ['question'],
+  exhibit: ['mark'],
+  transaction: ['referenceNo'],
+  inspection: ['inspectedOn'],
+  procurement_request: ['needEn'],
+  budget_line: ['titleEn'],
+  valuation: ['periodStart', 'periodEnd', 'amount'],
+};
+
+for (const target of PROPOSAL_TARGETS) {
+  target.identity = IDENTITY[target.key] ?? [];
+}
+
+/** Alan adından sütun adına: `titleEn` → `title_en`. */
+export const columnOf = (fieldName) => fieldName.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
+
 export const PROPOSAL_KEYS = PROPOSAL_TARGETS.map((t) => t.key);
 
 export const targetFor = (key) => PROPOSAL_TARGETS.find((t) => t.key === key) ?? null;

@@ -103,6 +103,9 @@ export async function fetchProposals(intakeIds: string[]): Promise<Proposal[]> {
     .from('intake_proposals')
     .select(COLUMNS)
     .in('intake_id', intakeIds)
+    // `declined` artık üretilmiyor (satır siliniyor); eski satırlar 0049'da
+    // temizlendi. Filtre, arada kalmış bir satırın ekrana düşmemesi için.
+    .neq('state', 'declined')
     .order('created_at', { ascending: true });
   if (error) throw new Error(error.message);
   return ((data ?? []) as unknown as ProposalRow[]).map(toProposal);
@@ -444,10 +447,33 @@ export async function applyProposal(input: {
   return createdRecordId;
 }
 
-export async function declineProposal(proposalId: string): Promise<void> {
-  const { error } = await supabase
+/**
+ * Teklifi at.
+ *
+ * Durumunu `declined` yapmak yerine satırı siliyor: kullanıcı reddettiği
+ * teklifin listede ve kayıtta hiç kalmamasını istedi, ve bu depoda bunu
+ * yapmak kaydı kaybetmek demiyor — denetim trigger'ı silinen satırın
+ * tamamını `audit_log.before`'a yazıyor (0001). Teklif listesi bir iş
+ * kuyruğu; olup bitenin kaydı denetim kaydında durur.
+ *
+ * Silinen satır sayısı okunuyor. RLS reddetmez, filtreler: uygulanmış bir
+ * teklifi silmeye çalışmak sıfır satır siler ve hiçbir şey yükselmez —
+ * sessiz kalmak, kullanıcıya olmayan bir şeyi olmuş göstermek olurdu.
+ */
+export async function discardProposal(proposalId: string): Promise<void> {
+  const { data, error } = await supabase
     .from('intake_proposals')
-    .update({ state: 'declined' })
-    .eq('id', proposalId);
+    .delete()
+    .eq('id', proposalId)
+    .select('id');
   if (error) throw new Error(error.message);
+  if ((data ?? []).length === 0) {
+    // Sıfır satırın birden fazla sebebi var ve tek sebep varmış gibi yazmak,
+    // kullanıcıyı yanlış yere bakmaya gönderir.
+    throw new Error(
+      'That proposal was not removed. Either it has already been recorded — those stay, because ' +
+        'a recorded proposal is what links the record to its document — or it is not yours to ' +
+        'remove.',
+    );
+  }
 }

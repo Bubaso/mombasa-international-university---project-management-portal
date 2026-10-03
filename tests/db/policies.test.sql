@@ -9075,6 +9075,32 @@ begin
 end;
 $$;
 
+-- Reddedilen teklif modülden çıkar (0049). Kaydı denetim kaydında kalır.
+do $$
+declare
+  v_before bigint;
+begin
+  select count(*) into v_before from audit_log
+   where entity_type = 'intake_proposals' and action = 'DELETE';
+
+  delete from intake_proposals where id = '1e000000-0000-0000-0000-00000000000f';
+  raise notice 'ok   a proposal nobody wants is removed, not parked';
+
+  if (select count(*) from audit_log
+       where entity_type = 'intake_proposals' and action = 'DELETE') <> v_before + 1 then
+    raise exception 'FAIL the deletion left no audit trail';
+  end if;
+  raise notice 'ok   and the deletion itself is on the record';
+end;
+$$;
+
+-- Ama uygulanmış teklif kalır: kütükteki kaydın belgeye bağı odur.
+-- RLS reddetmez, filtreler — ölçülen şey satırın yerinde durması.
+delete from intake_proposals where id = '1e000000-0000-0000-0000-000000000001';
+select pg_temp.check('an applied proposal stays, because it is what links record to document',
+  (select count(*) from intake_proposals
+    where id = '1e000000-0000-0000-0000-000000000001'), 1::bigint);
+
 reset role;
 
 \echo ''

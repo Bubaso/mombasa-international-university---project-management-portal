@@ -8,7 +8,7 @@ import { useMeetings } from '../../api/meetingHooks';
 import { useStakeholders } from '../../api/stakeholderHooks';
 import { useBlocks } from '../../api/siteHooks';
 import { useBudgetCategories } from '../../api/moneyHooks';
-import { applyProposal, declineProposal, type Proposal } from '../../api/proposals';
+import { applyProposal, discardProposal, type Proposal } from '../../api/proposals';
 import { ActionButton, Field, Pill, Select, TextInput, WriteError } from '../ui/Controls';
 import { formatDate } from '../../lib/site';
 import { targetFor, type TargetField } from '../../../supabase/functions/ai-assistant/targets.js';
@@ -97,8 +97,8 @@ export const ProposalCard: React.FC<{ proposal: Proposal }> = ({ proposal }) => 
     },
   });
 
-  const decline = useMutation({
-    mutationFn: () => declineProposal(proposal.id),
+  const discard = useMutation({
+    mutationFn: () => discardProposal(proposal.id),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['intakeProposals'] }),
   });
 
@@ -137,11 +137,6 @@ export const ProposalCard: React.FC<{ proposal: Proposal }> = ({ proposal }) => 
             {tr ? 'kaydedildi' : 'recorded'}
           </Pill>
         )}
-        {proposal.state === 'declined' && (
-          <Pill className="border-slate-300 bg-slate-100 text-slate-600">
-            {tr ? 'reddedildi' : 'declined'}
-          </Pill>
-        )}
       </div>
 
       {/* Belgenin kendi cümlesi. Kararın dayandığı şey bu. */}
@@ -157,8 +152,8 @@ export const ProposalCard: React.FC<{ proposal: Proposal }> = ({ proposal }) => 
               ? `Bu teklif kayda dönüştü${proposal.decidedAt ? ` — ${formatDate(proposal.decidedAt, language)}` : ''}.`
               : `This proposal became a record${proposal.decidedAt ? ` on ${formatDate(proposal.decidedAt, language)}` : ''}.`
             : tr
-              ? 'Bu teklif reddedildi ve kütüğe hiçbir şey yazılmadı.'
-              : 'This proposal was declined and nothing was written.'}
+              ? 'Bu teklif karara bağlandı.'
+              : 'This proposal has been decided.'}
         </p>
       ) : (
         <>
@@ -199,17 +194,23 @@ export const ProposalCard: React.FC<{ proposal: Proposal }> = ({ proposal }) => 
                   : 'Approve and record'}
             </ActionButton>
             <ActionButton
-              tone="quiet"
-              disabled={decline.isPending}
-              onClick={() => decline.mutate()}
+              tone="danger"
+              disabled={discard.isPending}
+              onClick={() => discard.mutate()}
             >
               <X className="h-3.5 w-3.5" aria-hidden="true" />
-              {tr ? 'Reddet' : 'Decline'}
+              {discard.isPending
+                ? tr
+                  ? 'Siliniyor…'
+                  : 'Removing…'
+                : tr
+                  ? 'Reddet ve sil'
+                  : 'Reject and remove'}
             </ActionButton>
           </div>
 
           <WriteError error={apply.error} />
-          <WriteError error={decline.error} />
+          <WriteError error={discard.error} />
         </>
       )}
     </li>
