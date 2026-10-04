@@ -1,36 +1,37 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useApp, AVAILABLE_ROLES } from '../context/AppContext';
-import { ActiveTab, UserRole } from '../types';
-import {
-  GraduationCap,
-  Users2,
-  FolderGit2,
-  MessagesSquare,
-  HelpCircle,
-  Globe,
-  Shield,
-  Search,
-  X,
-  Compass,
-  Download,
-  CheckCircle2,
-  ChevronRight
-} from 'lucide-react';
+import { useApp } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
+import { NAV_GROUPS } from '../lib/navigation';
+import { Globe, LogOut, Search, X, ChevronRight } from 'lucide-react';
 
 interface MobileMoreSheetProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+/**
+ * Everywhere you can go, on a phone.
+ *
+ * This sheet used to list nine of the nineteen routes, hand-written, each
+ * with its own description. Six routes were in neither this list nor the
+ * bottom bar, so on a phone they did not exist: compliance and academic
+ * readiness, risks, the plan, procurement, reports, and the assistant. That
+ * was not a decision anybody made — the list had simply been written once
+ * and never caught up with the sidebar.
+ *
+ * So it reads `lib/navigation.ts` now, the same six groups the sidebar shows,
+ * and every route is two taps away: the menu, then the route.
+ *
+ * The per-route descriptions are gone with it. They were prose written beside
+ * each entry — "340 dönüm arazi, 60 yıllık tapu, fakülteler, burs sözleşmesi"
+ * — which made a list of nineteen unreadable, and several of them asserted
+ * figures nobody had checked. A group heading says enough about where a route
+ * sits, and the route's own screen says what is on it.
+ */
 export const MobileMoreSheet: React.FC<MobileMoreSheetProps> = ({ isOpen, onClose }) => {
-  const {
-    language,
-    setLanguage,
-    currentUser,
-    switchRole,
-    setIsSearchOpen
-  } = useApp();
+  const { language, setLanguage, setIsSearchOpen } = useApp();
+  const { user, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -41,159 +42,125 @@ export const MobileMoreSheet: React.FC<MobileMoreSheetProps> = ({ isOpen, onClos
     onClose();
   };
 
-  const moreItems: { tab: ActiveTab; path: string; labelTr: string; labelEn: string; descTr: string; descEn: string; icon: React.ElementType; color: string }[] = [
-    {
-      tab: 'project_info',
-      path: '/project_info',
-      labelTr: 'Proje Künyesi & Bilgileri',
-      labelEn: 'Project Overview & Identity',
-      descTr: '84 dönüm arazi, 60 yıllık tapu, fakülteler, burs sözleşmesi',
-      descEn: '84 acres, 60-year lease, faculties & scholarship terms',
-      icon: GraduationCap,
-      color: 'bg-amber-100 text-amber-800 border-amber-300'
-    },
-    {
-      tab: 'governance',
-      path: '/governance',
-      labelTr: 'Mütevelliler & Yönetişim',
-      labelEn: 'Board of Trustees & Charter',
-      descTr: 'Fasıl 164 tescilli 12 mütevelli, CUE berat yol haritası',
-      descEn: 'Cap 164 12-member board, CUE charter milestones',
-      icon: Users2,
-      color: 'bg-purple-100 text-purple-800 border-purple-300'
-    },
-    {
-      tab: 'documents',
-      path: '/documents',
-      labelTr: 'Şifreli Belge Kasası',
-      labelEn: 'Encrypted Document Vault',
-      descTr: 'Güvenli tapu, layihalar ve mimari çizimler',
-      descEn: 'Secure deeds, court pleadings & BoQ prints',
-      icon: FolderGit2,
-      color: 'bg-blue-100 text-blue-800 border-blue-300'
-    },
-    {
-      tab: 'communication',
-      path: '/communication',
-      labelTr: 'Paydaşlar Arası İletişim',
-      labelEn: 'Stakeholder Comms',
-      descTr: 'Avukatlar, şantiye müteahhitleri ve vakıflar arası mesajlaşma',
-      descEn: 'Direct coordination between counsel, site engineers & trustees',
-      icon: MessagesSquare,
-      color: 'bg-emerald-100 text-emerald-800 border-emerald-300'
-    }
-  ];
-
   return (
     <div className="fixed inset-0 z-50 md:hidden flex flex-col justify-end animate-fade-in">
-      {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity"
         onClick={onClose}
       />
 
-      {/* Sheet Container */}
       <div className="relative z-10 bg-white rounded-t-2xl shadow-2xl p-5 space-y-4 max-h-[85vh] overflow-y-auto animate-slide-up border-t border-slate-200">
-        {/* Drag handle */}
         <div className="w-12 h-1.5 rounded-full bg-slate-300 mx-auto" />
 
-        {/* Sheet Header */}
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-800 font-bold text-xs">
+            <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-800 font-bold text-sm">
               MIU
             </div>
             <div>
-              <h3 className="font-bold text-slate-900 text-sm">
-                {language === 'tr' ? 'Diğer Modüller & Ayarlar' : 'More Modules & Settings'}
+              <h3 className="font-bold text-slate-900 text-base">
+                {language === 'tr' ? 'Tüm bölümler' : 'All sections'}
               </h3>
-              <p className="text-[11px] text-slate-500">
-                {language === 'tr' ? 'Mombasa Uluslararası Üniversitesi' : 'Mombasa International University'}
+              <p className="text-xs text-slate-500">
+                {language === 'tr'
+                  ? 'Mombasa Uluslararası Üniversitesi'
+                  : 'Mombasa International University'}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer"
+            aria-label={language === 'tr' ? 'Kapat' : 'Close'}
+            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Global Search Quick Trigger */}
+        {/* Search is a way of getting around, not a feature: in a portal with
+            nineteen routes it is often the shortest one. */}
         <button
           onClick={() => {
             onClose();
             setIsSearchOpen(true);
           }}
-          className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 hover:bg-slate-100 transition-colors"
+          className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-600 hover:bg-slate-100 transition-colors"
         >
           <span className="flex items-center gap-2">
             <Search className="w-4 h-4 text-amber-600" />
             <span className="font-medium">
-              {language === 'tr' ? 'Tüm modüllerde ara...' : 'Search across all records...'}
+              {language === 'tr' ? 'Tüm kayıtlarda ara…' : 'Search across all records…'}
             </span>
           </span>
-          <span className="font-mono text-[10px] bg-white px-2 py-0.5 rounded border border-slate-200 text-slate-500">
+          <span className="font-mono text-xs bg-white px-2 py-0.5 rounded border border-slate-200 text-slate-500">
             {language === 'tr' ? 'Bul' : 'Find'}
           </span>
         </button>
 
-        {/* Quick Module Destinations */}
-        <div className="space-y-2">
-          <div className="text-[11px] font-bold uppercase text-slate-500 tracking-wider">
-            {language === 'tr' ? 'Önemli Bölümler' : 'Dedicated Sections'}
-          </div>
-          <div className="space-y-2">
-            {moreItems.map((item) => {
-              const Icon = item.icon;
-              const isCurrent = location.pathname === item.path;
-              return (
-                <button
-                  key={item.tab}
-                  onClick={() => navigateTo(item.path)}
-                  className={`w-full flex items-center justify-between p-3 rounded-xl border text-left transition-colors cursor-pointer ${
-                    isCurrent
-                      ? 'bg-amber-50/70 border-amber-300 ring-1 ring-amber-300'
-                      : 'bg-slate-50/80 border-slate-200 hover:bg-slate-100'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center border shrink-0 ${item.color}`}>
-                      <Icon className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="font-bold text-xs text-slate-900">
-                        {language === 'tr' ? item.labelTr : item.labelEn}
-                      </div>
-                      <div className="text-[11px] text-slate-500 line-clamp-1">
-                        {language === 'tr' ? item.descTr : item.descEn}
-                      </div>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-slate-400 shrink-0 ml-2" />
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        <nav aria-label={language === 'tr' ? 'Tüm bölümler' : 'All sections'} className="space-y-4">
+          {NAV_GROUPS.map((group) => (
+            <div key={group.id} className="space-y-1.5">
+              <h4 className="text-xs font-bold uppercase text-slate-500 tracking-wider">
+                {group.heading[language]}
+              </h4>
+              <ul className="space-y-1.5">
+                {group.routes.map((route) => {
+                  const Icon = route.icon;
+                  const isCurrent = location.pathname === route.path;
+                  return (
+                    <li key={route.tab}>
+                      <button
+                        onClick={() => navigateTo(route.path)}
+                        aria-current={isCurrent ? 'page' : undefined}
+                        // See the sidebar: the route, readable from outside.
+                        data-path={route.path}
+                        className={`w-full flex items-center justify-between gap-3 p-3 rounded-xl border text-left transition-colors cursor-pointer ${
+                          isCurrent
+                            ? 'bg-amber-50/70 border-amber-300 ring-1 ring-amber-300'
+                            : 'bg-slate-50/80 border-slate-200 hover:bg-slate-100'
+                        }`}
+                      >
+                        <span className="flex items-center gap-3 min-w-0">
+                          <span
+                            className={`w-9 h-9 rounded-lg flex items-center justify-center border shrink-0 ${
+                              isCurrent
+                                ? 'bg-amber-100 text-amber-800 border-amber-300'
+                                : 'bg-white text-slate-600 border-slate-200'
+                            }`}
+                          >
+                            <Icon className="w-4 h-4" aria-hidden="true" />
+                          </span>
+                          <span className="font-semibold text-sm text-slate-900">
+                            {route.label[language]}
+                          </span>
+                        </span>
+                        <ChevronRight
+                          className="w-4 h-4 text-slate-500 shrink-0"
+                          aria-hidden="true"
+                        />
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
+        </nav>
 
-        {/* Language & Role Switchers */}
         <div className="pt-2 border-t border-slate-100 space-y-3">
-          <div className="text-[11px] font-bold uppercase text-slate-500 tracking-wider">
-            {language === 'tr' ? 'Kullanıcı Rolü & Dil' : 'User Role & Language'}
+          <div className="text-xs font-bold uppercase text-slate-500 tracking-wider">
+            {language === 'tr' ? 'Dil' : 'Language'}
           </div>
 
-          {/* Language Switcher Bar */}
-          <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+          <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm">
             <span className="flex items-center gap-2 text-slate-700 font-medium">
               <Globe className="w-4 h-4 text-amber-600" />
-              <span>{language === 'tr' ? 'Arayüz Dili:' : 'Interface Language:'}</span>
+              <span>{language === 'tr' ? 'Arayüz dili:' : 'Interface language:'}</span>
             </span>
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setLanguage('tr')}
-                className={`px-3 py-1 rounded-lg font-bold text-xs transition-colors cursor-pointer ${
+                className={`px-3 py-1 rounded-lg font-bold text-sm transition-colors cursor-pointer ${
                   language === 'tr'
                     ? 'bg-amber-600 text-white shadow-xs'
                     : 'bg-white text-slate-700 border border-slate-200'
@@ -203,7 +170,7 @@ export const MobileMoreSheet: React.FC<MobileMoreSheetProps> = ({ isOpen, onClos
               </button>
               <button
                 onClick={() => setLanguage('en')}
-                className={`px-3 py-1 rounded-lg font-bold text-xs transition-colors cursor-pointer ${
+                className={`px-3 py-1 rounded-lg font-bold text-sm transition-colors cursor-pointer ${
                   language === 'en'
                     ? 'bg-amber-600 text-white shadow-xs'
                     : 'bg-white text-slate-700 border border-slate-200'
@@ -213,12 +180,35 @@ export const MobileMoreSheet: React.FC<MobileMoreSheetProps> = ({ isOpen, onClos
               </button>
             </div>
           </div>
-
-
         </div>
 
-        {/* Footer info */}
-        <div className="pt-2 text-center text-[10px] text-slate-400">
+        {/* Signing out lives here on a phone, not in the top bar.
+            The bar's right-hand cluster did not fit at 390px — the sign-out
+            icon ended 8px past the viewport, which is where the horizontal
+            rock on all nineteen routes came from. This is also simply where
+            people look for it. */}
+        {user && (
+          <div className="border-t border-slate-100 pt-3">
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                void signOut();
+              }}
+              className="flex w-full cursor-pointer items-center justify-between rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm font-semibold text-rose-800 hover:bg-rose-100"
+            >
+              <span className="flex items-center gap-2">
+                <LogOut className="h-4 w-4" />
+                {language === 'tr' ? 'Çıkış yap' : 'Sign out'}
+              </span>
+              <span className="max-w-[160px] truncate text-xs font-normal text-rose-700">
+                {user.name}
+              </span>
+            </button>
+          </div>
+        )}
+
+        <div className="pt-2 text-center text-xs text-slate-500">
           Mombasa International University · AUTK Cap 164 · Plot MN/I/5141
         </div>
       </div>

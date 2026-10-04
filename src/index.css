@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @theme {
   --color-solar-base03: #002b36;
@@ -23,10 +23,23 @@
   --color-slate-100: #eee8d5;
   --color-slate-200: #dfd7c2;
   --color-slate-300: #d3c9b0;
+  /* The steps text is written in. Solarized's own mid-greys do not reach
+     4.5:1 on this palette's own surfaces — measured, base1 #93a1a1 gives
+     2.18:1 and base0 #839496 gives 2.58:1 against slate-100, and even base01
+     #586e75 only reaches 4.39:1 — so the four steps below are shifted along
+     the base01→base02 line until each clears the threshold on white, on the
+     page background and on a tinted panel. A 5% shift is enough for the
+     first one, which is why these still read as Solarized.
+
+     This is where T9-01 actually lives. Patching the 571 places that use
+     these classes would have left the next one to be written wrong; the
+     scale is the single place the rule belongs.
+
+     slate-400 stays as Solarized base1. It is no longer used for text. */
   --color-slate-400: #93a1a1;
-  --color-slate-500: #839496;
-  --color-slate-600: #657b83;
-  --color-slate-700: #586e75;
+  --color-slate-500: #546b72; /* 4.60:1 worst case — muted text */
+  --color-slate-600: #44616a; /* 5.42:1 — secondary text */
+  --color-slate-700: #334d55; /* 7.34:1 — body text */
   --color-slate-800: #073642;
   --color-slate-900: #002b36;
 
@@ -35,15 +48,24 @@
   --color-amber-100: #f7ebc3;
   --color-amber-200: #eed692;
   --color-amber-500: #b58900;
-  --color-amber-600: #b58900;
-  --color-amber-700: #9e7500;
-  --color-amber-800: #805e00;
+  /* White sits on amber-600: it is the primary button. Solarized yellow gives
+     white text 3.21:1, under the 4.5:1 of T9-01 at the 14px the buttons use,
+     so this step is darkened along its own hue line to 5.17:1. amber-500
+     keeps the original for fills and accents that carry no text. */
+  --color-amber-600: #8a6800;
+  /* Text steps, so both clear 4.5:1 on white, on the page background and on
+     a tinted panel. #9e7500 was 3.43:1 at the 14px the legal screen's section
+     label uses. */
+  --color-amber-700: #7d5e00; /* 4.93:1 worst case */
+  --color-amber-800: #6b5000; /* 6.18:1 */
 
   --color-emerald-50: #f1f6e0;
   --color-emerald-100: #e2ecc1;
-  --color-emerald-600: #859900;
-  --color-emerald-700: #718200;
-  --color-emerald-800: #5c6b00;
+  /* Solarized green as text is 2.62:1 on these surfaces. Darkened along its
+     own line to 4.58:1; white on it reaches 5.61:1. */
+  --color-emerald-600: #53711a;
+  --color-emerald-700: #466821; /* 5.25:1 worst case */
+  --color-emerald-800: #3a5a1e; /* 6.6:1 */
 
   --color-blue-50: #eaf3fa;
   --color-blue-100: #d4e7f5;
@@ -91,4 +113,312 @@ body {
   background: #c7bc9f;
 }
 
+/* ---------------------------------------------------------------------------
+   Printing (M12-12)
+   ---------------------------------------------------------------------------
+   A printed page is the one output that leaves this system completely. The
+   database decides who may read a record; a sheet of paper on a table is read
+   by whoever is at the table, and a filing cabinet has no row level security.
+   So printing is treated as an export rather than as a visual variant, and
+   three things follow.
 
+   WHAT IS NOT WORTH IRONING ON PAPER comes out: the navigation, the search
+   box, every button and form, the mobile bar. A printed page covered in
+   controls nobody can press wastes the paper and buries the record.
+
+   COLOUR CANNOT BE THE ONLY CARRIER. Browsers drop background colours when
+   printing unless the user opts in, so a pill that says "overdue" only by
+   being red says nothing at all on paper. print-color-adjust keeps the fills
+   where a reader has allowed them, and the pills keep their borders either
+   way — a bordered outline survives a monochrome printer.
+
+   A SHEET HAS TO SAY WHAT IT IS. PrintHeader puts the screen, the moment, the
+   person who printed it and the classification at the top of the first page,
+   because an unmarked print of a confidential register is the paper version of
+   an unmarked machine translation.
+*/
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm 12mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  /* The app's scroll container clips at the viewport; on paper there is no
+     viewport and everything has to flow. */
+  main,
+  .overflow-y-auto,
+  .overflow-auto,
+  .max-h-80,
+  .max-h-96 {
+    overflow: visible !important;
+    max-height: none !important;
+    height: auto !important;
+    padding: 0 !important;
+  }
+
+  /* Nothing a reader could press belongs on paper.
+     The chrome is marked rather than matched by element name: this app's
+     navigation is an <aside>, its top bar a <header> and only its mobile bar a
+     <nav>, so a rule written against `nav` hid the one piece that was already
+     hidden at desktop width and would have printed the other two.
+
+     Two things measured while testing this, both worth writing down rather
+     than leaving as folklore. The smoke test reads the computed display of
+     each marked element rather than whether it looks visible, because hiding
+     the buttons inside the chrome collapses it to no height and it then reads
+     as invisible either way. And removing the attribute from this selector
+     changes nothing on paper today: all three pieces of chrome are sticky or
+     fixed, and Chromium drops those when printing anyway. So this line is
+     redundant for the chrome as it stands and is kept for the next piece that
+     is neither — which the test will not catch, because nothing can isolate a
+     rule whose job something else is already doing. */
+  [data-print='hide'],
+  nav,
+  button,
+  input,
+  select,
+  textarea,
+  form,
+  [role='dialog'] {
+    display: none !important;
+  }
+
+  /* A card is a card on screen; on paper a box with a shadow is noise. */
+  .shadow-xs,
+  .shadow-sm,
+  .shadow,
+  .shadow-md,
+  .shadow-lg {
+    box-shadow: none !important;
+  }
+
+  section,
+  article,
+  li,
+  tr {
+    break-inside: avoid;
+  }
+
+  h1,
+  h2,
+  h3 {
+    break-after: avoid;
+  }
+
+  table {
+    width: 100% !important;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  /* Keep the fills a reader has allowed, and never rely on them: every pill
+     in this app carries a border, which a monochrome printer still renders. */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  a[href^='http']::after {
+    content: ' (' attr(href) ')';
+    font-size: 9px;
+    color: #555;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Tap targets on a phone (T4-01)
+   --------------------------------------------------------------------------
+   Measured before this rule existed: 455 of 607 interactive elements on a
+   390px screen were under the 44px touch minimum, and 372 were under 32px.
+   The shared controls carry their own min-height, which covers 543 of them;
+   this is for the 148 buttons written inline across the views, which are too
+   many and too varied to reach one at a time.
+
+   In @layer base on purpose: every Tailwind utility beats it, so a button
+   that already declares its own height keeps it, and nothing here can win an
+   argument with a deliberate class.
+
+   `button` is inline-block by default, which honours min-height, so no
+   display change is needed and no flex row is rearranged. Links are left
+   alone: an `a` is inline, would need display:inline-flex to honour a
+   min-height at all, and that would stretch every citation marker inside a
+   sentence. Navigation links carry their own height in their components. */
+@layer base {
+  @media (max-width: 767px) {
+    button,
+    [role='button'],
+    input,
+    select,
+    textarea,
+    summary {
+      min-height: 44px;
+    }
+
+    /* A checkbox or radio is a 44px *target*, not a 44px box: stretching the
+       control itself would draw an enormous tick. The label beside it is the
+       target, and it is already a hit area. */
+    input[type='checkbox'],
+    input[type='radio'] {
+      min-height: 0;
+    }
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Registers become cards on a phone (T5-01)
+   --------------------------------------------------------------------------
+   TableFrame is used 43 times and carried an unconditional min-width of
+   640px, so every register scrolled sideways on a 390px screen — about three
+   fifths visible, with the status and the date off the right edge.
+
+   Below sm the header row is hidden and each body row becomes a card whose
+   cells stack. The label on each cell is its own column heading: TableFrame
+   reads the headings out of `head` and publishes them as --col-1…--col-9 on
+   the table, and each cell picks up the one matching its position. No call
+   site passes a label, and a table that gains a column gains its label with
+   it. */
+@media (max-width: 639px) {
+  table.register thead {
+    display: none;
+  }
+
+  table.register,
+  table.register tbody,
+  table.register tr,
+  table.register td {
+    display: block;
+    width: 100%;
+  }
+
+  table.register tr {
+    margin-bottom: 0.5rem;
+    border: 1px solid var(--color-slate-200);
+    border-radius: 0.5rem;
+    padding: 0.25rem 0.5rem;
+  }
+
+  table.register td {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.375rem 0;
+    text-align: right;
+  }
+
+  table.register td + td {
+    border-top: 1px solid var(--color-slate-100);
+  }
+
+  table.register td::before {
+    content: var(--col-label, '');
+    flex: 0 0 auto;
+    max-width: 45%;
+    text-align: left;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-slate-500);
+  }
+
+  /* A cell that spans the table is an empty state or a note, not a field, so
+     it keeps neither a label nor the two-column shape. */
+  table.register td[colspan] {
+    display: block;
+    text-align: left;
+  }
+
+  table.register td[colspan]::before {
+    content: none;
+  }
+
+  table.register td:nth-child(1) {
+    --col-label: var(--col-1);
+  }
+  table.register td:nth-child(2) {
+    --col-label: var(--col-2);
+  }
+  table.register td:nth-child(3) {
+    --col-label: var(--col-3);
+  }
+  table.register td:nth-child(4) {
+    --col-label: var(--col-4);
+  }
+  table.register td:nth-child(5) {
+    --col-label: var(--col-5);
+  }
+  table.register td:nth-child(6) {
+    --col-label: var(--col-6);
+  }
+  table.register td:nth-child(7) {
+    --col-label: var(--col-7);
+  }
+  table.register td:nth-child(8) {
+    --col-label: var(--col-8);
+  }
+  table.register td:nth-child(9) {
+    --col-label: var(--col-9);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Keyboard focus (T9-03).
+
+   There was no focus styling in this file at all, and fourteen components
+   call `focus:outline-none` — so a keyboard user lost the ring the browser
+   would have drawn and got nothing in its place. Every action in the portal
+   is reachable by tab; until now you could not see where you were.
+
+   NOT in @layer base, unlike the tap-target rule above. A base rule loses to
+   every utility, and `focus:outline-none` is a utility: it would erase this
+   on exactly the fourteen controls that need it most. Outside a layer, this
+   wins, which is the intent — a component may choose its own ring colour,
+   but it may not choose to have none.
+
+   `:focus-visible` rather than `:focus`, so a mouse click does not leave a
+   ring behind. Both an outline and a shadow: `outline-none` sets
+   `outline-style`, so the shadow survives it, and the outline survives a
+   `shadow-*` utility. Belt and braces, because the failure mode here is
+   silent and the people it affects are the ones least able to work around it.
+   --------------------------------------------------------------------------- */
+:focus-visible {
+  outline: 2px solid var(--color-amber-600);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--color-amber-600) 30%, transparent);
+}
+
+/* A focus ring drawn inside an overflow-hidden parent gets clipped, so the
+   element is lifted while focused. */
+:focus-visible {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---------------------------------------------------------------------------
+   Reduced motion (T9-05).
+
+   The portal animates a sheet sliding up, a spinner and several colour
+   transitions. Somebody who has asked their system for less movement has
+   usually asked for a reason — vestibular disorders make a sliding panel
+   genuinely unpleasant. Transitions collapse to near-instant rather than to
+   zero: a 1ms duration still fires `transitionend`, so nothing that waits on
+   one hangs.
+   --------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,8 @@
+dist
+dist-smoke
+dev-dist
+node_modules
+.firebase
+public
+package-lock.json
+supabase/.temp

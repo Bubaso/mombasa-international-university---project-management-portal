@@ -1,336 +1,416 @@
-import React, { useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
+import { FolderGit2, Search, Plus, FileCheck2, FileX2, History, Eye, Link2 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import * as queries from '../api/hooks';
-import { DocumentItem } from '../types';
+import * as vault from '../api/documentHooks';
+import { useAuthority } from '../api/adminHooks';
+import { QueryStatus } from '../components/QueryStatus';
+import { EmptyState } from '../components/EmptyState';
+import { clearanceLabel, clearanceStyle } from '../lib/authority';
+import { DOCUMENT_CATEGORIES, categoryLabel, fileSize, shortDigest } from '../lib/documents';
 import {
-  FolderGit2,
-  Lock,
-  ShieldCheck,
-  Download,
-  Upload,
-  Search,
-  FileText,
-  FileCheck,
-  CheckCircle2,
-  Eye,
-  History,
-  Tag,
-  Key,
-  Plus
-} from 'lucide-react';
-import { ContextualAIAssistant } from '../components/ContextualAIAssistant';
+  ActionButton,
+  Field,
+  Pill,
+  Select,
+  TextInput,
+  WriteError,
+} from '../components/ui/Controls';
+import { DocumentDetail } from '../components/documents/DocumentDetail';
+import type { Confidentiality, DocumentCategory, DocumentItem, DocumentVersion } from '../types';
+import { MoreRows } from '../components/ui/MoreRows';
 
+/**
+ * The document vault (M9).
+ *
+ * What this screen used to be is worth stating, because it is what the design
+ * is a reaction to: it displayed "encrypted", "SHA-256 verified" and "securely
+ * stored" on a page where no file could be uploaded at all. Faz 0 removed the
+ * words. This holds the documents.
+ *
+ * Two things are therefore shown exactly as they are. A version is verified
+ * when the server has read the stored bytes and recorded their digest, and
+ * not before — so a freshly uploaded file reads as unverified for as long as
+ * that takes, and says why. And nothing on this page claims encryption: what
+ * the storage provider does at rest is not something this application is in a
+ * position to attest to.
+ */
 export const DocumentVaultView: React.FC = () => {
-  const { language, showToast } = useApp();
-  const { data: documentVault = [] } = queries.useDocumentVault();
-  const { mutate: addDocument } = queries.useAddDocument();
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [searchDocQuery, setSearchDocQuery] = useState<string>('');
-  const [showUploadModal, setShowUploadModal] = useState<boolean>(false);
+  const { language } = useApp();
+  const tr = language === 'tr';
 
-  // Upload modal form
-  const [docTitle, setDocTitle] = useState('');
-  const [docCategory, setDocCategory] = useState<DocumentItem['category']>('legal_pleadings');
-  const [docVersion, setDocVersion] = useState('v1.0');
-  const [docDescription, setDocDescription] = useState('');
+  const PAGE = 40;
 
-  const filteredDocs = documentVault.filter((doc) => {
-    if (selectedCategory !== 'all' && doc.category !== selectedCategory) return false;
-    if (searchDocQuery.trim()) {
-      const q = searchDocQuery.toLowerCase();
-      return (
-        doc.title.toLowerCase().includes(q) ||
-        doc.sha256Hash.toLowerCase().includes(q) ||
-        doc.descriptionEn.toLowerCase().includes(q) ||
-        doc.descriptionTr.toLowerCase().includes(q)
-      );
-    }
-    return true;
-  });
+  const [limit, setLimit] = React.useState(40);
 
-  const handleUploadSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!docTitle) return;
-    addDocument({
-      title: docTitle,
-      category: docCategory,
-      version: docVersion,
-      descriptionEn: docDescription || 'Official document archived in encrypted repository.',
-      descriptionTr: docDescription || 'Şifreli kasada arşivlenen resmi belge.'
+  const documents = vault.useDocuments(limit);
+  const versions = vault.useCurrentVersions();
+  const undigested = vault.useUndigestedCount();
+  const authority = useAuthority();
+
+  const canWrite =
+    authority.data != null &&
+    ['admin', 'project_director', 'field_team', 'board_director'].some((role) =>
+      authority.data?.roles.includes(role as never),
+    );
+
+  const [query, setQuery] = useState('');
+  const [category, setCategory] = useState<DocumentCategory | ''>('');
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
+
+  const rows = documents.data?.rows ?? [];
+
+  const versionById = useMemo(() => {
+    const byId = new Map<string, DocumentVersion>();
+    for (const version of versions.data ?? []) byId.set(version.id, version);
+    return byId;
+  }, [versions.data]);
+
+  const currentVersion = useCallback(
+    (doc: DocumentItem): DocumentVersion | null =>
+      doc.currentVersionId ? (versionById.get(doc.currentVersionId) ?? null) : null,
+    [versionById],
+  );
+
+  const shown = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    return rows.filter((doc) => {
+      if (category && doc.category !== category) return false;
+      if (!needle) return true;
+      const version = currentVersion(doc);
+      return [doc.title, doc.descriptionEn, doc.descriptionTr, version?.fileName, version?.sha256]
+        .filter(Boolean)
+        .some((field) => (field as string).toLowerCase().includes(needle));
     });
-    setDocTitle('');
-    setDocDescription('');
-    setShowUploadModal(false);
-  };
+  }, [rows, query, category, currentVersion]);
+
+  const selected = rows.find((d) => d.id === selectedId) ?? null;
+  // Kasanın tamamından: dilimin içinden saymak bir bütünlük rakamını az
+  // gösterirdi, ki bu rozeti hiç koymamaktan kötü.
+  const unverified = undigested.data ?? 0;
 
   return (
-    <div className="space-y-6">
-      {/* Top Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-slate-200 p-5 rounded-xl shadow-xs">
-        <div>
-          <div className="flex items-center gap-2 text-xs font-semibold text-blue-700 uppercase tracking-wider">
-            <Lock className="w-4 h-4 text-blue-600" />
-            <span>{language === 'tr' ? 'Şifreli Belge Kasası & Versiyon Kontrolü' : 'Encrypted Document Vault & Version Control'}</span>
+    <div className="space-y-4">
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex items-start gap-2.5">
+          <FolderGit2 className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" aria-hidden="true" />
+          <div>
+            <h1 className="text-lg font-bold text-slate-900">
+              {tr ? 'Belge Kasası' : 'Document Vault'}
+            </h1>
+            <p className="max-w-2xl text-sm text-slate-500">
+              {tr
+                ? 'Mahkemeye sunulacak evrak, tasdikli suretler, senet, sözleşmeler ve çizimler. Hangi sürümün geçerli olduğu ve kimin ne zaman gördüğü burada hukukî sonuç doğurur.'
+                : 'Court filings, certified copies, the deed, contracts and drawings. Which version is the operative one, and who saw it when, have legal consequences here.'}
+            </p>
           </div>
-          <h1 className="text-xl font-bold text-slate-900 mt-1">
-            {language === 'tr' ? 'Belge Kasası' : 'Document Vault'}
-          </h1>
         </div>
+        {canWrite && !adding && (
+          <ActionButton tone="primary" onClick={() => setAdding(true)}>
+            <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+            <span>{tr ? 'Belge ekle' : 'Add a document'}</span>
+          </ActionButton>
+        )}
+      </header>
 
-        <div className="flex items-center gap-2.5">
-          <button
-            onClick={() => setShowUploadModal(true)}
-            className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer shadow-xs"
-          >
-            <Upload className="w-3.5 h-3.5" />
-            <span>{language === 'tr' ? 'Yeni Belge / Versiyon Yükle' : 'Upload Document / Version'}</span>
-          </button>
-        </div>
-      </div>
+      <QueryStatus queries={[documents]} />
 
-      {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white border border-slate-200 p-3 rounded-xl shadow-xs">
-        <div className="flex items-center gap-1 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0 text-xs scrollbar-none snap-x">
-          {[
-            { id: 'all', labelEn: 'All Files', labelTr: 'Tüm Belgeler' },
-            { id: 'trust_deed', labelEn: 'Trust Deed', labelTr: 'Vakıf Senedi' },
-            { id: 'court_order', labelEn: 'Court Orders', labelTr: 'Mahkeme Kararları' },
-            { id: 'legal_pleadings', labelEn: 'Legal Pleadings', labelTr: 'Dava Layihaları' },
-            { id: 'boq_finance', labelEn: 'QS BoQ & Audit', labelTr: 'Metraj & Denetim' },
-            { id: 'architectural', labelEn: 'Architectural', labelTr: 'Mimari Çizimler' },
-            { id: 'accreditation_cue', labelEn: 'CUE Charter', labelTr: 'CUE Akreditasyon' }
-          ].map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setSelectedCategory(cat.id)}
-              className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition-colors cursor-pointer shrink-0 snap-start ${
-                selectedCategory === cat.id
-                  ? 'bg-blue-600 text-white font-semibold shadow-xs'
-                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-              }`}
-            >
-              {language === 'tr' ? cat.labelTr : cat.labelEn}
-            </button>
-          ))}
-        </div>
-
-        <div className="relative w-full sm:w-64 shrink-0">
-          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
-          <input
-            type="text"
-            value={searchDocQuery}
-            onChange={(e) => setSearchDocQuery(e.target.value)}
-            placeholder={language === 'tr' ? 'Belge adı veya SHA özeti...' : 'Search document or hash...'}
-            className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white"
-          />
-        </div>
-      </div>
-
-      {/* Documents Grid */}
-      {filteredDocs.length === 0 ? (
-        <div className="p-8 text-center bg-white rounded-xl border border-dashed border-slate-200 shadow-xs space-y-3">
-          <div className="w-12 h-12 mx-auto rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600">
-            <Lock className="w-6 h-6" />
-          </div>
-          <h3 className="text-sm font-bold text-slate-800">
-            {language === 'tr' ? 'Seçili Kriterde Belge Bulunamadı' : 'No Documents Found for Selected Filter'}
-          </h3>
-          <p className="text-xs text-slate-500 max-w-sm mx-auto">
-            {language === 'tr'
-              ? 'Aradığınız kritere uygun belge bulunamadı. Yeni bir belge yüklemek için yukarıdaki butonu kullanabilirsiniz.'
-              : 'No documents match your query or selected category. Click "Upload Document / Version" above to store new files.'}
+      {unverified > 0 && (
+        <div className="flex items-start gap-2.5 rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5">
+          <FileX2 className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" aria-hidden="true" />
+          <p className="text-xs leading-relaxed text-amber-900">
+            <span className="font-semibold">
+              {tr
+                ? `${unverified} belgenin geçerli sürümü doğrulanmamış.`
+                : `${unverified} documents have an unverified current version.`}
+            </span>{' '}
+            {tr
+              ? 'Doğrulanmış demek, sunucunun depodaki baytları okuyup özetini kaydetmiş olması demek — başka bir şey değil. Yükleme yeni bittiyse birkaç saniye sürebilir; sürmüşse dosya depoya ulaşmamış olabilir.'
+              : 'Verified here means the server read the stored bytes and recorded their digest, and nothing else. Just after an upload this takes a moment; if it persists, the file may not have reached storage.'}
           </p>
-          <button
-            onClick={() => setShowUploadModal(true)}
-            className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold cursor-pointer shadow-xs"
-          >
-            <Upload className="w-3.5 h-3.5" />
-            <span>{language === 'tr' ? 'Belge Yükle' : 'Upload File'}</span>
-          </button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredDocs.map((doc) => {
-            const categoryLabel = (() => {
-              const map: Record<string, { en: string; tr: string }> = {
-                trust_deed: { en: 'Trust Deed', tr: 'Vakıf Senedi' },
-                court_order: { en: 'Court Order', tr: 'Mahkeme Kararı' },
-                legal_pleadings: { en: 'Legal Pleadings', tr: 'Dava Layihası' },
-                boq_finance: { en: 'QS BoQ & Audit', tr: 'Metraj & Denetim' },
-                architectural: { en: 'Architectural / Photos', tr: 'Mimari / Fotoğraflar' },
-                accreditation_cue: { en: 'CUE Charter', tr: 'CUE Akreditasyon' }
-              };
-              return language === 'tr' ? (map[doc.category]?.tr || doc.category) : (map[doc.category]?.en || doc.category.replace('_', ' '));
-            })();
-
-            return (
-              <div
-                key={doc.id}
-                className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs hover:border-slate-300 transition-colors flex flex-col justify-between space-y-3"
-              >
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="font-mono text-blue-700 font-bold uppercase">{categoryLabel}</span>
-                    <span className="text-emerald-800 font-mono font-bold bg-emerald-50 border border-emerald-300 px-2 py-0.5 rounded">
-                      {doc.version}
-                    </span>
-                  </div>
-
-                  <h3 className="font-bold text-slate-900 text-xs leading-snug line-clamp-2">
-                    {doc.title}
-                  </h3>
-
-                  <p className="text-[11px] text-slate-600 leading-relaxed line-clamp-2">
-                    {language === 'tr' ? doc.descriptionTr : doc.descriptionEn}
-                  </p>
-                </div>
-
-                {/* Cryptographic Hash & Metadata */}
-                <div className="space-y-2 pt-2 border-t border-slate-100 text-[11px]">
-                  <div className="flex items-center justify-between text-slate-500">
-                    <span className="flex items-center gap-1">
-                      <Key className="w-3 h-3 text-amber-600" />
-                      <span>{language === 'tr' ? 'Doğrulama Kodu:' : 'Verification Code:'}</span>
-                    </span>
-                    <span className="font-mono text-slate-700 truncate max-w-[150px]" title={doc.sha256Hash}>
-                      {doc.sha256Hash.slice(0, 16)}...
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between text-slate-500 text-[10px]">
-                    <span>{doc.uploadedBy}</span>
-                    <span>{doc.fileSize} · {doc.fileFormat}</span>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-1">
-                    <span className="inline-flex items-center gap-1 text-emerald-700 text-[10px] font-semibold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
-                      <ShieldCheck className="w-3 h-3 text-emerald-600" />
-                      <span>{language === 'tr' ? 'Güvenli Belge' : 'Secure Document'}</span>
-                    </span>
-
-                    <button
-                      onClick={() => {
-                        showToast(
-                          language === 'tr'
-                            ? `"${doc.title}" indirildi ve doğrulaması sağlandı.`
-                            : `"${doc.title}" downloaded and verified.`
-                        );
-                      }}
-                      className="inline-flex items-center gap-1 text-blue-700 hover:text-blue-900 font-semibold cursor-pointer py-1 px-2 rounded-lg hover:bg-blue-50"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      <span>{language === 'tr' ? 'İndir' : 'Download'}</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
         </div>
       )}
 
-      {/* Upload Document Modal */}
-      {showUploadModal && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-xs p-0 sm:p-4 animate-fade-in">
-          <div className="w-full sm:max-w-md bg-white border border-slate-200 rounded-t-2xl sm:rounded-2xl p-5 sm:p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                <Upload className="w-4 h-4 text-blue-600" />
-                <span>{language === 'tr' ? 'Kasaya Belge Yükle' : 'Upload Document to Vault'}</span>
-              </h3>
-              <button
-                onClick={() => setShowUploadModal(false)}
-                className="text-slate-400 hover:text-slate-700 cursor-pointer p-1"
-              >
-                ✕
-              </button>
-            </div>
+      {adding && <NewDocumentForm onDone={() => setAdding(false)} />}
 
-            <form onSubmit={handleUploadSubmit} className="space-y-4 text-xs">
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">
-                  {language === 'tr' ? 'Belge Başlığı:' : 'Document Title:'}
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={docTitle}
-                  onChange={(e) => setDocTitle(e.target.value)}
-                  placeholder="e.g. Court of Appeal Additional Affidavit of DW-1"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">
-                  {language === 'tr' ? 'Kategori:' : 'Category:'}
-                </label>
-                <select
-                  value={docCategory}
-                  onChange={(e) => setDocCategory(e.target.value as any)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white"
-                >
-                  <option value="legal_pleadings">{language === 'tr' ? 'Dava Layihaları ve Savunmalar' : 'Legal Pleadings & Briefs'}</option>
-                  <option value="court_order">{language === 'tr' ? 'Mahkeme Kararları ve Tedbirler' : 'Court Orders & Injunctions'}</option>
-                  <option value="trust_deed">{language === 'tr' ? 'Vakıf Senedi ve Tüzük' : 'Trust Deed & Constitution'}</option>
-                  <option value="boq_finance">{language === 'tr' ? 'Metraj, BoQ ve Fatura Evrakları' : 'Quantity Surveyor BoQ & Invoices'}</option>
-                  <option value="architectural">{language === 'tr' ? 'Mimari Planlar ve Şantiye Görselleri' : 'Architectural Plans & Site Renders'}</option>
-                  <option value="accreditation_cue">{language === 'tr' ? 'CUE Akreditasyon Dosyası' : 'CUE Accreditation Dossier'}</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">
-                  {language === 'tr' ? 'Versiyon Numarası:' : 'Version Tag:'}
-                </label>
-                <input
-                  type="text"
-                  value={docVersion}
-                  onChange={(e) => setDocVersion(e.target.value)}
-                  placeholder="v1.0"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white font-mono"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">
-                  {language === 'tr' ? 'Açıklama / Özet:' : 'Description:'}
-                </label>
-                <textarea
-                  rows={3}
-                  value={docDescription}
-                  onChange={(e) => setDocDescription(e.target.value)}
-                  placeholder={language === 'tr' ? 'Belge içeriği ve özet bilgisi...' : 'Description of the record...'}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setShowUploadModal(false)}
-                  className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer font-medium"
-                >
-                  {language === 'tr' ? 'İptal' : 'Cancel'}
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors cursor-pointer shadow-xs"
-                >
-                  {language === 'tr' ? 'Şifrele ve Yükle' : 'Encrypt & Store'}
-                </button>
-              </div>
-            </form>
+      <div className="flex flex-wrap items-end gap-2">
+        <Field label={tr ? 'Ara' : 'Search'} className="min-w-[180px] flex-1">
+          <div className="relative">
+            <Search
+              className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500"
+              aria-hidden="true"
+            />
+            <TextInput
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={tr ? 'Başlık, dosya adı, özet…' : 'Title, file name, digest…'}
+              className="pl-8"
+            />
           </div>
+        </Field>
+        <Field label={tr ? 'Kategori' : 'Category'}>
+          <Select
+            value={category}
+            onChange={(e) => setCategory(e.target.value as DocumentCategory | '')}
+          >
+            <option value="">{tr ? 'Hepsi' : 'All'}</option>
+            {DOCUMENT_CATEGORIES.map((c) => (
+              <option key={c} value={c}>
+                {categoryLabel(c, language)}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <span className="pb-1.5 text-xs text-slate-500">
+          {tr ? `${shown.length} belge` : `${shown.length} documents`}
+        </span>
+      </div>
+
+      <div className={selected ? 'grid grid-cols-1 gap-4 xl:grid-cols-[1fr_400px]' : ''}>
+        <div className="min-w-0">
+          {shown.length === 0 ? (
+            <EmptyState
+              icon={FolderGit2}
+              title={tr ? 'Kasa boş' : 'The vault is empty'}
+              description={
+                rows.length === 0
+                  ? tr
+                    ? 'Henüz belge yüklenmemiş. Her yükleme yeni bir sürümdür; eski sürümler silinmez ve hangisinin geçerli olduğu her zaman işaretlidir.'
+                    : 'Nothing uploaded yet. Every upload is a new version, older ones are never removed, and which one is in force is always marked.'
+                  : tr
+                    ? 'Bu filtrelerle eşleşen belge yok.'
+                    : 'Nothing matches those filters.'
+              }
+            />
+          ) : (
+            <div className="rounded-xl border border-slate-200 bg-white shadow-xs">
+              <ul className="divide-y divide-slate-100">
+                {shown.map((doc) => {
+                  const version = currentVersion(doc);
+                  return (
+                    <li key={doc.id}>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedId(doc.id)}
+                        className={`flex w-full cursor-pointer flex-wrap items-start justify-between gap-2 px-4 py-2.5 text-left hover:bg-slate-50 ${
+                          doc.id === selectedId ? 'bg-amber-50' : ''
+                        }`}
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="text-sm font-medium text-slate-900">{doc.title}</span>
+                            <Pill>{categoryLabel(doc.category, language)}</Pill>
+                            {doc.confidentiality !== 'internal' && (
+                              <Pill className={clearanceStyle(doc.confidentiality)}>
+                                {clearanceLabel(doc.confidentiality, language)}
+                              </Pill>
+                            )}
+                          </div>
+                          <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-slate-500">
+                            {version ? (
+                              <>
+                                <span className="font-mono">{version.fileName}</span>
+                                <span>{fileSize(version.byteSize)}</span>
+                                <span className="flex items-center gap-1">
+                                  <History className="h-3 w-3" aria-hidden="true" />
+                                  {tr
+                                    ? `sürüm ${version.versionNo}`
+                                    : `version ${version.versionNo}`}
+                                  {doc.versionCount > 1 && (
+                                    <span className="text-slate-500">
+                                      {tr
+                                        ? ` · ${doc.versionCount} sürüm`
+                                        : ` · ${doc.versionCount} in all`}
+                                    </span>
+                                  )}
+                                </span>
+                              </>
+                            ) : (
+                              <span className="text-amber-700">
+                                {tr ? 'dosya yüklenmemiş' : 'no file uploaded'}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-1.5">
+                          {version &&
+                            (version.sha256 ? (
+                              <span
+                                className="flex items-center gap-1 text-xs text-emerald-700"
+                                title={version.sha256}
+                              >
+                                <FileCheck2 className="h-3.5 w-3.5" aria-hidden="true" />
+                                <span className="hidden font-mono sm:inline">
+                                  {shortDigest(version.sha256)}
+                                </span>
+                              </span>
+                            ) : (
+                              <span
+                                className="flex items-center gap-1 text-xs text-amber-700"
+                                title={
+                                  tr
+                                    ? 'Sunucu henüz baytları okuyup özetini kaydetmedi'
+                                    : 'The server has not yet read the bytes and recorded their digest'
+                                }
+                              >
+                                <FileX2 className="h-3.5 w-3.5" aria-hidden="true" />
+                                <span className="hidden sm:inline">
+                                  {tr ? 'doğrulanmadı' : 'unverified'}
+                                </span>
+                              </span>
+                            ))}
+                        </div>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+              <MoreRows
+                shown={(documents.data?.rows ?? []).length}
+                total={documents.data?.total ?? 0}
+                onMore={() => setLimit(limit + PAGE)}
+                busy={documents.isFetching}
+              />
+            </div>
+          )}
         </div>
+
+        {selected && (
+          <DocumentDetail
+            document={selected}
+            canWrite={canWrite}
+            onClose={() => setSelectedId(null)}
+          />
+        )}
+      </div>
+
+      <p className="flex items-start gap-1.5 text-xs leading-relaxed text-slate-500">
+        <Eye className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
+        <span>
+          {tr
+            ? 'Bir belgeyi açmanın ya da indirmenin tek yolu sunucudan geçiyor ve her seferinde kimin ne zaman okuduğu kaydediliyor. Bu kaydı hiçbir istemci yazamaz, değiştiremez ve silemez.'
+            : 'The only route to a file is through the server, and every route through it records who read what and when. No client can write, edit or delete that record.'}
+        </span>
+      </p>
+    </div>
+  );
+};
+
+// ---------------------------------------------------------------------------
+
+const NewDocumentForm: React.FC<{ onDone: () => void }> = ({ onDone }) => {
+  const { language } = useApp();
+  const tr = language === 'tr';
+  const create = vault.useCreateDocument();
+  const upload = vault.useUploadVersion();
+
+  const [title, setTitle] = useState('');
+  const [category, setCategory] = useState<DocumentCategory>('other');
+  const [description, setDescription] = useState('');
+  const [confidentiality, setConfidentiality] = useState<Confidentiality>('internal');
+  const [file, setFile] = useState<File | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  const pending = create.isPending || upload.isPending;
+
+  return (
+    <form
+      className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!title.trim() || !file) return;
+        setNotice(null);
+        create.mutate(
+          {
+            title: title.trim(),
+            category,
+            descriptionEn: description.trim() || null,
+            confidentiality,
+          },
+          {
+            onSuccess: (created) =>
+              upload.mutate(
+                { documentId: created.id, file, note: null },
+                {
+                  onSuccess: (outcome) => {
+                    if (outcome.verificationError) {
+                      // The file is stored and the record exists; only the
+                      // digest is missing, and the list will say so.
+                      setNotice(outcome.verificationError);
+                      return;
+                    }
+                    onDone();
+                  },
+                },
+              ),
+          },
+        );
+      }}
+    >
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+        <Field label={tr ? 'Başlık' : 'Title'} className="sm:col-span-2">
+          <TextInput value={title} onChange={(e) => setTitle(e.target.value)} required />
+        </Field>
+        <Field label={tr ? 'Kategori' : 'Category'}>
+          <Select
+            value={category}
+            onChange={(e) => setCategory(e.target.value as DocumentCategory)}
+          >
+            {DOCUMENT_CATEGORIES.map((c) => (
+              <option key={c} value={c}>
+                {categoryLabel(c, language)}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field label={tr ? 'Açıklama' : 'Description'} className="sm:col-span-2">
+          <TextInput value={description} onChange={(e) => setDescription(e.target.value)} />
+        </Field>
+        <Field label={tr ? 'Gizlilik' : 'Tier'}>
+          <Select
+            value={confidentiality}
+            onChange={(e) => setConfidentiality(e.target.value as Confidentiality)}
+          >
+            <option value="public">{tr ? 'Açık' : 'Public'}</option>
+            <option value="internal">{tr ? 'Kuruma özel' : 'Internal'}</option>
+            <option value="confidential">{tr ? 'Gizli' : 'Confidential'}</option>
+            <option value="restricted">{tr ? 'Kısıtlı' : 'Restricted'}</option>
+          </Select>
+        </Field>
+        <Field label={tr ? 'Dosya' : 'File'} className="sm:col-span-3">
+          <input
+            type="file"
+            required
+            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            className="w-full cursor-pointer rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-900 file:mr-3 file:cursor-pointer file:rounded file:border-0 file:bg-slate-100 file:px-2.5 file:py-1 file:text-sm file:font-medium file:text-slate-700"
+          />
+        </Field>
+      </div>
+
+      <p className="mt-2 text-xs leading-relaxed text-slate-500">
+        {tr
+          ? 'Dosya yüklendikten sonra sunucu depodaki baytları okuyup SHA-256 özetini kaydeder. Bu kaydedilene kadar belge "doğrulanmadı" görünür — ve bu işaret hiçbir kullanıcı tarafından konulamaz ya da kaldırılamaz.'
+          : 'After the upload the server reads the stored bytes and records their SHA-256. Until it has, the document reads as unverified — and that mark is not something any user can set or clear.'}
+      </p>
+
+      <WriteError error={create.error ?? upload.error} />
+      {notice && (
+        <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs text-amber-900">
+          {tr
+            ? `Dosya yüklendi ama özeti hesaplanamadı: ${notice}`
+            : `The file was stored but its digest could not be computed: ${notice}`}
+        </p>
       )}
-    
-      <ContextualAIAssistant 
-        contextData={JSON.stringify(documentVault)}
-        systemInstruction="You are an expert document archivist AI. Help the user find specific document versions, clarify access roles, and summarize document categories based ONLY on the provided context."
-        title={language === 'tr' ? 'Döküman AI Asistanı' : 'Document Vault AI'}
-      />
-    
-</div>
+
+      <div className="mt-2.5 flex justify-end gap-2">
+        <ActionButton type="button" onClick={onDone} disabled={pending}>
+          {tr ? 'Vazgeç' : 'Cancel'}
+        </ActionButton>
+        <ActionButton type="submit" tone="primary" disabled={pending || !file}>
+          <Link2 className="h-3 w-3" aria-hidden="true" />
+          <span>{pending ? (tr ? 'Yükleniyor…' : 'Uploading…') : tr ? 'Yükle' : 'Upload'}</span>
+        </ActionButton>
+      </div>
+    </form>
   );
 };
