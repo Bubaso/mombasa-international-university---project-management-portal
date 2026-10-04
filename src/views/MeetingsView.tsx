@@ -32,6 +32,8 @@ import {
   WriteError,
 } from '../components/ui/Controls';
 import type { Confidentiality, Meeting, MeetingKind, MeetingStatus } from '../types';
+import { useRecordOrigins } from '../api/proposalHooks';
+import { RecordOrigin } from '../components/ui/RecordOrigin';
 
 /**
  * The meeting record (M3).
@@ -61,6 +63,8 @@ export const MeetingsView: React.FC = () => {
   // duruyor, yani geri çekilen şey kaydın kendisi, işi değil. Hüküm
   // `lib/registerStates`'te, bir kez (CLAUDE.md §4).
   const { open: waiting, settled } = splitBySettled(rows, 'meeting_status', (m) => m.status);
+  // Bu ekranın bütün satırlarının kökeni, tek okumada (M13-21).
+  const origins = useRecordOrigins(rows.map((r) => r.id));
 
   /** Bir satır; iki yerde çiziliyor (önümüzdeki ve yapılmış). */
   const row = (meeting: Meeting) => (
@@ -114,6 +118,7 @@ export const MeetingsView: React.FC = () => {
           {meetingStatusLabel(meeting.status, language)}
         </span>
       </button>
+      <RecordOrigin origin={origins.of(meeting.id)} />
     </li>
   );
 

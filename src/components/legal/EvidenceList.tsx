@@ -5,6 +5,8 @@ import * as legal from '../../api/legalHooks';
 import { todayIso } from '../../lib/date';
 import { ActionButton, Field, Pill, TextInput, WriteError } from '../ui/Controls';
 import { EmptyState } from '../EmptyState';
+import { useRecordOrigins } from '../../api/proposalHooks';
+import { RecordOrigin } from '../ui/RecordOrigin';
 
 /**
  * Exhibits and the chain of custody (M5-06).
@@ -27,6 +29,8 @@ export const EvidenceList: React.FC<{ caseId: string; canWrite: boolean }> = ({
   const [handingOver, setHandingOver] = useState<string | null>(null);
 
   const rows = exhibits.data ?? [];
+  // Bu ekranın bütün satırlarının kökeni, tek okumada (M13-21).
+  const origins = useRecordOrigins(rows.map((e) => e.id));
   const chainFor = (exhibitId: string) =>
     (custody.data ?? []).filter((c) => c.exhibitId === exhibitId);
 
@@ -74,6 +78,7 @@ export const EvidenceList: React.FC<{ caseId: string; canWrite: boolean }> = ({
                         {exhibit.description}
                       </span>
                     </div>
+                    <RecordOrigin origin={origins.of(exhibit.id)} />
                     <div className="mt-0.5 flex flex-wrap gap-x-3 text-xs text-slate-500">
                       {exhibit.source && (
                         <span>

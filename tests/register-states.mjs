@@ -586,26 +586,24 @@ const ORIGIN_SCREENS = [
   { table: 'issues', file: 'src/components/raid/IssueList.tsx' },
   { table: 'assumptions', file: 'src/components/raid/AssumptionList.tsx' },
   // Henüz bağlanmadı. Her biri bir ekran ve sıraya göre gidiyor.
-  { table: 'hearings', file: 'src/components/legal/HearingList.tsx', pending: true },
-  { table: 'meetings', file: 'src/views/MeetingsView.tsx', pending: true },
-  { table: 'decisions', file: 'src/components/meetings/DecisionList.tsx', pending: true },
-  { table: 'stakeholders', file: 'src/views/StakeholdersView.tsx', pending: true },
+  { table: 'hearings', file: 'src/components/legal/HearingList.tsx' },
+  { table: 'meetings', file: 'src/views/MeetingsView.tsx' },
+  { table: 'decisions', file: 'src/components/meetings/DecisionList.tsx' },
+  { table: 'stakeholders', file: 'src/views/StakeholdersView.tsx' },
   {
     table: 'stakeholder_interactions',
     file: 'src/components/stakeholders/StakeholderDetail.tsx',
-    pending: true,
   },
-  { table: 'legal_opinions', file: 'src/components/legal/CounselPanel.tsx', pending: true },
-  { table: 'exhibits', file: 'src/components/legal/EvidenceList.tsx', pending: true },
-  { table: 'financial_transactions', file: 'src/components/money/LedgerPanel.tsx', pending: true },
-  { table: 'site_inspections', file: 'src/components/site/InspectionList.tsx', pending: true },
+  { table: 'legal_opinions', file: 'src/components/legal/CounselPanel.tsx' },
+  { table: 'exhibits', file: 'src/components/legal/EvidenceList.tsx' },
+  { table: 'financial_transactions', file: 'src/components/money/LedgerPanel.tsx' },
+  { table: 'site_inspections', file: 'src/components/site/InspectionList.tsx' },
   {
     table: 'procurement_requests',
     file: 'src/components/procurement/RequestPanel.tsx',
-    pending: true,
   },
-  { table: 'budget_lines', file: 'src/components/money/BudgetPanel.tsx', pending: true },
-  { table: 'valuations', file: 'src/components/site/CommercialPanel.tsx', pending: true },
+  { table: 'budget_lines', file: 'src/components/money/BudgetPanel.tsx' },
+  { table: 'valuations', file: 'src/components/site/CommercialPanel.tsx' },
 ];
 
 // Liste asistanın hedeflerinin tamamını kapsıyor mu? Hedefler
@@ -656,7 +654,10 @@ for (const entry of ORIGIN_SCREENS) {
 }
 
 // Kalanların sayısı kayıtlı: düşmesi iş, artması geri alma.
-const PENDING_TODAY = 12;
+// Yirmi üçün yirmi üçü bağlandı. Sayı sıfır ve öyle kalmalı: bir hedef
+// eklenip ekranı söylenmezse yukarıdaki kapsama kontrolü, bağlı bir ekran geri
+// alınırsa satır kontrolü düşer.
+const PENDING_TODAY = 0;
 const stillPending = ORIGIN_SCREENS.filter((e) => e.pending).length;
 check(
   stillPending === PENDING_TODAY,

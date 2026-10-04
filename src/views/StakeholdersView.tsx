@@ -31,6 +31,8 @@ import {
   WriteError,
 } from '../components/ui/Controls';
 import type { Confidentiality, StakeholderCategory, Stance } from '../types';
+import { useRecordOrigins } from '../api/proposalHooks';
+import { RecordOrigin } from '../components/ui/RecordOrigin';
 
 /**
  * The stakeholder register (M4).
@@ -59,6 +61,8 @@ export const StakeholdersView: React.FC = () => {
   const [adding, setAdding] = useState(false);
 
   const rows = stakeholders.data ?? [];
+  // Bu ekranın bütün satırlarının kökeni, tek okumada (M13-21).
+  const origins = useRecordOrigins(rows.map((s) => s.id));
 
   const shown = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -212,6 +216,7 @@ export const StakeholdersView: React.FC = () => {
                         {[s.title, s.organizationName].filter(Boolean).join(' · ') ||
                           categoryLabel(s.category, language)}
                       </div>
+                      <RecordOrigin origin={origins.of(s.id)} />
                     </Td>
                     <Td>
                       <Pill className={stanceStyle(s.stance)}>

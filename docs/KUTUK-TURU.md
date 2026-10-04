@@ -174,6 +174,37 @@ Her kütüğün detay ekranına bir satır: bu kayıt hangi belgeden, hangi
 alıntıdan açıldı (M13-21). Mekanizma asistan turunda kuruldu
 (`record_provenance`, `fetchProvenanceOfRecord`, `DocumentOrigin` kalıbı).
 
+**Bitti: yirmi üç kütüğün yirmi üçü.** Eksik olan şey ters yöndü — belgenin
+yanında "bundan ne çıktı" vardı, kaydın yanında "bu nereden geldi" yoktu. Ve
+bu sorunun aciliyeti kuyruğun kendisinden geliyor: teklif kuyruğu artık
+**boşalmak için** kurulu, yani kaydın dayanağı olan cümle kuyrukla birlikte
+gidiyor. Gittiğinde kaydın neden var olduğunu söyleyen tek şey gitmiş olurdu.
+
+Üç parça:
+
+- **`fetchProvenanceOfRecords`** — bir ekran dolusu için tek okuma. Satır
+  başına sorgu, yirmi satırlık bir kütükte yirmi istek; ve bu satır yirmi üç
+  ekrana gireceği için o maliyet yirmi üç kez ödenirdi. `useMachineMarks` aynı
+  sorunu aynı şekilde çözmüştü.
+- **`useRecordOrigins`** — sıralanmış kimlik listesine göre anahtarlı, yani
+  ebeveyn yeni bir dizi üretince yeniden çekmiyor. Harita değil arama
+  fonksiyonu döndürüyor: satırı çizen bileşen tek bir kaydı biliyor.
+- **`RecordOrigin`** — satırın kendisi. **Kökeni olmayan kayıtta hiç
+  çizilmiyor:** elle girilmiş kaydın kökeni yoktur ve "kökeni kayıtlı değil"
+  yazmak boş bir alanı bilgi gibi göstermek olurdu. **Alıntı kısaltılmıyor** —
+  dayanağın yarısı dayanak değildir.
+
+Satırın nerede durduğu ekranın şekline göre: tabloda hücrenin içinde,
+genişleyen satırda açıldığında, kart hâlinde satırın altında. Satırı bir
+bileşen çizen beş kütükte köken **prop olarak** iniyor; o bileşenin kendi
+sorgusunu yapması tam olarak toplu okumanın engellediği N+1 olurdu.
+
+`tests/register-states.mjs` yirmi üçünü `targets.js`'ten okuyup ekranına
+bağlıyor: asistana yeni bir hedef eklenip ekranı söylenmezse kapsama kontrolü,
+bağlı bir ekrandan satır silinirse satır kontrolü düşüyor. Listedeki her yolun
+gerçekten bir dosya olduğu da sınanıyor — ilk yazdığımda altısı uydurmaydı ve
+bir sonraki partiyi var olmayan dosyalara yönlendirecekti.
+
 ## Birinci dalganın sonucu: her liste kuyruk değil
 
 Dalga "on iki iş kuyruğu" varsayımıyla başladı ve **beşinde varsayım yanlış

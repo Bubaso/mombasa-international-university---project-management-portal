@@ -8,6 +8,8 @@ import { COUNSEL_STATE_VALUES, counselStateLabel } from '../../lib/legal';
 import { ActionButton, Field, Pill, Select, TextInput, WriteError } from '../ui/Controls';
 import { EmptyState } from '../EmptyState';
 import type { CounselState } from '../../types';
+import { useRecordOrigins } from '../../api/proposalHooks';
+import { RecordOrigin } from '../ui/RecordOrigin';
 
 const STATE_STYLES: Record<CounselState, string> = {
   proposed: 'border-slate-300 bg-slate-100 text-slate-700',
@@ -42,6 +44,9 @@ export const CounselPanel: React.FC<{ caseId: string; canManage: boolean }> = ({
   const [recording, setRecording] = useState(false);
 
   const rows = counsel.data ?? [];
+  // Görüşlerin kökeni, tek okumada: asistanın hedefi görüşler, vekâletler
+  // değil (M13-21).
+  const origins = useRecordOrigins((opinions.data ?? []).map((o) => o.id));
 
   // Grouped by question, trimmed and lowercased so the same question asked
   // twice does not read as two.
@@ -215,6 +220,7 @@ export const CounselPanel: React.FC<{ caseId: string; canManage: boolean }> = ({
                           {opinion.conclusion}
                         </p>
                       )}
+                      <RecordOrigin origin={origins.of(opinion.id)} />
                     </li>
                   ))}
                 </ul>

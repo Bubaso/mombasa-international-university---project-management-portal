@@ -20,6 +20,9 @@ import { QueryStatus } from '../QueryStatus';
 import { ActionButton, Field, Pill, Section, Select, TextInput, WriteError } from '../ui/Controls';
 import { formatDate } from '../../lib/site';
 import type { SiteInspection } from '../../types';
+import { useRecordOrigins } from '../../api/proposalHooks';
+import { RecordOrigin } from '../ui/RecordOrigin';
+import type { Provenance } from '../../api/proposals';
 
 export const InspectionList: React.FC<{ blockId: string; canInspect: boolean }> = ({
   blockId,
@@ -32,6 +35,8 @@ export const InspectionList: React.FC<{ blockId: string; canInspect: boolean }> 
   const [openId, setOpenId] = useState<string | null>(null);
 
   const rows = inspections.data ?? [];
+  // Bir ekran dolusu için tek okuma (M13-21).
+  const origins = useRecordOrigins(rows.map((i) => i.id));
 
   return (
     <Section
@@ -80,6 +85,7 @@ export const InspectionList: React.FC<{ blockId: string; canInspect: boolean }> 
             <InspectionRow
               key={inspection.id}
               inspection={inspection}
+              origin={origins.of(inspection.id)}
               open={openId === inspection.id}
               onToggle={() => setOpenId(openId === inspection.id ? null : inspection.id)}
               canInspect={canInspect}
@@ -93,10 +99,12 @@ export const InspectionList: React.FC<{ blockId: string; canInspect: boolean }> 
 
 const InspectionRow: React.FC<{
   inspection: SiteInspection;
+  /** Kaydın kökeni, ekranın tek okumasından (M13-21). */
+  origin: Provenance | undefined;
   open: boolean;
   onToggle: () => void;
   canInspect: boolean;
-}> = ({ inspection, open, onToggle, canInspect }) => {
+}> = ({ inspection, origin, open, onToggle, canInspect }) => {
   const { language } = useApp();
   const { user } = useAuth();
   const tr = language === 'tr';
@@ -152,6 +160,7 @@ const InspectionRow: React.FC<{
             {inspection.inspectorName ?? '—'}
             {inspection.summaryEn && ` · ${inspection.summaryEn}`}
           </div>
+          <RecordOrigin origin={origin} />
         </div>
         <span className="shrink-0 text-xs text-slate-500">
           {tr ? `${inspection.findingCount} bulgu` : `${inspection.findingCount} findings`}

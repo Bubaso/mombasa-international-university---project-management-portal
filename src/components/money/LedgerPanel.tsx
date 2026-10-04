@@ -43,6 +43,8 @@ import {
 } from '../../lib/money';
 import type { CurrencyCode, FinancialTransaction } from '../../types';
 import { MoreRows } from '../ui/MoreRows';
+import { useRecordOrigins } from '../../api/proposalHooks';
+import { RecordOrigin } from '../ui/RecordOrigin';
 
 interface Props {
   canSpend: boolean;
@@ -80,6 +82,8 @@ export const LedgerPanel: React.FC<Props> = ({ canSpend, canAudit }) => {
   const rows = ledger.data?.rows ?? [];
   // Kütüğün tamamından; dilimin içinden saymak sayıyı sessizce küçültürdü.
   const unverified = gaps.data?.undocumented ?? 0;
+  // Bu ekranın bütün satırlarının kökeni, tek okumada (M13-21).
+  const origins = useRecordOrigins(rows.map((t) => t.id));
 
   const exportCsv = () => {
     const csv = toCsv(
@@ -319,6 +323,7 @@ export const LedgerPanel: React.FC<Props> = ({ canSpend, canAudit }) => {
                 <span className="block text-xs text-slate-500">
                   {formatDate(transaction.date, language)}
                 </span>
+                <RecordOrigin origin={origins.of(transaction.id)} />
               </Td>
               <Td>
                 {transaction.description}

@@ -16,6 +16,8 @@ import {
 } from '../../lib/meetings';
 import { ActionButton, Field, Pill, Select, TextInput, WriteError } from '../ui/Controls';
 import type { Confidentiality, DecisionStatus, VoteOutcome } from '../../types';
+import { useRecordOrigins } from '../../api/proposalHooks';
+import { RecordOrigin } from '../ui/RecordOrigin';
 
 /**
  * Decisions, as records rather than as a paragraph in the minutes (M3-04).
@@ -41,6 +43,8 @@ export const DecisionList: React.FC<{
   const [adding, setAdding] = useState(false);
 
   const rows = decisions.data ?? [];
+  // Bu ekranın bütün satırlarının kökeni, tek okumada (M13-21).
+  const origins = useRecordOrigins(rows.map((d) => d.id));
   // Which of these sentences a machine wrote and nobody has approved. Asked
   // once for the screenful rather than once per row.
   const marks = useMachineMarks(
@@ -100,6 +104,7 @@ export const DecisionList: React.FC<{
                   {decisionStatusLabel(decision.status, language)}
                 </Pill>
               </div>
+              <RecordOrigin origin={origins.of(decision.id)} />
 
               <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-slate-500">
                 {decision.organ && <span>{decision.organ}</span>}

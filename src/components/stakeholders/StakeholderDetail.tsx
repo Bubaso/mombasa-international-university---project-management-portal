@@ -34,6 +34,8 @@ import {
   stanceStyle,
 } from '../../lib/stakeholders';
 import { ActionButton, Field, Pill, Select, TextInput, WriteError } from '../ui/Controls';
+import { useRecordOrigins } from '../../api/proposalHooks';
+import { RecordOrigin } from '../ui/RecordOrigin';
 import type {
   Confidentiality,
   ContactChannel,
@@ -69,6 +71,8 @@ export const StakeholderDetail: React.FC<Props> = ({
 
   const history = register.useStanceHistory(stakeholder.id);
   const interactions = register.useInteractions(stakeholder.id);
+  // Temasların kökeni, tek okumada (M13-21).
+  const origins = useRecordOrigins((interactions.data ?? []).map((i) => i.id));
   const assessments = register.useAssessments(stakeholder.id);
   const relationships = register.useRelationships();
   const commitments = useCommitmentRecords();
@@ -228,6 +232,7 @@ export const StakeholderDetail: React.FC<Props> = ({
                     </span>
                   </div>
                   <p className="mt-0.5 text-xs leading-relaxed text-slate-700">{entry.summary}</p>
+                  <RecordOrigin origin={origins.of(entry.id)} />
                   {entry.outcome && (
                     <p className="mt-1 text-xs text-slate-500">
                       <span className="font-medium">{tr ? 'Sonuç: ' : 'Outcome: '}</span>

@@ -42,6 +42,8 @@ import {
   valuationStateStyle,
 } from '../../lib/site';
 import type { BoqVersion, CurrencyCode, Valuation } from '../../types';
+import { useRecordOrigins } from '../../api/proposalHooks';
+import { RecordOrigin } from '../ui/RecordOrigin';
 
 interface Props {
   blockId: string;
@@ -329,6 +331,8 @@ const ValuationSection: React.FC<{
   // Ödenmiş ya da reddedilmiş hakediş kimseden imza beklemiyor; direktör
   // onayı bekleyen bekliyor. Hüküm `lib/registerStates`'te (CLAUDE.md §4).
   const { open: waiting, settled } = splitBySettled(rows, 'valuation_state', (v) => v.state);
+  // Bu ekranın bütün satırlarının kökeni, tek okumada (M13-21).
+  const origins = useRecordOrigins(rows.map((v) => v.id));
 
   /** Bir satır; iki yerde çiziliyor (bekleyen ve kapanan). */
   const row = (valuation: Valuation) => (
@@ -345,6 +349,7 @@ const ValuationSection: React.FC<{
             </Pill>
           </div>
           <div className="mt-0.5 text-xs text-slate-500">{valuation.contractorName ?? '—'}</div>
+          <RecordOrigin origin={origins.of(valuation.id)} />
           {/* Both signatures, named. An approval chain is only worth
                     something if you can see whose it is. */}
           <div className="mt-0.5 space-y-0.5 text-xs text-slate-500">

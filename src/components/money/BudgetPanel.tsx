@@ -31,6 +31,8 @@ import {
 import { CURRENCIES, money as fmt } from '../../lib/site';
 import { share } from '../../lib/money';
 import type { CurrencyCode } from '../../types';
+import { useRecordOrigins } from '../../api/proposalHooks';
+import { RecordOrigin } from '../ui/RecordOrigin';
 
 export const BudgetPanel: React.FC<{ canSpend: boolean }> = ({ canSpend }) => {
   const { language } = useApp();
@@ -52,6 +54,8 @@ export const BudgetPanel: React.FC<{ canSpend: boolean }> = ({ canSpend }) => {
   const [categoryName, setCategoryName] = useState('');
 
   const rows = positions.data ?? [];
+  // Bu ekranın bütün satırlarının kökeni, tek okumada (M13-21).
+  const origins = useRecordOrigins(rows.map((r) => r.budgetLineId));
   const totals = rows.reduce(
     (acc, row) => ({
       budget: acc.budget + row.budgetKes,
@@ -244,6 +248,7 @@ export const BudgetPanel: React.FC<{ canSpend: boolean }> = ({ canSpend }) => {
                     en={row.titleEn}
                     tr={row.titleTr}
                   />
+                  <RecordOrigin origin={origins.of(row.budgetLineId)} />
                 </Td>
                 <Td className="text-right font-mono">{fmt(row.budgetKes, 'KES')}</Td>
                 <Td className="text-right font-mono text-sky-800">

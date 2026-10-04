@@ -14,6 +14,8 @@ import { ActionButton, Field, Pill, Select, TextInput, WriteError } from '../ui/
 import { SettledSection } from '../ui/SettledSection';
 import { EmptyState } from '../EmptyState';
 import type { Hearing, HearingKind, PreparationState } from '../../types';
+import { useRecordOrigins } from '../../api/proposalHooks';
+import { RecordOrigin } from '../ui/RecordOrigin';
 
 /**
  * Hearings (M5-03).
@@ -58,6 +60,8 @@ export const HearingList: React.FC<{ caseId: string; canWrite: boolean }> = ({
   const rows = hearings.data ?? [];
   const waiting = rows.filter((h) => !isOver(h));
   const settled = rows.filter(isOver);
+  // Bu ekranın bütün satırlarının kökeni, tek okumada (M13-21).
+  const origins = useRecordOrigins(rows.map((r) => r.id));
   const upcoming = waiting.filter((h) => !hasHappened(h));
   // Geçmiş ama sonucu yazılmamış olanlar. Bu sayı bir kusur değil, sorunun
   // birinin önüne konmasıdır.
@@ -98,6 +102,7 @@ export const HearingList: React.FC<{ caseId: string; canWrite: boolean }> = ({
                 {hearing.bench}
               </p>
             )}
+            <RecordOrigin origin={origins.of(hearing.id)} />
           </div>
           <Pill className={PREPARATION_STYLES[hearing.preparation]}>
             {preparationLabel(hearing.preparation, language)}

@@ -51,6 +51,8 @@ import { money, formatDate } from '../../lib/site';
 import { splitBySettled } from '../../lib/registerStates';
 import { SettledSection } from '../ui/SettledSection';
 import type { ProcurementKind, ProcurementRequest } from '../../types';
+import { useRecordOrigins } from '../../api/proposalHooks';
+import { RecordOrigin } from '../ui/RecordOrigin';
 
 const KINDS: ProcurementKind[] = [
   'legal_counsel',
@@ -108,6 +110,8 @@ export const RequestPanel: React.FC = () => {
   // Bu ayrı bir soru ve hükmün tekrarı değil: açık her talep onay beklemiyor,
   // adayları çağrılmış olan zaten onaylanmış durumda.
   const awaitingApproval = waiting.filter((r) => r.state === 'drafted').length;
+  // Bu ekranın bütün satırlarının kökeni, tek okumada (M13-21).
+  const origins = useRecordOrigins(rows.map((r) => r.id));
 
   /** Bir satır; iki yerde çiziliyor (bekleyen ve kapanan). */
   const row = (request: ProcurementRequest) => {
@@ -177,6 +181,7 @@ export const RequestPanel: React.FC = () => {
             </ActionButton>
           )}
         </div>
+        <RecordOrigin origin={origins.of(request.id)} />
 
         {open && (
           <div className="mt-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
