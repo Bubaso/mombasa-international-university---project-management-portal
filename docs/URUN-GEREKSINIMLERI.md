@@ -228,7 +228,24 @@ Her kayıt (belge, not, karar, temas, risk) tam olarak bir seviye taşır:
 
 ## 5. Modüller
 
-Toplam **240 numaralandırılmış gereksinim**, 15 modül ve fonksiyonel olmayan gereksinimlere dağılmış durumda.
+Toplam **252 numaralandırılmış gereksinim**: 209 modül gereksinimi (`M2-01` gibi), 37
+fonksiyonel olmayan gereksinim (`N-01`…`N-37`) ve 6 göç gereksinimi (`G-01`…`G-06`).
+
+Sayı, bölüm 2'deki 18 numaralı satırı içermiyor: `S-1`…`S-10` yapısal sorunlar ve
+`H-1`…`H-8` doğrulanmış hatalar, yani **teşhis**, istenen iş değil. Dokümandaki bütün
+numaralı satır 270; gereksinim olan 252. Sayım tek komutla tekrarlanabilir olsun diye
+bunu burada yazıyoruz:
+
+```
+grep -cE '^\| *M[0-9]+-[0-9]+' docs/URUN-GEREKSINIMLERI.md   # 209
+grep -cE '^\| *N-[0-9]+'       docs/URUN-GEREKSINIMLERI.md   #  37
+grep -cE '^\| *G-[0-9]+'       docs/URUN-GEREKSINIMLERI.md   #   6
+```
+
+Bu satır bir süre **240** diyordu ve o sayı yazıldığı gün doğruydu (197 + 37 + 6). Doküman
+sonradan büyüdü — en çok M13, belge asistanının satırlarıyla — ve sayı güncellenmedi. Bu
+dokümanın kendisi hakkında eski bir rakam taşıması, portalın ekranlarından kaldırılan şeyin
+aynısı: 4 Ekim 2026'da sayıldı.
 
 | Modül   | Konu                               | Nerede                                     |
 | ------- | ---------------------------------- | ------------------------------------------ |
