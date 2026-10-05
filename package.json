@@ -14,7 +14,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test:smoke": "npm run build:smoke && node tests/smoke.mjs",
-    "verify": "npm run typecheck && npm run lint && npm run format:check && npm run build && npm run test:smoke && npm run test:policies && npm run test:assistant && npm run test:translate && npm run test:exports && npm run test:push && npm run test:push:sw && npm run test:nav && npm run test:palette && npm run test:intake && npm run test:sql-objects && npm run test:enum-drift && npm run test:register-states && npm run test:list-reads && npm run test:populated && npm run test:doc-counts",
+    "verify": "npm run typecheck && npm run lint && npm run format:check && npm run build && npm run test:smoke && npm run test:policies && npm run test:assistant && npm run test:translate && npm run test:exports && npm run test:push && npm run test:push:sw && npm run test:nav && npm run test:palette && npm run test:intake && npm run test:sql-objects && npm run test:enum-drift && npm run test:register-states && npm run test:list-reads && npm run test:populated && npm run test:doc-counts && npm run test:screen-text",
     "test:policies": "bash tests/db/run.sh",
     "test:assistant": "node tests/assistant.mjs",
     "sql:bundle": "node scripts/bundle-migrations.mjs",
@@ -34,6 +34,7 @@
     "test:list-reads": "node tests/list-reads.mjs",
     "test:populated": "npm run build:smoke && node tests/populated.mjs",
     "test:doc-counts": "node tests/doc-counts.mjs",
+    "test:screen-text": "node tests/screen-text.mjs",
     "test:design": "node tests/design.mjs",
     "deploy": "npm run build && npm run check:dist && firebase deploy --only hosting --project miu-kenya"
   },

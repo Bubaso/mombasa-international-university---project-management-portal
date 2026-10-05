@@ -151,14 +151,50 @@ export function introsIn(source, strings) {
   return out;
 }
 
-/** Ekranda işi olmayan geliştirici dili (T13-07). */
+/**
+ * Ekranda işi olmayan geliştirici dili (T13-07).
+ *
+ * Sınır `\b` ile yazılamıyor ve bunu ölçerken öğrendim: JavaScript'in `\b`'si
+ * ASCII kelime karakterine dayanır, `ö` ASCII değildir, yani `/\bözet/`
+ * `'özet'` dizgisinde bile eşleşmiyor. Türkçe harfle BAŞLAYAN her desen
+ * (`özet`, `şema`, `önbellek`) sessizce ölüydü ve ölçüm "jargon yok" diyordu;
+ * `sütun` çalışıyordu, çünkü `s` ASCII. Yarısı ölü bir desen listesi, liste
+ * olmamasından kötüdür: cevap verdiğini sanırsın.
+ *
+ * `özet` ve `hash` listeden çıktı, çünkü yanlış işaretler. `özet` Türkçede
+ * "summary" demek ve uygulamada 14 yerde o anlamda geçiyor — "Haftalık özet",
+ * "Dava Özeti", "Okuma (özet)". Jargon olan şey `SHA-256`; kelimenin kendisi
+ * doğru Türkçe. `sorgu` da çıktı: "üç ayrı sorgu" cümlesi kullanıcıya bir şey
+ * anlatıyor, kolon adı gibi sızmış bir terim değil.
+ */
+/**
+ * Sıkı sınır: iki yanı da kelime dışı. Kimlik ve kolon adı için — `M13-09`
+ * ve `is_active` ek almaz.
+ */
+const B = (body) => new RegExp(`(?<![\\p{L}\\p{N}])(?:${body})(?![\\p{L}\\p{N}])`, 'u');
+
+/**
+ * Gövde sınırı: başı sıkı, sonu serbest. Türkçe eklemeli bir dil ve ekran
+ * metni çekimli hâli kullanıyor — "veritabanı **şeması**", "**sütunu**",
+ * "**politikaları**". Sonda sıkı sınırla yazılmış `şema` deseni, gerçek
+ * metnin hiçbirini yakalamıyordu; ölçüm yine "jargon yok" diyordu.
+ *
+ * Başın sıkı kalması gerekiyor: serbest olsa `şema` bir başka kelimenin
+ * ortasında da eşleşir ve desen var olmayan bir sorun üretir.
+ *
+ * Gövdenin kendisi de değişebiliyor: `önbellek` → `önbelleğe`, yani ünsüz
+ * yumuşaması son harfi değiştiriyor. Bu yüzden gövde `önbelle` — kelimenin
+ * çekilmeyen kısmı. Türkçe bir deseni sözlük biçiminde yazmak, onu çalışmaz
+ * hâlde yazmaktır.
+ */
+const STEM = (body) => new RegExp(`(?<![\\p{L}\\p{N}])(?:${body})`, 'u');
+
 export const JARGON = {
-  'gereksinim kimliği': /\b[MTNG]\d{0,2}-\d{2}\b/,
-  'kolon/tablo adı': /\b[a-z]+_[a-z]+(?:_[a-z]+)*\b/,
-  'veritabanı terimi':
-    /\b(?:trigger|RLS|enum|jsonb|migration|PostgREST|politikalar?|şema|sütun|sorgu)\b/,
-  kriptografi: /\b(?:SHA-256|VAPID|hash|özet|JWT|CORS|Content-Range)\b/,
-  'mimari terimi': /\b(?:edge fonksiyon|service worker|localStorage|idempotent|önbellek)\b/,
+  'gereksinim kimliği': B(String.raw`[MTNG]\d{0,2}-\d{2}`),
+  'kolon/tablo adı': B(String.raw`[a-z]+_[a-z]+(?:_[a-z]+)*`),
+  'veritabanı terimi': STEM('trigger|RLS|enum|jsonb|migration|PostgREST|politika|şema|sütun'),
+  kriptografi: STEM('SHA-256|VAPID|JWT|CORS|Content-Range'),
+  'mimari terimi': STEM('edge fonksiyon|service worker|localStorage|idempotent|önbelle'),
 };
 
 /** Kullanıcıya değil yazara hitap eden cümle (T13-03). */

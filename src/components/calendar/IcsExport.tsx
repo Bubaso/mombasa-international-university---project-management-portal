@@ -55,8 +55,8 @@ export const IcsExport: React.FC<{ entries: CalendarEntry[] }> = ({ entries }) =
             </h2>
             <p className="max-w-2xl text-xs text-slate-500">
               {tr
-                ? 'Google Takvim, Outlook ve telefonunuzun takvimi bu dosyayı okur. İçe aktarmak bir kopya alır: tarih sonra değişirse dosya eskir, yeniden almanız gerekir. Canlı bir bağlantı değil — canlı bağlantı, takvim programının giriş yapmadan okuyabileceği bir adres ister, yani bağlantıyı elinde tutan takvimi elinde tutar. İsterseniz onu ayrıca konuşalım.'
-                : 'Google Calendar, Outlook and your phone will read this file. Importing takes a copy: if a date moves afterwards the file is stale and you take it again. It is not a live feed — a feed needs an address a calendar program can read without signing in, which means whoever holds the link holds the calendar. Worth deciding deliberately rather than by default.'}
+                ? 'Google Takvim, Outlook ve telefonunuzun takvimi okur. Kopya alır: tarih sonra değişirse yeniden almanız gerekir.'
+                : 'Google Calendar, Outlook and your phone will read it. It takes a copy: if a date moves, take it again.'}
             </p>
           </div>
         </div>

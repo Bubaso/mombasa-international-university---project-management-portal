@@ -11,6 +11,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { SignInPage } from './components/SignInPage';
 import { Navbar } from './components/Navbar';
 import { PrintHeader } from './components/PrintHeader';
+import { UNIVERSITY } from './lib/org';
 import { Sidebar } from './components/Sidebar';
 import { DeadlineAlertBanner } from './components/DeadlineAlertBanner';
 import { OfflineIndicator } from './components/OfflineIndicator';
@@ -142,9 +143,7 @@ const MainLayout: React.FC = () => {
           <footer className="mt-12 pt-6 border-t border-slate-200 text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-3">
             <div>
               <span className="font-semibold text-slate-700">
-                {language === 'tr'
-                  ? 'Mombasa Uluslararası Üniversitesi Projesi'
-                  : 'Mombasa International University Project'}
+                {language === 'tr' ? `${UNIVERSITY.tr} Projesi` : `${UNIVERSITY.en} Project`}
               </span>{' '}
               ·{' '}
               <span>

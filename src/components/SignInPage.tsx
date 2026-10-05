@@ -3,6 +3,7 @@ import { Loader2, LogIn, ShieldAlert, PlugZap } from 'lucide-react';
 import { useAuth, type AccessDenial } from '../context/AuthContext';
 import { supabaseHost } from '../lib/supabase';
 import { useApp } from '../context/AppContext';
+import { UNIVERSITY_SHORT, name } from '../lib/org';
 
 /**
  * Sign-in, and the two states that are not a sign-in problem: no backend
@@ -91,7 +92,7 @@ export const SignInPage: React.FC = () => {
           </div>
           <div>
             <h1 className="font-bold text-slate-900 leading-tight">
-              {tr ? 'Mombasa Uluslararası Üniv.' : 'Mombasa Int. University'}
+              {name(UNIVERSITY_SHORT, language)}
             </h1>
             <p className="text-xs text-slate-500 leading-none mt-0.5">
               {tr ? 'Kenya Afrika Üniversitesi Vakfı' : 'African University Trust (AUTK)'}

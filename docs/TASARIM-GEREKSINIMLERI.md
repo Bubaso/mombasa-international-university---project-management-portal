@@ -248,6 +248,68 @@ Rota başına yük (uzun metin sayısı / karakteri):
 | T13-08 | Boş durum açıklamaları kısalsın: 20 açıklama, 2355 karakter.                                                                                         | P1  | Her boş durum açıklaması ≤ 120 karakter ve neyin kayıtlı olmadığını söylemeye devam ediyor (T5-05 korunur). |
 | T13-09 | Kesim bir ratchet'e bağlansın; metin sessizce geri büyümesin.                                                                                        | P0  | `tests/screen-text.mjs` ölçülen tavanı tutuyor ve `npm run verify` içinde koşuyor.                          |
 
+### T13 · Faz 1 — ölçülen sonuç
+
+Hiçbir tanıtım paragrafı daha kesilmedi; bu faz tavanı kurdu ve iki
+tartışmasız kusuru kapattı.
+
+|                           | kesimden önce | Faz 1 sonrası |
+| ------------------------- | ------------- | ------------- |
+| ekran metni               | 66.876        | **66.523**    |
+| 80+ karakterlik metin     | 37.267        | **37.034**    |
+| başlık altı paragraf      | 8.722         | **8.489**     |
+| sohbet cümlesi            | 1             | **0**         |
+| kurum adının biçim sayısı | 3             | **1**         |
+
+**T13-03.** `IcsExport` paneli "İsterseniz onu ayrıca konuşalım" diye
+bitiyordu — kullanıcıya değil yazara hitap eden bir cümle, arayüze commit
+edilmiş. Paragraf 345 → 112 karakter: ekranda ne olduğu ve kullanıcının
+çarpacağı tek kısıt ("kopya alır, tarih değişirse yeniden alın") kaldı. Kesilen
+gerekçe kaybolmadı, çünkü dosyanın başlığında zaten yazılıydı — ekrandaki
+kopyaydı.
+
+**T13-05.** Kurumun adı dört yerde, üç biçimde yazılıydı: tam ad, "Projesi"
+eklenmiş hâli, ve `Mombasa Uluslararası Üniv.` kısaltması. Mobil altbilgi ise
+hiç iki dilli değildi; İngilizcesi Türkçe arayüzde de görünüyordu.
+`src/lib/org.ts` tek kaynak oldu. Kısaltma kaldırıldı: kurumun kendi adını
+kısaltmak, sicile verilen adla ekrandaki adı ayırır.
+
+**T13-09.** `tests/screen-text.mjs` 14 kontrol, `npm run verify` içinde.
+Tavanlar ölçülen değerler ve yalnızca aşağı iner. Altı mutasyonla sınandı ve
+en önemlisi altıncısı: ölçüm aletini körleştirmek: `stringsIn` boş liste
+döndürdüğünde diğer 13 kontrol sessizce geçiyordu, artık düşüyor.
+
+#### Ölçüm aletim üç kez yanlış cevap verdi
+
+Üçü de kayda değer, çünkü üçü de "cevap veremedim" demek yerine yanlış cevap
+verdi.
+
+**Paragrafı başlık saydı.** Döngü yalnızca aradığı etiketleri tanıyordu,
+`<p className=…>` listede yoktu, ve 48 paragrafı bir üstteki `<h2>`'ye yazdı.
+Rapor "48 başlık 165 karakter uzunluğunda" diyordu; başlıklar iyiydi, altındaki
+paragraflar uzundu. Beyaz liste kaldırıldı: artık satırdaki son `<tag` neyse o.
+
+**Metnin %16'sını görmedi.** Desen yalnızca `tr ? …` arıyordu, oysa en eski iki
+ekran `language === 'tr' ? …` kullanıyor. 414 satırlık `ProjectInfoView` için
+"0 metin" dedi — aradığını bulamayınca sustuğunu değil sıfır olduğunu söyledi.
+10.613 karakter, 2 ekran.
+
+**Türkçe jargon desenleri ölüydü.** JavaScript'in `\b`'si ASCII kelime
+karakterine dayanıyor ve `ö` ASCII değil: `/\bözet/` `'özet'` dizgisinde bile
+eşleşmiyor. `özet`, `şema`, `önbellek` desenleri hiç çalışmamıştı ve ölçüm
+"jargon yok" diyordu. Üstüne Türkçe eklemeli: metinde `şema` değil `şeması`
+yazıyor, ve `önbellek` → `önbelleğe` diye yumuşuyor. Sınır artık Unicode
+sınıfıyla, gövde çekilmeyen kısma kadar.
+
+Bir de desenin kendisi yanlıştı: `özet` Türkçede "summary" demek ve uygulamada
+14 yerde o anlamda geçiyor — "Haftalık özet", "Dava Özeti". Jargon olan şey
+`SHA-256`, kelimenin kendisi doğru Türkçe. Var olmayan bir sorunu kovalatan
+desen, olmayan desenden kötüdür; listeden çıktı.
+
+Düzeltilmiş dedektörün bulduğu: 10 yer. `is_active`, `full_name`, `M13-10`,
+`service worker`, `SHA-256`, "savunma sütunları" (bu muhtemelen yanlış pozitif
+— T13-07 onu elle ayıklayacak).
+
 ---
 
 ## Önerilen sıra

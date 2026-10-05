@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { NAV_GROUPS } from '../lib/navigation';
+import { UNIVERSITY, TRUST, PLOT, name } from '../lib/org';
 import { Globe, LogOut, Search, X, ChevronRight } from 'lucide-react';
 
 interface MobileMoreSheetProps {
@@ -62,9 +63,7 @@ export const MobileMoreSheet: React.FC<MobileMoreSheetProps> = ({ isOpen, onClos
                 {language === 'tr' ? 'Tüm bölümler' : 'All sections'}
               </h3>
               <p className="text-xs text-slate-500">
-                {language === 'tr'
-                  ? 'Mombasa Uluslararası Üniversitesi'
-                  : 'Mombasa International University'}
+                {language === 'tr' ? UNIVERSITY.tr : UNIVERSITY.en}
               </p>
             </div>
           </div>
@@ -209,7 +208,8 @@ export const MobileMoreSheet: React.FC<MobileMoreSheetProps> = ({ isOpen, onClos
         )}
 
         <div className="pt-2 text-center text-xs text-slate-500">
-          Mombasa International University · AUTK Cap 164 · Plot MN/I/5141
+          {name(UNIVERSITY, language)} · {name(TRUST, language)} ·{' '}
+          {language === 'tr' ? 'Parsel' : 'Plot'} {PLOT}
         </div>
       </div>
     </div>

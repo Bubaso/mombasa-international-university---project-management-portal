@@ -6,6 +6,7 @@ import { Search, Globe, Menu, LogOut, UserCog } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useAuthority } from '../api/adminHooks';
 import { roleLabel } from '../lib/roles';
+import { UNIVERSITY_SHORT, name } from '../lib/org';
 
 interface NavbarProps {
   onOpenMenu: () => void;
@@ -53,7 +54,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenMenu }) => {
 
             <div>
               <span className="font-bold text-sm sm:text-base text-slate-900 group-hover:text-amber-600 transition-colors block leading-tight">
-                {language === 'tr' ? 'Mombasa Uluslararası Üniv.' : 'Mombasa Int. University'}
+                {name(UNIVERSITY_SHORT, language)}
               </span>
               <p className="text-xs sm:text-xs text-slate-500 truncate max-w-[160px] sm:max-w-xs leading-none mt-0.5">
                 {language === 'tr'
