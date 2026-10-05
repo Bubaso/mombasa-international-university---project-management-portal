@@ -122,8 +122,8 @@ export const CapturePanel: React.FC = () => {
             </h2>
             <p className="max-w-2xl text-xs text-slate-500">
               {tr
-                ? 'Sahada, valilikte, yolda — bağlantı olmadığı yerde toplantı yazılabilsin diye. Yazdığınız şey bağlantı gelene kadar yalnızca bu cihazdadır; kayda geçtiği an bunu açıkça söyler. Aksiyon cümleleri aksiyon olmaz, aday kuyruğuna düşer: sahada tarih ve sorumlu uydurmak zorunda kalmazsınız.'
-                : 'For the rooms the network does not reach. What you write stays on this device until the connection returns, and the panel says so plainly until it has gone. Action sentences become candidates rather than actions, so nobody has to invent an owner and a date in a room with no signal.'}
+                ? 'Bağlantı olmadığı yerde toplantı yazmak için. Yazdığınız şey kayda geçene kadar bu cihazda kalır.'
+                : 'For writing a meeting where there is no connection. What you write stays on this device until it is recorded.'}
             </p>
           </div>
         </div>

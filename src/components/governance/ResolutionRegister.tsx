@@ -51,8 +51,8 @@ export const ResolutionRegister: React.FC = () => {
             </h2>
             <p className="text-xs text-slate-500">
               {tr
-                ? 'Organların kararları, numaralı ve imzalı. İmzalandıktan sonra metni değiştirilemez — geri alınabilir, üstüne karar alınabilir, ama yeniden yazılamaz.'
-                : 'The organs’ resolutions, numbered and signed. Once signed the text is closed: a resolution can be rescinded or superseded, not rewritten.'}
+                ? 'Organların kararları, numaralı ve imzalı. İmzadan sonra metin değiştirilemez; üstüne karar alınır.'
+                : "The organs' resolutions, numbered and signed. After signing the text cannot change; a later resolution supersedes it."}
             </p>
           </div>
         </div>

@@ -63,8 +63,8 @@ export const FinanceAccountingView: React.FC = () => {
           </h1>
           <p className="max-w-2xl text-sm text-slate-500">
             {tr
-              ? 'Bağışçılar Türkiye’de, harcama Kenya’da, denetim üçüncü bir yerde. Her tutar kendi para biriminde ve kullanılan kurla birlikte durur; "denetlendi" rozetini yalnızca denetçi koyabilir.'
-              : 'Donors are in Türkiye, the spending is in Kenya, the audit is somewhere else. Every amount keeps its own currency and the rate used, and only an auditor can produce the audited badge.'}
+              ? 'Her tutar kendi para biriminde ve kuruyla durur; “denetlendi” rozetini yalnızca denetçi koyabilir.'
+              : 'Every amount sits in its own currency with the rate used; only an auditor can set the “audited” badge.'}
           </p>
         </div>
       </header>

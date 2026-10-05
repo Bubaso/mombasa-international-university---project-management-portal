@@ -84,8 +84,8 @@ export const DigestPanel: React.FC = () => {
             </h2>
             <p className="max-w-2xl text-xs text-slate-500">
               {tr
-                ? 'Üç hedef kitle, üç ayrı sorgu. Bağışçı özeti, mütevelli özetinin kırpılmışı değil — istemcide gizlenen bir bölüm, bir hatayla açılabilecek bir bölümdür.'
-                : 'Three audiences, three queries. The donor digest is not the trustee one with sections hidden: a section hidden in the client is a section one bug away from showing.'}
+                ? 'Üç hedef kitle, üç ayrı derleme.'
+                : 'Three audiences, three separate compilations.'}
             </p>
           </div>
         </div>

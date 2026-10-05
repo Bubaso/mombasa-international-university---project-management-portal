@@ -238,15 +238,15 @@ Rota başına yük (uzun metin sayısı / karakteri):
 
 | ID     | Gereksinim                                                                                                                                           | P   | Kabul kriteri                                                                                               |
 | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- | --- | ----------------------------------------------------------------------------------------------------------- |
-| T13-01 | Başlık altındaki 54 tanıtım paragrafı birinci cümlesine insin; gerekçe cümleleri silinsin (kod yorumunda kalır).                                     | P0  | Hiçbir tanıtım paragrafı 100 karakterden uzun değil. Ölçüm: 8722 → hedef ≤ 3500 karakter.                   |
-| T13-02 | Kullanıcının çarpacağı kısıtlar korunsun, gerekçeden ayrı ve tek cümle olarak.                                                                       | P0  | Gizlilik varsayılanı, delil şartı ve kapatılamayan bildirim ekranda hâlâ yazılı.                            |
-| T13-03 | Ekrana girmiş sohbet cümlesi kaldırılsın: `IcsExport` "İsterseniz onu ayrıca konuşalım".                                                             | P0  | Uygulamada kullanıcıya soru soran ya da yazara hitap eden hiçbir cümle yok.                                 |
+| T13-01 | Başlık altındaki tanıtım paragrafları birinci cümlesine insin; gerekçe cümleleri silinsin (kod yorumunda kalır).                                     | P0  | ✅ Faz 2: 45 paragraf kesildi, 8722 → **2719** karakter, en uzunu **98**; hiçbiri 100'ü aşmıyor.            |
+| T13-02 | Kullanıcının çarpacağı kısıtlar korunsun, gerekçeden ayrı ve tek cümle olarak.                                                                       | P0  | ✅ Faz 2: on bir kısıt tek tek arandı, hepsi ekranda.                                                       |
+| T13-03 | Ekrana girmiş sohbet cümlesi kaldırılsın: `IcsExport` "İsterseniz onu ayrıca konuşalım".                                                             | P0  | ✅ Faz 1: kaldırıldı; ratchet sıfırda tutuyor.                                                              |
 | T13-04 | `/legal` kendi turunu alsın: 43 uzun metin, 6288 karakter.                                                                                           | P0  | `/legal` uzun metin karakteri ≤ 2000.                                                                       |
-| T13-05 | Kurumun adı tek biçimde yazılsın. Bugün 3 biçim var: tam ad, "Projesi" ekli, ve "Üniv." kısaltması.                                                  | P1  | Tek sabitten geliyor; "Üniv." hiçbir yerde yok.                                                             |
+| T13-05 | Kurumun adı tek biçimde yazılsın. Bugün 3 biçim var: tam ad, "Projesi" ekli, ve "Üniv." kısaltması.                                                  | P1  | ✅ Faz 1: `src/lib/org.ts` tek kaynak; kısaltma kaldırıldı.                                                 |
 | T13-06 | İki dilli metin tek kalıpla yazılsın. Bugün `tr ? …` (1894 yer) ve `language === 'tr' ? …` (213 yer) birlikte kullanılıyor.                          | P1  | Tek kalıp; ölçüm betiği tek desenle tüm metni görüyor.                                                      |
 | T13-07 | Geliştirici dili ekrandan çıksın: gereksinim kimliği (3), snake_case kolon adı (2), veritabanı terimi (4), "özet/SHA-256" (7), "service worker" (1). | P1  | Ekran metninde `M13-09` gibi kimlik, `is_active` gibi kolon adı ve veritabanı terimi geçmiyor.              |
 | T13-08 | Boş durum açıklamaları kısalsın: 20 açıklama, 2355 karakter.                                                                                         | P1  | Her boş durum açıklaması ≤ 120 karakter ve neyin kayıtlı olmadığını söylemeye devam ediyor (T5-05 korunur). |
-| T13-09 | Kesim bir ratchet'e bağlansın; metin sessizce geri büyümesin.                                                                                        | P0  | `tests/screen-text.mjs` ölçülen tavanı tutuyor ve `npm run verify` içinde koşuyor.                          |
+| T13-09 | Kesim bir ratchet'e bağlansın; metin sessizce geri büyümesin.                                                                                        | P0  | ✅ Faz 1–2: `tests/screen-text.mjs`, 17 kontrol, `verify` içinde.                                           |
 
 ### T13 · Faz 1 — ölçülen sonuç
 
@@ -309,6 +309,86 @@ desen, olmayan desenden kötüdür; listeden çıktı.
 Düzeltilmiş dedektörün bulduğu: 10 yer. `is_active`, `full_name`, `M13-10`,
 `service worker`, `SHA-256`, "savunma sütunları" (bu muhtemelen yanlış pozitif
 — T13-07 onu elle ayıklayacak).
+
+### T13 · Faz 2 — ölçülen sonuç
+
+Kesim yapıldı: **45 tanıtım paragrafı**, 48 adaydan. Üçüne dokunulmadı
+(`StakeholdersView`, `AdminConsoleView` ve Faz 1'de kesilen `IcsExport`) —
+zaten kısaydılar ve içerik söylüyorlardı.
+
+|                            | kesimden önce | Faz 1  | **Faz 2**  |
+| -------------------------- | ------------- | ------ | ---------- |
+| ekran metni                | 66.876        | 66.523 | **62.294** |
+| 80+ karakterlik metin      | 37.267        | 37.034 | **31.220** |
+| panel gerekçesi (paragraf) | 8.722         | 8.489  | **2.719**  |
+| en uzun panel gerekçesi    | 345           | 315    | **98**     |
+
+Panel gerekçelerinin hacmi **%68 düştü** ve hiçbiri 100 karakteri aşmıyor
+(T13-01'in kriteri). Ekran metninin tamamından 4.582 karakter gitti.
+
+**T13-02 doğrulandı, iddia olarak değil tek tek aranarak.** Kullanıcının
+çarpacağı on bir kısıt ekranda duruyor: "Beyanlar varsayılan olarak gizli",
+"kasada belgesi olmadan 'karşılandı' olamıyor", "duruşma bildirimi portal
+içinde kapatılamaz", "Kısıtlı kayıtlar hiçbir koşulda modele gitmez",
+"Belgesiz kayıt kabul edilmiyor", "kendi talebini onaylayamaz", "İmzadan
+sonra metin değiştirilemez", "Taslak olmayanın belgesi kasada olmak zorunda",
+"bir öneridir, kayıt değil", "Sorumlusu ve tarihi yazılmadan aksiyon
+sayılmıyor", "yalnızca denetçi koyabilir".
+
+Dürüstlük cümleleri de kaldı, çünkü onlar da gerekçe değil: "İlgisiz olduğu
+anlamına gelmez — kontrol edilebilir bir bağ bulunamadı", "raporu olmayan
+blok 'raporlanmadı' der, sıfır demez", "Defter kişinin sahada olup olmadığını
+bilmiyor", "Kütüğü olmayan şerit çizilmiyor". Kesilen şey bir bilinmeyenin
+ekrandan kaldırılması değildi; bir kararın savunmasıydı.
+
+#### Altı paragraf kesilmedi ve sebebi ölçüm değil, türü
+
+Dedektörün yakaladığı 54 paragrafın altısı `LegalAffairsView`'daydı ve
+tanıtım paragrafı değillerdi: dava pozisyon metinleri ("Pozisyonumuz:
+Şiddetle Karşı Çıkıyoruz"), Yargıtay içtihat başlıkları, mahkeme kayıt notu.
+Başlık altında oldukları için yakalanmışlardı. Bunlar projenin kendi
+içeriği — dokuz temyiz itirazı ve otuz yıllık kronolojinin parçası.
+
+Ratchet ikisini ayrı sayıyor. Tek sayıda toplanırsa iki şey bozulur:
+T13-01'in kazancı davanın içeriğiyle seyrelir, ve "en uzun gerekçe" tavanını
+bir gerekçe değil bir dava pozisyonu belirler. T13-04 o ekranın kendi turu ve
+oradaki soru farklı: içerik koda gömülü, kısaltılacak değil veritabanına
+taşınacak.
+
+#### İki kesim yanlıştı ve ratchet onları yakalamadı
+
+Kesimden sonra `npm run verify` **düştü**, iki smoke iddiasıyla:
+
+- `ReadinessBoard` — "ve tanıtım şeridinin neden olmadığını söylüyor, sıfır
+  çizmek yerine". Paragrafı "Kütüğü olmayan şerit çizilmiyor" diye kesmiştim:
+  kural doğru, ama **hangi** şeridin eksik olduğunu artık söylemiyordu.
+  Okuyucu, tanıtımın bir mesele olduğunu ama takip edilmediğini öğrenemiyordu.
+- `RequestPanel` — "ekran onayın ödeme bantlarından geçtiğini söylüyor, ikinci
+  bir eşik kümesinden değil". Bu cümleyi tamamen atmıştım. Oysa kullanıcının
+  "bana hangi eşik uygulanıyor" sorusunun cevabı buydu.
+
+İkisi de olgu, gerekçe değil — sınıflandırmam 45 kesimin 2'sinde yanlıştı.
+Önemli olan şu: **ratchet bunları yakalamazdı.** Hacim düşmüştü, tavanların
+hepsi geçiyordu, kural sağlanıyordu. Yakalayan şey ekranın ne söylediğini
+sınayan smoke iddialarıydı. Bir hacim tavanı metnin azaldığını söyler,
+anlamın korunduğunu söylemez; ikisi ayrı sorudur ve ikisinin ayrı testi var.
+
+`RequestPanel`'de "eleme gerekçesi zorunlu" cümlesi paragraftan çıktı ve
+yerinde kaldı: `Neden elendi?` alanı formda `required`, yani kısıt eylemin
+yanında duruyor. Bir kısıtı tanıtım paragrafından çıkarmak, onu uygulamadan
+çıkarmak değil — ama uygulamada olmadığını doğrulamadan çıkarmak olurdu.
+
+#### Bir tekrar daha çıktı
+
+`CommunicationView` (h1) ve `ThreadPanel` (h2) aynı cümleyle açıyordu —
+"Portal resmî kayıt, WhatsApp günlük konuşma". Bir ekranın başlığı ve onun
+içindeki panelin başlığı aynı şeyi söylüyorsa ikincisi bilgi taşımıyor;
+panelin paragrafı artık kendi kısıtını söylüyor ("Burada yazılan
+değiştirilemez").
+
+Ratchet 17 kontrole çıktı. İki yeni iddia mutasyonla sınandı: 101 karakterlik
+bir gerekçe kuralı düşürüyor, ve `LegalAffairsView`'ın büyümesi **yalnızca**
+kendi tavanını düşürüyor — panel tavanlarına karışmıyor.
 
 ---
 

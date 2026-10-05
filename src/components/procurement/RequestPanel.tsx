@@ -464,8 +464,8 @@ export const RequestPanel: React.FC = () => {
             </h2>
             <p className="text-xs text-slate-500">
               {tr
-                ? 'Onay, ödemelerdeki aynı tutar bandından geçiyor; talep eden kendi talebini onaylayamıyor. Eleme gerekçesi zorunlu — kaybolan tam olarak o.'
-                : 'Approval goes through the same money bands as a payment, and the requester cannot approve their own. A rejection needs its reason: that is the part that gets lost.'}
+                ? 'Onay, ödemelerdeki aynı tutar bandından geçer; talep eden kendi talebini onaylayamaz.'
+                : 'Approval uses the same money bands as a payment; a requester cannot approve their own.'}
             </p>
           </div>
         </div>

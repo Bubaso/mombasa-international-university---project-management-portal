@@ -73,8 +73,8 @@ export const ReviewPanel: React.FC = () => {
             </h2>
             <p className="text-xs text-slate-500">
               {tr
-                ? 'Tarihli, puanlı ve sonradan değiştirilemez. Düzeltme, yeni bir değerlendirme yazmakla yapılıyor — ikisi de dosyada kalıyor.'
-                : 'Dated, scored, and not editable afterwards. A correction is a new review, and both stay on the file.'}
+                ? 'Tarihli, puanlı ve sonradan değiştirilemez; düzeltme yeni değerlendirme olarak yazılır.'
+                : 'Dated, scored and unalterable; a correction is written as a new review.'}
             </p>
           </div>
         </div>

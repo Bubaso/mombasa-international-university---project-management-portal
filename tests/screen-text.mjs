@@ -49,11 +49,32 @@ process.chdir(root);
 // Bir dalga bunları düşürdüğünde burayı da düşürür. Düşmesi iş, artması
 // geri alma; ikisi de görünür olsun diye sayı burada duruyor.
 const CEILING = {
-  textChars: 66523,
-  longChars: 37034,
-  introChars: 8489,
-  longestIntro: 315,
+  textChars: 62328,
+  longChars: 31390,
+  // Panel gerekçesi: T13-01'in kestiği şey. 8489 → 2753 (Faz 2).
+  introChars: 2753,
+  longestIntro: 98,
+  // T13-01'in kriteri bir tavan değil kural: hiçbir panel gerekçesi 100
+  // karakteri aşmasın. Ölçülen en uzun 98 ve tavan ayrıca 98 — ikisi bir
+  // arada, çünkü biri geri büyümeyi, öteki kuralın kendisini tutuyor.
+  introRule: 100,
+
+  // LegalAffairsView ayrı sayılıyor ve sebebi ölçüm değil, türü: bu
+  // paragraflar panel gerekçesi DEĞİL, davanın kendi içeriği — pozisyon
+  // metinleri, Yargıtay içtihat başlıkları, mahkeme kayıt notu. Dedektör
+  // onları başlık altında oldukları için yakalıyor; kesilecek şey değiller.
+  //
+  // Tek sayıda toplanırsa iki şey birden bozulur: T13-01'in kazancı
+  // davanın içeriğiyle seyrelir, ve "en uzun gerekçe" tavanı bir gerekçe
+  // değil bir dava pozisyonu tarafından belirlenir. T13-04 o ekranın kendi
+  // turu ve oradaki soru farklı: içerik koda gömülü, kısaltılacak değil
+  // veritabanına taşınacak.
+  legalIntroChars: 856,
+  longestLegalIntro: 263,
 };
+
+/** Davanın içeriği, panel gerekçesi değil (T13-04). */
+const LEGAL_CONTENT = 'src/views/LegalAffairsView.tsx';
 
 /** Kurumun adının ikinci kopyası (T13-05). `org.ts` tek kaynak. */
 const UNIVERSITY_NAME =
@@ -76,6 +97,9 @@ let longChars = 0;
 let introChars = 0;
 let longestIntro = 0;
 let longestIntroAt = '';
+let legalIntroChars = 0;
+let longestLegalIntro = 0;
+const overRule = [];
 const chatty = [];
 const nameCopies = [];
 const jargon = {};
@@ -87,7 +111,13 @@ for (const file of files) {
   longChars += strings.filter((r) => r.len >= 80).reduce((a, r) => a + r.len, 0);
 
   for (const intro of introsIn(source, strings)) {
+    if (file === LEGAL_CONTENT) {
+      legalIntroChars += intro.len;
+      longestLegalIntro = Math.max(longestLegalIntro, intro.len);
+      continue;
+    }
     introChars += intro.len;
+    if (intro.len > CEILING.introRule) overRule.push(`${file}:${intro.line} (${intro.len})`);
     if (intro.len > longestIntro) {
       longestIntro = intro.len;
       longestIntroAt = `${file}:${intro.line}`;
@@ -127,6 +157,22 @@ check(
   longestIntro <= CEILING.longestIntro,
   'en uzun tanıtım paragrafı kayıtlı tavanın altında',
   `${longestIntro} / ${CEILING.longestIntro}${longestIntro > CEILING.longestIntro ? `  ${longestIntroAt}` : ''}`,
+);
+
+check(
+  overRule.length === 0,
+  `hiçbir panel gerekçesi ${CEILING.introRule} karakteri aşmıyor`,
+  overRule.join(', '),
+);
+check(
+  legalIntroChars <= CEILING.legalIntroChars,
+  'LegalAffairsView içeriğinin hacmi kayıtlı tavanın altında',
+  `${legalIntroChars} / ${CEILING.legalIntroChars}`,
+);
+check(
+  longestLegalIntro <= CEILING.longestLegalIntro,
+  "LegalAffairsView'ın en uzun paragrafı kayıtlı tavanın altında",
+  `${longestLegalIntro} / ${CEILING.longestLegalIntro}`,
 );
 
 check(

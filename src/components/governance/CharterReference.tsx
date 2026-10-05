@@ -98,8 +98,8 @@ export const CharterReference: React.FC = () => {
             </h2>
             <p className="max-w-3xl text-xs leading-relaxed text-slate-500">
               {tr
-                ? 'Bu sayfa okunur: bir sicil memuru "bu yetki hangi maddeden geliyor" diye sorduğunda buradaki şey alıntılanır. Bu yüzden senedin kendi sözleri, birinin okuması, ve maddenin dosyada bulunup bulunmadığı üç ayrı şey olarak durur — portal senedi okumuyor, dosya olarak tutuyor.'
-                : 'This page gets read out: when a registrar asks which clause a power comes from, what is here is what gets quoted. So the deed’s own words, somebody’s reading of them, and whether the clause has been found in the file are three separate things — the portal does not read the deed, it holds it as a file.'}
+                ? 'Senedin kendi sözleri, birinin okuması ve maddenin dosyada olup olmadığı — üçü ayrı duruyor.'
+                : "The deed's own words, somebody's reading of them, and whether the clause is on file — three separate things."}
             </p>
           </div>
         </div>

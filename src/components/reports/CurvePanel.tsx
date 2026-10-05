@@ -185,8 +185,8 @@ export const CurvePanel: React.FC = () => {
           <h2 className="text-base font-bold text-slate-900">{tr ? 'Eğriler' : 'The curves'}</h2>
           <p className="max-w-2xl text-xs text-slate-500">
             {tr
-              ? 'İlerleme, harcama ve risk seyri. Her biri çizilebildiğinde çiziliyor; çizilemiyorsa hangi sayının sıfır olduğunu söylüyor. Verisi olmayan bir grafik, eksenleri ve göstergesiyle bir ölçüm gibi görünür ama hiçbir şey ölçmez — ve düz bir çizgi okuyucuya “bir şey olmuyor” der, oysa “hiçbir şey kaydedilmemiş” demektir.'
-              : 'Progress, spend and risk over time. Each is drawn when it can be; when it cannot, it says which count is zero. A chart with no data behind it has axes and a legend and all the furniture of a measurement while measuring nothing — and a flat line reads as “nothing is happening” when it means “nothing has been recorded”.'}
+              ? 'İlerleme, harcama ve risk seyri. Çizilemiyorsa hangi sayının eksik olduğunu söyler.'
+              : 'Progress, spend and risk over time. Where a curve cannot be drawn, it names the missing figure.'}
           </p>
         </div>
       </header>

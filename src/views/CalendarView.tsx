@@ -168,8 +168,8 @@ export const CalendarView: React.FC = () => {
             </h1>
             <p className="max-w-2xl text-sm text-slate-500">
               {tr
-                ? 'Duruşma, usul süresi, yükümlülük, aksiyon ve cevaplanmamış soru — tarihi olan her şey tek listede. Haftasını planlamak için beş ekran açan kimse yok.'
-                : 'Hearings, procedural deadlines, obligations, actions and unanswered questions — everything with a date, in one list. Nobody plans a week by opening five screens.'}
+                ? 'Duruşma, usul süresi, yükümlülük, aksiyon ve cevaplanmamış soru — tarihi olan her şey.'
+                : 'Hearings, procedural deadlines, obligations, actions and open questions — everything with a date.'}
             </p>
           </div>
         </div>

@@ -119,8 +119,8 @@ export const TriagePanel: React.FC = () => {
             </h2>
             <p className="max-w-2xl text-xs text-slate-500">
               {tr
-                ? 'Tutanaklardan gelen aksiyon cümleleri. Bir aksiyonun bir sorumlusu ve bir tarihi olmak zorunda; bu ikisi yazılmadan bunlar aksiyon değil ve aksiyon sayılmıyor. Uydurulmuş bir tarih, tarihi olmayan bir aksiyondan kötüdür — takip edildiğini sandırır.'
-                : 'Action sentences from the minutes. An action must have one owner and one date; until those are given these are not actions and are not counted as any. A made-up date is worse than no action at all, because it looks tracked.'}
+                ? 'Tutanaklardan gelen aksiyon cümleleri. Sorumlusu ve tarihi yazılmadan aksiyon sayılmıyor.'
+                : 'Action sentences from the minutes. Nothing counts as an action until it has an owner and a date.'}
             </p>
           </div>
         </div>

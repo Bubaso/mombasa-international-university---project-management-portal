@@ -37,8 +37,8 @@ export const RoadmapPanel: React.FC = () => {
           </h2>
           <p className="text-xs text-slate-500">
             {tr
-              ? 'Aşamalar, bağımlılıkları ve hedef tarihleri. “Tıkandı” hesaplanıyor, saklanmıyor: öncesi bitince kendiliğinden açılıyor.'
-              : 'The stages, their dependencies and their targets. “Blocked” is computed rather than stored, so it clears itself the moment the stage before it finishes.'}
+              ? 'Aşamalar, bağımlılıkları ve hedef tarihleri.'
+              : 'The stages, their dependencies and target dates.'}
           </p>
         </div>
       </header>

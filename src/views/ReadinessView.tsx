@@ -43,8 +43,8 @@ export const ReadinessView: React.FC = () => {
             </h1>
             <p className="max-w-2xl text-sm text-slate-500">
               {tr
-                ? 'Projenin amacı bir üniversite; inşaat aracı. Burada o amacın nerede olduğu duruyor: mevzuat takvimi, CUE şartları, berat yol haritası, programlar ve kira sözleşmesinden doğan sayılı taahhütler.'
-                : 'The point of the project is a university; the construction is the means. This is where the end stands: the statutory calendar, the CUE standards, the charter road map, the programmes, and the counted undertakings the lease imposes.'}
+                ? 'Mevzuat takvimi, CUE şartları, berat yol haritası, programlar ve sayılı taahhütler.'
+                : 'The regulatory calendar, CUE requirements, the charter roadmap, programmes and the counted undertakings.'}
             </p>
           </div>
         </div>

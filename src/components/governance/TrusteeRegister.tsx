@@ -106,8 +106,8 @@ export const TrusteeRegister: React.FC = () => {
             </h2>
             <p className="text-xs text-slate-500">
               {tr
-                ? 'Kim, kim tarafından atandı, görev süresi ne zaman doluyor. Kimlik belgesi kasada tutuluyor — numarası hiçbir yerde yazılı değil.'
-                : 'Who, appointed by whom, and when the term runs out. The identity document lives in the vault; the number is written down nowhere.'}
+                ? 'Kim, kim tarafından atandı, görev süresi ne zaman doluyor.'
+                : 'Who, appointed by whom, and when the term runs out.'}
             </p>
           </div>
         </div>

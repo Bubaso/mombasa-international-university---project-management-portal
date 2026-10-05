@@ -158,8 +158,8 @@ export const WatchPanel: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
             </h3>
             <p className="text-xs leading-relaxed text-slate-500">
               {tr
-                ? 'Bu bir "sahadaki kişiler" listesi değil. Defter yalnızca çıkışın yazılmadığını biliyor; kişinin sahada olup olmadığını bilmiyor.'
-                : 'This is not a list of people on site. The book knows only that no exit was written down.'}
+                ? 'Çıkışı yazılmamış girişler. Defter kişinin sahada olup olmadığını bilmiyor.'
+                : 'Entries with no exit written. The book does not know whether the person is on site.'}
             </p>
           </div>
         </header>
@@ -236,8 +236,8 @@ export const WatchPanel: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
             </h3>
             <p className="text-xs leading-relaxed text-slate-500">
               {tr
-                ? 'Bu kayıt mahkemede okunabilir. Teyit edilen bir olayın anlatısı donar; sonradan yapılan müdahale eklenebilir, çünkü sonraki cevap olayın yeniden yazılması değildir.'
-                : 'This record may be read in court. A confirmed narrative is frozen; a later response can still be added, because answering afterwards is not rewriting the event.'}
+                ? 'Teyit edilen bir olayın anlatısı donar; sonraki müdahale ayrı eklenir.'
+                : "Once confirmed, an incident's account is frozen; what was done next is added separately."}
             </p>
           </div>
         </header>
@@ -429,8 +429,8 @@ export const WatchPanel: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
             </h3>
             <p className="text-xs leading-relaxed text-slate-500">
               {tr
-                ? 'Bir tur, yürüdüğü kaydedildiği için vardır. Yürünmemiş bir turu işaretleyecek bir kutu yok; eksik, hesaplanır.'
-                : 'A round exists because somebody recorded walking it. There is no box to tick for one nobody walked; the shortfall is computed.'}
+                ? 'Yürüdüğü kaydedilen turlar. Eksik turlar hesaplanır.'
+                : 'The rounds recorded as walked. What is missing is computed.'}
             </p>
           </div>
         </header>

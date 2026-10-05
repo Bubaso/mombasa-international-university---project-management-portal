@@ -98,8 +98,8 @@ export const CorrespondencePanel: React.FC = () => {
             </h2>
             <p className="max-w-2xl text-xs text-slate-500">
               {tr
-                ? 'Ne gönderildi, ne zaman, hangi yolla, eki ne ve ulaştığı teyit edildi mi. Postaya verilip cevapsız kalan bir yazı ile alındığı teyit edilen bir yazı farklı iki olgudur.'
-                : 'What was sent, when, by what route, with what attached, and whether delivery was ever confirmed. A letter posted and unanswered is a different fact from one acknowledged.'}
+                ? 'Ne gönderildi, ne zaman, hangi yolla, eki ne ve ulaştığı teyit edildi mi.'
+                : 'What was sent, when, by what route, with what attached, and whether delivery was confirmed.'}
             </p>
           </div>
         </div>

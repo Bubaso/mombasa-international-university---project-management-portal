@@ -42,8 +42,8 @@ export const ProgrammePanel: React.FC = () => {
             </h2>
             <p className="text-xs text-slate-500">
               {tr
-                ? 'Projenin amacı bir üniversite; inşaat aracı. Onaylı bir programın müfredatı kasada olmak zorunda.'
-                : 'The point of the project is a university; the construction is the means. An approved programme must have its curriculum in the vault.'}
+                ? 'Onaylı bir programın müfredatı kasada olmak zorunda.'
+                : 'An approved programme must have its curriculum in the vault.'}
             </p>
           </div>
         </div>

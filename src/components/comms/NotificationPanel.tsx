@@ -81,8 +81,8 @@ export const NotificationPanel: React.FC = () => {
             </h2>
             <p className="max-w-2xl text-xs text-slate-500">
               {tr
-                ? 'Ekip Türkiye, Mombasa ve Nairobi arasında dağılmış; bir duruşma tarihinin kimsenin gözünden kaçmaması bu modülün var olma sebebi. Bu yüzden duruşma ve son tarih bildirimi portal içinde kapatılamaz.'
-                : 'The team is spread across Türkiye, Mombasa and Nairobi, and the stated reason this module exists is that a hearing date must not slip past anybody. So a hearing and a deadline cannot be switched off in the portal itself.'}
+                ? 'Duruşma ve son tarih bildirimi portal içinde kapatılamaz.'
+                : 'Hearing and deadline notifications cannot be switched off inside the portal.'}
             </p>
           </div>
         </div>
@@ -171,8 +171,8 @@ export const NotificationPanel: React.FC = () => {
           {rows.length === 0 ? (
             <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
               {tr
-                ? 'Bildirim yok. Bildirimler elle yazılmaz; tarama kütüklere bakar ve tarihlerin söylediğini bildirime çevirir. Yukarıdaki satır taramanın ne zaman çalıştığını söylüyor — boşluğun sebebi o.'
-                : 'No notifications. They are not typed by hand: one is raised when a hearing, a deadline or an announcement is recorded.'}
+                ? 'Bildirim yok. Bildirimler taramadan gelir; yukarıdaki satır en son ne zaman çalıştığını söylüyor.'
+                : 'No notifications. They come from the sweep; the line above says when it last ran.'}
             </p>
           ) : (
             <ul className="max-h-80 space-y-1.5 overflow-y-auto pr-1">

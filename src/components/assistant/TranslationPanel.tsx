@@ -71,8 +71,8 @@ export const TranslationPanel: React.FC = () => {
             </h2>
             <p className="max-w-2xl text-xs text-slate-500">
               {tr
-                ? 'Bir alanın boş olan dili otomatik dolduruluyor. Ama okuyandan ayırt edilemeyen bir makine çevirisi, okuyan için kaydın kendisidir — bu yüzden onaylanmamış çeviri bir öneridir, kayıt değil. Aşağıdaki sayı, arkasında henüz kimsenin durmadığı öneri sayısı.'
-                : 'The empty language of a field is filled automatically. But a machine translation a reader cannot tell apart from the record IS the record to them — so an unapproved one is a suggestion, not the record. The count below is of suggestions nobody has stood behind.'}
+                ? 'Boş olan dil otomatik dolduruluyor. Onaylanmamış çeviri bir öneridir, kayıt değil.'
+                : 'The empty language is filled automatically. An unapproved translation is a suggestion, not a record.'}
             </p>
           </div>
         </div>

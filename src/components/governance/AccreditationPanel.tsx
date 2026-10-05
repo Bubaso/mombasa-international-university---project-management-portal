@@ -121,8 +121,8 @@ export const AccreditationPanel: React.FC = () => {
             </h2>
             <p className="text-xs text-slate-500">
               {tr
-                ? 'Hiçbir şart, arkasında kasada bir belge olmadan “karşılandı” olamıyor — bu kuralı veritabanı uyguluyor, ekran değil.'
-                : 'No requirement reaches “met” without a document in the vault behind it — the database enforces that, not this screen.'}
+                ? 'Hiçbir şart, kasada belgesi olmadan “karşılandı” olamıyor.'
+                : 'No requirement can be marked met without its document in the vault.'}
             </p>
           </div>
         </div>

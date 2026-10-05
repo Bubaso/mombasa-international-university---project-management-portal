@@ -318,8 +318,8 @@ export const ContractPanel: React.FC = () => {
             </h2>
             <p className="text-xs text-slate-500">
               {tr
-                ? 'Taraf, konu, tutar, süre, yenileme tarihi ve fesih şartı. Taslak olmayan her sözleşmenin belgesi kasada olmak zorunda; şartları da M2’de yükümlülük olarak duruyor.'
-                : 'Party, subject, value, term, renewal date and termination clause. Any contract past draft must have its document in the vault, and its terms live in M2 as obligations.'}
+                ? 'Taraf, konu, tutar, süre, yenileme ve fesih. Taslak olmayanın belgesi kasada olmak zorunda.'
+                : 'Party, subject, amount, term, renewal and termination. Anything past draft must have its document in the vault.'}
             </p>
           </div>
         </div>

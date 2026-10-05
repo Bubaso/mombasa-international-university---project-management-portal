@@ -110,8 +110,8 @@ export const PendingDecisions: React.FC<{ limit?: number }> = ({ limit }) => {
             </h2>
             <p className="text-xs text-slate-500">
               {tr
-                ? 'Altı kütüğün tamamından. Kimse reddetmiyor — bunlar kimsenin ekranının üstüne çıkmadığı için bekliyor.'
-                : 'From all six registers. Nobody refuses these; they wait because they never reach the top of anybody’s screen.'}
+                ? 'Altı kütükten, karar bekleyenler.'
+                : 'Waiting on a decision, from all six registers.'}
             </p>
           </div>
         </div>

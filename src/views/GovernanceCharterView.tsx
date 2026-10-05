@@ -51,8 +51,8 @@ export const GovernanceCharterView: React.FC = () => {
             <h1 className="text-lg font-bold text-slate-900">{tr ? 'Yönetişim' : 'Governance'}</h1>
             <p className="max-w-2xl text-sm text-slate-500">
               {tr
-                ? 'Üç organ, mütevelli kütüğü, resmî kararlar ve beyanlar. Buradaki her rakam bir sorgudan geliyor: nisap yoklamadan, kararın uygulanıp uygulanmadığı aksiyonlarından.'
-                : 'Three organs, the trustee register, the formal resolutions and the declarations. Every figure here comes from a query: the quorum from the attendance, and whether a resolution happened from its actions.'}
+                ? 'Üç organ, mütevelli kütüğü, resmî kararlar ve beyanlar.'
+                : 'Three organs, the trustee register, formal resolutions and declarations.'}
             </p>
           </div>
         </div>

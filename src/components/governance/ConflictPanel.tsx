@@ -46,8 +46,8 @@ export const ConflictPanel: React.FC = () => {
             </h2>
             <p className="text-xs text-slate-500">
               {tr
-                ? 'Herkes kendi beyanını yapar; kütüğü okuyanlar heyet, yönetim ve denetim komitesi. Beyanlar varsayılan olarak gizli.'
-                : 'Everybody makes their own; the board, the management and the audit committee read the register. Declarations are confidential by default.'}
+                ? 'Herkes kendi beyanını yapar. Beyanlar varsayılan olarak gizli.'
+                : 'Everyone files their own declaration. Declarations are confidential by default.'}
             </p>
           </div>
         </div>

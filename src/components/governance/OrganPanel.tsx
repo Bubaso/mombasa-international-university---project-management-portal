@@ -76,8 +76,8 @@ export const OrganPanel: React.FC = () => {
           </h2>
           <p className="text-xs text-slate-500">
             {tr
-              ? 'Nisap kuralı veri olarak tutuluyor, böylece oturumun karar almaya yetkili olup olmadığı yoklamaya bakılarak söylenebiliyor.'
-              : 'The quorum rule is held as data, so whether a sitting was competent to decide can be read off the attendance.'}
+              ? 'Üç organ, üyeleri ve nisap kuralı. Oturumun yetkili olup olmadığı yoklamadan hesaplanır.'
+              : 'Three organs, their members and the quorum rule. Whether a sitting may decide is computed from the attendance.'}
           </p>
         </div>
       </header>

@@ -39,8 +39,8 @@ export const TargetPanel: React.FC = () => {
           </h2>
           <p className="text-xs text-slate-500">
             {tr
-              ? 'Burs taahhüdü, cami yükümlülüğü ve kira sözleşmesinden doğan diğerleri. Her rakam kasadaki bir belgeye dayanıyor — belgesiz kayıt kabul edilmiyor.'
-              : 'The scholarship undertaking, the mosque, and whatever else the lease requires. Every figure rests on a document in the vault; an unevidenced entry is refused.'}
+              ? 'Burs, cami ve kira sözleşmesinden doğan taahhütler. Belgesiz kayıt kabul edilmiyor.'
+              : 'Scholarship, mosque and the other undertakings from the lease. No entry is accepted without its document.'}
           </p>
         </div>
       </header>

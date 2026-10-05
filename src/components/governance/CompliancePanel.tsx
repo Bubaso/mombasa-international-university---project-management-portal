@@ -53,8 +53,8 @@ export const CompliancePanel: React.FC = () => {
             </h2>
             <p className="text-xs text-slate-500">
               {tr
-                ? 'Fasıl 164, KRA, CUE, valilik. Her biri yükümlülük olarak M2’de yaşıyor; takvim kuralı tutuyor, yükümlülük o dönemin örneğini.'
-                : 'Cap 164, KRA, CUE, the county. Each lives as an obligation in M2: the calendar holds the rule, the obligation holds this period’s instance.'}
+                ? 'Fasıl 164, KRA, CUE ve valilik yükümlülüklerinin takvimi.'
+                : 'The calendar of Cap 164, KRA, CUE and county obligations.'}
             </p>
           </div>
         </div>

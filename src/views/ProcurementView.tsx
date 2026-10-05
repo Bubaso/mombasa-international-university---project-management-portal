@@ -44,8 +44,8 @@ export const ProcurementView: React.FC = () => {
             </h1>
             <p className="max-w-2xl text-sm text-slate-500">
               {tr
-                ? 'Ne alındı ve neden, ne imzalandı, nasıl çalıştılar. Bir vakıfta bu verimlilik değil hesap verebilirlik meselesi — bu yüzden gerekçe her üç adımda da karar anında isteniyor.'
-                : 'What was bought and why, what was signed, and how they performed. In a trust this is accountability rather than efficiency, which is why the reasoning is required at the moment of the decision in all three.'}
+                ? 'Ne alındı ve neden, ne imzalandı, nasıl çalıştılar. Gerekçe her üç adımda isteniyor.'
+                : 'What was bought and why, what was signed, how they performed. A reason is asked at all three steps.'}
             </p>
           </div>
         </div>

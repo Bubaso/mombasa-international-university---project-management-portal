@@ -50,8 +50,8 @@ export const ReadinessBoard: React.FC = () => {
             </h2>
             <p className="text-xs text-slate-500">
               {tr
-                ? 'Her şerit gerçek bir kütükten sayılıyor. Tanıtım şeridi yok, çünkü onu tutan bir kütük yok — sıfır çizmek “yapılmadı” diye okunur, oysa doğrusu “takip edilmiyor”.'
-                : 'Each strand is counted from a real register. Outreach is missing because no register holds it — drawing a zero would read as “not done”, when the truth is “not tracked”.'}
+                ? 'Her şerit gerçek bir kütükten sayılıyor. Tanıtım şeridi yok: onu tutan bir kütük yok.'
+                : 'Every lane is counted from a real register. Outreach is missing: no register holds it.'}
             </p>
           </div>
         </div>

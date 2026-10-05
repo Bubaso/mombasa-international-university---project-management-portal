@@ -145,8 +145,8 @@ export const MatchingPanel: React.FC = () => {
             </h2>
             <p className="max-w-2xl text-xs leading-relaxed text-slate-500">
               {tr
-                ? 'Hiçbiri engellenmiyor — tadil de ortak girişim de gerçek şeyler, ve kaydı reddetmek doğru rakamı birinin tablosuna taşır. Engellenmeyen şey, iki kaydın sessizce ayrı şey söylemesi.'
-                : 'None of this is blocked — a variation is a real thing and so is a joint venture, and refusing the entry only moves the true figure into a spreadsheet. What is not allowed is the two registers disagreeing quietly.'}
+                ? 'Hiçbiri engellenmiyor; engellenen şey iki kaydın sessizce ayrı rakam söylemesi.'
+                : 'Nothing here is blocked; what is blocked is two records quietly saying different figures.'}
             </p>
           </div>
         </div>

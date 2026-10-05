@@ -116,8 +116,8 @@ export const ClosePanel: React.FC<{ canClose: boolean }> = ({ canClose }) => {
             </h3>
             <p className="max-w-3xl text-xs leading-relaxed text-slate-500">
               {tr
-                ? 'Bir kapanış, neyi dışarıda bıraktığını söylediği ölçüde kapanıştır. Rakamlar kapanış anında dondurulur ve saklanır — yeniden hesaplanan bir toplam, geciken bir fatura girildiğinde sessizce değişir, ve değişen rakam kapanış değildir.'
-                : 'A close is a close to the extent that it says what it leaves out. The figures are frozen and stored at the moment of closing — a recomputed total moves silently when a late invoice arrives, and a figure that moves is not a close.'}
+                ? 'Rakamlar kapanış anında dondurulur ve saklanır.'
+                : 'The figures are frozen at the moment of closing and kept.'}
             </p>
           </div>
         </header>

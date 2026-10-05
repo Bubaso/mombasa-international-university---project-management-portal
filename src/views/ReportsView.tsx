@@ -126,8 +126,8 @@ export const ReportsView: React.FC = () => {
             </h1>
             <p className="max-w-2xl text-sm text-slate-500">
               {tr
-                ? 'Rapor yazılmaz, derlenir. Her satır hangi kütükten geldiğini taşır — çünkü elle aktarılan her rakam yanlış olabilecek bir rakamdır. Onay, rakamları dondurur: yayımlanan şey, birinin imzaladığı şeydir.'
-                : 'A report is compiled, not written. Each row names the register it came from, because every retyped figure is one that can be wrong. Approval freezes the figures: what is published is what somebody signed.'}
+                ? 'Rapor yazılmaz, derlenir. Onay rakamları dondurur.'
+                : 'A report is compiled, not written. Approval freezes the figures.'}
             </p>
           </div>
         </div>

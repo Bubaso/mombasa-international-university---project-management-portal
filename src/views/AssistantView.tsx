@@ -230,8 +230,8 @@ export const AssistantView: React.FC = () => {
           <h1 className="text-lg font-bold text-slate-900">{tr ? 'Asistan' : 'Assistant'}</h1>
           <p className="max-w-2xl text-sm text-slate-500">
             {tr
-              ? 'Beş tanımlı iş, fazlası yok. Her cevap dayandığı kayıtları gösterir ve taslak olarak çıkar. Kısıtlı kayıtlar hiçbir koşulda modele gitmez.'
-              : 'Five defined jobs and no more. Every answer shows the records it rests on and comes out as a draft. Restricted records never reach the model, under any circumstances.'}
+              ? 'Beş tanımlı iş. Kısıtlı kayıtlar hiçbir koşulda modele gitmez.'
+              : 'Five defined jobs. Restricted records never reach the model.'}
           </p>
         </div>
       </header>
@@ -500,8 +500,8 @@ export const AssistantView: React.FC = () => {
         </h2>
         <p className="mb-2 text-xs text-slate-500">
           {tr
-            ? 'Kendi sorularınız. Yönetici ve denetçiler herkesin sorularını görür — kayıt zaten bunun için var.'
-            : 'Your own questions. An administrator and the auditors see everybody’s — that is what the log is for.'}
+            ? 'Kendi sorularınız. Yönetici ve denetçiler herkesin sorularını görür.'
+            : "Your own questions. Administrators and auditors see everyone's."}
         </p>
         <QueryStatus queries={[log]} />
         {(log.data?.rows ?? []).length === 0 ? (

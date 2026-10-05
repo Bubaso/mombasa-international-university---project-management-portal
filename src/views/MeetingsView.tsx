@@ -133,8 +133,8 @@ export const MeetingsView: React.FC = () => {
             </h1>
             <p className="text-sm text-slate-500">
               {tr
-                ? 'Toplantı notunu arşiv olmaktan çıkarıp taahhüt üreten bir mekanizmaya çevirmek için.'
-                : 'To stop a meeting note being an archive and make it something that produces commitments.'}
+                ? 'Toplantı, karar, aksiyon ve açık sorular.'
+                : 'Meetings, decisions, actions and open questions.'}
             </p>
           </div>
         </div>

@@ -96,8 +96,8 @@ export const SimilarRecords: React.FC<{ kind: SearchKind; id: string }> = ({ kin
       {rows.length === 0 ? (
         <p className="mt-1 text-xs text-slate-500">
           {tr
-            ? 'Kayıtlı bir bağ yok, ve arşivin her yerinde olmayan ortak bir terim de bulunamadı. Bu, ilgisiz olduğu anlamına gelmez — portalda kontrol edilebilir bir bağ bulunmadığı anlamına gelir.'
-            : 'No recorded link, and no shared term that is not in the whole archive. That does not mean nothing is related — it means the portal holds no link a reader could check.'}
+            ? 'Kayıtlı bir bağ yok. İlgisiz olduğu anlamına gelmez — kontrol edilebilir bir bağ bulunamadı.'
+            : 'No recorded link. That does not mean unrelated — it means no checkable link was found.'}
         </p>
       ) : (
         <div className="mt-1.5 space-y-2">

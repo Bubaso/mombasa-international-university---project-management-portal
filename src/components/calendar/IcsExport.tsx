@@ -55,8 +55,8 @@ export const IcsExport: React.FC<{ entries: CalendarEntry[] }> = ({ entries }) =
             </h2>
             <p className="max-w-2xl text-xs text-slate-500">
               {tr
-                ? 'Google Takvim, Outlook ve telefonunuzun takvimi okur. Kopya alır: tarih sonra değişirse yeniden almanız gerekir.'
-                : 'Google Calendar, Outlook and your phone will read it. It takes a copy: if a date moves, take it again.'}
+                ? 'Google Takvim, Outlook ve telefonunuz okur. Kopya alır: tarih değişirse yeniden alın.'
+                : 'Google Calendar, Outlook and your phone read it. It takes a copy: if a date moves, take it again.'}
             </p>
           </div>
         </div>

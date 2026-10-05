@@ -86,8 +86,8 @@ export const AgendaPanel: React.FC<{ limit?: number; compact?: boolean }> = ({
             {!compact && (
               <p className="text-xs text-slate-500">
                 {tr
-                  ? 'Kapanmamış her aksiyon ve cevaplanmamış her soru. Listeden çıkmanın tek yolu bitirmek ya da iptal ettiğini söylemek.'
-                  : 'Every action not finished and every question not answered. The only way off is to do it or to say it is cancelled.'}
+                  ? 'Kapanmamış her aksiyon ve cevaplanmamış her soru.'
+                  : 'Every action still open and every question still unanswered.'}
               </p>
             )}
           </div>

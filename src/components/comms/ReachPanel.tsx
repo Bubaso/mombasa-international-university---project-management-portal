@@ -56,8 +56,8 @@ export const ReachPanel: React.FC = () => {
           </h2>
           <p className="max-w-2xl text-xs text-slate-500">
             {tr
-              ? 'Payda, duyuruyu görebilecek kişilerdir — hesabı olan herkes değil. Yanlış paydayla hesaplanan bir yüzde, yarısı okunmuş bir duyuruyu iyi okunmuş gösterir.'
-              : 'The denominator is the people who could see it, not everybody with an account. A percentage against the wrong denominator makes a half-read notice look well read.'}
+              ? 'Payda, duyuruyu görebilecek kişiler — hesabı olan herkes değil.'
+              : 'The denominator is who could see the announcement — not everyone with an account.'}
           </p>
         </div>
       </header>

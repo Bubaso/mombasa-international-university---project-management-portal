@@ -41,8 +41,8 @@ export const CommunicationView: React.FC = () => {
             </h1>
             <p className="max-w-2xl text-sm text-slate-500">
               {tr
-                ? 'Portal resmî kayıt, WhatsApp günlük konuşma — portal WhatsApp’ın yerini almaya çalışmaz, ona bildirim gönderir. Ekip üç ülkeye dağılmış durumda ve bu modülün var olma sebebi bir duruşma tarihinin kimsenin gözünden kaçmaması.'
-                : 'The portal is the record and WhatsApp is the daily conversation; the portal notifies it rather than replacing it. The team is spread across three countries, and the stated reason this module exists is that a hearing date must not slip past anybody.'}
+                ? 'Portal resmî kayıt, WhatsApp günlük konuşma; portal ona bildirim gönderir.'
+                : 'The portal is the record, WhatsApp the daily conversation; the portal notifies it.'}
             </p>
           </div>
         </div>

@@ -117,8 +117,8 @@ export const ThreadPanel: React.FC = () => {
             </h2>
             <p className="max-w-2xl text-xs text-slate-500">
               {tr
-                ? 'Portal resmî kayıt, WhatsApp günlük konuşma. Burada yazılan değiştirilemez ve kimin yazdığı oturumdan gelir — adı elle girilmez.'
-                : 'The portal is the record and WhatsApp is the conversation. What is written here cannot be edited, and who wrote it comes from the session rather than from a name typed in.'}
+                ? 'Burada yazılan değiştirilemez; kimin yazdığı oturumdan gelir.'
+                : 'What is written here cannot be changed, and who wrote it comes from the session.'}
             </p>
           </div>
         </div>
