@@ -43,8 +43,8 @@ export const ReadinessView: React.FC = () => {
             </h1>
             <p className="max-w-2xl text-sm text-slate-500">
               {tr
-                ? 'Mevzuat takvimi, CUE şartları, berat yol haritası, programlar ve sayılı taahhütler.'
-                : 'The regulatory calendar, CUE requirements, the charter roadmap, programmes and the counted undertakings.'}
+                ? 'Mevzuat takvimi, CUE şartları, berat yolu ve programlar.'
+                : 'Regulatory calendar, CUE requirements, charter, programmes.'}
             </p>
           </div>
         </div>

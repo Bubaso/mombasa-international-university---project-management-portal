@@ -41,8 +41,8 @@ export const CommunicationView: React.FC = () => {
             </h1>
             <p className="max-w-2xl text-sm text-slate-500">
               {tr
-                ? 'Portal resmî kayıt, WhatsApp günlük konuşma; portal ona bildirim gönderir.'
-                : 'The portal is the record, WhatsApp the daily conversation; the portal notifies it.'}
+                ? 'Portal kaydı ve WhatsApp bildirimleri.'
+                : 'The portal record and WhatsApp notifications.'}
             </p>
           </div>
         </div>

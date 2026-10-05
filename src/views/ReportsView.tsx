@@ -125,9 +125,7 @@ export const ReportsView: React.FC = () => {
               {tr ? 'Derlenen raporlar' : 'Compiled reports'}
             </h1>
             <p className="max-w-2xl text-sm text-slate-500">
-              {tr
-                ? 'Rapor yazılmaz, derlenir. Onay rakamları dondurur.'
-                : 'A report is compiled, not written. Approval freezes the figures.'}
+              {tr ? 'Onay, rakamları dondurur.' : 'Approval freezes the figures.'}
             </p>
           </div>
         </div>

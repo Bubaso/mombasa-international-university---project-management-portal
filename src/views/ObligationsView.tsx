@@ -114,8 +114,8 @@ export const ObligationsView: React.FC = () => {
             </h1>
             <p className="max-w-2xl text-sm text-slate-500">
               {tr
-                ? 'Kira sözleşmesi, mahkeme kararları, vakıf senedi, mutabakatlar ve verilmiş sözler.'
-                : 'The lease, the court orders, the trust deed, the memoranda, and promises people made.'}
+                ? 'Kira, mahkeme kararları, vakıf senedi ve verilmiş sözler.'
+                : 'The lease, court orders, the trust deed, and promises made.'}
             </p>
           </div>
         </div>

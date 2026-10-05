@@ -47,8 +47,8 @@ export const PlanView: React.FC = () => {
             </h1>
             <Explain id="plan.overview">
               {tr
-                ? 'Planın omurgası, ama buradaki hiçbir şey elle işaretlenmiyor: bir taş kasaya belge düştüğünde başarılmış sayılır, bir faz bitiş tarihini geçmiş açık blokları varsa süresini aşmış sayılır. Plan kayıtları okur.'
-                : 'The backbone of the plan, though nothing on it is ticked by hand: a milestone counts as achieved when its document reaches the vault, a phase as overrun when work is still open past its end date. The plan reads the registers.'}
+                ? 'Kilometre taşları elle işaretlenmez, hesaplanır.'
+                : 'Milestones are not ticked by hand, but computed.'}
             </Explain>
           </div>
         </div>

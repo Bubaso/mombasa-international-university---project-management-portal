@@ -126,17 +126,19 @@ export const DashboardView: React.FC = () => {
                   ? 'Gösterge paneli'
                   : 'Dashboard'}
             </h1>
-            <p className="max-w-2xl text-sm text-slate-500">
-              {/* Saying which role's screen this is, because under a
-                  delegation it may not be the one they expect. */}
-              {roles.length > 0
-                ? tr
-                  ? `${roles.map((r) => roleLabel(r as UserRole, language)).join(' + ')} ekranı. Buradaki her rakam veriden geliyor.`
-                  : `The ${roles.map((r) => roleLabel(r as UserRole, language)).join(' + ')} screen. Every figure here comes from a query.`
-                : tr
-                  ? 'Buradaki her rakam veriden geliyor.'
-                  : 'Every figure here comes from a query.'}
-            </p>
+            {/* Hangi rolün ekranı olduğu söyleniyor, çünkü bir yetki devri
+                altında beklediği rol olmayabilir. Yanındaki "buradaki her
+                rakam veriden geliyor" cümlesi KALDIRILDI: sistemin kendisi
+                hakkında bir iddia, girişi açan kişiye söylenecek şey değil —
+                ve İngilizcesi "comes from a query" diyordu, yani ekrana
+                sızmış bir veritabanı terimi (T14-01). */}
+            {roles.length > 0 && (
+              <p className="max-w-2xl text-sm text-slate-500">
+                {tr
+                  ? `${roles.map((r) => roleLabel(r as UserRole, language)).join(' + ')} ekranı.`
+                  : `The ${roles.map((r) => roleLabel(r as UserRole, language)).join(' + ')} screen.`}
+              </p>
+            )}
           </div>
         </div>
         <DataFreshness queries={[calendar]} />

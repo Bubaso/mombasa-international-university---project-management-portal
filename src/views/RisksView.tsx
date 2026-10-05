@@ -77,8 +77,8 @@ export const RisksView: React.FC = () => {
           </h1>
           <Explain id="risks.overview">
             {tr
-              ? 'Kafadaki risk, yönetilen risk değildir. Skor iki sayıdan hesaplanır, her hareketi kayda geçer, ve eşiği geçtiğinde bu bir olay olarak yazılır.'
-              : 'A risk in somebody’s head is not a managed risk. The score is computed from two numbers, every movement is recorded, and crossing the line is written down as an event.'}
+              ? 'Riskler, skorları ve eşik geçişleri.'
+              : 'Risks, their scores, and threshold crossings.'}
           </Explain>
         </div>
       </header>

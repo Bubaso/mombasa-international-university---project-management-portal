@@ -36,6 +36,7 @@ import {
   stringsIn,
   introsIn,
   emptyStatesIn,
+  pageLeadIn,
   JARGON,
   CHATTY,
 } from '../scripts/screen-text.mjs';
@@ -465,6 +466,33 @@ check(
     overEmpty.length === 0,
     `hiçbir boş durum açıklaması ${CEILING.longestEmpty} karakteri aşmıyor`,
     overEmpty.length ? overEmpty.join(', ') : `en uzun ${longestEmpty}`,
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Ekran başlığının altı (T14-01)
+// ---------------------------------------------------------------------------
+//
+// Ölçüm, 5 Ekim 2026: 15 ekranın 15'inde bir cümle, 1.323 karakter, en uzunu
+// 208. Kesimden sonra 645 ve hiçbiri 60'ı aşmıyor — İKİ dilde de.
+{
+  const LEAD_RULE = 60;
+  let leadChars = 0;
+  let leads = 0;
+  const overLead = [];
+  for (const file of globSync('src/views/*.tsx').sort()) {
+    const row = pageLeadIn(readFileSync(file, 'utf8'));
+    if (!row) continue;
+    leads += 1;
+    leadChars += row.tr.length;
+    const longest = Math.max(row.tr.length, row.en.length);
+    if (longest > LEAD_RULE) overLead.push(`${file} (${longest})`);
+  }
+  check(leads >= 12, 'ekran başlığı altı cümleler bulundu', `${leads} ekran`);
+  check(
+    overLead.length === 0,
+    `hiçbir ekran başlığının altı ${LEAD_RULE} karakteri aşmıyor (T14-01)`,
+    overLead.length ? overLead.join(', ') : `${leadChars} karakter toplam`,
   );
 }
 

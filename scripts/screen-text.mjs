@@ -230,6 +230,32 @@ export function emptyStatesIn(source) {
 }
 
 /**
+ * Ekran başlığının altındaki cümle (T14-01).
+ *
+ * T13 bunları HİÇ görmedi ve sebebi öğretici: `introsIn` panel içindeki
+ * `<h2>` + `<p>` kalıbını arıyordu, ekranın kendi `<header>`'ını değil. On
+ * beş ekranın on beşinde bir cümle vardı, 1.323 karakter, ve çoğu ilke
+ * beyanıydı — "Kafadaki risk, yönetilen risk değildir", "İlerleme kanıttan
+ * hesaplanır". Sistemi inceleyen birine yazılmış cümleler, kullanana değil.
+ *
+ * Kural: başlık altı ya ekranın NEYİ topladığını söyler ya da hiç yoktur.
+ * Gerekçe değil. Kullanıcının çarpacağı bir kısıt gerekçe sayılmaz ve
+ * kalabilir — ama kullanım yerinde zaten yazılıysa burada tekrar edilmez
+ * (CLAUDE.md §4: kuralı iki yere yazma).
+ */
+export function pageLeadIn(source) {
+  const body = strip(source);
+  const at = body.indexOf('<header');
+  if (at === -1) return null;
+  // Başlıktan sonraki ilk UZUN iki dilli metin: kısa olanlar etiket, rozet,
+  // düğme yazısı. Eşik 45, çünkü ölçülen on beş cümlenin en kısası 50'ydi.
+  for (const row of stringsIn(body.slice(at, at + 2400))) {
+    if (row.tr.length >= 45 || row.en.length >= 45) return row;
+  }
+  return null;
+}
+
+/**
  * Ekranda işi olmayan geliştirici dili (T13-07).
  *
  * Sınır `\b` ile yazılamıyor ve bunu ölçerken öğrendim: JavaScript'in `\b`'si

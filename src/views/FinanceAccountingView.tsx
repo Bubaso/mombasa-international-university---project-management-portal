@@ -62,9 +62,7 @@ export const FinanceAccountingView: React.FC = () => {
             {tr ? 'Bütçe ve Finans' : 'Budget and Finance'}
           </h1>
           <p className="max-w-2xl text-sm text-slate-500">
-            {tr
-              ? 'Her tutar kendi para biriminde ve kuruyla durur; “denetlendi” rozetini yalnızca denetçi koyabilir.'
-              : 'Every amount sits in its own currency with the rate used; only an auditor can set the “audited” badge.'}
+            {tr ? 'Bütçe, harcama, taahhüt ve denetim.' : 'Budget, spend, commitments and audit.'}
           </p>
         </div>
       </header>

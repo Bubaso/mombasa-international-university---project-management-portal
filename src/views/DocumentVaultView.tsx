@@ -100,8 +100,8 @@ export const DocumentVaultView: React.FC = () => {
             </h1>
             <p className="max-w-2xl text-sm text-slate-500">
               {tr
-                ? 'Mahkemeye sunulacak evrak, tasdikli suretler, senet, sözleşmeler ve çizimler.'
-                : 'Court filings, certified copies, the deed, contracts and drawings.'}
+                ? 'Evrak, tasdikli suretler, senet, sözleşme ve çizimler.'
+                : 'Filings, certified copies, the deed, contracts, drawings.'}
             </p>
           </div>
         </div>

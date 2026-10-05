@@ -47,8 +47,8 @@ export const AdminConsoleView: React.FC = () => {
           </h1>
           <p className="text-sm text-slate-500">
             {tr
-              ? 'Portala kimin girdiği, neyi görebildiği ve bunu kimin değiştirdiği.'
-              : 'Who is in the portal, what they can see, and who changed it.'}
+              ? 'Kişiler, yetkileri ve denetim kaydı.'
+              : 'People, their access, and the audit record.'}
           </p>
         </div>
       </header>
@@ -75,8 +75,8 @@ export const AdminConsoleView: React.FC = () => {
       {!isInternal && (
         <p className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs leading-relaxed text-slate-500">
           {tr
-            ? 'Kapsam, paylaşım ve yetki devri bölümleri yalnızca kurum içi ekibe açıktır. Size verilen erişimin tamamı yukarıda görünür; eksik olduğunu düşünüyorsanız proje direktörüne başvurun.'
-            : 'Scope, sharing and delegation are for the internal team. Everything you have been given is shown above — if something is missing, the project director is the person to ask.'}
+            ? 'Eksik gördüğünüz erişim için proje direktörüne başvurun.'
+            : 'For access you think is missing, ask the project director.'}
         </p>
       )}
     </div>

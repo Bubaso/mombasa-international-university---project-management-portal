@@ -230,8 +230,8 @@ export const AssistantView: React.FC = () => {
           <h1 className="text-lg font-bold text-slate-900">{tr ? 'Asistan' : 'Assistant'}</h1>
           <p className="max-w-2xl text-sm text-slate-500">
             {tr
-              ? 'Beş tanımlı iş. Kısıtlı kayıtlar hiçbir koşulda modele gitmez.'
-              : 'Five defined jobs. Restricted records never reach the model.'}
+              ? 'Kısıtlı kayıtlar hiçbir koşulda modele gitmez.'
+              : 'Restricted records never reach the model.'}
           </p>
         </div>
       </header>
@@ -241,8 +241,8 @@ export const AssistantView: React.FC = () => {
           <CircleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
           <p>
             {tr
-              ? 'Asistan bu kurulumda yapılandırılmamış. Sunucu tarafı kurulmadan çalışmaz; anahtar tarayıcıya hiçbir zaman konmaz.'
-              : 'The assistant is not configured in this installation. It does nothing until the server side is set up; the key is never put in the browser.'}
+              ? 'Asistan bu kurulumda yapılandırılmamış.'
+              : 'The assistant is not configured in this installation.'}
           </p>
         </div>
       )}

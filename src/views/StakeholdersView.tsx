@@ -89,8 +89,8 @@ export const StakeholdersView: React.FC = () => {
             </h1>
             <p className="text-sm text-slate-500">
               {tr
-                ? 'Kim bizden yana, kimi etkiliyor, en son ne zaman konuştuk, sorumlusu kim.'
-                : 'Who is with us, who they reach, when we last spoke, and whose job they are.'}
+                ? 'Kim kimi etkiliyor, en son ne konuşuldu, sorumlusu kim.'
+                : 'Who reaches whom, when we last spoke, whose job they are.'}
             </p>
           </div>
         </div>

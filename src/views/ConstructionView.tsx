@@ -94,8 +94,8 @@ export const ConstructionView: React.FC = () => {
           </h1>
           <p className="max-w-2xl text-sm text-slate-500">
             {tr
-              ? 'İlerleme kanıttan hesaplanır; raporu olmayan blok “raporlanmadı” der, sıfır demez.'
-              : 'Progress is computed from the evidence behind it; a block with no report says “not reported”, not zero.'}
+              ? 'Bloklar, ilerleme, saha güvenliği ve olay kaydı.'
+              : 'Blocks, progress, site security and the incident log.'}
           </p>
         </div>
       </header>
