@@ -241,8 +241,8 @@ export const AssistantView: React.FC = () => {
           <CircleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
           <p>
             {tr
-              ? 'Asistan bu kurulumda yapılandırılmamış. Sunucu tarafı fonksiyon dağıtılıp VITE_AI_PROXY_URL ayarlanmadan çalışmaz — anahtar tarayıcıya hiçbir zaman konmaz (M13-01).'
-              : 'The assistant is not configured in this deployment. It does nothing until the server-side function is deployed and VITE_AI_PROXY_URL is set — the key is never put in the browser (M13-01).'}
+              ? 'Asistan bu kurulumda yapılandırılmamış. Sunucu tarafı kurulmadan çalışmaz; anahtar tarayıcıya hiçbir zaman konmaz.'
+              : 'The assistant is not configured in this installation. It does nothing until the server side is set up; the key is never put in the browser.'}
           </p>
         </div>
       )}
@@ -340,8 +340,8 @@ export const AssistantView: React.FC = () => {
         <div className="flex items-center justify-between gap-2">
           <p className="text-xs text-slate-500">
             {tr
-              ? 'Sorduğunuz kaydedilir: kim ne sordu, kaç kayda dayandı (M13-10).'
-              : 'What you ask is logged: who asked what, and how many records it rested on (M13-10).'}
+              ? 'Sorduğunuz kaydedilir: kim ne sordu, kaç kayda dayandı.'
+              : 'What you ask is logged: who asked what, and how many records it rested on.'}
           </p>
           <button
             type="submit"
@@ -481,8 +481,8 @@ export const AssistantView: React.FC = () => {
 
           <p className="mt-3 text-xs text-slate-500">
             {tr
-              ? 'Kaydetme düğmesi yok. Bu metni bir kayda eklemek isteyen kişi ilgili ekranda kendi adıyla ekler (M13-09).'
-              : 'There is no save button. Putting this into a record is done on that record’s own screen, under the name of whoever does it (M13-09).'}
+              ? 'Kaydetme düğmesi yok. Bu metni bir kayda eklemek isteyen kişi ilgili ekranda kendi adıyla ekler.'
+              : 'There is no save button. Putting this into a record is done on that record’s own screen, under the name of whoever does it .'}
           </p>
         </section>
       )}

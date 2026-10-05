@@ -116,9 +116,7 @@ export const DependencyList: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
           icon={GitBranch}
           title={tr ? 'Bağımlılık kaydedilmemiş' : 'No dependencies recorded'}
           description={
-            tr
-              ? 'Neyin neyi beklediği yazılı değil. Bu zincir yazılmadığında, gecikmenin nereden geldiği her seferinde yeniden tartışılır.'
-              : 'Nothing records what is waiting on what. Unwritten, the chain gets re-argued every time something is late.'
+            tr ? 'Neyin neyi beklediği yazılı değil.' : 'Nothing records what is waiting on what.'
           }
         />
       ) : (

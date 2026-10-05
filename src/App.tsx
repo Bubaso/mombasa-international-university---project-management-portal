@@ -100,6 +100,7 @@ function useOfflineReady(): boolean {
 const MainLayout: React.FC = () => {
   const offlineReady = useOfflineReady();
   const { language } = useApp();
+  const tr = language === 'tr';
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
@@ -143,25 +144,23 @@ const MainLayout: React.FC = () => {
           <footer className="mt-12 pt-6 border-t border-slate-200 text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-3">
             <div>
               <span className="font-semibold text-slate-700">
-                {language === 'tr' ? `${UNIVERSITY.tr} Projesi` : `${UNIVERSITY.en} Project`}
+                {tr ? `${UNIVERSITY.tr} Projesi` : `${UNIVERSITY.en} Project`}
               </span>{' '}
               ·{' '}
               <span>
-                {language === 'tr'
+                {tr
                   ? 'Kenya Afrika Üniversitesi Vakfı (AUTK)'
                   : 'African University Trust of Kenya (AUTK)'}
               </span>{' '}
               ·{' '}
               <span>
-                {language === 'tr'
+                {tr
                   ? `Parsel No: MN/I/5141 (${formatLandArea(84, 'tr')}), Utange/Majaoni`
                   : 'Plot No. MN/I/5141 (84 Acres), Utange/Majaoni'}
               </span>
             </div>
             <div className="flex items-center gap-3">
-              <span>
-                {language === 'tr' ? 'Fasıl 164 Kenya Kanunları' : 'Cap 164 Laws of Kenya'}
-              </span>
+              <span>{tr ? 'Fasıl 164 Kenya Kanunları' : 'Cap 164 Laws of Kenya'}</span>
               {/* Only when a service worker is actually driving this page.
                   It used to be a fixed string, so it said "PWA Etkin" whether
                   or not registration had succeeded — the same kind of claim
@@ -171,7 +170,7 @@ const MainLayout: React.FC = () => {
                 <>
                   <span>·</span>
                   <span className="font-mono font-medium text-emerald-600">
-                    {language === 'tr' ? 'Çevrimdışı hazır' : 'Offline ready'}
+                    {tr ? 'Çevrimdışı hazır' : 'Offline ready'}
                   </span>
                 </>
               )}

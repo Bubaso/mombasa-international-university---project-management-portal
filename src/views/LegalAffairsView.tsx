@@ -94,6 +94,7 @@ const LEGAL_SECTIONS = [
 export const LegalAffairsView: React.FC = () => {
   const navigate = useNavigate();
   const { language } = useApp();
+  const tr = language === 'tr';
   const legalCasesQuery = queries.useLegalCases();
   const legalCases = legalCasesQuery.data ?? [];
   const { mutate: addLegalCase } = queries.useAddLegalCase();
@@ -172,10 +173,10 @@ export const LegalAffairsView: React.FC = () => {
         <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" aria-hidden="true" />
         <div className="space-y-1">
           <div className="font-semibold text-amber-900">
-            {language === 'tr' ? 'Doğrulanmamış içerik' : 'Unverified content'}
+            {tr ? 'Doğrulanmamış içerik' : 'Unverified content'}
           </div>
           <p className="leading-relaxed text-amber-900/80">
-            {language === 'tr'
+            {tr
               ? 'Bu sayfadaki dava özeti, gerekçeler, kronoloji ve taraf listesi koda gömülü sabit metinlerdir; hiçbiri sistemdeki bir belgeye veya karara bağlı değildir ve güncelliği doğrulanmamıştır. Hukuki bir karara dayanak yapmadan önce asıl evrakla teyit edin.'
               : 'The case summary, grounds, chronology and party list on this page are static text held in the code. None of it is linked to a document or record in the system, and none of it has been checked for currency. Verify against the primary filings before relying on any of it.'}
           </p>
@@ -188,13 +189,11 @@ export const LegalAffairsView: React.FC = () => {
           <div className="flex items-center gap-2 text-sm font-semibold text-amber-700 uppercase tracking-wider">
             <Scale className="w-4 h-4" />
             <span>
-              {language === 'tr'
-                ? 'Hukuk Müşavirliği & Temyiz Portföyü'
-                : 'Appellate Defense & Legal Affairs'}
+              {tr ? 'Hukuk Müşavirliği & Temyiz Portföyü' : 'Appellate Defense & Legal Affairs'}
             </span>
           </div>
           <h1 className="text-xl font-bold text-slate-900 mt-1">
-            {language === 'tr' ? 'Hukuk İşleri' : 'Legal Affairs'}
+            {tr ? 'Hukuk İşleri' : 'Legal Affairs'}
           </h1>
         </div>
 
@@ -204,9 +203,7 @@ export const LegalAffairsView: React.FC = () => {
             className="inline-flex items-center gap-1.5 bg-amber-600 hover:bg-amber-500 text-white px-3.5 py-2 rounded-lg text-sm font-semibold transition-colors cursor-pointer shadow-xs"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>
-              {language === 'tr' ? 'Acil Dilekçe / Layiha Kaydet' : 'File Motion / Pleading'}
-            </span>
+            <span>{tr ? 'Acil Dilekçe / Layiha Kaydet' : 'File Motion / Pleading'}</span>
           </button>
         </div>
       </div>
@@ -217,13 +214,13 @@ export const LegalAffairsView: React.FC = () => {
           <div className="flex items-center gap-2 text-emerald-800 font-bold text-sm uppercase tracking-wider">
             <ShieldCheck className="w-5 h-5 text-emerald-600" />
             <span>
-              {language === 'tr'
+              {tr
                 ? 'Yargıtay Heyeti Resmî Kararı — Mevcut Durumun Korunması (Status Quo)'
                 : 'Court of Appeal Injunction — Status Quo Order (9 February 2026)'}
             </span>
           </div>
           <span className="text-xs font-mono text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-            {language === 'tr'
+            {tr
               ? 'Heyet: Mohammed · Laibuta · Ngenye-Macharia'
               : 'Judges: Mohammed · Laibuta · Ngenye-Macharia'}
           </span>
@@ -232,10 +229,10 @@ export const LegalAffairsView: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
           <div className="bg-emerald-50/40 p-3 rounded-lg border border-emerald-100 space-y-1">
             <div className="font-semibold text-slate-900">
-              {language === 'tr' ? '1. Sınırların Korunması' : '1. Boundary Protection'}
+              {tr ? '1. Sınırların Korunması' : '1. Boundary Protection'}
             </div>
             <p className="text-slate-600 text-xs leading-relaxed">
-              {language === 'tr'
+              {tr
                 ? 'Moli ailesi (1.–7. davalılar) sadece fiilen işgal ettikleri 20 dönümlük (5 acre) alanda kalmaya devam edecektir.'
                 : 'Claimants strictly confined to the 5-acre enclave they actually occupied during site survey.'}
             </p>
@@ -243,10 +240,10 @@ export const LegalAffairsView: React.FC = () => {
 
           <div className="bg-emerald-50/40 p-3 rounded-lg border border-emerald-100 space-y-1">
             <div className="font-semibold text-slate-900">
-              {language === 'tr' ? '2. Satış ve Devir Yasağı' : '2. Prohibition of Sale'}
+              {tr ? '2. Satış ve Devir Yasağı' : '2. Prohibition of Sale'}
             </div>
             <p className="text-slate-600 text-xs leading-relaxed">
-              {language === 'tr'
+              {tr
                 ? 'Temyiz sonuçlanıncaya kadar arazinin hiçbir kısmı üçüncü kişilere devredilemez, satılamaz veya bölünemez.'
                 : 'No party may sell, subdivide or transfer any portion of the 84-acre parcel to third parties.'}
             </p>
@@ -254,10 +251,10 @@ export const LegalAffairsView: React.FC = () => {
 
           <div className="bg-emerald-50/40 p-3 rounded-lg border border-emerald-100 space-y-1">
             <div className="font-semibold text-slate-900">
-              {language === 'tr' ? '3. Öncelikli Yargılama' : '3. Priority Hearing'}
+              {tr ? '3. Öncelikli Yargılama' : '3. Priority Hearing'}
             </div>
             <p className="text-slate-600 text-xs leading-relaxed">
-              {language === 'tr'
+              {tr
                 ? 'Adaletin gecikmemesi amacıyla temyiz davasının sıradan dosyaların önüne alınarak öncelikli görülmesine karar verildi.'
                 : 'Expedited calendar granted ahead of standard queue due to magnitude of university investment.'}
             </p>
@@ -265,10 +262,10 @@ export const LegalAffairsView: React.FC = () => {
 
           <div className="bg-emerald-50/40 p-3 rounded-lg border border-emerald-100 space-y-1">
             <div className="font-semibold text-slate-900">
-              {language === 'tr' ? '4. İnşaatların Durdurulması' : '4. Suspension of Works'}
+              {tr ? '4. İnşaatların Durdurulması' : '4. Suspension of Works'}
             </div>
             <p className="text-slate-600 text-xs leading-relaxed">
-              {language === 'tr'
+              {tr
                 ? 'Yeni inşaat ve çevre duvarı geçici olarak durdurulmuştur (Acil koruma başvurusu hariç).'
                 : 'New construction suspended; urgent weatherproofing allowed via variation application.'}
             </p>
@@ -296,7 +293,7 @@ export const LegalAffairsView: React.FC = () => {
       <div className="space-y-2 border-b border-slate-200 pb-2">
         <div
           role="tablist"
-          aria-label={language === 'tr' ? 'Hukuk bölümleri' : 'Legal sections'}
+          aria-label={tr ? 'Hukuk bölümleri' : 'Legal sections'}
           className="flex flex-wrap items-center gap-1.5"
         >
           {LEGAL_SECTIONS.map((section) => {
@@ -314,7 +311,7 @@ export const LegalAffairsView: React.FC = () => {
                     : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
                 }`}
               >
-                {language === 'tr' ? section.labelTr : section.labelEn}
+                {tr ? section.labelTr : section.labelEn}
               </button>
             );
           })}
@@ -322,7 +319,7 @@ export const LegalAffairsView: React.FC = () => {
 
         <div
           role="tablist"
-          aria-label={language === 'tr' ? 'Hukuk sekmeleri' : 'Legal sub-tabs'}
+          aria-label={tr ? 'Hukuk sekmeleri' : 'Legal sub-tabs'}
           className="flex flex-wrap items-center gap-1.5"
         >
           {activeSection.tabs.map((tab) => (
@@ -338,7 +335,7 @@ export const LegalAffairsView: React.FC = () => {
                   : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
               }`}
             >
-              <span>{language === 'tr' ? tab.labelTr : tab.labelEn}</span>
+              <span>{tr ? tab.labelTr : tab.labelEn}</span>
             </button>
           ))}
         </div>
@@ -369,7 +366,7 @@ export const LegalAffairsView: React.FC = () => {
       {!activeCase &&
         ['hearings', 'filings', 'orders', 'evidence', 'counsel'].includes(activeSubTab) && (
           <div className="rounded-xl border border-slate-200 bg-white px-4 py-6 text-center text-sm text-slate-500">
-            {language === 'tr'
+            {tr
               ? 'Henüz kayıtlı dava dosyası yok. Duruşma, layiha ve karar kayıtları bir dosyaya bağlıdır.'
               : 'No case file is recorded yet. Hearings, filings and orders all hang off one.'}
           </div>
@@ -399,11 +396,11 @@ export const LegalAffairsView: React.FC = () => {
       {activeSubTab === 'overview' && !activeCase && (
         <EmptyState
           icon={FolderOpen}
-          title={language === 'tr' ? 'Kayıtlı dava dosyası yok' : 'No case files on record'}
+          title={tr ? 'Kayıtlı dava dosyası yok' : 'No case files on record'}
           description={
-            language === 'tr'
-              ? 'Henüz hiçbir dava dosyası kaydedilmemiş. Yukarıdaki "Acil Dilekçe / Layiha Kaydet" düğmesiyle ilk dosyayı ekleyebilirsiniz.'
-              : 'No case file has been recorded yet. Use "File Motion / Pleading" above to add the first one.'
+            tr
+              ? 'Henüz dava dosyası kaydedilmemiş. Yukarıdaki düğmeyle ilk dosyayı ekleyin.'
+              : 'No case file recorded yet. Use the button above to add the first one.'
           }
           action={
             <button
@@ -411,7 +408,7 @@ export const LegalAffairsView: React.FC = () => {
               className="inline-flex items-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white px-3.5 py-1.5 rounded-lg text-sm font-semibold cursor-pointer shadow-xs"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>{language === 'tr' ? 'İlk Dosyayı Kaydet' : 'Log First Filing'}</span>
+              <span>{tr ? 'İlk Dosyayı Kaydet' : 'Log First Filing'}</span>
             </button>
           }
         />
@@ -429,20 +426,20 @@ export const LegalAffairsView: React.FC = () => {
                   <h2 className="text-base font-bold text-slate-900 mt-0.5">{activeCase.title}</h2>
                 </div>
                 <span className="text-sm font-semibold px-2.5 py-1 rounded bg-amber-50 border border-amber-300 text-amber-800 font-mono">
-                  {language === 'tr' ? 'ÖNCELİKLİ DOSYA' : 'PRIORITY LISTING'}
+                  {tr ? 'ÖNCELİKLİ DOSYA' : 'PRIORITY LISTING'}
                 </span>
               </div>
 
               <div className="text-sm text-slate-700 space-y-2">
                 <p className="leading-relaxed">
-                  {language === 'tr' ? activeCase.descriptionTr : activeCase.descriptionEn}
+                  {tr ? activeCase.descriptionTr : activeCase.descriptionEn}
                 </p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm pt-2">
                 <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
                   <div className="text-slate-500 text-xs font-semibold uppercase">
-                    {language === 'tr' ? 'Temyiz Edenler (Appellants)' : 'Appellants'}
+                    {tr ? 'Temyiz Edenler (Appellants)' : 'Appellants'}
                   </div>
                   <div className="text-slate-800 mt-1 font-medium">
                     Zayed Bin Sultan Al Nahyan Charitable & Humanitarian Foundation & African
@@ -452,7 +449,7 @@ export const LegalAffairsView: React.FC = () => {
 
                 <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
                   <div className="text-slate-500 text-xs font-semibold uppercase">
-                    {language === 'tr' ? 'Karşı Taraf (Respondents)' : 'Respondents'}
+                    {tr ? 'Karşı Taraf (Respondents)' : 'Respondents'}
                   </div>
                   <div className="text-slate-800 mt-1 font-medium">
                     Kazungu Moli Chogo and 6 Others (1st-7th Respondents / Moli Family)
@@ -465,9 +462,7 @@ export const LegalAffairsView: React.FC = () => {
                 <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
                   <FolderOpen className="w-4 h-4 text-amber-600" />
                   <span>
-                    {language === 'tr'
-                      ? 'Takip Edilen 5 Dava Dosyası Özeti'
-                      : '5 Followed Dispute Files Overview'}
+                    {tr ? 'Takip Edilen 5 Dava Dosyası Özeti' : '5 Followed Dispute Files Overview'}
                   </span>
                 </h3>
                 <div className="space-y-2 text-sm">
@@ -477,8 +472,7 @@ export const LegalAffairsView: React.FC = () => {
                         1. Civil Appeal No. E062 of 2025
                       </span>
                       <span className="text-slate-500 ml-2">
-                        Court of Appeal —{' '}
-                        {language === 'tr' ? 'ASIL DAVA / Derdest' : 'MAIN APPEAL / Ongoing'}
+                        Court of Appeal — {tr ? 'ASIL DAVA / Derdest' : 'MAIN APPEAL / Ongoing'}
                       </span>
                     </div>
                     <span className="text-xs text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 font-mono">
@@ -490,28 +484,26 @@ export const LegalAffairsView: React.FC = () => {
                       <span className="font-semibold text-slate-800">2. MISC No. 134 of 2013</span>
                       <span className="text-slate-500 ml-2">
                         Mombasa ELC —{' '}
-                        {language === 'tr'
+                        {tr
                           ? 'Olumsuz Zilyetlik & Tapu İptali'
                           : 'Adverse Possession & Title Cancellation'}
                       </span>
                     </div>
                     <span className="text-xs text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 font-mono">
-                      {language === 'tr' ? 'Temyiz Edilen Karar' : 'Challenged Ruling'}
+                      {tr ? 'Temyiz Edilen Karar' : 'Challenged Ruling'}
                     </span>
                   </div>
                   <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between">
                     <div>
                       <span className="font-semibold text-slate-800">3. ELC No. 52 of 2022</span>
                       <span className="text-slate-500 ml-2">
-                        {language === 'tr'
+                        {tr
                           ? 'NLC Başkanına Karşı Yargısal Denetim'
                           : 'Judicial Review vs NLC Chairman'}
                       </span>
                     </div>
                     <span className="text-xs text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200 font-mono">
-                      {language === 'tr'
-                        ? '134/2013 ile Birleştirildi'
-                        : 'Consolidated into 134/2013'}
+                      {tr ? '134/2013 ile Birleştirildi' : 'Consolidated into 134/2013'}
                     </span>
                   </div>
                   <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between">
@@ -519,26 +511,24 @@ export const LegalAffairsView: React.FC = () => {
                       <span className="font-semibold text-slate-800">4. MIC No. 103 of 2012</span>
                       <span className="text-slate-500 ml-2">
                         Ex Parte Bronson Hare Chogo —{' '}
-                        {language === 'tr' ? 'Tahliye Tebligatları' : 'Eviction Notices'}
+                        {tr ? 'Tahliye Tebligatları' : 'Eviction Notices'}
                       </span>
                     </div>
                     <span className="text-xs text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200 font-mono">
-                      {language === 'tr'
-                        ? 'Delil Gizleme İspatı'
-                        : 'Material Non-Disclosure Weapon'}
+                      {tr ? 'Delil Gizleme İspatı' : 'Material Non-Disclosure Weapon'}
                     </span>
                   </div>
                   <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between">
                     <div>
                       <span className="font-semibold text-slate-800">5. NLC Utange Majaoni</span>
                       <span className="text-slate-500 ml-2">
-                        {language === 'tr'
+                        {tr
                           ? 'Milli Arazi Komisyonu Tarihsel Haksızlık İddiası'
                           : 'National Land Commission Historical Injustice Claim'}
                       </span>
                     </div>
                     <span className="text-xs text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200 font-mono">
-                      {language === 'tr' ? '2019 Raporu Dava Konusu' : 'Challenged 2019 Finding'}
+                      {tr ? '2019 Raporu Dava Konusu' : 'Challenged 2019 Finding'}
                     </span>
                   </div>
                 </div>
@@ -550,12 +540,12 @@ export const LegalAffairsView: React.FC = () => {
           <div className="lg:col-span-4 space-y-5">
             <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-4">
               <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700">
-                {language === 'tr' ? 'Duruşma ve Karar Geçmişi' : 'Key Orders & Decrees'}
+                {tr ? 'Duruşma ve Karar Geçmişi' : 'Key Orders & Decrees'}
               </h3>
               <div className="space-y-3 text-sm">
                 {caseOrders.length === 0 ? (
                   <p className="text-xs text-slate-500">
-                    {language === 'tr'
+                    {tr
                       ? 'Bu dosya için kayıtlı mahkeme kararı yok.'
                       : 'No court order recorded on this file.'}
                   </p>
@@ -581,7 +571,7 @@ export const LegalAffairsView: React.FC = () => {
                         <div className="font-semibold text-slate-900">{ord.referenceNo}</div>
                       )}
                       <p className="text-slate-600 text-xs leading-relaxed">
-                        {(language === 'tr' ? ord.textTr : ord.textEn) ?? ord.textEn ?? ord.textTr}
+                        {(tr ? ord.textTr : ord.textEn) ?? ord.textEn ?? ord.textTr}
                       </p>
                       {ord.madeBy && <p className="text-slate-500 text-xs">{ord.madeBy}</p>}
                     </div>
@@ -594,12 +584,10 @@ export const LegalAffairsView: React.FC = () => {
             <div className="bg-amber-50/80 border border-amber-200 p-4 rounded-xl space-y-2">
               <div className="text-sm font-bold text-amber-800 flex items-center gap-1.5">
                 <FileCheck className="w-4 h-4 text-amber-600" />
-                <span>
-                  {language === 'tr' ? 'Dava Layihaları ve Evrakları' : 'Case Trial Bundle Files'}
-                </span>
+                <span>{tr ? 'Dava Layihaları ve Evrakları' : 'Case Trial Bundle Files'}</span>
               </div>
               <p className="text-xs text-slate-700">
-                {language === 'tr'
+                {tr
                   ? 'Kadzitu Moli 2012 tahliye makbuzu, 60 yıllık kira senedi ve onaylı tapu itirazlarını inceleyin.'
                   : 'Examine Kadzitu Moli 2012 payment receipt, 60-year lease and title certificates in vault.'}
               </p>
@@ -607,7 +595,7 @@ export const LegalAffairsView: React.FC = () => {
                 onClick={() => navigate('/documents')}
                 className="text-sm text-amber-800 font-semibold underline hover:text-amber-950 cursor-pointer"
               >
-                {language === 'tr' ? 'Belge Kasasını Aç' : 'Access Vault'}
+                {tr ? 'Belge Kasasını Aç' : 'Access Vault'}
               </button>
             </div>
           </div>
@@ -660,9 +648,7 @@ export const LegalAffairsView: React.FC = () => {
               <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
                 <Plus className="w-4 h-4 text-amber-600" />
                 <span>
-                  {language === 'tr'
-                    ? 'Yeni Hukuki Dilekçe / Başvuru Kaydı'
-                    : 'Log Legal Motion / Pleading'}
+                  {tr ? 'Yeni Hukuki Dilekçe / Başvuru Kaydı' : 'Log Legal Motion / Pleading'}
                 </span>
               </h3>
               <button
@@ -676,7 +662,7 @@ export const LegalAffairsView: React.FC = () => {
             <form onSubmit={handleCreateMotion} className="space-y-4 text-sm">
               <div>
                 <label className="block text-slate-700 font-semibold mb-1">
-                  {language === 'tr' ? 'Dilekçe / Başvuru Başlığı:' : 'Motion / Pleading Title:'}
+                  {tr ? 'Dilekçe / Başvuru Başlığı:' : 'Motion / Pleading Title:'}
                 </label>
                 <input
                   type="text"
@@ -684,7 +670,7 @@ export const LegalAffairsView: React.FC = () => {
                   value={motionTitle}
                   onChange={(e) => setMotionTitle(e.target.value)}
                   placeholder={
-                    language === 'tr'
+                    tr
                       ? 'Örn: Notice of Motion under Certificate of Urgency (Weatherproofing)'
                       : 'e.g. Urgent Certificate of Motion for Weatherproofing Variation'
                   }
@@ -694,7 +680,7 @@ export const LegalAffairsView: React.FC = () => {
 
               <div>
                 <label className="block text-slate-700 font-semibold mb-1">
-                  {language === 'tr' ? 'İlgili Mahkeme / Merci:' : 'Target Court / Registry:'}
+                  {tr ? 'İlgili Mahkeme / Merci:' : 'Target Court / Registry:'}
                 </label>
                 <select
                   value={motionCourt}
@@ -716,14 +702,14 @@ export const LegalAffairsView: React.FC = () => {
 
               <div>
                 <label className="block text-slate-700 font-semibold mb-1">
-                  {language === 'tr' ? 'Hukuki Gerekçe & Açıklama:' : 'Legal Grounds & Summary:'}
+                  {tr ? 'Hukuki Gerekçe & Açıklama:' : 'Legal Grounds & Summary:'}
                 </label>
                 <textarea
                   rows={3}
                   value={motionDetail}
                   onChange={(e) => setMotionDetail(e.target.value)}
                   placeholder={
-                    language === 'tr'
+                    tr
                       ? 'Dilekçenin temel dayanağı, eklenen deliller ve beklenen karar...'
                       : 'Grounds for motion, expert affidavits attached, and specific reliefs sought...'
                   }
@@ -737,13 +723,13 @@ export const LegalAffairsView: React.FC = () => {
                   onClick={() => setShowNewMotionModal(false)}
                   className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm cursor-pointer font-medium"
                 >
-                  {language === 'tr' ? 'İptal' : 'Cancel'}
+                  {tr ? 'İptal' : 'Cancel'}
                 </button>
                 <button
                   type="submit"
                   className="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold text-sm transition-colors cursor-pointer shadow-xs"
                 >
-                  {language === 'tr' ? 'Kaydet ve Dosyaya Ekle' : 'Save & Bind to File'}
+                  {tr ? 'Kaydet ve Dosyaya Ekle' : 'Save & Bind to File'}
                 </button>
               </div>
             </form>

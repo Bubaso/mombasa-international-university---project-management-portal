@@ -200,8 +200,8 @@ export const RiskList: React.FC<Props> = ({ canKeep, canAcknowledge }) => {
           title={tr ? 'Risk kütüğü boş' : 'The register is empty'}
           description={
             tr
-              ? 'Hiç risk kaydedilmemiş — ya da bu kütük sizin görebileceğiniz bir şey değil. Kütük, ortaklar ve siyaset hakkında da konuştuğu için kurum içidir.'
-              : 'Nothing recorded — or this register is not yours to see. It says things about partners and politics, so it stays inside.'
+              ? 'Hiç risk kaydedilmemiş — ya da bu kütük sizin görebileceğiniz bir şey değil.'
+              : 'Nothing recorded — or this register is not yours to see.'
           }
         />
       ) : (

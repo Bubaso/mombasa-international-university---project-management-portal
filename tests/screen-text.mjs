@@ -31,7 +31,14 @@
 import { readFileSync, globSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { stringsIn, introsIn, JARGON, CHATTY } from '../scripts/screen-text.mjs';
+import {
+  strip,
+  stringsIn,
+  introsIn,
+  emptyStatesIn,
+  JARGON,
+  CHATTY,
+} from '../scripts/screen-text.mjs';
 
 let failures = 0;
 const check = (ok, label, detail = '') => {
@@ -56,8 +63,10 @@ process.chdir(root);
 // ölçüm düzeldiği için yükseltmek geri alma değil; düzeltmeden önceki sayıyı
 // korumak, körlüğü tavan olarak yazmak olurdu.
 const CEILING = {
-  textChars: 58388,
-  longChars: 28171,
+  // Faz 5: 58.388 → 57.640 ve 28.171 → 26.994. T13-07'nin jargon
+  // düzeltmeleri ve T13-08'in beş uzun boş durum açıklaması.
+  textChars: 57640,
+  longChars: 26994,
   // Panel gerekçesi: T13-01'in kestiği şey. 8489 → 2753 (Faz 2).
   introChars: 2753,
   longestIntro: 98,
@@ -93,7 +102,35 @@ const CEILING = {
   // sıfır ve bu bir tavan değil olgu: o paragraflar dava pozisyon metinleriydi
   // ve kaynaktan çıktılar. Sıfır, tavanın en güçlü hâli — ekrana bir daha
   // gömülü hukukî metin girerse test düşer.
-  legalScreenChars: 2166,
+  // Faz 5: 2.166 → 2.117 (jargon düzeltmesi).
+  legalScreenChars: 2117,
+
+  /**
+   * Boş durum açıklamaları (T13-08). Bir kaydın olmaması bir hata değil ve
+   * ekran bunu bir paragrafla anlatmamalı: ne girileceğini söyleyen bir cümle
+   * yeter.
+   *
+   * ÖLÇÜM DÜZELTMESİ. Faz 5'te bu satır için bildirdiğim rakamlar — "27
+   * açıklama, 2.759 → 2.308, en uzun 120, hiçbiri 120 üstü değil" — her
+   * kalemde yanlıştı, çünkü elle grep'le sayılmıştı ve grep iki şeyi
+   * kaçırıyordu: prettier'ın `<EmptyState`'i satır sonunda bıraktığı çok
+   * prop'lu kullanımlar, ve İngilizce taraf. Ölçüm artık bu depoda bir test:
+   *
+   *     HEAD (Faz 5 öncesi)   32 açıklama  3.501 kar  en uzun 179  120 üstü: 11
+   *     Faz 5 sonrası         32 açıklama  2.906 kar  en uzun 120  120 üstü:  0
+   *
+   * Tavan, bildirdiğim yanlış sayıdan (2.308) YÜKSEK ve öyle kalıyor. 2.308'i
+   * tutmak körlüğü hedef olarak yazmak olurdu — aynı hatayı Faz 3'te veri
+   * dizisi deseninde yaptım ve çözüm aynı: ölçüm düzeltilince tavan ölçülene
+   * çekilir, ölçülen tavana değil.
+   *
+   * Asıl kazanç hacim değil kural: 120 karakteri aşan 11 açıklama → 0.
+   * Açıklama başına 109 → 91 karakter.
+   *
+   * `longestEmpty` tavan değil kural: hiçbiri 120'yi aşmasın, İKİ dilde de.
+   */
+  emptyChars: 2906,
+  longestEmpty: 120,
 };
 
 /** Davanın içeriği, panel gerekçesi değil (T13-04). */
@@ -104,12 +141,15 @@ const UNIVERSITY_NAME =
   /Mombasa\s+(?:Uluslararası|International|Int\.)\s*(?:Üniv|University|Universit)/i;
 
 /** Jargon, kategorisi başına ölçülen tavan (T13-07). */
+// Faz 5: desen daraltıldı, altı yanlış pozitif gitti, bir gerçek sızıntı
+// düzeltildi, ve kalan üçünün hepsi `JARGON_ALLOWED`'da gerekçeli. Üç
+// kategori **sıfır**; sıfır tavanın en güçlü hâli.
 const JARGON_CEILING = {
-  'gereksinim kimliği': 3,
-  'kolon/tablo adı': 2,
-  'veritabanı terimi': 1,
+  'gereksinim kimliği': 0,
+  'kolon/ortam adı': 2,
+  'veritabanı terimi': 0,
   kriptografi: 1,
-  'mimari terimi': 2,
+  'mimari terimi': 0,
 };
 
 // ---------------------------------------------------------------------------
@@ -131,6 +171,17 @@ const FIXTURE = `
   const b = language === 'tr' ? 'Eski kalıptaki Türkçe' : 'The old pattern';
   const data = [{ titleTr: 'Veri dizisindeki Türkçe', titleEn: 'In a data array' }];
   // tr ? 'Yorumdaki metin sayılmaz' : 'A comment is not screen text'
+  <h2>{tr ? 'Boş durum olmayan başlık' : 'Not an empty state'}</h2>
+  <EmptyState
+    icon={X}
+    title={tr ? 'Kayıt yok' : 'Nothing here'}
+    description={tr ? 'Boş durum açıklaması' : 'The empty state description'}
+  />
+  <EmptyState
+    icon={X}
+    title={tr ? 'İngilizcesi uzun' : 'Longer in English'}
+    description={tr ? 'Kısa Türkçe.' : 'A noticeably longer English side of the very same description.'}
+  />
 `;
 
 {
@@ -155,6 +206,108 @@ const FIXTURE = `
     !trs.some((t) => t.includes('Yorumdaki')),
     'ölçüm kod yorumunu ekran metni saymıyor',
     trs.filter((t) => t.includes('Yorumdaki')).join(', '),
+  );
+
+  // Boş durum ölçümü de fixture'la sınanıyor, aynı sebeple: `emptyStatesIn`
+  // sessizce boş dizi döndürürse tavan kendiliğinden geçer ve T13-08'in
+  // kazancı korunuyor sanılır. Bir tavan körlüğü yakalayamaz — yakalayan şey,
+  // ölçümün bilinen bir girdide bilineni bulduğunu görmektir.
+  const empty = emptyStatesIn(FIXTURE).map((r) => r.tr);
+  check(
+    empty.includes('Boş durum açıklaması'),
+    'ölçüm boş durum açıklamasını görüyor',
+    empty.includes('Boş durum açıklaması') ? '' : JSON.stringify(empty),
+  );
+  check(
+    !empty.some((t) => t.includes('Boş durum olmayan')),
+    'ölçüm boş durum olmayan metni boş durum saymıyor',
+    empty.filter((t) => t.includes('Boş durum olmayan')).join(', '),
+  );
+
+  // Uzunluk İKİ dilin uzun olanı olmalı ve bunu bir tavan sınayamaz: daha dar
+  // bir ölçüm üst sınırı her zaman geçer. (Denendi — `len`'i Türkçeye
+  // indirmek 2.906'yı 2.756'ya düşürdü ve tavan memnun geçti.) Yakalayan tek
+  // şey, İngilizcesi daha uzun bilinen bir girdide ölçülenin İngilizce
+  // uzunluğuna eşit olduğunu görmektir.
+  const rows = emptyStatesIn(FIXTURE);
+  const longer = rows.find((r) => r.tr === 'Kısa Türkçe.');
+  check(
+    longer?.len === 'A noticeably longer English side of the very same description.'.length,
+    'boş durum uzunluğu iki dilin uzun olanı',
+    longer ? `ölçülen ${longer.len}, tr ${longer.tr.length}, en ${longer.en?.length}` : 'satır yok',
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Tek iki dilli kalıp (T13-06)
+// ---------------------------------------------------------------------------
+//
+// Ölçüm, 5 Ekim 2026: uygulamada iki kalıp birlikte yaşıyordu — `tr ? …`
+// 1919 yerde, `language === 'tr' ? …` 139 yerde. İkincisi en eski iki ekranda
+// yoğundu (`ProjectInfoView` 50, `LegalAffairsView` 47) ve ölçüm betiğini
+// **kör** bırakmıştı: ilk sürüm yalnızca birinciyi arıyor ve 10.613 karakteri
+// kaçırıyordu.
+//
+// İlginç olan şu: `i18n/translations.ts` uzun biçimi ev kuralı diye
+// belgeliyordu ("Everywhere else the project writes its text as
+// `language === 'tr' ? …`"), oysa kod 1919'a 139 kısa biçimdeydi. Belgelenen
+// kural azınlıkta kalmış, yani o da eskimiş bir iddiaydı; yorum düzeltildi.
+//
+// Bileşenler kısa biçimde tekilleştirildi. Kalan uzun biçim kullanımları
+// MEŞRU ve üç sınıfta:
+//
+//   1. `const tr = language === 'tr';` — kalıbın kendisi.
+//
+//   2. `language`'ı PARAMETRE alan yardımcılar (`lib/units.ts`, `lib/ics.ts`,
+//      `lib/meetings.ts`, `lib/search.ts`, `lib/auditFile.ts`, `lib/org.ts`,
+//      `context/AppContext.tsx`, `api/capture.ts`, ve `ChronologyPanel`'in
+//      `whenText`'i). Orada `tr` türetmek parametreyi gölgelemek olurdu.
+//
+//   3. YAZMA tarafında kolon seçimi: `titleEn: language === 'en' ? … ,
+//      titleTr: language === 'tr' ? …`. Bu ekran metni değil, kullanıcının
+//      yazdığının hangi kolona gideceği kararı, ve `'en'` satırıyla simetrik.
+//      `tr ?` yapmak onu etiket seçimi gibi okutur.
+//
+// Bu yüzden T13-06'nın ilk kriteri ("ölçüm tek desenle tüm metni görüyor")
+// YANLIŞTI ve düzeltildi: ikinci sınıf ekran metni üretiyor, yani çıkarıcı iki
+// deseni de tutmak zorunda. Tutulan kural şu: bileşen ve ekran dosyalarında
+// gereksiz ikinci biçim kalmasın.
+
+// Parametre sınıfının tek istisnası, sebebiyle. Dosya adı değil satırın kendisi
+// kayıtlı: aynı dosyada ikinci bir kaçak yine düşürür.
+const LONG_FORM_ALLOWED = {
+  'src/components/plan/ChronologyPanel.tsx': {
+    line: "language === 'tr' ? 'tr-TR' : 'en-GB'",
+    reason: 'whenText(event, language) — `language` parametre, `tr` kapsamda yok',
+  },
+};
+
+{
+  const DECLARATION = /const tr = language === 'tr';/g;
+  const TR_FIELD = /(\w+)Tr:\s*language === 'tr'/;
+  const stray = [];
+  for (const file of globSync('src/{components,views}/**/*.tsx').sort()) {
+    const lines = strip(readFileSync(file, 'utf8')).replace(DECLARATION, '').split('\n');
+    for (const [n, line] of lines.entries()) {
+      if (!line.includes("language === 'tr'")) continue;
+
+      // Yazma tarafı çifti: aynı alanın `En` kardeşi komşu satırlarda.
+      // Blok-yerel olmak zorunda — dosyada bir yerde `'en'` geçiyor diye
+      // geçmek, kontrolü boşa çıkarır (ilk yazımda tam bu oldu).
+      const field = TR_FIELD.exec(line)?.[1];
+      const near = lines.slice(Math.max(0, n - 3), n + 4).join('\n');
+      if (field && near.includes(`${field}En: language === 'en'`)) continue;
+
+      const allowed = LONG_FORM_ALLOWED[file];
+      if (allowed && line.includes(allowed.line)) continue;
+
+      stray.push(`${file}:${n + 1}`);
+    }
+  }
+  check(
+    stray.length === 0,
+    'bileşenlerde gereksiz ikinci iki dilli kalıp yok (T13-06)',
+    stray.length ? stray.join(', ') : `${Object.keys(LONG_FORM_ALLOWED).length} kayıtlı istisna`,
   );
 }
 
@@ -201,8 +354,13 @@ for (const file of files) {
     if (file !== 'src/lib/org.ts' && UNIVERSITY_NAME.test(row.tr)) {
       nameCopies.push(`${file}:${row.line}`);
     }
+    // İKİ dil de sınanıyor. Altıncı kör nokta buydu: dedektör yalnızca
+    // `row.tr`'yi okuyordu, yani İngilizce yanındaki jargonu hiç görmüyordu.
+    // Türkçesinden `(M13-10)` kaldırılmış bir cümlenin İngilizcesi onu hâlâ
+    // taşıyordu ve ölçüm "temiz" diyordu. Ekranda duran şey okuyanın diline
+    // göre değişiyor; ölçüm değişmemeli.
     for (const [kind, pattern] of Object.entries(JARGON)) {
-      if (pattern.test(row.tr)) jargon[kind] = (jargon[kind] ?? 0) + 1;
+      if (pattern.test(row.tr) || pattern.test(row.en)) jargon[kind] = (jargon[kind] ?? 0) + 1;
     }
   }
 }
@@ -276,6 +434,39 @@ check(
   'her jargon kategorisinin kayıtlı bir tavanı var',
   unlisted.join(', '),
 );
+
+// ---------------------------------------------------------------------------
+// Boş durum açıklamaları (T13-08)
+// ---------------------------------------------------------------------------
+//
+// Ölçüm, 5 Ekim 2026: 27 boş durum açıklaması, 2.759 karakter, en uzunu 198 —
+// yani bir kaydın olmaması dört satırla anlatılıyordu. Kesim sonrası 2.308 ve
+// en uzun 120.
+{
+  let emptyChars = 0;
+  let longestEmpty = 0;
+  let emptyCount = 0;
+  const overEmpty = [];
+  for (const file of globSync('src/{components,views}/**/*.tsx').sort()) {
+    for (const row of emptyStatesIn(readFileSync(file, 'utf8'))) {
+      emptyChars += row.len;
+      emptyCount += 1;
+      if (row.len > longestEmpty) longestEmpty = row.len;
+      if (row.len > CEILING.longestEmpty) overEmpty.push(`${file}:${row.line} (${row.len})`);
+    }
+  }
+  check(emptyCount > 20, 'boş durum açıklamaları bulundu', `${emptyCount} açıklama`);
+  check(
+    emptyChars <= CEILING.emptyChars,
+    'boş durum açıklamalarının hacmi kayıtlı tavanın altında (T13-08)',
+    `${emptyChars} / ${CEILING.emptyChars}`,
+  );
+  check(
+    overEmpty.length === 0,
+    `hiçbir boş durum açıklaması ${CEILING.longestEmpty} karakteri aşmıyor`,
+    overEmpty.length ? overEmpty.join(', ') : `en uzun ${longestEmpty}`,
+  );
+}
 
 console.log('');
 if (failures > 0) {

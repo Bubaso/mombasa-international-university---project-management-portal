@@ -236,17 +236,17 @@ Rota başına yük (uzun metin sayısı / karakteri):
 | `/procurement`   | 15         | 2101     |                                             |
 | diğer 12 rota    | 102        | 14280    |                                             |
 
-| ID     | Gereksinim                                                                                                                                           | P   | Kabul kriteri                                                                                               |
-| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- | --- | ----------------------------------------------------------------------------------------------------------- |
-| T13-01 | Başlık altındaki tanıtım paragrafları birinci cümlesine insin; gerekçe cümleleri silinsin (kod yorumunda kalır).                                     | P0  | ✅ Faz 2: 45 paragraf kesildi, 8722 → **2719** karakter, en uzunu **98**; hiçbiri 100'ü aşmıyor.            |
-| T13-02 | Kullanıcının çarpacağı kısıtlar korunsun, gerekçeden ayrı ve tek cümle olarak.                                                                       | P0  | ✅ Faz 2: on bir kısıt tek tek arandı, hepsi ekranda.                                                       |
-| T13-03 | Ekrana girmiş sohbet cümlesi kaldırılsın: `IcsExport` "İsterseniz onu ayrıca konuşalım".                                                             | P0  | ✅ Faz 1: kaldırıldı; ratchet sıfırda tutuyor.                                                              |
-| T13-04 | `/legal` kendi turunu alsın: 43 uzun metin, 6288 karakter.                                                                                           | P0  | `/legal` uzun metin karakteri ≤ 2000.                                                                       |
-| T13-05 | Kurumun adı tek biçimde yazılsın. Bugün 3 biçim var: tam ad, "Projesi" ekli, ve "Üniv." kısaltması.                                                  | P1  | ✅ Faz 1: `src/lib/org.ts` tek kaynak; kısaltma kaldırıldı.                                                 |
-| T13-06 | İki dilli metin tek kalıpla yazılsın. Bugün `tr ? …` (1894 yer) ve `language === 'tr' ? …` (213 yer) birlikte kullanılıyor.                          | P1  | Tek kalıp; ölçüm betiği tek desenle tüm metni görüyor.                                                      |
-| T13-07 | Geliştirici dili ekrandan çıksın: gereksinim kimliği (3), snake_case kolon adı (2), veritabanı terimi (4), "özet/SHA-256" (7), "service worker" (1). | P1  | Ekran metninde `M13-09` gibi kimlik, `is_active` gibi kolon adı ve veritabanı terimi geçmiyor.              |
-| T13-08 | Boş durum açıklamaları kısalsın: 20 açıklama, 2355 karakter.                                                                                         | P1  | Her boş durum açıklaması ≤ 120 karakter ve neyin kayıtlı olmadığını söylemeye devam ediyor (T5-05 korunur). |
-| T13-09 | Kesim bir ratchet'e bağlansın; metin sessizce geri büyümesin.                                                                                        | P0  | ✅ Faz 1–2: `tests/screen-text.mjs`, 17 kontrol, `verify` içinde.                                           |
+| ID     | Gereksinim                                                                                                                                           | P   | Kabul kriteri                                                                                     |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- | --- | ------------------------------------------------------------------------------------------------- |
+| T13-01 | Başlık altındaki tanıtım paragrafları birinci cümlesine insin; gerekçe cümleleri silinsin (kod yorumunda kalır).                                     | P0  | ✅ Faz 2: 45 paragraf kesildi, 8722 → **2719** karakter, en uzunu **98**; hiçbiri 100'ü aşmıyor.  |
+| T13-02 | Kullanıcının çarpacağı kısıtlar korunsun, gerekçeden ayrı ve tek cümle olarak.                                                                       | P0  | ✅ Faz 2: on bir kısıt tek tek arandı, hepsi ekranda.                                             |
+| T13-03 | Ekrana girmiş sohbet cümlesi kaldırılsın: `IcsExport` "İsterseniz onu ayrıca konuşalım".                                                             | P0  | ✅ Faz 1: kaldırıldı; ratchet sıfırda tutuyor.                                                    |
+| T13-04 | `/legal` kendi turunu alsın: 43 uzun metin, 6288 karakter.                                                                                           | P0  | `/legal` uzun metin karakteri ≤ 2000.                                                             |
+| T13-05 | Kurumun adı tek biçimde yazılsın. Bugün 3 biçim var: tam ad, "Projesi" ekli, ve "Üniv." kısaltması.                                                  | P1  | ✅ Faz 1: `src/lib/org.ts` tek kaynak; kısaltma kaldırıldı.                                       |
+| T13-06 | İki dilli metin tek kalıpla yazılsın. Bugün `tr ? …` (1894 yer) ve `language === 'tr' ? …` (213 yer) birlikte kullanılıyor.                          | P1  | ✅ Faz 5: bileşenlerde gereksiz ikinci biçim yok; kalan 7 kullanım gerekçeli (kriter düzeltildi). |
+| T13-07 | Geliştirici dili ekrandan çıksın: gereksinim kimliği (3), snake_case kolon adı (2), veritabanı terimi (4), "özet/SHA-256" (7), "service worker" (1). | P1  | ✅ Faz 5: 9 → 3, kalan üçü gerekçeli; üç kategorinin tavanı sıfır, ölçüm iki dili de okuyor.      |
+| T13-08 | Boş durum açıklamaları kısalsın. (Satırdaki "20 açıklama, 2355 karakter" **yanlış ölçümdü**; gerçek 32 açıklama, 3.501 karakter.)                    | P1  | ✅ Faz 5: 3.501 → 2.906 karakter, 120 üstü 11 → 0; neyin kayıtlı olmadığı korundu (T5-05).        |
+| T13-09 | Kesim bir ratchet'e bağlansın; metin sessizce geri büyümesin.                                                                                        | P0  | ✅ Faz 1–5: `tests/screen-text.mjs`, 29 kontrol (7'si ölçümün kendi fixture'ı), `verify` içinde.  |
 
 ### T13 · Faz 1 — ölçülen sonuç
 
@@ -594,6 +594,113 @@ ekranın kendi işi.
 
 **0053 canlıya uygulanmadı.** Dört tablo, bir enum ve bir kolon bekliyor;
 uygulanana kadar beş sekme boş görünür ve neyin kayıtlı olmadığını söyler.
+
+---
+
+### T13 · Faz 5 — ölçülen sonuç
+
+Faz 5 kesim fazı değil, **ölçüm fazı**: T13-06, T13-07 ve T13-08 kapandı ve
+üçünün de kriteri ölçümün kendisi hakkındaydı.
+
+|                                 | Faz 4  | **Faz 5**  |
+| ------------------------------- | ------ | ---------- |
+| ekran metni (uygulama)          | 58.371 | **57.640** |
+| 80+ karakterlik metin           | 28.171 | **26.994** |
+| ekrana sızan geliştirici dili   | 9      | **3**      |
+| boş durum açıklaması (karakter) | 3.501  | **2.906**  |
+| 120 karakteri aşan boş durum    | 11     | **0**      |
+| `screen-text` kontrolü          | 18     | **29**     |
+
+**T13-06.** Bileşenler tek kalıpta (`tr ? …`) tekilleştirildi: 13 dosya ve 54
+çok satırlı koşullu. Kalan uzun biçim kullanımları **meşru** ve üç sınıfta —
+`const tr = …` bildiriminin kendisi, `language`'ı **parametre** alan yardımcı
+fonksiyonlar (`lib/units.ts`, `lib/ics.ts`, `lib/meetings.ts`, `lib/search.ts`,
+`lib/auditFile.ts`, `lib/org.ts`, `context/AppContext.tsx`, `api/capture.ts`,
+`ChronologyPanel`'in `whenText`'i), ve `titleEn: language === 'en' ? …` ile
+simetrik duran **yazma tarafı kolon seçimi** (`OrderList`, `ActionList`,
+`DecisionList`, `QuestionList`, `ObligationsView`).
+
+`i18n/translations.ts`'in yorumu uzun biçimi _ev kuralı_ olarak belgeliyordu
+("Everywhere else the project writes its text as `language === 'tr' ? …`"),
+oysa kod 1919'a 139 kısa biçimdeydi. Belgelenen kural azınlıkta kalmıştı,
+yani o da eskimiş bir iddiaydı; yorum düzeltildi.
+
+**T13-07.** 9 → 3. Kalan üçü `JARGON_ALLOWED`'da gerekçeli (CSV başlıkları,
+`SHA-256`, ortam değişkeni adları) ve üç kategorinin tavanı **sıfır**. Bu
+faz desen listesini üçüncü kez daralttı: `özet`, `sorgu`, `sütun`, `trigger`,
+`migration`, `tablosu`, `politika`, `şema`, `önbellek` listeden çıktı, çünkü
+hepsi sıradan Türkçede bir anlam taşıyor — `özet` uygulamada 14 yerde
+"summary" demek. Yarısı yanlış işaret veren bir liste, liste olmamasından
+kötüdür: cevap verdiğini sanırsın.
+
+**T13-08.** Burada verdiğim rakamları geri alıyorum.
+
+### T13-08 için bildirdiğim her sayı yanlıştı
+
+Faz 5'in ortasında şunu bildirdim: _"27 açıklama, 2.759 → 2.308 karakter, en
+uzun 120, hiçbiri 120 üstü değil."_ Dördü de yanlış. Elle `grep`'le saymıştım
+ve `grep` iki şeyi kaçırıyordu: prettier çok prop'lu `<EmptyState`'i satır
+**sonunda** bırakıyor (desenim `<EmptyState[\s>]` ardından bir karakter
+bekliyordu, oysa orada `\n` var), ve ölçüm yalnızca **Türkçe** tarafı
+okuyordu.
+
+Ölçüm artık elle değil, depoda bir fonksiyon (`emptyStatesIn`) ve bir test:
+
+|                     | açıklama | karakter  | en uzun | 120 üstü |
+| ------------------- | -------- | --------- | ------- | -------- |
+| HEAD (Faz 5 öncesi) | 32       | 3.501     | 179     | **11**   |
+| Faz 5 sonrası       | 32       | **2.906** | **120** | **0**    |
+
+Asıl kazanç hacim değil kural: 120'yi aşan 11 açıklama → 0, açıklama başına
+109 → 91 karakter. Düzeltilmiş ölçüm beş açıklama daha kesmeyi gerektirdi
+(`CalendarView`, `DocumentVaultView`, `ObligationsView`, `CounselPanel`,
+`EvidenceList`) ve son ikisi **yalnızca İngilizce tarafı ölçüme katınca**
+ortaya çıktı — T13-07'de yaptığım hatanın aynısı, bir faz sonra.
+
+Tavan, bildirdiğim yanlış sayıdan (2.308) **yüksek** ve öyle kalıyor. 2.308'i
+tutmak körlüğü hedef olarak yazmak olurdu; ölçüm düzeltilince tavan ölçülene
+çekilir, ölçülen tavana değil. Faz 3'te veri dizisi deseninde aynı kararı
+verdim.
+
+### Bir tavan körlüğü yakalayamaz — ikinci kez ölçüldü
+
+Faz 4'te şunu yazdım: hacim tavanı bir **üst sınır**dır, körleşmiş bir ölçüm
+onu her zaman geçer. Faz 5 bunu iki kez daha gösterdi ve ikisi de yeni
+kontrolün kendi mutasyonunda çıktı:
+
+1. `emptyStatesIn`'in açık etiket desenini bozmak 32 açıklamanın hepsini
+   kaçırtıyor; **hacim tavanı memnun geçiyor** (0 ≤ 2.906). Düşüren şey
+   fixture'dı.
+2. `len`'i iki dilin uzun olanından Türkçeye indirmek 2.906'yı 2.756'ya
+   düşürüyor; **tavan yine memnun geçiyor.** Bunu hiçbir fixture'ım
+   yakalamıyordu, çünkü fixture'daki iki dil de kısaydı. İngilizcesi
+   kasten daha uzun bir fixture eklendi ve ölçülen uzunluğun İngilizce
+   uzunluğa **eşit** olduğu doğrulanıyor.
+
+İlk yazdığım T13-06 kontrolü de aynı sınıftaydı ve kendi mutasyonunda
+düştü: yazma tarafı muafiyetini `WRITE_SIDE.test(body)` ile **dosya
+genelinde** arıyordum, yani içinde bir yerde `language === 'en'` geçen her
+dosya her satırını atlıyordu. Muafiyet artık blok-yerel: aynı alanın `En`
+kardeşi ±3 satır içinde olmak zorunda. Beş mutasyonun beşi de düşüyor.
+
+### Kriterde yaptığım iki değişikliği açıkça söylüyorum
+
+**T13-06'nın ilk kriteri yanlıştı.** "Ölçüm betiği tek desenle tüm metni
+görüyor" diye yazmıştım. `language`'ı parametre alan dokuz yardımcı ekran
+metni **üretiyor** ve orada `tr` türetmek parametreyi gölgelemek olurdu, yani
+çıkarıcı iki deseni de tutmak zorunda. Kriter şuna çevrildi: _bileşen ve ekran
+dosyalarında gereksiz ikinci biçim kalmasın_ — ve kontrol tam bunu ölçüyor.
+
+**T13-08'in kriterindeki sayı yanlıştı.** Satır "20 açıklama, 2355 karakter"
+diyordu; gerçek 32 açıklama ve 3.501 karakterdi. Kriterin **kuralı** (≤120
+karakter) doğruydu ve değişmedi; yanlış olan, ona eşlik eden ölçümdü.
+
+#### Kalan
+
+`/legal` 2.117 karakter; T13-04'ün kriteri (≤2.000) **henüz karşılanmadı**,
+117 karakter yukarıda.
+
+**0053 hâlâ canlıya uygulanmadı.**
 
 ---
 

@@ -14,6 +14,7 @@ interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = ({ onOpenMenu }) => {
   const { language, setLanguage, setIsSearchOpen } = useApp();
+  const tr = language === 'tr';
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const lentFrom = useAuthority().data?.delegations[0]?.lenderName;
@@ -39,9 +40,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenMenu }) => {
           <button
             type="button"
             onClick={() => navigate('/')}
-            aria-label={
-              language === 'tr' ? 'Gösterge paneline git' : 'Go to the executive dashboard'
-            }
+            aria-label={tr ? 'Gösterge paneline git' : 'Go to the executive dashboard'}
             className="flex items-center gap-2 sm:gap-3 cursor-pointer group text-left"
           >
             <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 p-0.5 shadow-sm flex items-center justify-center shrink-0">
@@ -57,9 +56,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenMenu }) => {
                 {name(UNIVERSITY_SHORT, language)}
               </span>
               <p className="text-xs sm:text-xs text-slate-500 truncate max-w-[160px] sm:max-w-xs leading-none mt-0.5">
-                {language === 'tr'
-                  ? 'Kenya Afrika Üniversitesi Vakfı'
-                  : 'African University Trust (AUTK)'}
+                {tr ? 'Kenya Afrika Üniversitesi Vakfı' : 'African University Trust (AUTK)'}
               </p>
             </div>
           </button>
@@ -74,7 +71,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenMenu }) => {
             <span className="flex items-center gap-2">
               <Search className="w-3.5 h-3.5 text-amber-600" />
               <span>
-                {language === 'tr'
+                {tr
                   ? 'Dava, tapu, metraj ve müteahhit ara...'
                   : 'Search cases, deeds, BoQ, contractors...'}
               </span>
@@ -91,7 +88,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenMenu }) => {
           <button
             onClick={() => setIsSearchOpen(true)}
             className="lg:hidden p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 cursor-pointer"
-            title={language === 'tr' ? 'Ara' : 'Search'}
+            title={tr ? 'Ara' : 'Search'}
           >
             <Search className="w-4 h-4" />
           </button>
@@ -127,7 +124,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenMenu }) => {
               type="button"
               onClick={() => navigate('/admin')}
               title={
-                language === 'tr'
+                tr
                   ? `${lentFrom} adına devredilmiş yetkiyle hareket ediyorsunuz`
                   : `You are acting on ${lentFrom}'s delegated authority`
               }
@@ -135,7 +132,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenMenu }) => {
             >
               <UserCog className="w-3.5 h-3.5 shrink-0" />
               <span className="hidden sm:inline max-w-[120px] truncate">
-                {language === 'tr' ? `${lentFrom} adına` : `Acting for ${lentFrom}`}
+                {tr ? `${lentFrom} adına` : `Acting for ${lentFrom}`}
               </span>
             </button>
           )}
@@ -152,8 +149,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenMenu }) => {
               </div>
               <button
                 onClick={() => void signOut()}
-                title={language === 'tr' ? 'Çıkış yap' : 'Sign out'}
-                aria-label={language === 'tr' ? 'Çıkış yap' : 'Sign out'}
+                title={tr ? 'Çıkış yap' : 'Sign out'}
+                aria-label={tr ? 'Çıkış yap' : 'Sign out'}
                 className="hidden sm:block p-2 rounded-lg text-slate-500 hover:text-rose-700 hover:bg-rose-50 cursor-pointer"
               >
                 <LogOut className="w-4 h-4" />

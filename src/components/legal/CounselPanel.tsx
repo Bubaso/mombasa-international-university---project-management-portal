@@ -87,8 +87,8 @@ export const CounselPanel: React.FC<{ caseId: string; canManage: boolean }> = ({
               title={tr ? 'Bu dosyada avukat kaydı yok' : 'Nobody is on this file'}
               description={
                 tr
-                  ? 'Kimin hangi dosyada olduğunu ve vekâletnamenin sunulup sunulmadığını buradan takip edin. Dış avukatın dosyaya erişimi ayrıca Erişim ve Yönetim ekranından verilir.'
-                  : 'Track who is on which file and whether the power of attorney has been filed. An external advocate’s access to the file itself is granted separately, under Access & Administration.'
+                  ? 'Kim hangi dosyada, vekâletname sunuldu mu. Dış avukatın erişimi Erişim ve Yönetim’den verilir.'
+                  : 'Who is on which file, and whether a power of attorney is filed. Grant an advocate access under Access & Administration.'
               }
             />
           ) : (

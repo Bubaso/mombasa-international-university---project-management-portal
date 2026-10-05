@@ -23,9 +23,7 @@ export const NoteEditor: React.FC<{
   const { language } = useApp();
   const tr = language === 'tr';
   const notes = useNotes(meetingId);
-  const [noteLanguage, setNoteLanguage] = useState<ContentLanguage>(
-    language === 'tr' ? 'tr' : 'en',
-  );
+  const [noteLanguage, setNoteLanguage] = useState<ContentLanguage>(tr ? 'tr' : 'en');
 
   const locked = minutesStatus === 'final';
   const rows = notes.data ?? [];

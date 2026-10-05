@@ -21,8 +21,8 @@ function denialText(denial: AccessDenial | null, tr: boolean): string {
   switch (denial?.kind) {
     case 'inactive':
       return tr
-        ? 'Portalda profiliniz var ama etkin değil (is_active kapalı). Bunu bir yönetici açabilir.'
-        : 'A profile exists for this account but it is switched off (is_active is false). An administrator can turn it back on.';
+        ? 'Portalda profiliniz var ama kapalı. Bunu bir yönetici açabilir.'
+        : 'You have a profile here, but it is closed. An administrator can open it.';
 
     case 'expired':
       return tr

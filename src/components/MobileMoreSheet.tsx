@@ -32,6 +32,7 @@ interface MobileMoreSheetProps {
  */
 export const MobileMoreSheet: React.FC<MobileMoreSheetProps> = ({ isOpen, onClose }) => {
   const { language, setLanguage, setIsSearchOpen } = useApp();
+  const tr = language === 'tr';
   const { user, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -60,16 +61,14 @@ export const MobileMoreSheet: React.FC<MobileMoreSheetProps> = ({ isOpen, onClos
             </div>
             <div>
               <h3 className="font-bold text-slate-900 text-base">
-                {language === 'tr' ? 'Tüm bölümler' : 'All sections'}
+                {tr ? 'Tüm bölümler' : 'All sections'}
               </h3>
-              <p className="text-xs text-slate-500">
-                {language === 'tr' ? UNIVERSITY.tr : UNIVERSITY.en}
-              </p>
+              <p className="text-xs text-slate-500">{tr ? UNIVERSITY.tr : UNIVERSITY.en}</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            aria-label={language === 'tr' ? 'Kapat' : 'Close'}
+            aria-label={tr ? 'Kapat' : 'Close'}
             className="p-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 cursor-pointer"
           >
             <X className="w-5 h-5" />
@@ -88,15 +87,15 @@ export const MobileMoreSheet: React.FC<MobileMoreSheetProps> = ({ isOpen, onClos
           <span className="flex items-center gap-2">
             <Search className="w-4 h-4 text-amber-600" />
             <span className="font-medium">
-              {language === 'tr' ? 'Tüm kayıtlarda ara…' : 'Search across all records…'}
+              {tr ? 'Tüm kayıtlarda ara…' : 'Search across all records…'}
             </span>
           </span>
           <span className="font-mono text-xs bg-white px-2 py-0.5 rounded border border-slate-200 text-slate-500">
-            {language === 'tr' ? 'Bul' : 'Find'}
+            {tr ? 'Bul' : 'Find'}
           </span>
         </button>
 
-        <nav aria-label={language === 'tr' ? 'Tüm bölümler' : 'All sections'} className="space-y-4">
+        <nav aria-label={tr ? 'Tüm bölümler' : 'All sections'} className="space-y-4">
           {NAV_GROUPS.map((group) => (
             <div key={group.id} className="space-y-1.5">
               <h4 className="text-xs font-bold uppercase text-slate-500 tracking-wider">
@@ -148,19 +147,19 @@ export const MobileMoreSheet: React.FC<MobileMoreSheetProps> = ({ isOpen, onClos
 
         <div className="pt-2 border-t border-slate-100 space-y-3">
           <div className="text-xs font-bold uppercase text-slate-500 tracking-wider">
-            {language === 'tr' ? 'Dil' : 'Language'}
+            {tr ? 'Dil' : 'Language'}
           </div>
 
           <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm">
             <span className="flex items-center gap-2 text-slate-700 font-medium">
               <Globe className="w-4 h-4 text-amber-600" />
-              <span>{language === 'tr' ? 'Arayüz dili:' : 'Interface language:'}</span>
+              <span>{tr ? 'Arayüz dili:' : 'Interface language:'}</span>
             </span>
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setLanguage('tr')}
                 className={`px-3 py-1 rounded-lg font-bold text-sm transition-colors cursor-pointer ${
-                  language === 'tr'
+                  tr
                     ? 'bg-amber-600 text-white shadow-xs'
                     : 'bg-white text-slate-700 border border-slate-200'
                 }`}
@@ -198,7 +197,7 @@ export const MobileMoreSheet: React.FC<MobileMoreSheetProps> = ({ isOpen, onClos
             >
               <span className="flex items-center gap-2">
                 <LogOut className="h-4 w-4" />
-                {language === 'tr' ? 'Çıkış yap' : 'Sign out'}
+                {tr ? 'Çıkış yap' : 'Sign out'}
               </span>
               <span className="max-w-[160px] truncate text-xs font-normal text-rose-700">
                 {user.name}
@@ -208,8 +207,7 @@ export const MobileMoreSheet: React.FC<MobileMoreSheetProps> = ({ isOpen, onClos
         )}
 
         <div className="pt-2 text-center text-xs text-slate-500">
-          {name(UNIVERSITY, language)} · {name(TRUST, language)} ·{' '}
-          {language === 'tr' ? 'Parsel' : 'Plot'} {PLOT}
+          {name(UNIVERSITY, language)} · {name(TRUST, language)} · {tr ? 'Parsel' : 'Plot'} {PLOT}
         </div>
       </div>
     </div>

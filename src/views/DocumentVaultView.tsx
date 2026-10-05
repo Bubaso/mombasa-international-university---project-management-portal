@@ -175,8 +175,8 @@ export const DocumentVaultView: React.FC = () => {
               description={
                 rows.length === 0
                   ? tr
-                    ? 'Henüz belge yüklenmemiş. Her yükleme yeni bir sürümdür; eski sürümler silinmez ve hangisinin geçerli olduğu her zaman işaretlidir.'
-                    : 'Nothing uploaded yet. Every upload is a new version, older ones are never removed, and which one is in force is always marked.'
+                    ? 'Henüz belge yüklenmemiş. Her yükleme yeni bir sürüm olarak eklenir.'
+                    : 'Nothing uploaded yet. Every upload is added as a new version.'
                   : tr
                     ? 'Bu filtrelerle eşleşen belge yok.'
                     : 'Nothing matches those filters.'

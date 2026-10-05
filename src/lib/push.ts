@@ -201,8 +201,8 @@ export function pushStateWords(state: PushState, tr: boolean): string {
         : 'Checking what this device is set up for.';
     case 'worker_not_ready':
       return tr
-        ? "Tarayıcı bildirimi destekliyor ama bu sekmenin service worker'ı henüz hazır değil. Sayfayı yenileyin; hazır olmadan abonelik kurulamaz."
-        : "This browser supports push, but this tab's service worker has not started yet. Reload the page; nothing can subscribe until it has.";
+        ? 'Tarayıcınız bildirimi destekliyor ama bu sekme henüz hazır değil. Sayfayı yenileyin.'
+        : 'Your browser supports notifications, but this tab is not ready yet. Reload the page.';
     case 'unsupported':
       return tr
         ? 'Bu tarayıcı anlık bildirim desteklemiyor. Portalı açmadan haber alamazsınız.'

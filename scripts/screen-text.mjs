@@ -184,6 +184,52 @@ export function introsIn(source, strings) {
 }
 
 /**
+ * `<EmptyState>`'in `description`'ları (T13-08).
+ *
+ * Ayrı ölçülüyorlar çünkü ayrı bir kusurdu: bir kaydın olmaması bir hata
+ * değil, ve ekran bunu bir paragrafla açıklamaya kalkınca uygulama "henüz
+ * bitmemiş" gibi okunuyor. Doğru boş durum ne girileceğini söyleyen tek bir
+ * cümledir.
+ *
+ * Prop'un kendisinden gidiyor, `stringsIn`'in genel havuzundan değil: aynı
+ * dosyadaki bir başlık ya da yardım metni de 60+ karakter olabilir ve
+ * karışırsa ölçüm boş durumun gerilediğini göremez.
+ */
+export function emptyStatesIn(source) {
+  // `[\s>]` değil `(?![A-Za-z])`: prettier çok prop'lu elemanı sarıyor ve
+  // `<EmptyState` satırın SONUNDA kalıyor, yani ardından eşleşecek bir karakter
+  // yok. İlk yazımda `[\s>]` vardı ve ölçüm 34 kullanımın hepsini kaçırıp "0
+  // açıklama" dedi — tavanı kendiliğinden geçirecekti. Fixture yakaladı.
+  const OPEN = /<EmptyState(?![A-Za-z])/;
+  const lines = strip(source).split('\n');
+  const out = [];
+  for (let i = 0; i < lines.length; i += 1) {
+    if (!OPEN.test(lines[i])) continue;
+    // `description` prop'una kadar oku; sonraki `<EmptyState`'te dur, yoksa
+    // bir sonrakinin açıklaması bu kullanımınmış gibi sayılır.
+    const block = [];
+    for (let j = i; j < Math.min(lines.length, i + 24); j += 1) {
+      if (j > i && OPEN.test(lines[j])) break;
+      block.push(lines[j]);
+    }
+    const body = block.join('\n');
+    const at = body.indexOf('description=');
+    if (at === -1) continue;
+    const first = stringsIn(body.slice(at))[0];
+    // Uzunluk İKİ dilin uzun olanı. Tek dili ölçmek T13-07'de sızıntıyı
+    // gizledi: Türkçe düzeltildi, İngilizce kolon adı taşımaya devam etti.
+    if (first)
+      out.push({
+        line: i + 1,
+        tr: first.tr,
+        en: first.en,
+        len: Math.max(first.tr.length, first.en.length),
+      });
+  }
+  return out;
+}
+
+/**
  * Ekranda işi olmayan geliştirici dili (T13-07).
  *
  * Sınır `\b` ile yazılamıyor ve bunu ölçerken öğrendim: JavaScript'in `\b`'si
@@ -198,6 +244,22 @@ export function introsIn(source, strings) {
  * "Dava Özeti", "Okuma (özet)". Jargon olan şey `SHA-256`; kelimenin kendisi
  * doğru Türkçe. `sorgu` da çıktı: "üç ayrı sorgu" cümlesi kullanıcıya bir şey
  * anlatıyor, kolon adı gibi sızmış bir terim değil.
+ *
+ * Liste üç kez kırpıldı ve kalıp artık belli: **alan kelimesini jargon sayan
+ * bir desen, yakaladığından fazlasına mal oluyor.** Çıkanlar ve sebepleri —
+ *
+ *   `özet` Türkçede "summary"; uygulamada 14 yerde o anlamda.
+ *   `sorgu` kullanıcıya bir şey anlatıyor ("üç ayrı sorgu").
+ *   `sütun` savunmanın dayanağı ("savunma sütunları"); 3 isabet, 3 yanlış.
+ *   `trigger` **risk tetikleyicisi** — M6-03'ün kendi kelimesi.
+ *   `migration` **Notion göçü** — projenin gerçek bir olayı, dosya değil.
+ *   `tablosu` **hesap tablosu** — spreadsheet.
+ *   `politika`, `şema` Türkçede gündelik anlamları var.
+ *   `önbellek` kullanıcının gördüğü bir durum, geliştirici terimi değil.
+ *
+ * Kalanlar başka anlamı olmayan biçimler: gereksinim kimliği, snake_case ve
+ * ENV_VAR adları, `RLS`/`jsonb`/`PostgREST`, kriptografi adları, ve mimari
+ * terimleri. İkisinin meşru kullanımı `JARGON_ALLOWED`'da gerekçesiyle.
  *
  * `sütun` da aynı sebeple çıktı ve ölçüldü: üç isabet verdi, üçü de "savunma
  * sütunları" — savunmanın dayanakları, veritabanı kolonu değil. Sıfır gerçek
@@ -230,13 +292,45 @@ const STEM = (body) => new RegExp(`(?<![\\p{L}\\p{N}])(?:${body})`, 'u');
 
 export const JARGON = {
   'gereksinim kimliği': B(String.raw`[MTNG]\d{0,2}-\d{2}`),
-  'kolon/tablo adı': B(String.raw`[a-z]+_[a-z]+(?:_[a-z]+)*`),
-  'veritabanı terimi': STEM(
-    'trigger|RLS|enum|jsonb|migration|PostgREST|politika|şema|tablosu|tablosunda',
-  ),
+  'kolon/ortam adı': B(String.raw`[a-z]+_[a-z]+(?:_[a-z]+)*|[A-Z][A-Z0-9]*_[A-Z0-9_]+`),
+  'veritabanı terimi': STEM('RLS|jsonb|PostgREST|PostgreSQL'),
   kriptografi: STEM('SHA-256|VAPID|JWT|CORS|Content-Range'),
-  'mimari terimi': STEM('edge fonksiyon|service worker|localStorage|idempotent|önbelle'),
+  'mimari terimi': STEM('edge fonksiyon|service worker|localStorage|idempotent'),
 };
+
+/**
+ * Deseni tetikleyen ama jargon OLMAYAN yerler, gerekçesiyle.
+ *
+ * Liste olmadan bu kararlar her turda yeniden verilir ve bir seferinde yanlış
+ * verilir. İkisi de ölçülerek buraya geldi.
+ */
+export const JARGON_ALLOWED = [
+  {
+    where: 'src/components/stakeholders/ContactsExchange.tsx',
+    what: 'full_name, preferred_language, interest_topic …',
+    why:
+      'CSV başlıklarının kendisi. Kullanıcı dosyasına bunları **birebir** ' +
+      'yazmak zorunda, yani ekranda görünmesi dosya biçiminin sözleşmesi — ' +
+      'sızmış bir kolon adı değil. Gizlemek, içe aktarmayı çalışmaz kılar.',
+  },
+  {
+    where: 'src/components/SignInPage.tsx',
+    what: 'VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, .env.local',
+    why:
+      'Arka ucu yapılandırılmamış bir derlemenin giriş ekranı. Bu metni ' +
+      'YALNIZCA o derlemeyi çalıştıran kişi görüyor — yani değişkenleri ' +
+      'ayarlayabilecek olan kişi. Canlıda hiç görünmüyor. Adları ' +
+      'gizlemek, cevabı bilen tek okuyucudan cevabı almak olurdu.',
+  },
+  {
+    where: 'src/views/DocumentVaultView.tsx',
+    what: 'SHA-256',
+    why:
+      '"Doğrulandı" iddiasının ne demek olduğu. Faz 0 bu ekrandan YANLIŞ bir ' +
+      '"SHA-256 doğrulandı" rozetini kaldırmıştı; bu cümle doğru olanı ve ' +
+      'algoritmayı adıyla söylemek denetçi için iddiayı denetlenebilir yapıyor.',
+  },
+];
 
 /** Kullanıcıya değil yazara hitap eden cümle (T13-03). */
 export const CHATTY = /(konuşalım|isterseniz|bence|sizin kararınız|ayrıca konuş)/i;

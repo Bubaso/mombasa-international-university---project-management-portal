@@ -208,8 +208,8 @@ export const CalendarView: React.FC = () => {
           description={
             entries.length === 0
               ? tr
-                ? 'Duruşma, süre, yükümlülük ya da aksiyon kaydedildikçe burada görünürler. Bu listede yalnızca sizin görmeye yetkili olduğunuz kayıtlar yer alır.'
-                : 'Hearings, deadlines, obligations and actions appear here as they are recorded. This list shows only what you are allowed to see.'
+                ? 'Duruşma, süre, yükümlülük ve aksiyonlar kaydedildikçe burada görünür. Yetkiniz dışındaki kayıtlar listelenmez.'
+                : 'Hearings, deadlines, obligations and actions appear here as recorded. Records outside your access are not listed.'
               : tr
                 ? 'Bu türde kayıt yok.'
                 : 'Nothing of that kind.'

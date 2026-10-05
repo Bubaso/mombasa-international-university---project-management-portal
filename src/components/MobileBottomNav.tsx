@@ -26,6 +26,7 @@ interface MobileBottomNavProps {
 
 export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenMore, isMoreOpen }) => {
   const { language } = useApp();
+  const tr = language === 'tr';
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -99,9 +100,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenMore, is
               />
             </div>
 
-            <span className="text-xs mt-1 tracking-tight">
-              {language === 'tr' ? item.labelTr : item.labelEn}
-            </span>
+            <span className="text-xs mt-1 tracking-tight">{tr ? item.labelTr : item.labelEn}</span>
           </button>
         );
       })}
@@ -120,7 +119,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenMore, is
           <LayoutGrid className="w-5 h-5" />
           <span className="w-1.5 h-1.5 rounded-full bg-amber-600 absolute -top-0.5 -right-0.5" />
         </div>
-        <span className="text-xs mt-1 tracking-tight">{language === 'tr' ? 'Menü' : 'More'}</span>
+        <span className="text-xs mt-1 tracking-tight">{tr ? 'Menü' : 'More'}</span>
       </button>
     </nav>
   );

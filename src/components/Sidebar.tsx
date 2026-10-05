@@ -22,6 +22,7 @@ import { NAV_GROUPS } from '../lib/navigation';
  */
 export const Sidebar: React.FC = () => {
   const { language } = useApp();
+  const tr = language === 'tr';
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -32,7 +33,7 @@ export const Sidebar: React.FC = () => {
     >
       <nav
         className="flex-1 overflow-y-auto p-3"
-        aria-label={language === 'tr' ? 'Ana gezinme' : 'Main navigation'}
+        aria-label={tr ? 'Ana gezinme' : 'Main navigation'}
       >
         {NAV_GROUPS.map((group, index) => (
           <div key={group.id} className={index > 0 ? 'mt-4' : ''}>
@@ -99,7 +100,7 @@ export const Sidebar: React.FC = () => {
         <div className="rounded-lg border border-slate-200 bg-white p-2.5 text-xs text-slate-600 shadow-xs">
           <div className="font-semibold text-slate-700">MIU · Utange/Majaoni</div>
           <div className="mt-0.5 text-xs text-slate-500">
-            {language === 'tr' ? 'Parsel MN/I/5141 · Fasıl 164' : 'Plot MN/I/5141 · Cap 164'}
+            {tr ? 'Parsel MN/I/5141 · Fasıl 164' : 'Plot MN/I/5141 · Cap 164'}
           </div>
         </div>
       </div>

@@ -71,8 +71,8 @@ export const MeetingDetailView: React.FC = () => {
           title={tr ? 'Bu toplantı görünmüyor' : 'This meeting is not visible'}
           description={
             tr
-              ? 'Kayıt silinmiş olabilir, ya da bu toplantıyı görmeye yetkiniz yok. Kurum dışındaysanız yalnızca katıldığınız toplantıları görürsünüz.'
-              : 'It may have been deleted, or it may not be yours to see. From outside the organisation you read only the meetings you were in.'
+              ? 'Kayıt silinmiş olabilir, ya da görmeye yetkiniz yok. Kurum dışındaysanız yalnızca katıldıklarınızı görürsünüz.'
+              : 'It may have been deleted, or it may not be yours to see. From outside you read only the meetings you were in.'
           }
         />
       </div>
@@ -244,6 +244,7 @@ export const MeetingDetailView: React.FC = () => {
 
 const BackLink: React.FC<{ onClick: () => void }> = ({ onClick }) => {
   const { language } = useApp();
+  const tr = language === 'tr';
   return (
     <button
       type="button"
@@ -251,7 +252,7 @@ const BackLink: React.FC<{ onClick: () => void }> = ({ onClick }) => {
       className="flex cursor-pointer items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-slate-900"
     >
       <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
-      {language === 'tr' ? 'Toplantılar' : 'All meetings'}
+      {tr ? 'Toplantılar' : 'All meetings'}
     </button>
   );
 };

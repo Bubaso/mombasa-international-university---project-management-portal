@@ -189,8 +189,8 @@ export const MeetingsView: React.FC = () => {
               title={tr ? 'Toplantı kaydı yok' : 'No meetings recorded'}
               description={
                 tr
-                  ? 'İlk toplantıyı kaydedin, ya da Notion göçünü bekleyin. Bir toplantı kaydı açıldığında açık aksiyonlar gündemine otomatik düşer.'
-                  : 'Record the first one, or wait for the Notion migration. Open actions land on a new meeting’s agenda by themselves.'
+                  ? 'İlk toplantıyı kaydedin, ya da Notion göçünü bekleyin.'
+                  : 'Record the first one, or wait for the Notion migration.'
               }
             />
           ) : (

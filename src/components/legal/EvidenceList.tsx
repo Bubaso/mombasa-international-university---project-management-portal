@@ -60,7 +60,7 @@ export const EvidenceList: React.FC<{ caseId: string; canWrite: boolean }> = ({
             description={
               tr
                 ? 'Her delili işaretiyle, kaynağıyla ve neyi ispat ettiğiyle girin. Teslim zinciri eklendikten sonra düzeltilemez.'
-                : 'Record each exhibit with its mark, its source and what it is offered to prove. Once a handover is entered it cannot be corrected.'
+                : 'Record each exhibit with its mark, its source and what it proves. A handover cannot be corrected once entered.'
             }
           />
         ) : (

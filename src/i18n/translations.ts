@@ -9,7 +9,7 @@
  * away from being a live claim, so it is gone.
  *
  * Everywhere else the project writes its text where it is used, as
- * `language === 'tr' ? '…' : '…'`. Navigation is the exception because three
+ * `tr ? '…' : '…'`. Navigation is the exception because three
  * components have to agree on the same labels.
  */
 export const translations = {

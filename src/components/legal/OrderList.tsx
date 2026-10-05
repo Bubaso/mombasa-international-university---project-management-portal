@@ -142,8 +142,8 @@ export const OrderList: React.FC<{ caseId: string; canWrite: boolean; canOblige:
             title={tr ? 'Kayıtlı karar yok' : 'No orders recorded'}
             description={
               tr
-                ? 'Her mahkeme kararını girin, sonra neyi yasakladığını ve neyi emrettiğini yükümlülük olarak ayırın. Kütüğe girmeyen bir yasak, saha işi açılırken kimseyi uyarmaz.'
-                : 'Record each order, then separate what it forbids from what it requires as obligations. A prohibition that is not in the register warns nobody when site work is opened.'
+                ? 'Her kararı girin, sonra yasakladığını ve emrettiğini yükümlülük olarak ayırın.'
+                : 'Record each order, then separate what it forbids from what it requires as obligations.'
             }
           />
         ) : (

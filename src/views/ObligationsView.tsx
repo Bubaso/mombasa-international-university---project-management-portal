@@ -189,8 +189,8 @@ export const ObligationsView: React.FC = () => {
               description={
                 rows.length === 0
                   ? tr
-                    ? 'Kira sözleşmesinden, mahkeme kararlarından ve vakıf senedinden doğan yükümlülükleri girerek başlayın. Her biri kaynak belgesine bağlandığında doğrulanmış sayılır.'
-                    : 'Start with what the lease, the court orders and the trust deed require. Each counts as verified once its source document is attached.'
+                    ? 'Kira sözleşmesi, mahkeme kararları ve vakıf senedinden doğan yükümlülükleri girin. Doğrulama kaynak belge ister.'
+                    : 'Enter what the lease, the court orders and the trust deed require. Verified status needs the source document.'
                   : tr
                     ? 'Bu filtrelerle eşleşen yükümlülük yok.'
                     : 'Nothing matches those filters.'
