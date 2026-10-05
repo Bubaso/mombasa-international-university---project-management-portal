@@ -337,16 +337,18 @@ const DENSITY = {
   '/obligations': { buttons: 47, headings: 15, height: 1556 },
   '/risks': { buttons: 52, headings: 9, height: 1636 },
   '/calendar': { buttons: 56, headings: 9, height: 1132 },
-  '/plan': { buttons: 50, headings: 13, height: 3460 },
+  '/plan': { buttons: 46, headings: 9, height: 1340 },
   '/reports': { buttons: 49, headings: 12, height: 1242 },
   '/procurement': { buttons: 56, headings: 11, height: 2974 },
   '/finance': { buttons: 45, headings: 9, height: 1044 },
   '/documents': { buttons: 47, headings: 7, height: 1061 },
   '/communication': { buttons: 107, headings: 16, height: 3050 },
-  '/assistant': { buttons: 52, headings: 10, height: 3199 },
+  '/assistant': { buttons: 50, headings: 8, height: 2351 },
   '/admin': { buttons: 37, headings: 11, height: 1044 },
 };
 const density = {};
+const tabsFound = {};
+const tabsOpened = {};
 
 for (const route of ROUTES) {
   pageErrors = [];
@@ -368,21 +370,61 @@ for (const route of ROUTES) {
   }));
 
   // Sekmeler: ilk ekranda görünmeyen bir panel, tıklanmadan sınanmaz.
-  const tabs = await page.$$('[role="tab"]');
-  for (let i = 0; i < tabs.length; i++) {
-    const all = await page.$$('[role="tab"]');
-    const tab = all[i];
-    if (!tab) break;
-    const name = (await tab.textContent())?.trim().slice(0, 32) ?? `tab ${i}`;
-    try {
-      await tab.click({ timeout: 4000 });
-    } catch {
-      continue;
+  //
+  // Gezinme İKİ SEVİYELİ ve bu ölçülerek öğrenildi. Önceki hâli tek bir
+  // listeyi KONUMA göre dolaşıyordu; bir dış sekmeye tıklamak iç sekmeleri
+  // DOM'dan kaldırınca liste kısalıyor ve döngü `if (!tab) break` ile
+  // SESSİZCE çıkıyordu. Ölçüm: `/legal`'da on yedi sekmenin yedisi,
+  // `/assistant`'ta dokuzun dördü açılıyordu — ve toplam eşik bunu
+  // geçiriyordu, çünkü eşik hangi ekranın neyi kaçırdığını bilmiyor.
+  //
+  // Doğrusu: dış sekmeyi aç, O SEKMENİN iç sekmelerini aç, dışa dön. İç
+  // sekmelere ancak ebeveyni açıkken ulaşılır.
+  const labelsOf = async (list) =>
+    Promise.all(
+      (await list.$$('[role="tab"]')).map(
+        async (t) => (await t.textContent())?.trim().slice(0, 40) ?? '',
+      ),
+    );
+  const clickIn = async (list, label) => {
+    const tabs = await list.$$('[role="tab"]');
+    for (const t of tabs) {
+      if (((await t.textContent())?.trim().slice(0, 40) ?? '') !== label) continue;
+      try {
+        await t.click({ timeout: 4000 });
+      } catch {
+        return false;
+      }
+      tabsClicked++;
+      await settle();
+      for (const message of await boundaries()) seen.add(`[${label}] ${message}`);
+      return true;
     }
-    tabsClicked++;
-    await settle();
-    for (const message of await boundaries()) seen.add(`[${name}] ${message}`);
+    return false;
+  };
+
+  const everSeen = new Set();
+  const opened = new Set();
+  const lists = await page.$$('[role="tablist"]');
+  const outer = lists[0] ?? null;
+  const outerLabels = outer ? await labelsOf(outer) : [];
+  outerLabels.forEach((l) => everSeen.add(l));
+
+  for (const label of outerLabels) {
+    if (await clickIn(outer, label)) opened.add(label);
+    // İç listeler: dış sekme açıkken ne varsa.
+    const nested = (await page.$$('[role="tablist"]')).slice(1);
+    for (const list of nested) {
+      for (const inner of await labelsOf(list)) {
+        everSeen.add(inner);
+        if (opened.has(inner)) continue;
+        if (await clickIn(list, inner)) opened.add(inner);
+      }
+    }
   }
+
+  tabsFound[route] = everSeen.size;
+  tabsOpened[route] = opened.size;
 
   const body = (await page.textContent('body')) ?? '';
   const signed = body.match(new RegExp(SIGNED_FUTURE.source, 'gi')) ?? [];
@@ -418,6 +460,47 @@ for (const route of ROUTES) {
       over.length ? over.join(', ') : `${m.buttons} düğme · ${m.headings} başlık · ${m.height}px`,
     );
   }
+}
+
+/**
+ * Sekmeli her ekranda KAÇ sekme olduğu, ölçülmüş ve yazılmış.
+ *
+ * "Bulunanın hepsi açıldı" tek başına yetmiyor ve bu mutasyonla ölçüldü:
+ * gezgini tek seviyeye düşürdüm, iç sekmeleri HİÇ görmedi, ve kontrol
+ * memnun geçti — çünkü görmediğini arayamaz. Daha dar bir ölçüm kendi
+ * üst sınırını her zaman tutturur; aynı ders, bu depoda üçüncü kez.
+ *
+ * Bu yüzden sayı burada, gezginden bağımsız. Bir ekranın sekmesi artarsa
+ * (yeni panel) ya da gezgin körleşirse, ikisi de düşürür.
+ */
+const TABS_EXPECTED = {
+  '/legal': 17,
+  '/assistant': 9,
+  '/readiness': 5,
+  '/risks': 5,
+  '/plan': 5,
+  '/finance': 5,
+  '/governance': 4,
+};
+
+{
+  const missed = Object.keys(tabsFound)
+    .filter((route) => tabsOpened[route] !== tabsFound[route])
+    .map((route) => `${route}: ${tabsOpened[route]}/${tabsFound[route]}`);
+  check(
+    missed.length === 0,
+    'her ekranda bulunan her sekme açıldı',
+    missed.length ? missed.join(', ') : `${Object.keys(tabsFound).length} ekran tarandı`,
+  );
+
+  const wrong = Object.entries(TABS_EXPECTED)
+    .filter(([route, n]) => (tabsFound[route] ?? 0) !== n)
+    .map(([route, n]) => `${route}: ${tabsFound[route] ?? 0} ≠ ${n}`);
+  check(
+    wrong.length === 0,
+    'sekmeli ekranların sekme sayısı kayıtlı sayıya eşit',
+    wrong.length ? wrong.join(', ') : `${Object.keys(TABS_EXPECTED).length} ekran`,
+  );
 }
 
 check(

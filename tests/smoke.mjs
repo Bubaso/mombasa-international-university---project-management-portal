@@ -4653,11 +4653,55 @@ try {
   await page.keyboard.press('Escape');
   await page.waitForTimeout(200);
 
+  /**
+   * Sayfanın metni, AÇILIŞ HÂLİ + HER SEKME, iki seviye derin.
+   *
+   * T14-04 ile ekranlar sekmelere bölündü: paneller duruyor, yeri değişti.
+   * Tek sayfanın metnine bakan bir iddia artık yalnızca açılış sekmesini
+   * görür ve "bu kayıt ekranda yok" der — oysa bir tık ötede.
+   *
+   * Düz bir döngü yetmiyor ve bu ölçüldü: bir dış sekmeye tıklamak iç
+   * sekmeleri DOM'dan kaldırıyor, elde kalan tutamaçlar sessizce
+   * tıklanamaz oluyor. `/assistant`'ta dokuz sekmenin dördü açılıyordu.
+   *
+   * Birleşim iddiaları ZAYIFLATMIYOR, güçlendiriyor: "şu kayıt ekranda"
+   * artık "erişilebilir bir yerde" demek, ve "şu uydurma rakam ekranda yok"
+   * tek sayfayı değil bütün sekmeleri tarıyor.
+   *
+   * DOM'a bakan kontroller bununla çözülmez: onlar kaydın O AN ekranda
+   * olmasını ister ve kendi sekmesini açıkça seçmek zorundadır.
+   */
+  const bodyAcrossTabs = async (page) => {
+    let text = (await page.textContent('body')) ?? '';
+    const labelsOf = async (list) =>
+      Promise.all(
+        (await list.$$('[role="tab"]')).map(async (t) => (await t.textContent())?.trim() ?? ''),
+      );
+    const clickIn = async (list, label) => {
+      for (const t of await list.$$('[role="tab"]')) {
+        if (((await t.textContent())?.trim() ?? '') !== label) continue;
+        await t.click().catch(() => {});
+        await page.waitForTimeout(250);
+        text += '\n' + ((await page.textContent('body')) ?? '');
+        return;
+      }
+    };
+    const outer = (await page.$$('[role="tablist"]'))[0];
+    if (!outer) return text;
+    for (const label of await labelsOf(outer)) {
+      await clickIn(outer, label);
+      for (const nested of (await page.$$('[role="tablist"]')).slice(1)) {
+        for (const inner of await labelsOf(nested)) await clickIn(nested, inner);
+      }
+    }
+    return text;
+  };
+
   // --- the assistant (M13-04, M13-07, M13-08, M13-09) -----------------------
   pageErrors = [];
   await page.goto(BASE + '/assistant', { waitUntil: 'networkidle' });
   await page.waitForTimeout(400);
-  const assistant = (await page.textContent('body')) ?? '';
+  const assistant = await bodyAcrossTabs(page);
 
   // M13-07: five jobs, offered as a choice. There is no free-form system
   // instruction field, because the instruction is the server's.
@@ -4733,6 +4777,9 @@ try {
   check(/gemini-2\.5-flash/.test(assistant), 'each translation names the model that produced it');
   // The approve control exists for the one awaiting a reader, and not for the
   // two that are settled or already edited.
+  // Çeviri kuyruğu kendi sekmesinde (T14-04); bu kontrol DOM'a bakıyor.
+  await page.locator('[role="tab"]', { hasText: 'Çeviri' }).first().click();
+  await page.waitForTimeout(300);
   check(
     (await page
       .locator('button')
@@ -4742,6 +4789,9 @@ try {
   );
 
   // An answer, with its citations.
+  // Soru formu "Sor" sekmesinde (T14-04).
+  await page.locator('[role="tab"]', { hasText: 'Sor' }).first().click();
+  await page.waitForTimeout(300);
   await page
     .locator('input[aria-label="Soru"], input[aria-label="Question"]')
     .first()
@@ -4810,16 +4860,6 @@ try {
    * DOM'a bakan kontroller bununla çözülmez: onlar kaydın O AN ekranda olmasını
    * ister, ve kendi sekmesini açıkça seçmek zorundadır.
    */
-  const bodyAcrossTabs = async (page) => {
-    let text = (await page.textContent('body')) ?? '';
-    for (const tab of await page.$$('[role="tab"]')) {
-      await tab.click();
-      await page.waitForTimeout(250);
-      text += '\n' + ((await page.textContent('body')) ?? '');
-    }
-    return text;
-  };
-
   // --- governance (M10-01 … M10-04, M10-11) ---------------------------------
   //
   // The screen this replaces held three resolutions in a React useState, one
@@ -5927,7 +5967,7 @@ try {
   pageErrors = [];
   await page.goto(BASE + '/plan', { waitUntil: 'networkidle' });
   await page.waitForTimeout(600);
-  const plan = (await page.textContent('body')) ?? '';
+  const plan = await bodyAcrossTabs(page);
 
   // M15-01: the target, the outcome, and the number between them.
   //
@@ -5947,6 +5987,10 @@ try {
   // (CLAUDE.md §3). Bölmenin yapıldığını `tests/register-states.mjs` yapıyla
   // sınıyor; burada sınanan şey, sayının tıklamadan görünmesi ve satırın bir
   // tıklama uzakta olması.
+  // Kilometre taşları kendi sekmesinde (T14-04); bu kontrol DOM'a bakıyor ve
+  // `bodyAcrossTabs` sayfayı son sekmede bırakıyor.
+  await page.locator('[role="tab"]', { hasText: 'Kilometre taşları' }).first().click();
+  await page.waitForTimeout(300);
   const closedMilestones = page
     .locator('button')
     .filter({ hasText: /kapanan|closed/i })

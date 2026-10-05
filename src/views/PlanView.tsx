@@ -11,10 +11,20 @@
  * The order of the panels is the order the questions get asked in a trustee
  * meeting: where are we against the dates, what is in each phase, what is
  * waiting on what, what did we say six months ago, and how did we get here.
+ *
+ * ---
+ *
+ * Sekmeler, 5 Ekim 2026 (T14-04). Altı panel alt alta duruyordu ve ekran
+ * **3.460 piksel** boyundaydı. Sekme sırası yukarıdaki soru sırasını AYNEN
+ * koruyor — toplantıda sorulma sırası, ve o sıra bir tasarım kararıydı.
+ *
+ * Gantt sekmeye alınmadı: bu dosyanın kendi yorumu onu "the overview, above
+ * the table that details it" diye tanımlıyor, yani ekranın özeti. Özet
+ * görünür kalır (`RiskMatrix`, `ReadinessBoard` ile aynı karar).
  */
-import React from 'react';
+import React, { useState } from 'react';
 import { Explain } from '../components/ui/Explain';
-import { GanttChartSquare } from 'lucide-react';
+import { Flag, GanttChartSquare, GitBranch, History, Layers, Ruler } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { GanttPanel } from '../components/plan/GanttPanel';
 import { MilestonePanel } from '../components/plan/MilestonePanel';
@@ -25,9 +35,12 @@ import { ChronologyPanel } from '../components/plan/ChronologyPanel';
 import { DataFreshness } from '../components/DataFreshness';
 import { usePlanMilestones } from '../api/planHooks';
 
+type Tab = 'milestones' | 'phases' | 'chain' | 'baseline' | 'chronology';
+
 export const PlanView: React.FC = () => {
   const { language } = useApp();
   const tr = language === 'tr';
+  const [tab, setTab] = useState<Tab>('milestones');
 
   // Freshness is measured on the milestones, because they are the part of
   // this screen whose staleness actually misleads somebody.
@@ -60,11 +73,39 @@ export const PlanView: React.FC = () => {
           under 3:1 against the surface. */}
       <GanttPanel />
 
-      <MilestonePanel />
-      <PhasePanel />
-      <ChainPanel />
-      <BaselinePanel />
-      <ChronologyPanel />
+      <div role="tablist" className="flex flex-wrap gap-1.5">
+        {(
+          [
+            { key: 'milestones', icon: Flag, label: tr ? 'Kilometre taşları' : 'Milestones' },
+            { key: 'phases', icon: Layers, label: tr ? 'Fazlar' : 'Phases' },
+            { key: 'chain', icon: GitBranch, label: tr ? 'Zincir' : 'Chain' },
+            { key: 'baseline', icon: Ruler, label: tr ? 'Taban plan' : 'Baseline' },
+            { key: 'chronology', icon: History, label: tr ? 'Kronoloji' : 'Chronology' },
+          ] as { key: Tab; icon: React.ElementType; label: string }[]
+        ).map(({ key, icon: Icon, label }) => (
+          <button
+            key={key}
+            type="button"
+            role="tab"
+            aria-selected={tab === key}
+            onClick={() => setTab(key)}
+            className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors ${
+              tab === key
+                ? 'border-indigo-300 bg-indigo-50 text-indigo-900'
+                : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+            <span>{label}</span>
+          </button>
+        ))}
+      </div>
+
+      {tab === 'milestones' && <MilestonePanel />}
+      {tab === 'phases' && <PhasePanel />}
+      {tab === 'chain' && <ChainPanel />}
+      {tab === 'baseline' && <BaselinePanel />}
+      {tab === 'chronology' && <ChronologyPanel />}
     </div>
   );
 };
