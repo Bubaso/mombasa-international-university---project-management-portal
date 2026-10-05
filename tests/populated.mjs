@@ -326,25 +326,25 @@ const signedCounts = [];
  * burada göreceğiz — geçen sefer göremedik.
  */
 const DENSITY = {
-  '/': { buttons: 47, headings: 9, height: 1105 },
-  '/project_info': { buttons: 38, headings: 11, height: 1419 },
-  '/legal': { buttons: 53, headings: 9, height: 1277 },
-  '/construction': { buttons: 45, headings: 7, height: 1044 },
-  '/governance': { buttons: 54, headings: 8, height: 1132 },
-  '/readiness': { buttons: 45, headings: 9, height: 1090 },
-  '/stakeholders': { buttons: 45, headings: 10, height: 1352 },
-  '/meetings': { buttons: 52, headings: 14, height: 1709 },
-  '/obligations': { buttons: 47, headings: 15, height: 1556 },
-  '/risks': { buttons: 52, headings: 9, height: 1636 },
-  '/calendar': { buttons: 56, headings: 9, height: 1132 },
-  '/plan': { buttons: 46, headings: 9, height: 1340 },
-  '/reports': { buttons: 49, headings: 12, height: 1242 },
-  '/procurement': { buttons: 52, headings: 8, height: 1044 },
-  '/finance': { buttons: 45, headings: 9, height: 1044 },
-  '/documents': { buttons: 47, headings: 7, height: 1061 },
-  '/communication': { buttons: 78, headings: 9, height: 1044 },
-  '/assistant': { buttons: 50, headings: 8, height: 2351 },
-  '/admin': { buttons: 37, headings: 11, height: 1044 },
+  '/assistant': { buttons: 55, headings: 3, height: 2351 },
+  '/meetings': { buttons: 57, headings: 9, height: 1709 },
+  '/obligations': { buttons: 52, headings: 10, height: 1556 },
+  '/risks': { buttons: 57, headings: 4, height: 1474 },
+  '/project_info': { buttons: 43, headings: 6, height: 1419 },
+  '/stakeholders': { buttons: 50, headings: 5, height: 1352 },
+  '/plan': { buttons: 51, headings: 4, height: 1340 },
+  '/legal': { buttons: 58, headings: 4, height: 1277 },
+  '/reports': { buttons: 54, headings: 7, height: 1242 },
+  '/governance': { buttons: 59, headings: 3, height: 1132 },
+  '/calendar': { buttons: 61, headings: 4, height: 1132 },
+  '/': { buttons: 52, headings: 4, height: 1105 },
+  '/readiness': { buttons: 50, headings: 4, height: 1090 },
+  '/documents': { buttons: 52, headings: 2, height: 1061 },
+  '/construction': { buttons: 50, headings: 2, height: 1044 },
+  '/procurement': { buttons: 57, headings: 3, height: 1044 },
+  '/finance': { buttons: 47, headings: 4, height: 1044 },
+  '/communication': { buttons: 83, headings: 4, height: 1044 },
+  '/admin': { buttons: 42, headings: 6, height: 1044 },
 };
 const density = {};
 const tabsFound = {};
@@ -460,6 +460,46 @@ for (const route of ROUTES) {
       over.length ? over.join(', ') : `${m.buttons} düğme · ${m.headings} başlık · ${m.height}px`,
     );
   }
+}
+
+/**
+ * Kenar çubuğunun grupları katlandı (T14-05) — ve hiçbir rota kaybolmadı.
+ *
+ * Bugüne kadar kapıda kenar çubuğunun DOM'unu sınayan hiçbir şey yoktu:
+ * `nav.mjs` kaynağı okuyor, `design.mjs` tarayıcıda ölçüyor ama `verify`
+ * içinde değil (canlı giriş istiyor). Yani katlamanın bir rotayı erişilemez
+ * bırakması sessizce geçebilirdi.
+ *
+ * Kontrol: her grubu aç, çıkan `data-path`'leri topla, rota sayısına eşit
+ * olsun. Katlamak gizlemek değil bir tık arkaya almaktır, ve aradaki farkı
+ * ölçen tek şey bu.
+ */
+{
+  await page.goto(BASE + '/', { waitUntil: 'domcontentloaded' });
+  await settle();
+  // GÖRÜNÜR olanlar, her grup açıldıktan sonra, birleşim olarak. İlk yazımda
+  // yalnızca `data-path`'lerin VARLIĞINA bakıyordum ve mutasyon geçti:
+  // aç/kapa düğmesini ölü hâle getirdim, rotalar `hidden` bir listede DOM'da
+  // durmaya devam etti, kontrol memnun kaldı. Varlık erişilebilirlik değil.
+  const visiblePaths = () =>
+    page.$$eval('aside [data-path]', (els) =>
+      els
+        .filter((el) => el.getClientRects().length > 0)
+        .map((el) => el.getAttribute('data-path') ?? '')
+        .filter(Boolean),
+    );
+  const reachableSet = new Set(await visiblePaths());
+  for (const header of await page.$$('aside [data-group]')) {
+    await header.click().catch(() => {});
+    await page.waitForTimeout(150);
+    for (const path of await visiblePaths()) reachableSet.add(path);
+  }
+  const reachable = [...reachableSet];
+  check(
+    reachable.length === ROUTES.length,
+    'kenar çubuğunda her rota bir grup açılınca erişilebilir (T14-05)',
+    `${reachable.length}/${ROUTES.length}`,
+  );
 }
 
 /**

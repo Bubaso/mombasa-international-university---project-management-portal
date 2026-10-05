@@ -300,7 +300,7 @@ gösteren ürün değil, ölçüm aracıydı.
 | T14-02 | Ham teknik metin ve her ekranda tekrarlanan künye bilgisi mobilyadan çıksın — silinmeden, yeri değişerek. | P0  | ✅ Faz 1: PostgREST hata metni katlandı; parsel/fasıl kenar çubuğu, footer ve mobil menüden kaldırıldı. |
 | T14-03 | Yoğunluk ölçülsün ve geri büyümesin: her rotada düğme, başlık ve sayfa boyu.                              | P0  | ✅ Faz 1: 19 rotanın 19'u `tests/populated.mjs` içinde tavanlı; tavanı yazılmamış rota ayrıca düşürür.  |
 | T14-04 | Her ekran özetle açılsın; detay istenince gelsin. Hiçbir işlev kaybolmasın, yeri değişsin.                | P0  | ✅ Faz 2: yedi ağır ekran bölündü, en uzunu 3.924 → **2.351px**; hiçbir panel silinmedi.                |
-| T14-05 | Gezinme rolün işine yarayan kısmı açık tutsun; 20 giriş + beş büyük harf grup başlığı aynı anda durmasın. | P1  | Faz 3 — bekliyor.                                                                                       |
+| T14-05 | Gezinme rolün işine yarayan kısmı açık tutsun; 20 giriş + beş büyük harf grup başlığı aynı anda durmasın. | P1  | ✅ Faz 3: gruplar katlandı, görünür gezinme girişi 19 → **3–6**; her rota bir tık arkada.               |
 | T14-06 | Giriş, girenin rolüne göre açılsın: mütevelliye yönetişim ve para, tedarikçiye kendi işi ve hakedişi.     | P1  | Faz 4 — bekliyor. Yetki zaten veritabanında; eksik olan girişin bunu yansıtması.                        |
 
 ### T14 · Faz 2 — ölçülen sonuç
@@ -1203,3 +1203,40 @@ DESIGN_EMAIL=… DESIGN_PASSWORD=… npm run test:design
 Henüz ölçülmeyenler: T3-02/T3-03 (satır yüksekliği ve ölçü) sayı olarak
 okunuyor ama üzerine düşülmüyor, T9-* (erişilebilirlik), T10-* (grafikler),
 T12-* (algılanan hız). Bunlar ait oldukları dalgada eklenecek.
+
+### T14 · Faz 3 — ölçülen sonuç
+
+Kenar çubuğunun grupları katlandı. Görünür gezinme girişi **19 → 3–6**:
+içinde bulunulan ekranın grubu açık, "Genel bakış" her zaman açık, geri
+kalanı bir tık arkada. Hiçbir rota kaybolmadı.
+
+**Telefon menüsü değişmedi** ve bu kasıtlı: T1-05 ("her rota telefondan
+erişilebilir") telefon sayfasından ölçülüyor. Orayı katlamak, bir kabul
+kriterini ölçen şeyi değiştirmek olurdu.
+
+#### Ölçümün kendisi düzeldi: gizli olan sayılıyordu
+
+Katlama uygulanınca T14-03 **on dokuz ekranın on dokuzunda birden** düştü:
+her ekran 5 düğme kazanmıştı — katlanan grupların başlıkları. Ama katlanan
+grubun linkleri de DOM'da duruyordu ve sayıma giriyordu.
+
+Yani ölçüm `document.querySelectorAll('button').length` ile **belgede**
+olanı sayıyordu, **ekranda** olanı değil. Bir ekranın yoğunluğu, kullanıcının
+gördüğü şeydir. Ölçüm `getClientRects().length > 0` ile görünüre çevrildi ve
+on dokuz tavan yeniden yazıldı.
+
+Tavan rakamlarının değişmesi ekranların ağırlaşmasından değil **ölçünün
+değişmesinden**; ikisini karşılaştırmak elma-armut olurdu ve bu satır onu
+söylemek için var.
+
+#### Ve yine: varlık, erişilebilirlik değil
+
+Kenar çubuğu için kapıya bir kontrol eklendi — bugüne kadar `verify` içinde
+kenar çubuğunun DOM'unu sınayan hiçbir şey yoktu (`nav.mjs` kaynağı okuyor,
+`design.mjs` canlı giriş istediği için kapıda değil).
+
+İlk yazdığım hâli `data-path`'lerin **varlığına** bakıyordu ve mutasyon
+geçti: aç/kapa düğmesini ölü hâle getirdim, rotalar `hidden` bir listede
+DOM'da durmaya devam etti, kontrol memnun kaldı. **Varlık erişilebilirlik
+değildir.** Kontrol görünürlük üzerinden ölçmeye çevrildi; ölü düğme
+mutasyonu artık 3/19 ile düşüyor.

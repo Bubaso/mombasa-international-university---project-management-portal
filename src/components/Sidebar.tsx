@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { ChevronDown } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { NAV_GROUPS } from '../lib/navigation';
 
@@ -19,12 +20,38 @@ import { NAV_GROUPS } from '../lib/navigation';
  * ellipsis at any width, which cost precisely the words that told one screen
  * from another, so navigation now carries short names and the full ones live
  * in the page heading.
+ *
+ * ---
+ *
+ * Katlanan gruplar, 5 Ekim 2026 (T14-05). On dokuz giriş ve altı başlık aynı
+ * anda duruyordu: bir ekran bulmak hâlâ listenin tamamını okumak demekti,
+ * yalnızca artık gruplanmış hâlde.
+ *
+ * Açık olan grup, İÇİNDE BULUNULAN ekranın grubu. "Genel bakış" her zaman
+ * açık, çünkü portala girilen yer orası. Geri kalan bir tık uzakta — ve
+ * hiçbir rota kaybolmuyor.
+ *
+ * TELEFON MENÜSÜ DEĞİŞMEDİ ve bu kasıtlı: T1-05 "her rota telefondan
+ * erişilebilir" diye ölçülüyor ve ölçüm telefon sayfasından yapılıyor. Orayı
+ * katlamak, bir kabul kriterini ölçen şeyi değiştirmek olurdu.
  */
 export const Sidebar: React.FC = () => {
   const { language } = useApp();
   const tr = language === 'tr';
   const location = useLocation();
   const navigate = useNavigate();
+
+  const groupOf = (path: string) =>
+    NAV_GROUPS.find((g) => g.routes.some((r) => r.path === path))?.id;
+  const [open, setOpen] = useState<string | null>(groupOf(location.pathname) ?? null);
+
+  // Başka bir ekrana geçildiğinde o ekranın grubu açılır: kullanıcı grubu
+  // kendisi açmadıysa da, bulunduğu yerin komşularını görmesi gerekir.
+  useEffect(() => {
+    const id = groupOf(location.pathname);
+    if (id) setOpen(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
 
   return (
     <aside
@@ -35,52 +62,74 @@ export const Sidebar: React.FC = () => {
         className="flex-1 overflow-y-auto p-3"
         aria-label={tr ? 'Ana gezinme' : 'Main navigation'}
       >
-        {NAV_GROUPS.map((group, index) => (
-          <div key={group.id} className={index > 0 ? 'mt-4' : ''}>
-            <h2 className="px-3 pb-1.5 text-xs font-semibold tracking-wider text-slate-500 uppercase">
-              {group.heading[language]}
-            </h2>
-            <ul className="space-y-0.5">
-              {group.routes.map((item) => {
-                const Icon = item.icon;
-                const isActive = location.pathname === item.path;
-                return (
-                  <li key={item.tab}>
-                    <button
-                      onClick={() => navigate(item.path)}
-                      aria-current={isActive ? 'page' : undefined}
-                      // Which route this goes to, readable from the outside.
-                      // These are buttons rather than links, so there is no
-                      // href for a test — or a reader — to inspect, and
-                      // "every route is reachable on a phone" is a claim that
-                      // has to be measurable. (Making them real links is a
-                      // T9 question and a larger change.)
-                      data-path={item.path}
-                      className={`group flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors ${
-                        isActive
-                          ? 'border-l-2 border-amber-600 bg-amber-50 font-semibold text-amber-900'
-                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                      }`}
-                    >
-                      <Icon
-                        className={`h-4 w-4 shrink-0 transition-colors ${
-                          isActive ? 'text-amber-600' : 'text-slate-500 group-hover:text-slate-700'
+        {NAV_GROUPS.map((group, index) => {
+          const always = group.id === 'overview';
+          const expanded = always || open === group.id;
+          return (
+            <div key={group.id} className={index > 0 ? 'mt-3' : ''}>
+              {always ? (
+                <h2 className="px-3 pb-1.5 text-xs font-semibold text-slate-500">
+                  {group.heading[language]}
+                </h2>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setOpen(expanded ? null : group.id)}
+                  aria-expanded={expanded}
+                  data-group={group.id}
+                  className="flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-50 hover:text-slate-700"
+                >
+                  <span>{group.heading[language]}</span>
+                  <ChevronDown
+                    className={`h-3.5 w-3.5 shrink-0 transition-transform ${expanded ? '' : '-rotate-90'}`}
+                    aria-hidden="true"
+                  />
+                </button>
+              )}
+              <ul className={`space-y-0.5 ${expanded ? '' : 'hidden'}`}>
+                {group.routes.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = location.pathname === item.path;
+                  return (
+                    <li key={item.tab}>
+                      <button
+                        onClick={() => navigate(item.path)}
+                        aria-current={isActive ? 'page' : undefined}
+                        // Which route this goes to, readable from the outside.
+                        // These are buttons rather than links, so there is no
+                        // href for a test — or a reader — to inspect, and
+                        // "every route is reachable on a phone" is a claim that
+                        // has to be measurable. (Making them real links is a
+                        // T9 question and a larger change.)
+                        data-path={item.path}
+                        className={`group flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors ${
+                          isActive
+                            ? 'border-l-2 border-amber-600 bg-amber-50 font-semibold text-amber-900'
+                            : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                         }`}
-                        aria-hidden="true"
-                      />
-                      {/* No `truncate`. A label that does not fit is a label
+                      >
+                        <Icon
+                          className={`h-4 w-4 shrink-0 transition-colors ${
+                            isActive
+                              ? 'text-amber-600'
+                              : 'text-slate-500 group-hover:text-slate-700'
+                          }`}
+                          aria-hidden="true"
+                        />
+                        {/* No `truncate`. A label that does not fit is a label
                           to shorten in lib/navigation.ts, not one to hide the
                           end of — and without this class a regression shows
                           up on the screen and in the design test instead of
                           disappearing quietly behind an ellipsis. */}
-                      <span>{item.label[language]}</span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        ))}
+                        <span>{item.label[language]}</span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          );
+        })}
       </nav>
 
       {/*
