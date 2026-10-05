@@ -592,8 +592,11 @@ karşılanmadı** — 166 karakter yukarıda. Kalanın içinde dava oluşturma
 kipi ve sekme etiketleri var, yani buradan sonrası metin kesmek değil
 ekranın kendi işi.
 
-**0053 canlıya uygulanmadı.** Dört tablo, bir enum ve bir kolon bekliyor;
-uygulanana kadar beş sekme boş görünür ve neyin kayıtlı olmadığını söyler.
+**0053 canlıya uygulandı** (5 Ekim 2026). Dört tablo canlı şemada doğrulandı:
+var olmayan bir tablo PostgREST'ten `404 / PGRST205` döner, dördü de
+`401 / 42501` (yetki yok) dönüyor — yani ilişki var, grant'ı kapalı. Kolon,
+enum ve politikalar dışarıdan anonim anahtarla doğrulanamıyor, çünkü 401
+tablonun grant'ında kolon çözümlenmeden patlıyor.
 
 ---
 
@@ -700,7 +703,7 @@ karakter) doğruydu ve değişmedi; yanlış olan, ona eşlik eden ölçümdü.
 `/legal` 2.117 karakter; T13-04'ün kriteri (≤2.000) **henüz karşılanmadı**,
 117 karakter yukarıda.
 
-**0053 hâlâ canlıya uygulanmadı.**
+**0053 canlıda** (yukarıda nasıl doğrulandığı yazılı).
 
 ---
 
