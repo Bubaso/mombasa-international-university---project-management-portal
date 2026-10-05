@@ -254,12 +254,24 @@ export async function countUnevidencedEvents(): Promise<number> {
   return count ?? 0;
 }
 
-export async function fetchChronology(limit = 50, offset = 0): Promise<Page<ChronologyEvent>> {
-  const { data, error, count } = await supabase
+/**
+ * @param caseId Verilirse yalnızca o davaya bağlı olaylar. Kolon 0024'ten beri
+ *   var (`legal_case_id`) ve tam bunun için: hukuk ekranının tarihçe sekmesi
+ *   30 yıllık kronolojiyi koda gömülü tutuyordu, oysa projenin kronolojisi
+ *   zaten bir kütük ve `/plan` onu okuyor. Süzgeç, aynı kütüğü ikinci kez
+ *   yazmak yerine davaya göre daraltıyor (CLAUDE.md §4).
+ */
+export async function fetchChronology(
+  limit = 50,
+  offset = 0,
+  caseId?: string,
+): Promise<Page<ChronologyEvent>> {
+  let query = supabase
     .from('project_chronology')
     .select('*', { count: 'exact' })
-    .order('occurred_on', { ascending: false })
-    .range(offset, offset + limit - 1);
+    .order('occurred_on', { ascending: false });
+  if (caseId) query = query.eq('legal_case_id', caseId);
+  const { data, error, count } = await query.range(offset, offset + limit - 1);
   fail(error);
 
   return {
@@ -288,6 +300,13 @@ export async function addChronologyEntry(input: {
   titleEn: string;
   detailEn?: string | null;
   documentId?: string | null;
+  /**
+   * Olay bir davaya bağlıysa onun kimliği. Davanın tarihçe sekmesinden
+   * girilen bir olay bağsız kalırsa yalnızca proje kronolojisinde görünür ve
+   * geldiği ekranda görünmez — yani kaydeden kişi kaydının kaybolduğunu
+   * sanar.
+   */
+  legalCaseId?: string | null;
   sourceNote?: string | null;
 }): Promise<string> {
   // The database requires one of the two, and saying so here is kinder than
@@ -309,6 +328,7 @@ export async function addChronologyEntry(input: {
       detail_en: input.detailEn?.trim() || null,
       document_id: input.documentId || null,
       source_note: input.sourceNote?.trim() || null,
+      legal_case_id: input.legalCaseId || null,
     })
     .select('id')
     .single();

@@ -123,7 +123,15 @@ for (const read of bounded) {
 // koymuyor, ama **koymasına gerek yok** — `.in('record_id', ids)` ile
 // çağıranın verdiği kimliklerle sınırlı, yani ekranın dilimden fazla satır
 // döndürmesi imkânsız. Sınır çağıranın dilimi.
-const UNBOUNDED_TODAY = 121;
+//
+// T13 Faz 3'ten sonra 122: `fetchCaseParties` eklendi ve kasıtlı olarak
+// sınırsız. Taraf listesi bir dilim olamaz, çünkü listenin kendisi "bu
+// davanın tarafları kim" sorusunun cevabı: dokuz tarafın dördünü gösteren bir
+// liste, dört taraf varmış gibi okunur. Kesilmiş bir **liste** dürüst olabilir
+// ("412 kayıttan 40 tanesi"); kesilmiş bir **küme** olamaz. Bir davanın
+// tarafları bir elin parmakları kadar ve `legal_case_id` ile zaten tek davaya
+// bağlı, yani okuma kütüğün tamamını değil bir davayı çekiyor.
+const UNBOUNDED_TODAY = 122;
 
 // Sayan okumalar sayılmıyor: sorumuz "kaç okuma her satırı çekiyor", ve
 // `head: true` olan hiç satır çekmiyor.

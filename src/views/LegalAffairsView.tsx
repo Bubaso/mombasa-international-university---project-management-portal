@@ -7,8 +7,6 @@ import {
   ShieldCheck,
   FileText,
   Plus,
-  Clock,
-  UserCheck,
   FileCheck,
   FolderOpen,
   BookOpen,
@@ -24,6 +22,8 @@ import { FilingList } from '../components/legal/FilingList';
 import { OrderList } from '../components/legal/OrderList';
 import { EvidenceList } from '../components/legal/EvidenceList';
 import { CounselPanel } from '../components/legal/CounselPanel';
+import { PartyList } from '../components/legal/PartyList';
+import { ChronologyPanel } from '../components/plan/ChronologyPanel';
 import { useAuthority } from '../api/adminHooks';
 import { ASSESSORS, actsAs } from '../lib/authority';
 import { EmptyState } from '../components/EmptyState';
@@ -1232,237 +1232,29 @@ export const LegalAffairsView: React.FC = () => {
       )}
 
       {/* Subtab Content: Who is Who */}
-      {activeSubTab === 'who_is_who' && (
-        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-xs space-y-6">
-          <div>
-            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <UserCheck className="w-5 h-5 text-amber-600" />
-              <span>
-                {language === 'tr'
-                  ? 'Kim Kimdir? — Taraflar, Avukatlar, Tanıklar ve Hâkimler'
-                  : 'Who is Who: Parties, Witnesses, Counsel & Judges'}
-              </span>
-            </h2>
-            <p className="text-sm text-slate-500 mt-1">
-              {language === 'tr'
-                ? 'Mombasa ELC ve Temyiz Mahkemesi Resmi Dava Kayıtlarından Çıkarılmıştır'
-                : 'Extracted from Mombasa ELC & Court of Appeal Judicial Records'}
-            </p>
-          </div>
+      {/* Taraflar artık kayıttan geliyor (M5-02). Burada altı kart koda gömülü
+          duruyordu — iki avukat, iki tanık, bir davacı ve heyet — isimleriyle,
+          bürolarıyla ve haklarındaki değerlendirmelerle. `case_parties` tablosu
+          0009'dan beri vardı ve hiçbir yerden okunmuyordu, yani veri kaynak
+          kodda tutuluyordu (CLAUDE.md §4).
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
-            {/* Legal Counsel */}
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-amber-800">
-                {language === 'tr'
-                  ? 'Hukuk Müşaviri (Savunma - Defense)'
-                  : 'Legal Counsel (Defense)'}
-              </span>
-              <div className="font-bold text-slate-900 text-base">Mr. Simon Karina</div>
-              <div className="text-slate-500 text-xs">Ndegwa Sitonik Karina Advocates</div>
-              <p className="text-slate-600 text-xs">
-                {language === 'tr'
-                  ? 'Afrika Üniversitesi Vakfı ve mütevellilerini savunan baş avukat.'
-                  : 'Lead advocate defending African University Trust and registered trustees.'}
-              </p>
-            </div>
-
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-amber-800">
-                {language === 'tr'
-                  ? 'Hukuk Müşaviri (Temyiz Eden - Appellant)'
-                  : 'Legal Counsel (Appellant)'}
-              </span>
-              <div className="font-bold text-slate-900 text-base">Mr. Mohamed Faki Khatib</div>
-              <div className="text-slate-500 text-xs">Khatib & Company Advocates</div>
-              <p className="text-slate-600 text-xs">
-                {language === 'tr'
-                  ? 'Tapu sahibi Zayed Vakfı’nı (7. Davalı / Temyiz Eden) temsil eden baş avukat.'
-                  : 'Lead advocate representing original title holder Zayed Foundation in appeal.'}
-              </p>
-            </div>
-
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-purple-700">
-                {language === 'tr'
-                  ? 'Mütevelli & Baş Tanık (DW-1)'
-                  : 'Trustee & Key Witness (DW-1)'}
-              </span>
-              <div className="font-bold text-slate-900 text-base">Lucas Cosmas Fondo</div>
-              <div className="text-slate-500 text-xs">Universal Education Foundation / AUTK</div>
-              <p className="text-slate-600 text-xs">
-                {language === 'tr'
-                  ? 'Duruşmada arazideki 20 dönüm işgal / 320 dönüm üniversite durumunu kararlılıkla savunan baş tanık.'
-                  : 'Main defense witness who confirmed physical 5-acre vs 79-acre campus demarcation.'}
-              </p>
-            </div>
-
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-purple-700">
-                {language === 'tr'
-                  ? 'Zayed Vakfı Direktörü (DW-2)'
-                  : 'Zayed Foundation Director (DW-2)'}
-              </span>
-              <div className="font-bold text-slate-900 text-base">Abubakar Hassan Dindia</div>
-              <div className="text-slate-500 text-xs">Zayed Bin Sultan Al Nahyan Foundation</div>
-              <p className="text-slate-600 text-xs">
-                {language === 'tr'
-                  ? '2002 satın alımını ve 2012 60 yıllık kira devrini mahkemeye tevsik eden direktör.'
-                  : 'Foundation director familiar with land purchase and leasehold agreements.'}
-              </p>
-            </div>
-
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-rose-700">
-                {language === 'tr'
-                  ? 'Kritik Davacı (5. Davacı)'
-                  : 'Critical Claimant (5th Claimant)'}
-              </span>
-              <div className="font-bold text-slate-900 text-base">Kadzitu Moli Chogo</div>
-              <div className="text-slate-500 text-xs">5th Claimant (Moli Family)</div>
-              <p className="text-slate-600 text-xs">
-                {language === 'tr'
-                  ? '29 Şubat 2012’de üniversiteden 779.980 KShs tahliye tazminatı alıp sözleşme imzalayan kritik isim.'
-                  : 'Signed the 2012 vacation agreement accepting KShs 779,980 compensation concealed from court.'}
-              </p>
-            </div>
-
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-blue-700">
-                {language === 'tr'
-                  ? 'Yargıtay Hâkimler Heyeti (Coram)'
-                  : 'Court of Appeal Panel (Coram)'}
-              </span>
-              <div className="font-bold text-slate-900 text-base">
-                JJ. Mohammed, Laibuta, Ngenye
-              </div>
-              <div className="text-slate-500 text-xs">Mombasa Court of Appeal (Yargıtay)</div>
-              <p className="text-slate-600 text-xs">
-                {language === 'tr'
-                  ? '9 Şubat 2026’da Status Quo emrini veren ve öncelikli yargılama kararı alan kıdemli heyet.'
-                  : 'Issued 9 Feb 2026 Status Quo order halting land sales and directing priority hearing.'}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
+          Avukatlar burada değil: `case_counsel` onları tutuyor ve yan sekmedeki
+          `CounselPanel` okuyor. Gömülü liste ikisini de gösteriyordu, yani aynı
+          iki avukat aynı bölümün iki sekmesinde biri kayıttan biri sabit
+          metinden geliyordu; sapan kopya her zaman ikincisidir. */}
+      {activeCase && activeSubTab === 'who_is_who' && <PartyList caseId={activeCase.id} />}
 
       {/* Subtab Content: Timeline */}
-      {activeSubTab === 'timeline' && (
-        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-xs space-y-6">
-          <div>
-            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <Clock className="w-5 h-5 text-amber-600" />
-              <span>
-                {language === 'tr'
-                  ? '30 Yıllık Dava ve Mülkiyet Kronolojisi'
-                  : '30-Year Property & Legal Chronicle'}
-              </span>
-            </h2>
-            <p className="text-sm text-slate-500 mt-1">
-              Plot No. MN/I/5141 (84 Acres / Dönüm) Utange/Majaoni, Mombasa
-            </p>
-          </div>
+      {/* Tarihçe de kayıttan (M5-13). Dokuz kayıtlık 30 yıllık kronoloji koda
+          gömülü bir dizideydi: hiçbiri bir belgeye bağlı değildi ve üçünde
+          İngilizce ile Türkçe esaslı olarak farklı şey söylüyordu — biri
+          "void ab initio", biri bir gizleme iddiası, biri heyetin adları.
+          Hangisinin doğru olduğu bu ekrandan bilinemiyordu.
 
-          <div className="relative border-l border-slate-200 ml-4 space-y-6 pl-6 text-sm">
-            {[
-              {
-                year: '1993',
-                titleEn: 'Patriarch Mzee Moli Chogo Passes Away',
-                titleTr: 'Aile Atası Mzee Moli Chogo Vefat Ediyor',
-                detailEn:
-                  'Buried on ancestral portion of the land. Claimants allege multi-generational residence.',
-                detailTr:
-                  'Arazideki aile kabristanına defnedildi. Davacılar nesiller boyu burada yaşadıklarını iddia ediyor.',
-              },
-              {
-                year: '1996',
-                titleEn: 'Mohamed Yusuf Haji Registers Root Title',
-                titleTr: 'Mohamed Yusuf Haji Kök Tapuyu Üzerine Çıkarıyor',
-                detailEn:
-                  'Former powerful Provincial Commissioner registered 84 acres; NLC later claimed root title was void ab initio.',
-                detailTr: 'Dönemin Bölge Komiseri 340 dönümlük tapuyu üzerine tescil ettirdi.',
-              },
-              {
-                year: '2002',
-                titleEn: 'Zayed Foundation Purchases Land',
-                titleTr: 'Zayed Vakfı Araziyi Satın Alıyor',
-                detailEn:
-                  'Purchased for educational charity. Gentlemen’s agreement allocated 5-acre enclave for Moli family.',
-                detailTr:
-                  'Eğitim kurumu kurmak amacıyla satın alındı. Moli ailesine 20 dönüm ayrılması hususunda mutabakata varıldı.',
-              },
-              {
-                year: '2004 — 2005',
-                titleEn: 'Perimeter Wall Demarcates 79 Acres vs 5 Acres',
-                titleTr: 'Çevre Duvarı İnşa Ediliyor (320 dönüm kampüs / 20 dönüm aile)',
-                detailEn:
-                  'Foundation constructed permanent perimeter wall, isolating 79 acres for university and leaving 5 acres for Moli.',
-                detailTr:
-                  'Vakıf devasa bir çevre duvarı inşa etti: 320 dönüm üniversiteye ayrıldı, aile 20 dönümde kaldı.',
-              },
-              {
-                year: '29 Feb 2012',
-                titleEn: 'Critical Vacation Agreement & KShs 779,980 Payment',
-                titleTr: 'Kritik Tahliye Anlaşması ve 779.980 KShs Tazminat Ödemesi',
-                detailEn:
-                  '5th Claimant Kadzitu Moli signed vacation contract acknowledging university ownership, receiving KShs 779,980 ex-gratia.',
-                detailTr:
-                  '5. Davacı Kadzitu Moli tazminat aldı ve üniversite mülkiyetini kabul ederek tahliye taahhüdü imzaladı.',
-              },
-              {
-                year: '27 June 2013',
-                titleEn: 'Originating Summons Filed (ELC 134/2013)',
-                titleTr: 'Moli Ailesi Asıl Davayı Açıyor (ELC 134/2013)',
-                detailEn:
-                  'Moli family filed adverse possession claim concealing the 2012 agreement and 2012 eviction proceedings.',
-                detailTr:
-                  'Moli ailesi 40 yıllık kesintisiz zilyetlik iddiasıyla 340 dönümün tamamı için tapu iptal davası açtı.',
-              },
-              {
-                year: '9 Feb 2024',
-                titleEn: 'Judge Naikuni Conducts Site Visit (Locus in Quo)',
-                titleTr: 'Hâkim L.L. Naikuni Sahaya İniyor (Keşif Yapılıyor)',
-                detailEn:
-                  'Court minutes officially recorded Moli family living only in 5 acres, while university occupied 79 acres.',
-                detailTr:
-                  'Tutanakta Moli ailesinin yalnızca 20 dönümlük alanda yaşadığı, diğer kısımda üniversite inşaatının olduğu tespit edildi.',
-              },
-              {
-                year: '27 June 2025',
-                titleEn: 'Controversial Lower Court Judgment',
-                titleTr: 'İlk Derece Mahkemesinin Tartışmalı Kararı',
-                detailEn:
-                  'Judge Naikuni disregarded his own 5-acre finding and unlawfully awarded all 84 acres to Moli family.',
-                detailTr:
-                  'Hâkim Naikuni 20 dönüm sınırını hiçe sayarak 340 dönümün tamamını Moli ailesine devretti.',
-              },
-              {
-                year: '9 Feb 2026',
-                titleEn: 'Court of Appeal Status Quo & Priority Order',
-                titleTr: 'Yargıtay Mevcut Durum (Status Quo) ve Öncelikli Duruşma Kararı',
-                detailEn:
-                  'Land sales frozen, Moli restricted to 5 acres, appeal fast-tracked before JJ. Mohammed, Laibuta, Ngenye-Macharia.',
-                detailTr:
-                  'Yargıtay heyeti arazi satışlarını durdurdu, aileyi 20 dönüme hapsetti ve öncelikli duruşma emri verdi.',
-              },
-            ].map((step, idx) => (
-              <div key={idx} className="relative">
-                <span className="absolute -left-9 top-0.5 w-5 h-5 rounded-full bg-white border-2 border-amber-500 flex items-center justify-center text-xs text-amber-600 font-mono shadow-xs">
-                  •
-                </span>
-                <span className="font-mono text-amber-800 font-bold text-xs">{step.year}</span>
-                <h4 className="font-bold text-slate-900 text-sm mt-0.5">
-                  {language === 'tr' ? step.titleTr : step.titleEn}
-                </h4>
-                <p className="text-slate-600 text-xs mt-1 leading-relaxed">
-                  {language === 'tr' ? step.detailTr : step.detailEn}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+          `chronology_entries` aynı şeyi tutuyor ve fazlasını istiyor: her kayıt
+          ya bir belgeye ya yazılı bir kaynak notuna bağlı olmak zorunda. Panel
+          `/plan`'da zaten bu kütüğü okuyor; davaya göre süzülüyor. */}
+      {activeCase && activeSubTab === 'timeline' && <ChronologyPanel caseId={activeCase.id} />}
 
       {/* New Motion Modal */}
       {showNewMotionModal && (

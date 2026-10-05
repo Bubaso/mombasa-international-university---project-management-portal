@@ -48,9 +48,16 @@ process.chdir(root);
 //
 // Bir dalga bunları düşürdüğünde burayı da düşürür. Düşmesi iş, artması
 // geri alma; ikisi de görünür olsun diye sayı burada duruyor.
+//
+// Faz 3'te tavanlar YÜKSELDİ ve sebebi metnin büyümesi değil, ölçümün
+// görmeye başlaması: `stringsIn` veri dizisi alanlarını (`titleEn: '...'`)
+// hiç saymıyordu ve yalnızca `LegalAffairsView`'da 3.273 karakter o
+// biçimdeydi. Uygulama genelinde 2.467 karakter kör noktadaydı. Bir tavanı
+// ölçüm düzeldiği için yükseltmek geri alma değil; düzeltmeden önceki sayıyı
+// korumak, körlüğü tavan olarak yazmak olurdu.
 const CEILING = {
-  textChars: 62328,
-  longChars: 31390,
+  textChars: 64049,
+  longChars: 32491,
   // Panel gerekçesi: T13-01'in kestiği şey. 8489 → 2753 (Faz 2).
   introChars: 2753,
   longestIntro: 98,
@@ -69,8 +76,19 @@ const CEILING = {
   // değil bir dava pozisyonu tarafından belirlenir. T13-04 o ekranın kendi
   // turu ve oradaki soru farklı: içerik koda gömülü, kısaltılacak değil
   // veritabanına taşınacak.
-  legalIntroChars: 856,
+  legalIntroChars: 786,
   longestLegalIntro: 263,
+
+  /**
+   * `LegalAffairsView`'ın tamamı (T13-04). Ekranın kendi tavanı var çünkü
+   * kalan iş orada: 8.452 karakter, ikinci en yoğun dosyanın dört katı. Beş
+   * blok hâlâ koda gömülü — temyiz itirazları, içtihatlar, heyet
+   * soru-cevapları, duruşma brifingi, ziyaret planı — ve her birinin
+   * veritabanında bir evi yok, yani sıradaki faz bir migration.
+   *
+   * Faz 3'te 10.770 → 8.452 indi: tarihçe ve taraf listesi kayda bağlandı.
+   */
+  legalScreenChars: 8452,
 };
 
 /** Davanın içeriği, panel gerekçesi değil (T13-04). */
@@ -89,6 +107,52 @@ const JARGON_CEILING = {
   'mimari terimi': 2,
 };
 
+// ---------------------------------------------------------------------------
+// Ölçüm aletinin kendisi, sabit bir örnekle
+// ---------------------------------------------------------------------------
+//
+// Bu blok ürüne bakmıyor ve bakmaması gerekiyor. Tavanlar üst sınır, yani
+// körleşen bir ölçüm onları HER ZAMAN geçer: desenlerden birini kaldırınca
+// sayı düşüyor ve "tavanın altında" diyor. Mutasyonla sınarken tam bu oldu —
+// veri dizisi desenini iptal ettim ve on sekiz kontrolün hepsi geçti.
+//
+// Alt sınır koymak da çözmüyor: metin kesildikçe sayı meşru olarak düşüyor,
+// yani alt sınır her dalgada elle indirilmek zorunda kalır ve indirilen bir
+// alt sınır koruma değildir. Ürüne bağlı olmayan tek cevap, aletin bilinen
+// bir girdide bilinen bir cevabı vermesi.
+
+const FIXTURE = `
+  const a = tr ? 'Koşullu ifadedeki Türkçe' : 'The conditional English';
+  const b = language === 'tr' ? 'Eski kalıptaki Türkçe' : 'The old pattern';
+  const data = [{ titleTr: 'Veri dizisindeki Türkçe', titleEn: 'In a data array' }];
+  // tr ? 'Yorumdaki metin sayılmaz' : 'A comment is not screen text'
+`;
+
+{
+  const got = stringsIn(FIXTURE);
+  const trs = got.map((r) => r.tr);
+  check(
+    trs.includes('Koşullu ifadedeki Türkçe'),
+    'ölçüm `tr ? …` kalıbını görüyor',
+    trs.includes('Koşullu ifadedeki Türkçe') ? '' : JSON.stringify(trs),
+  );
+  check(
+    trs.includes('Eski kalıptaki Türkçe'),
+    "ölçüm `language === 'tr' ? …` kalıbını görüyor",
+    trs.includes('Eski kalıptaki Türkçe') ? '' : JSON.stringify(trs),
+  );
+  check(
+    trs.includes('Veri dizisindeki Türkçe'),
+    'ölçüm veri dizisi alanlarını görüyor',
+    trs.includes('Veri dizisindeki Türkçe') ? '' : JSON.stringify(trs),
+  );
+  check(
+    !trs.some((t) => t.includes('Yorumdaki')),
+    'ölçüm kod yorumunu ekran metni saymıyor',
+    trs.filter((t) => t.includes('Yorumdaki')).join(', '),
+  );
+}
+
 const files = globSync('src/**/*.{ts,tsx}').sort();
 check(files.length > 100, 'ekran kaynakları bulundu', `${files.length} dosya`);
 
@@ -99,6 +163,7 @@ let longestIntro = 0;
 let longestIntroAt = '';
 let legalIntroChars = 0;
 let longestLegalIntro = 0;
+let legalScreenChars = 0;
 const overRule = [];
 const chatty = [];
 const nameCopies = [];
@@ -107,7 +172,9 @@ const jargon = {};
 for (const file of files) {
   const source = readFileSync(file, 'utf8');
   const strings = stringsIn(source);
-  textChars += strings.reduce((a, r) => a + r.len, 0);
+  const fileChars = strings.reduce((a, r) => a + r.len, 0);
+  textChars += fileChars;
+  if (file === LEGAL_CONTENT) legalScreenChars = fileChars;
   longChars += strings.filter((r) => r.len >= 80).reduce((a, r) => a + r.len, 0);
 
   for (const intro of introsIn(source, strings)) {
@@ -173,6 +240,11 @@ check(
   longestLegalIntro <= CEILING.longestLegalIntro,
   "LegalAffairsView'ın en uzun paragrafı kayıtlı tavanın altında",
   `${longestLegalIntro} / ${CEILING.longestLegalIntro}`,
+);
+check(
+  legalScreenChars <= CEILING.legalScreenChars,
+  "LegalAffairsView'ın toplam metni kayıtlı tavanın altında (T13-04)",
+  `${legalScreenChars} / ${CEILING.legalScreenChars}`,
 );
 
 check(

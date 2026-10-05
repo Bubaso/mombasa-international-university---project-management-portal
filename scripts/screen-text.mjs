@@ -82,6 +82,18 @@ const PAIR = new RegExp(
 /** Tek satıra indir: ölçtüğümüz şey uzunluk, girinti değil. */
 const flat = (s) => s.replace(/\\n/g, ' ').replace(/\\'/g, "'").replace(/\s+/g, ' ').trim();
 
+/**
+ * Veri dizisi içindeki iki dilli alan: `titleEn: '...'`, `detailTr: '...'`.
+ *
+ * Bu desen 5 Ekim 2026'da eklendi ve sebebi bir kaçırma: `LegalAffairsView`
+ * 30 yıllık kronolojiyi JSX içinde bir dizi olarak tutuyordu ve ölçüm onun
+ * **hiçbirini** görmüyordu — 54 metin, 3.273 karakter, yani o ekranın
+ * gerçek metninin üçte biri. `/legal` için "6.288 karakter" dedim, doğrusu
+ * 9.561'di. Koşullu ifade arayan bir desen, veri olarak duran metni
+ * göremiyor; ikisi ayrı yazım biçimi, aynı ekran metni.
+ */
+const FIELD = /\b(\w+?)(En|Tr):\s*\n?\s*(['"])((?:\\.|(?!\3).)*)\3/gs;
+
 /** @returns {{line: number, tr: string, en: string, len: number}[]} */
 export function stringsIn(source) {
   const src = strip(source);
@@ -93,7 +105,27 @@ export function stringsIn(source) {
     const line = src.slice(0, m.index).split('\n').length;
     found.push({ line, tr, en, len: tr.length });
   }
-  return found;
+
+  // Veri dizisi alanları: `titleEn`/`titleTr` gibi çiftler tek metin sayılır,
+  // koşullu ifadedeki iki yan nasıl tek sayılıyorsa. Eşi olmayan bir alan da
+  // sayılır — tek dilli bir metin de ekranda duruyor.
+  const fields = new Map();
+  for (const m of src.matchAll(FIELD)) {
+    const [, base, side, , value] = m;
+    const line = src.slice(0, m.index).split('\n').length;
+    const key = `${base}:${Math.floor(line / 8)}`;
+    const entry = fields.get(key) ?? { line, tr: '', en: '' };
+    entry[side === 'Tr' ? 'tr' : 'en'] = flat(value);
+    entry.line = Math.min(entry.line, line);
+    fields.set(key, entry);
+  }
+  for (const e of fields.values()) {
+    if (!e.tr && !e.en) continue;
+    // Türkçesi yoksa ekranda İngilizcesi duruyor, ve ölçülen şey ekrandaki.
+    found.push({ line: e.line, tr: e.tr || e.en, en: e.en || e.tr, len: (e.tr || e.en).length });
+  }
+
+  return found.sort((a, b) => a.line - b.line);
 }
 
 // Bir prop değerinin içindeki metin, o prop'un adını taşır. Etiketten önce

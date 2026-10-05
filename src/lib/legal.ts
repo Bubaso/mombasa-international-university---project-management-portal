@@ -7,6 +7,7 @@ import type {
   Language,
   OrderState,
   PreparationState,
+  CasePartyRole,
 } from '../types';
 
 type Bilingual = { tr: string; en: string };
@@ -54,6 +55,37 @@ const FILING_KINDS: Record<FilingKind, Bilingual> = {
 
 export const FILING_KIND_VALUES = Object.keys(FILING_KINDS) as FilingKind[];
 export const filingKindLabel = (k: FilingKind, l: Language) => wordFor(FILING_KINDS, k, l);
+
+/**
+ * Davadaki rol (M5-02). Enum 0009'da ve bu liste onun kopyası — enum sapması
+ * testi ikisini birbirine bağlıyor.
+ */
+const CASE_PARTY_ROLES: Record<CasePartyRole, Bilingual> = {
+  appellant: { tr: 'Temyiz eden', en: 'Appellant' },
+  respondent: { tr: 'Aleyhine temyiz edilen', en: 'Respondent' },
+  claimant: { tr: 'Davacı', en: 'Claimant' },
+  defendant: { tr: 'Davalı', en: 'Defendant' },
+  interested_party: { tr: 'İlgili taraf', en: 'Interested party' },
+  amicus: { tr: 'Mahkeme dostu', en: 'Amicus' },
+};
+
+export const CASE_PARTY_ROLE_VALUES = Object.keys(CASE_PARTY_ROLES) as CasePartyRole[];
+export const casePartyRoleLabel = (r: CasePartyRole, l: Language) =>
+  wordFor(CASE_PARTY_ROLES, r, l);
+
+/**
+ * Tarafın hangi yanda olduğu. Rozetin rengi bir taraf tutma değil, okuyanın
+ * iki yanı bir bakışta ayırması için: dokuz itirazlı bir dosyada kim kime
+ * karşı, listeyi okumadan görünmüyor.
+ */
+export const CASE_PARTY_ROLE_STYLES: Record<CasePartyRole, string> = {
+  appellant: 'border-indigo-300 bg-indigo-50 text-indigo-800',
+  respondent: 'border-rose-300 bg-rose-50 text-rose-800',
+  claimant: 'border-indigo-300 bg-indigo-50 text-indigo-800',
+  defendant: 'border-rose-300 bg-rose-50 text-rose-800',
+  interested_party: 'border-amber-300 bg-amber-50 text-amber-800',
+  amicus: 'border-slate-300 bg-slate-100 text-slate-700',
+};
 
 const FILING_STATES: Record<FilingState, Bilingual> = {
   planned: { tr: 'Planlandı', en: 'Planned' },

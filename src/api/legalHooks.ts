@@ -30,6 +30,13 @@ export const useCustody = (caseId: string | undefined) =>
     enabled: caseId != null,
   });
 
+export const useCaseParties = (caseId: string | undefined) =>
+  useQuery({
+    queryKey: ['caseParties', caseId],
+    queryFn: () => legal.fetchCaseParties(caseId as string),
+    enabled: caseId != null,
+  });
+
 export const useCounsel = (caseId: string | undefined) =>
   useQuery({
     queryKey: ['counsel', caseId],

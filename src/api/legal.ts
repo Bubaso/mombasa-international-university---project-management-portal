@@ -23,6 +23,7 @@ import type {
   LegalOrder,
   OrderState,
   PreparationState,
+  CaseParty,
 } from '../types';
 
 function fail(error: { message: string } | null): void {
@@ -394,6 +395,45 @@ interface CounselRow {
   instructed_on: string | null;
   note: string | null;
   advocate: { full_name: string } | { full_name: string }[] | null;
+}
+
+/**
+ * Davanın tarafları (M5-02).
+ *
+ * Tablo 0009'dan beri duruyor ve 5 Ekim 2026'ya kadar hiçbir yerden
+ * okunmuyordu: ekran "Kim kimdir" sekmesinde beş kişiyi koda gömülü
+ * gösteriyordu — isimleri, bürolarını, tanık numaralarını ve haklarında
+ * değerlendirmeleri. Kurulup bağlanmamış bir tablo, o veriyi başka bir yerde
+ * tutmaya zorluyor; burada tutulan yer kaynak koddu (CLAUDE.md §4).
+ *
+ * `represented_by` serbest metin, çünkü bir tarafı temsil eden avukat her
+ * zaman portalda bir kayıt değil — karşı tarafın avukatı paydaş kütüğünde
+ * olmak zorunda değil.
+ */
+interface PartyRow {
+  id: string;
+  legal_case_id: string;
+  role: CaseParty['role'];
+  name: string;
+  stakeholder_id: string | null;
+  represented_by: string | null;
+}
+
+export async function fetchCaseParties(caseId: string): Promise<CaseParty[]> {
+  const { data, error } = await supabase
+    .from('case_parties')
+    .select('id, legal_case_id, role, name, stakeholder_id, represented_by')
+    .eq('legal_case_id', caseId)
+    .order('role');
+  fail(error);
+  return ((data ?? []) as unknown as PartyRow[]).map((row) => ({
+    id: row.id,
+    legalCaseId: row.legal_case_id,
+    role: row.role,
+    name: row.name,
+    stakeholderId: row.stakeholder_id,
+    representedBy: row.represented_by,
+  }));
 }
 
 export async function fetchCounsel(caseId: string): Promise<CaseCounsel[]> {

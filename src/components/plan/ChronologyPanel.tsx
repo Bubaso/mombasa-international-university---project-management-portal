@@ -18,7 +18,12 @@ import { Bilingual } from '../ui/Bilingual';
 import { BookMarked, FileCheck2, Plus, Quote } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
-import { useAddChronologyEntry, useChronology, useUnevidencedCount } from '../../api/planHooks';
+import {
+  useAddChronologyEntry,
+  useCaseChronology,
+  useChronology,
+  useUnevidencedCount,
+} from '../../api/planHooks';
 import { useDocumentOptions } from '../../api/documentHooks';
 import { useAuthority } from '../../api/adminHooks';
 import { QueryStatus } from '../QueryStatus';
@@ -79,13 +84,26 @@ function whenText(event: ChronologyEvent, language: 'tr' | 'en'): string {
   return formatDate(event.occurredOn, language);
 }
 
-export const ChronologyPanel: React.FC = () => {
+/**
+ * @param caseId Verilirse yalnızca o davanın olayları, ve buradan girilen olay
+ *   o davaya bağlanır (M5-13).
+ *
+ *   Hukuk ekranının tarihçe sekmesi 30 yıllık kronolojiyi koda gömülü bir
+ *   dizide tutuyordu — dokuz kayıt, hiçbiri bir belgeye bağlı değil, ve
+ *   ekranın kendi uyarısı "güncelliği doğrulanmamıştır" diyordu. Oysa
+ *   kronoloji zaten bir kütük ve bu panel onu okuyor. İkinci bir bileşen
+ *   yazmak kuralı iki yere yazmak olurdu (CLAUDE.md §4); aynı panel davaya
+ *   göre daralıyor.
+ */
+export const ChronologyPanel: React.FC<{ caseId?: string }> = ({ caseId }) => {
   const { language } = useApp();
   const tr = language === 'tr';
   const navigate = useNavigate();
   const PAGE = 50;
   const [limit, setLimit] = useState(PAGE);
-  const chronology = useChronology(limit);
+  const projectWide = useChronology(limit);
+  const caseOnly = useCaseChronology(caseId, limit);
+  const chronology = caseId ? caseOnly : projectWide;
   const unevidencedCount = useUnevidencedCount();
   const documents = useDocumentOptions();
   const authority = useAuthority();
@@ -176,6 +194,7 @@ export const ChronologyPanel: React.FC = () => {
                 detailEn: form.detailEn,
                 documentId: form.documentId || null,
                 sourceNote: form.sourceNote,
+                legalCaseId: caseId ?? null,
               },
               {
                 onSuccess: () => {

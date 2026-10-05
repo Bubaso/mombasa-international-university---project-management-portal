@@ -25,6 +25,14 @@ export const useVariance = (baselineId: string | null) =>
 export const useChronology = (limit = 50) =>
   useQuery({ queryKey: ['chronology', limit], queryFn: () => api.fetchChronology(limit) });
 
+/** Bir davanın kendi tarihçesi (M5-13). Aynı kütük, davaya göre süzülmüş. */
+export const useCaseChronology = (caseId: string | undefined, limit = 50) =>
+  useQuery({
+    queryKey: ['chronology', 'case', caseId, limit],
+    queryFn: () => api.fetchChronology(limit, 0, caseId as string),
+    enabled: caseId != null,
+  });
+
 export const useCriticalDates = (limit = 3) =>
   useQuery({
     queryKey: ['criticalDates', limit],

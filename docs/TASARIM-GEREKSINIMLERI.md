@@ -390,6 +390,110 @@ Ratchet 17 kontrole çıktı. İki yeni iddia mutasyonla sınandı: 101 karakter
 bir gerekçe kuralı düşürüyor, ve `LegalAffairsView`'ın büyümesi **yalnızca**
 kendi tavanını düşürüyor — panel tavanlarına karışmıyor.
 
+### T13 · Faz 3 — ölçülen sonuç
+
+`/legal` turu ve burada iş metin kesmek değildi. Ekranın 13 sekmesinden
+dokuzu içeriğini **koda gömülü** tutuyordu, 1172 satır; ekranın kendi uyarısı
+da bunu söylüyordu ("koda gömülü sabit metinlerdir… asıl evrakla teyit
+edin"). Hazır tablosu olan iki blok kayda bağlandı.
+
+|                                 | Faz 2  | **Faz 3** |
+| ------------------------------- | ------ | --------- |
+| `LegalAffairsView` toplam metni | 10.770 | **8.452** |
+| dosya satırı                    | 1577   | **1371**  |
+| ekran metni (uygulama)          | 62.328 | 64.049 ⚠  |
+| 80+ karakterlik metin           | 31.390 | 32.491 ⚠  |
+
+⚠ Son iki satır **yükseldi** ve sebebi metnin büyümesi değil; aşağıda.
+
+**`who_is_who` → `case_parties`.** Sekme altı kartı koda gömülü tutuyordu: iki
+avukat, iki tanık, bir davacı ve hâkimler heyeti — isimleriyle, bürolarıyla,
+tanık numaralarıyla. `case_parties` tablosu **0009'dan beri vardı ve hiçbir
+yerden okunmuyordu**. Kurulup bağlanmamış bir tablo, o veriyi başka bir yerde
+tutmaya zorluyor; tutulan yer kaynak koddu (CLAUDE.md §4).
+
+Avukatlar artık burada değil. `case_counsel` onları tutuyor ve yan sekmedeki
+`CounselPanel` zaten okuyordu — yani aynı iki avukat aynı bölümün iki
+sekmesinde, biri kayıttan biri sabit metinden geliyordu.
+
+**`timeline` → `chronology_entries`.** 30 yıllık kronoloji dokuz kayıtlık bir
+dizideydi, oysa proje kronolojisi zaten bir kütük ve `/plan` onu okuyor. İkinci
+bir bileşen yazmak kuralı iki yere yazmak olurdu; `ChronologyPanel` isteğe
+bağlı bir `caseId` aldı ve davaya göre süzülüyor. `chronology_entries`'in
+`legal_case_id` kolonu 0024'ten beri tam bunun için duruyordu.
+
+#### Gömülü içerik veritabanına olduğu gibi yüklenemiyor
+
+`createChronologyEntry` kaynak olmadan kayıt kabul etmiyor ve gerekçeyi
+kelimesi kelimesine söylüyor: _"Say where this comes from… an entry nobody can
+trace is neither [memory nor evidence]."_ Gömülü dokuz kaydın hiçbirinde
+kaynak yok. Kaynak uydurmak §2'nin yasakladığı şey, o yüzden hazır `insert`
+üretmedim. Tablo ayrıca `category` istiyor ve `occurred_on` bir tarih; gömülü
+kayıtların üçü yalnızca yıl, biri aralık (`2004 — 2005`). `precision` kolonu
+tam bunun için var, yani kesinlik kaydedilebiliyor — uydurulmuş bir gün değil.
+
+Taraflar tarafında da benzeri: kartlardan doğru `case_parties` satırı üretmek
+**kimin taraf olduğuna karar vermek** demek — Fondo ve Dindia tanık, heyet
+`hearings.bench`, avukatlar `case_counsel`. Bu hukukî bir karar ve vermedim.
+
+İçerik kaybolmadı: kaynaktan birebir çıkarılıp oturumun scratchpad'inde bir
+devir klasörüne yazıldı (depoya girmiyor, §4). Klasör hangi parçanın hangi
+tabloya gittiğini ve neyin insan kararı beklediğini söylüyor.
+
+#### Kronolojinin iki dili aynı şeyi söylemiyor
+
+Dokuz kaydın **üçünde** İngilizce ve Türkçe esaslı olarak farklı şey
+söylüyor. Birim dönüşümleri (5 acre ↔ 20 dönüm) buna dahil değil, onlar doğru.
+
+| kayıt       | İngilizce                                                    | Türkçe                                       |
+| ----------- | ------------------------------------------------------------ | -------------------------------------------- |
+| 1996        | "NLC later claimed root title was **void ab initio**"        | NLC'den hiç söz etmiyor                      |
+| 27 Haz 2013 | "**concealing** the 2012 agreement and eviction proceedings" | "40 yıllık kesintisiz zilyetlik iddiasıyla…" |
+| 9 Şub 2026  | heyeti adıyla sayıyor                                        | "Yargıtay heyeti"                            |
+
+`who_is_who`'da da bir tane: Kadzitu Moli Chogo kartının İngilizcesi tazminatın
+**"concealed from court"** olduğunu söylüyor, Türkçesi söylemiyor. Bu bir
+çeviri farkı değil, isimli bir kişi hakkında bir dilde yapılıp öbüründe
+yapılmayan bir suçlama. Hangisinin doğru olduğunu bilmiyorum ve tahmin etmedim.
+
+#### Dördüncü ölçüm kör noktası, ve en pahalısı
+
+Ratchet **koda gömülü veri dizilerini hiç görmüyordu.** `stringsIn` yalnızca
+`tr ? … : …` koşullu ifadesini arıyordu; `LegalAffairsView` ise kronolojiyi
+`titleEn: '...'`, `detailTr: '...'` alanlarıyla bir dizide tutuyordu — **54
+metin, 3.273 karakter**, o ekranın gerçek metninin üçte biri. Uygulama
+genelinde 2.467 karakter kör noktadaydı.
+
+Yani T13-04 için yazdığım "`/legal` 6.288 karakter" rakamı eksikti; doğrusu
+9.561. Ve Faz 3'ün ölçülen kesintisi 746 karakter göründü, gerçeği 3.373.
+
+Desen eklendi ve tavanlar **yükseltildi**. Bir tavanı ölçüm düzeldiği için
+yükseltmek geri alma değil; düzeltmeden önceki sayıyı korumak, körlüğü tavan
+olarak yazmak olurdu.
+
+#### Tavanın körlüğü geçirdiğini mutasyon gösterdi
+
+Veri dizisi desenini iptal edip testi koşturdum: **on sekiz kontrolün hepsi
+geçti.** Tavan bir üst sınır, körleşen ölçüm onu her zaman geçer.
+
+Alt sınır koymak da çözmüyor: metin kesildikçe sayı meşru olarak düşüyor, yani
+alt sınır her dalgada elle indirilir ve indirilen bir alt sınır koruma değil.
+Ürüne bağlı olmayan tek cevap, **aletin sabit bir girdide bilinen bir cevabı
+vermesi**. Test artık dört satırlık bir örnek metni ölçüyor: üç kalıbın
+üçünü de bulmak ve kod yorumunu saymamak zorunda. Üç mutasyonla sınandı —
+veri dizisi desenini, eski kalıbı ve yorum ayıklamasını tek tek bozdum,
+üçünde de düşüyor.
+
+Ratchet 22 kontrole çıktı.
+
+#### Kalan iş bir migration
+
+Beş blok hâlâ koda gömülü ve hiçbirinin veritabanında evi yok: temyiz
+itirazları (126 satır), duruşma brifingi (202), heyet soru-cevapları (100),
+Yargıtay içtihatları (90), Kenya ziyaret planı (93). Bunlar
+`docs/URUN-GEREKSINIMLERI.md`'de P2 olarak bekleyen **M5-11…M5-16**
+("anlatıdan kayda geçiş") ve sıradaki faz o.
+
 ---
 
 ## Önerilen sıra
