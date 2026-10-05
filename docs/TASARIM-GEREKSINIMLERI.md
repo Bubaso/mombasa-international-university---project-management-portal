@@ -299,9 +299,99 @@ gösteren ürün değil, ölçüm aracıydı.
 | T14-01 | Ekran başlığının altı ya ekranın neyi topladığını söylesin ya da hiç olmasın; ilke beyanı olmasın.        | P0  | ✅ Faz 1: 1.323 → **677** karakter, en uzun 208 → **60**, İKİ dilde de; 14 ekran ölçülüyor.             |
 | T14-02 | Ham teknik metin ve her ekranda tekrarlanan künye bilgisi mobilyadan çıksın — silinmeden, yeri değişerek. | P0  | ✅ Faz 1: PostgREST hata metni katlandı; parsel/fasıl kenar çubuğu, footer ve mobil menüden kaldırıldı. |
 | T14-03 | Yoğunluk ölçülsün ve geri büyümesin: her rotada düğme, başlık ve sayfa boyu.                              | P0  | ✅ Faz 1: 19 rotanın 19'u `tests/populated.mjs` içinde tavanlı; tavanı yazılmamış rota ayrıca düşürür.  |
-| T14-04 | Her ekran özetle açılsın; detay istenince gelsin. Hiçbir işlev kaybolmasın, yeri değişsin.                | P0  | Faz 2 — bekliyor. Ölçüt T14-03'ün rakamlarının düşmesi.                                                 |
+| T14-04 | Her ekran özetle açılsın; detay istenince gelsin. Hiçbir işlev kaybolmasın, yeri değişsin.                | P0  | ✅ Faz 2: yedi ağır ekran bölündü, en uzunu 3.924 → **2.351px**; hiçbir panel silinmedi.                |
 | T14-05 | Gezinme rolün işine yarayan kısmı açık tutsun; 20 giriş + beş büyük harf grup başlığı aynı anda durmasın. | P1  | Faz 3 — bekliyor.                                                                                       |
 | T14-06 | Giriş, girenin rolüne göre açılsın: mütevelliye yönetişim ve para, tedarikçiye kendi işi ve hakedişi.     | P1  | Faz 4 — bekliyor. Yetki zaten veritabanında; eksik olan girişin bunu yansıtması.                        |
+
+### T14 · Faz 2 — ölçülen sonuç
+
+Yedi ağır ekran özet + detay kalıbına geçti. Ölçüm **açılış hâlinde** —
+sekmelere dokunmadan, yani ekranı açan kişinin gördüğü hâl.
+
+| ekran            | önce   | **sonra**  | düğme    | başlık |
+| ---------------- | ------ | ---------- | -------- | ------ |
+| `/governance`    | 3924px | **1132px** | 60 → 54  | 12 → 8 |
+| `/readiness`     | 3561px | **1090px** | 60 → 45  | 13 → 9 |
+| `/plan`          | 3460px | **1340px** | 50 → 46  | 13 → 9 |
+| `/assistant`     | 3199px | **2351px** | 52 → 50  | 10 → 8 |
+| `/communication` | 3050px | **1044px** | 107 → 78 | 16 → 9 |
+| `/procurement`   | 2974px | **1044px** | 56 → 52  | 11 → 8 |
+| `/construction`  | 2830px | **1044px** | 44 → 45  | 10 → 7 |
+
+En uzun ekran 3.924'ten 2.351 piksele indi. **Hiçbir panel silinmedi**;
+hepsi bir tık arkaya geçti. Depoda zaten olan sekme kalıbı (`RiskList`)
+kullanıldı — ikinci bir mekanizma icat edilmedi.
+
+**`/construction`'ın düğmesi 44'ten 45'e ÇIKTI** ve bunu gizlemiyorum: iki
+sekme iki düğme ekliyor. Boy %63 düştü, ama düğme sayısı yoğunluğun tek
+ölçüsü değil ve bu satır onu hatırlatıyor.
+
+#### Ekranın kendi kaydı, kararı verdiği yerler
+
+Üç ekranda özet sekmeye **alınmadı**, ve üçünde de sebep benim tercihim
+değil dosyanın kendi yorumuydu:
+
+- `/readiness`'in panosu: "şeritleri yan yana koyan tek görünüm o".
+- `/plan`'ın Gantt'ı: "the overview, above the table that details it".
+- `/construction`'ın yasak uyarısı: "finding out about it should not
+  require having already guessed which block to open" — bir sekmenin
+  arkasına koymak tam da onu tahmine bağlamak olurdu.
+
+`/assistant`'ta varsayılan sekmenin belge alımı olması da aynı sebeple:
+"Reading a document comes first, because it is the one thing here you
+arrive with in your hand." Alt alta dizilişte o cümle sırayı seçiyordu;
+sekmelerde hangisine düşüleceğini seçiyor.
+
+`/communication`'ın 107 düğmesinin çoğu `ThreadPanel`'den geliyor — her
+mesajın kendi tepki ve alıntı düğmeleri var (M11-13). Kalabalığı yaratan
+panel sayısı değil, dört panelin bir mesaj listesiyle aynı ekranda
+durmasıydı. Kalan 78 düğme o ekranın kendi işi.
+
+#### Asıl bulgu: on beş panel hiç sınanmıyormuş
+
+Sekme sayımını rota başına çevirince çıktı:
+
+    /legal      17 sekmenin  7'si açılıyordu
+    /assistant   9 sekmenin  4'ü açılıyordu
+
+Yani on beş panel hiç render edilmeden "geçmiş" sayılıyordu — ve bunların
+bir kısmı Faz 2'den **önce** de öyleydi; `/legal`'ın iki seviyeli sekmeleri
+aylar önce yapılmıştı (T1-07, T1-08).
+
+Sebep: gezgin tek listeyi **konuma** göre dolaşıyordu. Bir dış sekmeye
+tıklamak iç sekmeleri DOM'dan kaldırıyor, liste kısalıyor, ve döngü
+`if (!tab) break` ile sessizce çıkıyordu. `catch { continue }` de
+tıklanamayan sekmeyi yutuyordu, ve tek bir toplam eşik hangi ekranın neyi
+kaçırdığını bilmiyordu.
+
+Gezinme iki seviyeli ve **kimliğe** göre oldu: 35 → 50 tıklama.
+
+#### Ve bir tavan körlüğü yakalayamaz — bu depoda üçüncü kez
+
+"Bulunanın hepsi açıldı" kontrolü, gezgini tek seviyeye düşürünce **memnun
+geçiyor**: görmediğini arayamaz. Daha dar bir ölçüm kendi üst sınırını her
+zaman tutturur. Bu yüzden sekme sayıları gezginden bağımsız kayıtlı
+(`TABS_EXPECTED`), ve ayrıca "sekmesi olup kaydı olmayan ekran" da
+düşürüyor — her tur yeni bir sekmeli ekran üretiyor.
+
+Mutasyonu **ilk denediğimde düşmedi** ve "demek ki yakalamıyor" diye
+yazacaktım; desenin hiç tutmadığını, yani mutasyonun uygulanmamış olduğunu
+fark ettim. Uygulanmamış bir mutasyondan çıkarılan sonuç, testin kendisinden
+kötüdür.
+
+#### Kapının bedeli
+
+`smoke.mjs`'te **16 yer** düzeltildi: metne bakan iddialar birleşime geçti
+(`bodyAcrossTabs`, iki seviyeli), DOM'a bakanlar kendi sekmesini **açıkça**
+seçiyor. Örtük sekme sırasına güvenmek, sonraki değişiklikte sessizce yanlış
+yeri sınamak olurdu. Yardımcı modül düzeyine taşındı — kullanıldığı yerden
+sonra tanımlıydı ve bu bir kez patladı.
+
+Birleşim iddiaları zayıflatmıyor, güçlendiriyor: "şu kayıt ekranda" artık
+"erişilebilir bir yerde" demek, ve "şu uydurma rakam ekranda yok" tek
+sayfayı değil bütün sekmeleri tarıyor.
+
+---
 
 ### T14 · Faz 1 — ölçülen sonuç
 
