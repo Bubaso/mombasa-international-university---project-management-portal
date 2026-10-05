@@ -197,6 +197,57 @@ Toplantılar ekranında ilk üç ekranda **tek bir veri satırı** görünüyor.
 | T12-02 | Rota geçişlerinde önceki içerik korunup üzerine yüklensin.                                      | P2  | Geçişte beyaz ekran yok. |
 | T12-03 | Service worker ilk yüklemede 12 sn sürüyor (ölçüldü); bu bir gecikme kaynağı olarak incelensin. | P2  | Ölçüm kaydedilir.        |
 
+## T13 — İnce kesim: metnin hacmi
+
+Ölçüm, 5 Ekim 2026. Ekranda görünen iki dilli metin: **2100 çift, 66.876 TR
+karakteri**. Hacim bir yerde toplanmış: **80 karakterden uzun 262 metin,
+37.267 karakter — yani metinlerin %12'si, hacmin %56'sı.**
+
+T6 bu metinleri _katladı_ (tek satır + "neden?"). T13 onları _kesiyor_, çünkü
+katlanmış bir paragraf hâlâ yazılmış bir paragraftır ve sayfa onunla birlikte
+büyümeye devam ediyor.
+
+Kesilecek olanı tarif eden ayrım şu: paragrafların hepsi aynı iki parçadan
+kurulu. **Birinci cümle ekranda ne tutulduğunu söylüyor** — "Kim, kim
+tarafından atandı, görev süresi ne zaman doluyor." **Gerisi neden böyle
+yapıldığını savunuyor** — "Nisap kuralı veri olarak tutuluyor, böylece…".
+İkincisinin yeri kod yorumu ve `docs/`, ve ikisinde de zaten yazılı. Ekranda
+olması uygulamayı kullanıcısına değil **yapıcısına** anlatıyor; "yapım
+aşamasında" hissinin ölçülen kaynağı bu.
+
+İstisna, kuralın kendisi kadar önemli: kullanıcının **çarpacağı bir kısıt**
+gerekçe değildir ve kalır. "Beyanlar varsayılan olarak gizli", "belgesiz
+'karşılandı' olamıyor", "duruşma bildirimi kapatılamaz" — bunlar kullanıcının
+bilmezse hata yapacağı şeyler. Dürüstlük ilkesi de burada korunuyor: kesilen
+şey bir bilinmeyenin ekrandan kaldırılması değil, bir kararın savunmasının
+kaldırılması (CLAUDE.md §2).
+
+Rota başına yük (uzun metin sayısı / karakteri):
+
+| Rota             | Uzun metin | Karakter | Not                                         |
+| ---------------- | ---------- | -------- | ------------------------------------------- |
+| `/legal`         | 43         | 6288     | İkincisinin 2,2 katı; hiç yeniden yazılmadı |
+| `/communication` | 21         | 2823     |                                             |
+| `/governance`    | 19         | 2686     |                                             |
+| `/construction`  | 19         | 2065     |                                             |
+| `/plan`          | 17         | 2647     |                                             |
+| `/risks`         | 15         | 2220     |                                             |
+| `/meetings`      | 15         | 2157     |                                             |
+| `/procurement`   | 15         | 2101     |                                             |
+| diğer 12 rota    | 102        | 14280    |                                             |
+
+| ID     | Gereksinim                                                                                                                                           | P   | Kabul kriteri                                                                                               |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- | --- | ----------------------------------------------------------------------------------------------------------- |
+| T13-01 | Başlık altındaki 54 tanıtım paragrafı birinci cümlesine insin; gerekçe cümleleri silinsin (kod yorumunda kalır).                                     | P0  | Hiçbir tanıtım paragrafı 100 karakterden uzun değil. Ölçüm: 8722 → hedef ≤ 3500 karakter.                   |
+| T13-02 | Kullanıcının çarpacağı kısıtlar korunsun, gerekçeden ayrı ve tek cümle olarak.                                                                       | P0  | Gizlilik varsayılanı, delil şartı ve kapatılamayan bildirim ekranda hâlâ yazılı.                            |
+| T13-03 | Ekrana girmiş sohbet cümlesi kaldırılsın: `IcsExport` "İsterseniz onu ayrıca konuşalım".                                                             | P0  | Uygulamada kullanıcıya soru soran ya da yazara hitap eden hiçbir cümle yok.                                 |
+| T13-04 | `/legal` kendi turunu alsın: 43 uzun metin, 6288 karakter.                                                                                           | P0  | `/legal` uzun metin karakteri ≤ 2000.                                                                       |
+| T13-05 | Kurumun adı tek biçimde yazılsın. Bugün 3 biçim var: tam ad, "Projesi" ekli, ve "Üniv." kısaltması.                                                  | P1  | Tek sabitten geliyor; "Üniv." hiçbir yerde yok.                                                             |
+| T13-06 | İki dilli metin tek kalıpla yazılsın. Bugün `tr ? …` (1894 yer) ve `language === 'tr' ? …` (213 yer) birlikte kullanılıyor.                          | P1  | Tek kalıp; ölçüm betiği tek desenle tüm metni görüyor.                                                      |
+| T13-07 | Geliştirici dili ekrandan çıksın: gereksinim kimliği (3), snake_case kolon adı (2), veritabanı terimi (4), "özet/SHA-256" (7), "service worker" (1). | P1  | Ekran metninde `M13-09` gibi kimlik, `is_active` gibi kolon adı ve veritabanı terimi geçmiyor.              |
+| T13-08 | Boş durum açıklamaları kısalsın: 20 açıklama, 2355 karakter.                                                                                         | P1  | Her boş durum açıklaması ≤ 120 karakter ve neyin kayıtlı olmadığını söylemeye devam ediyor (T5-05 korunur). |
+| T13-09 | Kesim bir ratchet'e bağlansın; metin sessizce geri büyümesin.                                                                                        | P0  | `tests/screen-text.mjs` ölçülen tavanı tutuyor ve `npm run verify` içinde koşuyor.                          |
+
 ---
 
 ## Önerilen sıra
