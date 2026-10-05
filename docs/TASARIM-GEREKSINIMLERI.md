@@ -248,6 +248,111 @@ Rota başına yük (uzun metin sayısı / karakteri):
 | T13-08 | Boş durum açıklamaları kısalsın. (Satırdaki "20 açıklama, 2355 karakter" **yanlış ölçümdü**; gerçek 32 açıklama, 3.501 karakter.)                    | P1  | ✅ Faz 5: 3.501 → 2.906 karakter, 120 üstü 11 → 0; neyin kayıtlı olmadığı korundu (T5-05).        |
 | T13-09 | Kesim bir ratchet'e bağlansın; metin sessizce geri büyümesin.                                                                                        | P0  | ✅ Faz 1–5: `tests/screen-text.mjs`, 29 kontrol (7'si ölçümün kendi fixture'ı), `verify` içinde.  |
 
+## T14 — Yoğunluk: ekranda aynı anda kaç şey duruyor
+
+**Neden ayrı bir bölüm.** T13 turu bitince kullanıcı şunu söyledi: _"Pek bir
+sadeleşme göremedim, hâlâ çok teknik ve detay içeriyor. Bu mütevelli
+üyelerinin, tedarikçilerin, yöneticinin rahatça kullanacağı bir uygulama
+girişi vermiyor. Çok karışık, her yerden bir şey çıkıyor."_ Haklıydı, ve
+sebebi ölçümün kendisiydi.
+
+**T13 METİN KARAKTERİ ölçtü.** 66.523'ten 57.640'a indirdi ve her tavanı
+tuttu. Şikâyet ise metnin uzunluğu hakkında değildi: dert **bir ekranda aynı
+anda kaç şeyin durduğu.** Bir paragrafı kısaltmak, beş kütüğü alt alta dizen
+bir ekranı hafifletmiyor. Karakter saymak bu yüzden yanlış vekildi — kesimin
+kendisi değil, ölçünün seçimi hatalıydı.
+
+### Ölçüm, 5 Ekim 2026 (T14 Faz 1 sonrası, 19 rota)
+
+| ekran            | düğme   | başlık | boy        |
+| ---------------- | ------- | ------ | ---------- |
+| `/governance`    | 60      | 12     | **3924px** |
+| `/readiness`     | 60      | 13     | 3561px     |
+| `/plan`          | 50      | 13     | 3460px     |
+| `/communication` | **107** | 16     | 3050px     |
+| `/procurement`   | 56      | 11     | 2974px     |
+| `/construction`  | 44      | 10     | 2830px     |
+| `/assistant`     | 49      | 10     | 2041px     |
+| `/meetings`      | 52      | 14     | 1709px     |
+| `/legal`         | 57      | 9      | 1683px     |
+| diğer 10 rota    | 37–56   | 7–15   | 1044–1636  |
+
+Bir ekranda **107 düğme** var. En uzunu dört ekran boyu. 19 ekranda toplam
+**169 bileşen** render ediliyor; `StakeholdersView` tek sayfada 16 tanesini.
+
+### Ölçerken yaptığım iki hata, ikisi de yazılı
+
+**Vekil `limit`'i yok sayıyordu.** İlk ölçümümde giriş ekranı 59 düğme
+gösterdi; doğrusu 47'ydi. Mock, uygulamanın istediğinden çok satır servis
+ediyordu — üç tarih isteyen şerit dokuz çiple çıkıyordu. **Ekranı olduğundan
+kalabalık ölçüyordum.** Düzeltildi; `tests/populated.mjs` artık `limit` ve
+`Range` başlıklarına uyuyor, yani kullanıcının gerçekten gördüğünü geziyor.
+
+**Ve neredeyse olmayan bir kusuru bildirecektim.** O dokuz çipe bakıp
+"kritik tarihler şeridi dokuz çip gösteriyor" diye yazacaktım; oysa kod üç
+istiyor ve yorumunda _"dokuzluk bir şerit listedir ve her ekranın tepesindeki
+bir liste, insanların okumayı bıraktığı mobilyadır"_ yazıyor. Dokuzu
+gösteren ürün değil, ölçüm aracıydı.
+
+| ID     | Gereksinim                                                                                                | P   | Kabul kriteri                                                                                           |
+| ------ | --------------------------------------------------------------------------------------------------------- | --- | ------------------------------------------------------------------------------------------------------- |
+| T14-01 | Ekran başlığının altı ya ekranın neyi topladığını söylesin ya da hiç olmasın; ilke beyanı olmasın.        | P0  | ✅ Faz 1: 1.323 → **677** karakter, en uzun 208 → **60**, İKİ dilde de; 14 ekran ölçülüyor.             |
+| T14-02 | Ham teknik metin ve her ekranda tekrarlanan künye bilgisi mobilyadan çıksın — silinmeden, yeri değişerek. | P0  | ✅ Faz 1: PostgREST hata metni katlandı; parsel/fasıl kenar çubuğu, footer ve mobil menüden kaldırıldı. |
+| T14-03 | Yoğunluk ölçülsün ve geri büyümesin: her rotada düğme, başlık ve sayfa boyu.                              | P0  | ✅ Faz 1: 19 rotanın 19'u `tests/populated.mjs` içinde tavanlı; tavanı yazılmamış rota ayrıca düşürür.  |
+| T14-04 | Her ekran özetle açılsın; detay istenince gelsin. Hiçbir işlev kaybolmasın, yeri değişsin.                | P0  | Faz 2 — bekliyor. Ölçüt T14-03'ün rakamlarının düşmesi.                                                 |
+| T14-05 | Gezinme rolün işine yarayan kısmı açık tutsun; 20 giriş + beş büyük harf grup başlığı aynı anda durmasın. | P1  | Faz 3 — bekliyor.                                                                                       |
+| T14-06 | Giriş, girenin rolüne göre açılsın: mütevelliye yönetişim ve para, tedarikçiye kendi işi ve hakedişi.     | P1  | Faz 4 — bekliyor. Yetki zaten veritabanında; eksik olan girişin bunu yansıtması.                        |
+
+### T14 · Faz 1 — ölçülen sonuç
+
+Bu faz **kesim fazı değil ölçüm fazı**, ve bunu açıkça söylüyorum: yapısal
+olarak neredeyse hiçbir şey değişmedi. Giriş ekranı 1.141 → **1.121px**;
+`/construction` 2.830px'te duruyor. Metin hiçbir zaman asıl mesele değildi.
+
+Kapanan üç şey:
+
+**T14-01.** On beş ekranın on beşinde başlık altında bir cümle vardı, en
+uzunu 208 karakter, ve çoğu ilke beyanıydı — _"Kafadaki risk, yönetilen risk
+değildir"_, _"İlerleme kanıttan hesaplanır; raporu olmayan blok
+'raporlanmadı' der"_. Sistemi inceleyen birine yazılmış cümleler, kullanana
+değil. **T13 bunları hiç görmedi** ve sebebi öğretici: `introsIn` panel
+içindeki `<h2>` + `<p>` kalıbını arıyordu, ekranın kendi `<header>`'ını
+değil.
+
+Kontrol, benim **elle taramamın** kaçırdığı iki metni de buldu: `/admin`'de
+180 karakterlik bir uyarı, `/assistant`'ta 139 karakterlik bir açıklama
+(_"anahtar tarayıcıya hiçbir zaman konmaz"_ — ekrana sızmış geliştirici
+dili).
+
+**Kapı bir kaybı yakaladı.** `/assistant`'tan kestiğim _"Kısıtlı kayıtlar
+hiçbir koşulda modele gitmez"_ bir gizlilik **güvencesi** ve `smoke.mjs` onu
+ekranda arıyor. Gerekçe değil kısıt; geri kondu. T13 Faz 2'de aynı şey iki
+kez olmuştu — ölçü hacmi görür, anlamı görmez.
+
+**T14-02.** Ham PostgREST hatası (_"JSON object requested, multiple (or no)
+rows returned"_) mütevelliye doğrudan görünüyordu. Silinmedi — hatayı arayanın
+tek ipucu o; _"Teknik ayrıntı"_ başlığının arkasına alındı. Parsel numarası
+ve kanun faslı kenar çubuğundan, footer'dan ve mobil menüden kaldırıldı;
+künye `/project_info`'da duruyor. Hiçbir test ve hiçbir gereksinim onları
+mobilyada istemiyordu — bakıldı, varsayılmadı.
+
+**T14-03.** Tavanlar ölçülen değerler ve yalnızca aşağı iner. Mutasyonla
+sınandı: bir ekranın tavanını bir düğme düşürmek o ekranı düşürüyor, tavanı
+yazılmamış bir rota ayrıca raporlanıyor — sessizce ölçülmeyen bir ekran,
+geçmiş gibi görünür.
+
+#### Yol üstünde çıkan bir kusur
+
+Gündem panelinde **"−236 gün kaldı"** yazıyordu. Mütevelli kütüğünde
+düzeltilen _"−1700 gün kaldı"_ kusurunun aynısı, başka bir panelde: kelime
+sayının işaretine değil ayrı bir bayrağa bağlıydı (`overdue` sunucudan, gün
+sayısı istemciden, ve ikisi ayrışabiliyor). Artık aritmetik kelimeyi seçiyor.
+Tek bileşeni düzeltmek kuralı kurmaz: `tests/populated.mjs` gezdiği 19
+ekranın metnini sınıyor, hiçbirinde negatif bir sayının ardından "kaldı"
+yazmasın.
+
+---
+
 ### T13 · Faz 1 — ölçülen sonuç
 
 Hiçbir tanıtım paragrafı daha kesilmedi; bu faz tavanı kurdu ve iki
