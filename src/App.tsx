@@ -19,7 +19,6 @@ import { GlobalSearchModal } from './components/GlobalSearchModal';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { MobileMoreSheet } from './components/MobileMoreSheet';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { formatLandArea } from './lib/units';
 
 const DashboardView = lazy(() =>
   import('./views/DashboardView').then((m) => ({ default: m.DashboardView })),
@@ -152,15 +151,8 @@ const MainLayout: React.FC = () => {
                   ? 'Kenya Afrika Üniversitesi Vakfı (AUTK)'
                   : 'African University Trust of Kenya (AUTK)'}
               </span>{' '}
-              ·{' '}
-              <span>
-                {tr
-                  ? `Parsel No: MN/I/5141 (${formatLandArea(84, 'tr')}), Utange/Majaoni`
-                  : 'Plot No. MN/I/5141 (84 Acres), Utange/Majaoni'}
-              </span>
             </div>
             <div className="flex items-center gap-3">
-              <span>{tr ? 'Fasıl 164 Kenya Kanunları' : 'Cap 164 Laws of Kenya'}</span>
               {/* Only when a service worker is actually driving this page.
                   It used to be a fixed string, so it said "PWA Etkin" whether
                   or not registration had succeeded — the same kind of claim

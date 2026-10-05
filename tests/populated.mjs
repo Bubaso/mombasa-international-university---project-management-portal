@@ -236,10 +236,23 @@ await page.route('**/rest/v1/**', (route) => {
     return json(single ? PROFILE : [PROFILE]);
   }
 
-  const rows = relation ? canned.get(relation) : null;
-  if (!rows) return json([]);
+  const all = relation ? canned.get(relation) : null;
+  if (!all) return json([]);
   const single = (request.headers()['accept'] ?? '').includes('pgrst.object');
-  return json(single ? rows[0] : rows);
+  if (single) return json(all[0]);
+
+  // Uygulamanın İSTEDİĞİ kadarını ver. Önceki hâli `limit`'i yok sayıyordu ve
+  // ekranı olduğundan kalabalık geziyordu: üç tarih isteyen şerit dokuz çiple
+  // çıkıyordu. Çökme avında fark etmez (satır sayısı zaten dağarcık kadar),
+  // ama yoğunluk ölçümünde ederdi — ölçtüğün şey ürün değil vekil olurdu.
+  const range = request.headers()['range'];
+  const limit = Number(new URL(url).searchParams.get('limit'));
+  if (Number.isFinite(limit) && limit > 0) return json(all.slice(0, limit));
+  if (range) {
+    const [from, to] = range.split('-').map(Number);
+    if (Number.isFinite(from) && Number.isFinite(to)) return json(all.slice(from, to + 1));
+  }
+  return json(all);
 });
 
 await page.addInitScript((profile) => {
@@ -295,6 +308,46 @@ let tabsClicked = 0;
 const SIGNED_FUTURE = /[-−]\s?\d+\s*(?:gün kaldı|days left|gün var)/i;
 const signedCounts = [];
 
+/**
+ * Ekranın YOĞUNLUĞU (T14-03).
+ *
+ * T13 turu metin karakteri saydı ve 66.523'ten 57.640'a indirdi; kullanıcı
+ * yine "pek bir sadeleşme göremedim, hâlâ çok ağır" dedi ve haklıydı.
+ * Ölçülen şey şikâyetin konusu değildi: dert cümlelerin uzunluğu değil,
+ * **bir ekranda aynı anda kaç şeyin durduğu**.
+ *
+ * Bu yüzden ölçü artık üç sayı: ekrandaki düğme, başlık ve sayfanın boyu.
+ * Hiçbiri tek başına "sadelik" demek değil, ama üçü birden geri büyürse
+ * ekran ağırlaşmış demektir — ve karakter sayısı bunu göremiyordu.
+ *
+ * Tavanlar ÖLÇÜLEN değerler (5 Ekim 2026, T14 Faz 1 sonrası) ve yalnızca
+ * aşağı iner. Faz 2 bunları düşürmek için var: her ekran özetle açılacak,
+ * detay istenince gelecek. Rakam düşmezse faz işe yaramamıştır ve bunu
+ * burada göreceğiz — geçen sefer göremedik.
+ */
+const DENSITY = {
+  '/': { buttons: 47, headings: 9, height: 1105 },
+  '/project_info': { buttons: 38, headings: 11, height: 1419 },
+  '/legal': { buttons: 57, headings: 9, height: 1683 },
+  '/construction': { buttons: 44, headings: 10, height: 2830 },
+  '/governance': { buttons: 60, headings: 12, height: 3924 },
+  '/readiness': { buttons: 60, headings: 13, height: 3561 },
+  '/stakeholders': { buttons: 45, headings: 10, height: 1352 },
+  '/meetings': { buttons: 52, headings: 14, height: 1709 },
+  '/obligations': { buttons: 47, headings: 15, height: 1556 },
+  '/risks': { buttons: 42, headings: 8, height: 1636 },
+  '/calendar': { buttons: 56, headings: 9, height: 1132 },
+  '/plan': { buttons: 50, headings: 13, height: 3460 },
+  '/reports': { buttons: 49, headings: 12, height: 1242 },
+  '/procurement': { buttons: 56, headings: 11, height: 2974 },
+  '/finance': { buttons: 45, headings: 8, height: 1044 },
+  '/documents': { buttons: 47, headings: 7, height: 1061 },
+  '/communication': { buttons: 107, headings: 16, height: 3050 },
+  '/assistant': { buttons: 49, headings: 10, height: 2041 },
+  '/admin': { buttons: 37, headings: 11, height: 1044 },
+};
+const density = {};
+
 for (const route of ROUTES) {
   pageErrors = [];
   culprits = [];
@@ -320,6 +373,12 @@ for (const route of ROUTES) {
     for (const message of await boundaries()) seen.add(`[${name}] ${message}`);
   }
 
+  density[route] = await page.evaluate(() => ({
+    buttons: document.querySelectorAll('button').length,
+    headings: document.querySelectorAll('h1,h2,h3,h4').length,
+    height: document.body.scrollHeight,
+  }));
+
   const body = (await page.textContent('body')) ?? '';
   const signed = body.match(new RegExp(SIGNED_FUTURE.source, 'gi')) ?? [];
   if (signed.length) signedCounts.push(`${route}: ${[...new Set(signed)].join(', ')}`);
@@ -332,6 +391,28 @@ for (const route of ROUTES) {
   );
   for (const message of seen) found.push(`${route} ${message}`);
   for (const name of [...new Set(culprits)]) found.push(`${route} ← ${name}`);
+}
+
+// Ölçülen yoğunluk, en ağırdan hafife. Tavan yazılmamış bir ekran da
+// raporlanıyor: sessizce ölçülmeyen bir ekran, geçmiş gibi görünür.
+{
+  const rows = Object.entries(density).sort((a, b) => b[1].height - a[1].height);
+  for (const [route, m] of rows) {
+    const cap = DENSITY[route];
+    if (!cap) {
+      check(false, `${route} için yazılı bir yoğunluk tavanı yok`, JSON.stringify(m));
+      continue;
+    }
+    const over = [];
+    if (m.buttons > cap.buttons) over.push(`düğme ${m.buttons}>${cap.buttons}`);
+    if (m.headings > cap.headings) over.push(`başlık ${m.headings}>${cap.headings}`);
+    if (m.height > cap.height) over.push(`boy ${m.height}>${cap.height}px`);
+    check(
+      over.length === 0,
+      `${route.padEnd(15)} yoğunluğu tavanın altında (T14-03)`,
+      over.length ? over.join(', ') : `${m.buttons} düğme · ${m.headings} başlık · ${m.height}px`,
+    );
+  }
 }
 
 check(

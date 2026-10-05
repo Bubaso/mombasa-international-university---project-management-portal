@@ -96,12 +96,17 @@ export const Sidebar: React.FC = () => {
         the ledger, and both say where they came from and when. What stays
         here is the identity of the project, which does not change (M12-03).
       */}
+      {/*
+        Parsel numarası ve kanun faslı BURADAN kaldırıldı (T14-02). İkisi de
+        doğru ve ikisi de `/project_info`'da duruyor — orası künyenin yeri.
+        Her ekranın kenarında tekrar etmeleri kimseye bir şey söylemiyordu:
+        portalı açan kişi hangi projede olduğunu biliyor, ve bir tapu
+        numarası günlük işin parçası değil. Kalan satır projenin kimliği,
+        ki o değişmiyor (M12-03).
+      */}
       <div className="border-t border-slate-200 bg-slate-50 p-3">
         <div className="rounded-lg border border-slate-200 bg-white p-2.5 text-xs text-slate-600 shadow-xs">
           <div className="font-semibold text-slate-700">MIU · Utange/Majaoni</div>
-          <div className="mt-0.5 text-xs text-slate-500">
-            {tr ? 'Parsel MN/I/5141 · Fasıl 164' : 'Plot MN/I/5141 · Cap 164'}
-          </div>
         </div>
       </div>
     </aside>

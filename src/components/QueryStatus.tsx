@@ -85,8 +85,21 @@ export const QueryStatus: React.FC<QueryStatusProps> = ({ queries, className = '
               ? 'Aşağıda eksik veya boş görünen her şey bu hatadan kaynaklanıyor olabilir.'
               : 'Anything missing or empty below may be a result of this failure.'}
           </p>
+          {/*
+            Ham hata metni KATLANMIŞ duruyor. Eskiden doğrudan basılıyordu ve
+            mütevelliye "JSON object requested, multiple (or no) rows
+            returned" diye görünüyordu — İngilizce, teknik, ve okuyanın
+            elinden bir şey gelmeyen bir cümle. Silmek de doğru değil: hatayı
+            arayan kişinin tek ipucu o. Yani kaldırılmadı, bir tık arkasına
+            alındı (T14-02).
+          */}
           {detail && (
-            <p className="pt-0.5 font-mono text-xs break-words text-rose-800/70">{detail}</p>
+            <details className="pt-0.5">
+              <summary className="cursor-pointer text-xs text-rose-800/70 hover:underline">
+                {tr ? 'Teknik ayrıntı' : 'Technical detail'}
+              </summary>
+              <p className="pt-1 font-mono text-xs break-words text-rose-800/70">{detail}</p>
+            </details>
           )}
         </div>
         <button
