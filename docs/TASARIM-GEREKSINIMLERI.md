@@ -294,14 +294,14 @@ istiyor ve yorumunda _"dokuzluk bir şerit listedir ve her ekranın tepesindeki
 bir liste, insanların okumayı bıraktığı mobilyadır"_ yazıyor. Dokuzu
 gösteren ürün değil, ölçüm aracıydı.
 
-| ID     | Gereksinim                                                                                                | P   | Kabul kriteri                                                                                           |
-| ------ | --------------------------------------------------------------------------------------------------------- | --- | ------------------------------------------------------------------------------------------------------- |
-| T14-01 | Ekran başlığının altı ya ekranın neyi topladığını söylesin ya da hiç olmasın; ilke beyanı olmasın.        | P0  | ✅ Faz 1: 1.323 → **677** karakter, en uzun 208 → **60**, İKİ dilde de; 14 ekran ölçülüyor.             |
-| T14-02 | Ham teknik metin ve her ekranda tekrarlanan künye bilgisi mobilyadan çıksın — silinmeden, yeri değişerek. | P0  | ✅ Faz 1: PostgREST hata metni katlandı; parsel/fasıl kenar çubuğu, footer ve mobil menüden kaldırıldı. |
-| T14-03 | Yoğunluk ölçülsün ve geri büyümesin: her rotada düğme, başlık ve sayfa boyu.                              | P0  | ✅ Faz 1: 19 rotanın 19'u `tests/populated.mjs` içinde tavanlı; tavanı yazılmamış rota ayrıca düşürür.  |
-| T14-04 | Her ekran özetle açılsın; detay istenince gelsin. Hiçbir işlev kaybolmasın, yeri değişsin.                | P0  | ✅ Faz 2: yedi ağır ekran bölündü, en uzunu 3.924 → **2.351px**; hiçbir panel silinmedi.                |
-| T14-05 | Gezinme rolün işine yarayan kısmı açık tutsun; 20 giriş + beş büyük harf grup başlığı aynı anda durmasın. | P1  | ✅ Faz 3: gruplar katlandı, görünür gezinme girişi 19 → **3–6**; her rota bir tık arkada.               |
-| T14-06 | Giriş, girenin rolüne göre açılsın: mütevelliye yönetişim ve para, tedarikçiye kendi işi ve hakedişi.     | P1  | Faz 4 — bekliyor. Yetki zaten veritabanında; eksik olan girişin bunu yansıtması.                        |
+| ID     | Gereksinim                                                                                                | P   | Kabul kriteri                                                                                                               |
+| ------ | --------------------------------------------------------------------------------------------------------- | --- | --------------------------------------------------------------------------------------------------------------------------- |
+| T14-01 | Ekran başlığının altı ya ekranın neyi topladığını söylesin ya da hiç olmasın; ilke beyanı olmasın.        | P0  | ✅ Faz 1: 1.323 → **677** karakter, en uzun 208 → **60**, İKİ dilde de; 14 ekran ölçülüyor.                                 |
+| T14-02 | Ham teknik metin ve her ekranda tekrarlanan künye bilgisi mobilyadan çıksın — silinmeden, yeri değişerek. | P0  | ✅ Faz 1: PostgREST hata metni katlandı; parsel/fasıl kenar çubuğu, footer ve mobil menüden kaldırıldı.                     |
+| T14-03 | Yoğunluk ölçülsün ve geri büyümesin: her rotada düğme, başlık ve sayfa boyu.                              | P0  | ✅ Faz 1: 19 rotanın 19'u `tests/populated.mjs` içinde tavanlı; tavanı yazılmamış rota ayrıca düşürür.                      |
+| T14-04 | Her ekran özetle açılsın; detay istenince gelsin. Hiçbir işlev kaybolmasın, yeri değişsin.                | P0  | ✅ Faz 2: yedi ağır ekran bölündü, en uzunu 3.924 → **2.351px**; hiçbir panel silinmedi.                                    |
+| T14-05 | Gezinme rolün işine yarayan kısmı açık tutsun; 20 giriş + beş büyük harf grup başlığı aynı anda durmasın. | P1  | ✅ Faz 3: gruplar katlandı, görünür gezinme girişi 19 → **3–6**; her rota bir tık arkada.                                   |
+| T14-06 | Giriş, girenin rolüne göre açılsın: mütevelliye yönetişim ve para, tedarikçiye kendi işi ve hakedişi.     | P1  | ⚠️ Gösterge paneli bunu ZATEN yapıyor (M12-01, `BY_ROLE`). Kenar çubuğu yapmıyor, ve orası politika kararı — aşağıya bakın. |
 
 ### T14 · Faz 2 — ölçülen sonuç
 
@@ -1240,3 +1240,36 @@ geçti: aç/kapa düğmesini ölü hâle getirdim, rotalar `hidden` bir listede
 DOM'da durmaya devam etti, kontrol memnun kaldı. **Varlık erişilebilirlik
 değildir.** Kontrol görünürlük üzerinden ölçmeye çevrildi; ölü düğme
 mutasyonu artık 3/19 ile düşüyor.
+
+### T14-06 hakkında bir düzeltme: satırı yazarken bakmamışım
+
+T14-06'yı "giriş, girenin rolüne göre açılsın — Faz 4, bekliyor" diye
+yazdım. **Girişin yarısı zaten yapılmıştı ve bunu kontrol etmemiştim.**
+
+`DashboardView`'da `BY_ROLE` duruyor: on üç rolün her biri için hangi
+panellerin görüneceği, gerekçeleriyle. _"Mütevellinin sorusu neyin karara
+bağlanacağı"_, _"bağışçı için tek soru para"_, _"sahadaki kişi: bugün ne
+yapıyorum"_. Yetki devri yetkiyi birleşim yaptığı için panel listesi de
+birleşim. Bu M12-01 ve önceki bir fazda yapılmış.
+
+Bir gereksinim satırını, karşılanıp karşılanmadığına bakmadan "bekliyor"
+diye yazmak, bu dokümanın kaldırmak için var olduğu kusurun kendisi.
+
+#### Gerçekten eksik olan, ve neden yapılmadığı
+
+Kenar çubuğu role bakmıyor: bağışçı da, müteahhit de, mütevelli de aynı on
+dokuz rotayı görüyor. Ama bu **yapılmadı** ve sebebi teknik değil:
+
+- `navigation.ts`'te rol bilgisi **hiç yok** — eşlemeyi sıfırdan yazmak
+  gerekir.
+- "Müteahhit yönetişimi görmeli mi?" bir **politika** sorusu. Veritabanı
+  zaten erişimi kısıtlıyor; rotayı gezinmeden gizlemek erişimi değil
+  **görünürlüğü** değiştirir, ve ikisi farklı şeyler.
+- `BY_ROLE`'ü rotalara uyarlamak, panel kararını rota kararı sanmak olur.
+- Ve asıl mesele: erişim kuralı veritabanında. Gezinmeye ikinci bir kopya
+  yazmak CLAUDE.md §4'ün yasakladığı şey, ve **sapan kopya her zaman
+  ikincisidir.**
+
+Faz 3'ten sonra kenar çubuğu zaten 19'dan 3–6 girişe indi, yani şikâyetin
+kendisi karşılandı. Rol filtresi bir ürün kararı olarak açık duruyor ve
+kararı veren kişi bu satırı okuyan olmalı — ben değil.
