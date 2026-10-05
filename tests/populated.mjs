@@ -329,7 +329,7 @@ const DENSITY = {
   '/': { buttons: 47, headings: 9, height: 1105 },
   '/project_info': { buttons: 38, headings: 11, height: 1419 },
   '/legal': { buttons: 53, headings: 9, height: 1277 },
-  '/construction': { buttons: 44, headings: 10, height: 2830 },
+  '/construction': { buttons: 45, headings: 7, height: 1044 },
   '/governance': { buttons: 54, headings: 8, height: 1132 },
   '/readiness': { buttons: 45, headings: 9, height: 1090 },
   '/stakeholders': { buttons: 45, headings: 10, height: 1352 },
@@ -339,10 +339,10 @@ const DENSITY = {
   '/calendar': { buttons: 56, headings: 9, height: 1132 },
   '/plan': { buttons: 46, headings: 9, height: 1340 },
   '/reports': { buttons: 49, headings: 12, height: 1242 },
-  '/procurement': { buttons: 56, headings: 11, height: 2974 },
+  '/procurement': { buttons: 52, headings: 8, height: 1044 },
   '/finance': { buttons: 45, headings: 9, height: 1044 },
   '/documents': { buttons: 47, headings: 7, height: 1061 },
-  '/communication': { buttons: 107, headings: 16, height: 3050 },
+  '/communication': { buttons: 78, headings: 9, height: 1044 },
   '/assistant': { buttons: 50, headings: 8, height: 2351 },
   '/admin': { buttons: 37, headings: 11, height: 1044 },
 };
@@ -475,6 +475,9 @@ for (const route of ROUTES) {
  */
 const TABS_EXPECTED = {
   '/legal': 17,
+  '/communication': 5,
+  '/procurement': 4,
+  '/construction': 2,
   '/assistant': 9,
   '/readiness': 5,
   '/risks': 5,
@@ -500,6 +503,18 @@ const TABS_EXPECTED = {
     wrong.length === 0,
     'sekmeli ekranların sekme sayısı kayıtlı sayıya eşit',
     wrong.length ? wrong.join(', ') : `${Object.keys(TABS_EXPECTED).length} ekran`,
+  );
+
+  // Sekmesi olup da kayıtlı sayısı olmayan ekran: sessizce sayımın dışında
+  // kalır, ve T14-04 her turda yeni bir sekmeli ekran üretiyor. Kaydı
+  // olmayan bir ekranı "ölçüldü" saymak, ölçmemekle aynı şey.
+  const uncounted = Object.keys(tabsFound).filter(
+    (route) => tabsFound[route] > 0 && !(route in TABS_EXPECTED),
+  );
+  check(
+    uncounted.length === 0,
+    'sekmesi olan her ekranın kayıtlı bir sekme sayısı var',
+    uncounted.join(', '),
   );
 }
 

@@ -18,6 +18,50 @@ import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { setTimeout as sleep } from 'node:timers/promises';
 
+/**
+ * Sayfanın metni, AÇILIŞ HÂLİ + HER SEKME, iki seviye derin.
+ *
+ * T14-04 ile ekranlar sekmelere bölündü: paneller duruyor, yeri değişti.
+ * Tek sayfanın metnine bakan bir iddia artık yalnızca açılış sekmesini
+ * görür ve "bu kayıt ekranda yok" der — oysa bir tık ötede.
+ *
+ * Düz bir döngü yetmiyor ve bu ölçüldü: bir dış sekmeye tıklamak iç
+ * sekmeleri DOM'dan kaldırıyor, elde kalan tutamaçlar sessizce
+ * tıklanamaz oluyor. `/assistant`'ta dokuz sekmenin dördü açılıyordu.
+ *
+ * Birleşim iddiaları ZAYIFLATMIYOR, güçlendiriyor: "şu kayıt ekranda"
+ * artık "erişilebilir bir yerde" demek, ve "şu uydurma rakam ekranda yok"
+ * tek sayfayı değil bütün sekmeleri tarıyor.
+ *
+ * DOM'a bakan kontroller bununla çözülmez: onlar kaydın O AN ekranda
+ * olmasını ister ve kendi sekmesini açıkça seçmek zorundadır.
+ */
+const bodyAcrossTabs = async (page) => {
+  let text = (await page.textContent('body')) ?? '';
+  const labelsOf = async (list) =>
+    Promise.all(
+      (await list.$$('[role="tab"]')).map(async (t) => (await t.textContent())?.trim() ?? ''),
+    );
+  const clickIn = async (list, label) => {
+    for (const t of await list.$$('[role="tab"]')) {
+      if (((await t.textContent())?.trim() ?? '') !== label) continue;
+      await t.click().catch(() => {});
+      await page.waitForTimeout(250);
+      text += '\n' + ((await page.textContent('body')) ?? '');
+      return;
+    }
+  };
+  const outer = (await page.$$('[role="tablist"]'))[0];
+  if (!outer) return text;
+  for (const label of await labelsOf(outer)) {
+    await clickIn(outer, label);
+    for (const nested of (await page.$$('[role="tablist"]')).slice(1)) {
+      for (const inner of await labelsOf(nested)) await clickIn(nested, inner);
+    }
+  }
+  return text;
+};
+
 const PORT = Number(process.env.SMOKE_PORT ?? 4173);
 const BASE = `http://127.0.0.1:${PORT}`;
 
@@ -3143,6 +3187,7 @@ const postgrestHeaders = (body) => {
 
 const check = (ok, label, detail) => {
   if (!ok) failures++;
+
   console.log(`${ok ? 'ok  ' : 'FAIL'} ${label}${detail ? `  ${detail}` : ''}`);
 };
 
@@ -4190,7 +4235,7 @@ try {
   pageErrors = [];
   await page.goto(BASE + '/construction', { waitUntil: 'networkidle' });
   await page.waitForTimeout(400);
-  const siteView = (await page.textContent('body')) ?? '';
+  const siteView = await bodyAcrossTabs(page);
   check(
     pageErrors.length === 0 && /45%/.test(siteView),
     'a block with evidence shows the computed figure',
@@ -4211,6 +4256,10 @@ try {
   // Read from the list of entries, not from the page: the paragraph above the
   // list has to say the book does not know whether the person is on site, and
   // it cannot say that without the words.
+  // Nöbet defteri "Saha güvenliği" sekmesinde (T14-04); bu kontroller DOM'a
+  // bakıyor, yani kaydın o an ekranda olması gerekiyor.
+  await page.locator('[role="tab"]', { hasText: 'Saha güvenliği' }).first().click();
+  await page.waitForTimeout(300);
   const openEntries =
     (await page.textContent('ul[aria-label="Çıkışı kayıtlı olmayan girişler"]')) ?? '';
   check(
@@ -4652,50 +4701,6 @@ try {
 
   await page.keyboard.press('Escape');
   await page.waitForTimeout(200);
-
-  /**
-   * Sayfanın metni, AÇILIŞ HÂLİ + HER SEKME, iki seviye derin.
-   *
-   * T14-04 ile ekranlar sekmelere bölündü: paneller duruyor, yeri değişti.
-   * Tek sayfanın metnine bakan bir iddia artık yalnızca açılış sekmesini
-   * görür ve "bu kayıt ekranda yok" der — oysa bir tık ötede.
-   *
-   * Düz bir döngü yetmiyor ve bu ölçüldü: bir dış sekmeye tıklamak iç
-   * sekmeleri DOM'dan kaldırıyor, elde kalan tutamaçlar sessizce
-   * tıklanamaz oluyor. `/assistant`'ta dokuz sekmenin dördü açılıyordu.
-   *
-   * Birleşim iddiaları ZAYIFLATMIYOR, güçlendiriyor: "şu kayıt ekranda"
-   * artık "erişilebilir bir yerde" demek, ve "şu uydurma rakam ekranda yok"
-   * tek sayfayı değil bütün sekmeleri tarıyor.
-   *
-   * DOM'a bakan kontroller bununla çözülmez: onlar kaydın O AN ekranda
-   * olmasını ister ve kendi sekmesini açıkça seçmek zorundadır.
-   */
-  const bodyAcrossTabs = async (page) => {
-    let text = (await page.textContent('body')) ?? '';
-    const labelsOf = async (list) =>
-      Promise.all(
-        (await list.$$('[role="tab"]')).map(async (t) => (await t.textContent())?.trim() ?? ''),
-      );
-    const clickIn = async (list, label) => {
-      for (const t of await list.$$('[role="tab"]')) {
-        if (((await t.textContent())?.trim() ?? '') !== label) continue;
-        await t.click().catch(() => {});
-        await page.waitForTimeout(250);
-        text += '\n' + ((await page.textContent('body')) ?? '');
-        return;
-      }
-    };
-    const outer = (await page.$$('[role="tablist"]'))[0];
-    if (!outer) return text;
-    for (const label of await labelsOf(outer)) {
-      await clickIn(outer, label);
-      for (const nested of (await page.$$('[role="tablist"]')).slice(1)) {
-        for (const inner of await labelsOf(nested)) await clickIn(nested, inner);
-      }
-    }
-    return text;
-  };
 
   // --- the assistant (M13-04, M13-07, M13-08, M13-09) -----------------------
   pageErrors = [];
@@ -5236,7 +5241,7 @@ try {
   pageErrors = [];
   await page.goto(BASE + '/procurement', { waitUntil: 'networkidle' });
   await page.waitForTimeout(500);
-  const procurement = (await page.textContent('body')) ?? '';
+  const procurement = await bodyAcrossTabs(page);
 
   // M14-01: the need and the reason, together. Asked of PR-2026-02, which is
   // `drafted` and therefore in the waiting list.
@@ -5263,6 +5268,10 @@ try {
     !/Lead counsel for the appeal|Temyiz için baş avukat/.test(procurement),
     'an awarded request is withdrawn from the queue',
   );
+  // Talepler sekmesine dön: `bodyAcrossTabs` sayfayı sonuncuda bırakıyor ve
+  // bu kontrol DOM'a bakıyor.
+  await page.locator('[role="tab"]', { hasText: 'Talepler' }).first().click();
+  await page.waitForTimeout(300);
   const concluded = page
     .locator('button')
     .filter({ hasText: /sonuçlanan|concluded/i })
@@ -5316,6 +5325,9 @@ try {
     !/CT-2024-09/.test(procurement),
     'a terminated contract is not listed beside the live ones',
   );
+  // Sözleşmeler sekmesi (T14-04); bu kontrol DOM'a bakıyor.
+  await page.locator('[role="tab"]', { hasText: 'Sözleşmeler' }).first().click();
+  await page.waitForTimeout(300);
   const endedContracts = page
     .locator('button')
     .filter({ hasText: /sona ermiş|ended/i })
@@ -5345,7 +5357,7 @@ try {
     .first()
     .click();
   await page.waitForTimeout(600);
-  const contract = (await page.textContent('body')) ?? '';
+  const contract = await bodyAcrossTabs(page);
   check(
     /File the record of appeal|Temyiz dosyasını sun/.test(contract) &&
       /yükümlülüğe git|open the obligation/.test(contract),
@@ -5361,6 +5373,9 @@ try {
   );
 
   // M14-07, the other half: the four disagreements the schedule could not see.
+  // Eşleştirme sekmesi (T14-04); aşağıdaki iki liste DOM'dan okunuyor.
+  await page.locator('[role="tab"]', { hasText: 'Eşleştirme' }).first().click();
+  await page.waitForTimeout(300);
   const owedList = (await page.textContent('ul[aria-label="Ödemesi planlanmamış hakediş"]')) ?? '';
   check(
     /Coast Engineering/.test(owedList) &&
@@ -5426,6 +5441,10 @@ try {
   pageErrors = [];
   await page.goto(BASE + '/procurement', { waitUntil: 'networkidle' });
   await page.waitForTimeout(500);
+  // Yeniden yüklendi, yani talepler sekmesindeyiz; eşleştirme panelini
+  // görmek için oraya geç (T14-04).
+  await page.locator('[role="tab"]', { hasText: 'Eşleştirme' }).first().click();
+  await page.waitForTimeout(300);
   const emptyMatch = (await page.textContent('body')) ?? '';
   check(
     pageErrors.length === 0 &&
@@ -5601,7 +5620,7 @@ try {
   pageErrors = [];
   await page.goto(BASE + '/communication', { waitUntil: 'networkidle' });
   await page.waitForTimeout(600);
-  const comms = (await page.textContent('body')) ?? '';
+  const comms = await bodyAcrossTabs(page);
 
   // M11-02: the sender comes from the row's profile, never from a string.
   check(
@@ -5641,6 +5660,9 @@ try {
     /Mütevelli|Trustees/.test(comms) && /Genel|General/.test(comms),
     'the channels this person is in are on the screen (M11-04)',
   );
+  // Mesajlar sekmesi (T14-04); `bodyAcrossTabs` sayfayı sonuncuda bırakıyor.
+  await page.locator('[role="tab"]', { hasText: 'Mesajlar' }).first().click();
+  await page.waitForTimeout(300);
   await page
     .locator('button')
     .filter({ hasText: /Konu aç|Start a thread/ })
@@ -5665,7 +5687,7 @@ try {
     .first()
     .click();
   await page.waitForTimeout(500);
-  const announcement = (await page.textContent('body')) ?? '';
+  const announcement = await bodyAcrossTabs(page);
   check(
     /cevap yazılamaz|cannot be replied to/.test(announcement),
     'an announcement says plainly that it is one-way (M11-11)',
@@ -5701,7 +5723,7 @@ try {
   pageErrors = [];
   await page.goto(BASE + '/communication', { waitUntil: 'networkidle' });
   await page.waitForTimeout(400);
-  const stopped = (await page.textContent('body')) ?? '';
+  const stopped = await bodyAcrossTabs(page);
   check(
     /Takvim durmuş görünüyor/.test(stopped),
     'a schedule that stopped is named, not left to be inferred from silence',
@@ -5719,7 +5741,7 @@ try {
   pageErrors = [];
   await page.goto(BASE + '/communication', { waitUntil: 'networkidle' });
   await page.waitForTimeout(400);
-  const never = (await page.textContent('body')) ?? '';
+  const never = await bodyAcrossTabs(page);
   check(
     /Bildirim taraması hiç çalışmamış/.test(never),
     'a portal that has never swept says so rather than showing an empty inbox',
@@ -5736,6 +5758,9 @@ try {
   pageErrors = [];
   await page.goto(BASE + '/communication', { waitUntil: 'networkidle' });
   await page.waitForTimeout(400);
+  // Bildirim ızgarası "Bildirimler" sekmesinde (T14-04).
+  await page.locator('[role="tab"]', { hasText: 'Bildirimler' }).first().click();
+  await page.waitForTimeout(300);
   const grid = page.locator('table[aria-label="Konu ve mecra tercihleri"] thead');
   const noProvider = grid.locator('span', { hasText: /sağlayıcı yok|no provider/ });
   check(
@@ -5757,6 +5782,8 @@ try {
   await serve('**/rest/v1/push_health**', TEST_PUSH_NO_KEY);
   await page.goto(BASE + '/communication', { waitUntil: 'networkidle' });
   await page.waitForTimeout(400);
+  await page.locator('[role="tab"]', { hasText: 'Bildirimler' }).first().click();
+  await page.waitForTimeout(300);
   check(
     (await noProvider.count()) === 3,
     'with no key recorded it marks push as well, and the screen follows the database',
@@ -5771,6 +5798,8 @@ try {
   );
   await page.goto(BASE + '/communication', { waitUntil: 'networkidle' });
   await page.waitForTimeout(400);
+  await page.locator('[role="tab"]', { hasText: 'Bildirimler' }).first().click();
+  await page.waitForTimeout(300);
   const unknown = grid.locator('span', { hasText: /sağlayıcı bilinmiyor|provider unknown/ });
   check(
     (await unknown.count()) === 4,
@@ -5807,6 +5836,9 @@ try {
   // races against was a line claiming "no key is on record" before the
   // database had been asked. The panel now says `kontrol ediliyor` in that
   // gap, so the test can wait for it to stop saying that.
+  // Bildirimler sekmesi (T14-04); bu kontrol DOM'a bakıyor.
+  await page.locator('[role="tab"]', { hasText: 'Bildirimler' }).first().click();
+  await page.waitForTimeout(300);
   const device = page.locator('[aria-label="Bu cihazda bildirim"]');
   const settled = async () => {
     await device
@@ -5840,6 +5872,9 @@ try {
     });
   });
   await page.goto(BASE + '/communication', { waitUntil: 'domcontentloaded' });
+  // Sekmeye hemen geç: panel "kontrol ediliyor" derken okunacak, yani bu
+  // tıklama beklemeden ÖNCE olmalı (T14-04).
+  await page.locator('[role="tab"]', { hasText: 'Bildirimler' }).first().click();
   await page.waitForTimeout(600);
   const midFlight = (await device.textContent()) ?? '';
   check(
@@ -5854,6 +5889,8 @@ try {
 
   await serve('**/rest/v1/push_health**', TEST_PUSH_HEALTH);
   await page.goto(BASE + '/communication', { waitUntil: 'networkidle' });
+  await page.locator('[role="tab"]', { hasText: 'Bildirimler' }).first().click();
+  await page.waitForTimeout(200);
   const asked = await settled();
   check(
     /Bu cihaz henüz bildirim almıyor/.test(asked),
@@ -5877,6 +5914,8 @@ try {
   // not round it up to a delivery.
   await serve('**/rest/v1/push_health**', TEST_PUSH_NOWHERE);
   await page.goto(BASE + '/communication', { waitUntil: 'networkidle' });
+  await page.locator('[role="tab"]', { hasText: 'Bildirimler' }).first().click();
+  await page.waitForTimeout(200);
   const nowhere = await settled();
   check(
     /2 bildirim sırada bekliyor ve gidecek kayıtlı cihaz yok/.test(nowhere),
@@ -5896,6 +5935,8 @@ try {
   await serve('**/rest/v1/push_health**', TEST_PUSH_HEALTH);
   pageErrors = [];
   await page.goto(BASE + '/communication', { waitUntil: 'networkidle' });
+  await page.locator('[role="tab"]', { hasText: 'Bildirimler' }).first().click();
+  await page.waitForTimeout(200);
   const unsupported = await settled();
   check(
     /Bu tarayıcı anlık bildirim desteklemiyor/.test(unsupported),
@@ -5941,6 +5982,9 @@ try {
     /Sizi bekleyenler|Waiting on you/.test(comms),
     'the trustee digest carries what is waiting on them (M11-10)',
   );
+  // Özet paneli kendi sekmesinde (T14-04).
+  await page.locator('[role="tab"]', { hasText: 'Özet' }).first().click();
+  await page.waitForTimeout(300);
   await page.selectOption(
     'select[aria-label="Hedef kitle"], select[aria-label="Audience"]',
     'donor',
