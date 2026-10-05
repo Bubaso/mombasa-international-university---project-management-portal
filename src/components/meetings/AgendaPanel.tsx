@@ -153,7 +153,19 @@ export const AgendaPanel: React.FC<{ limit?: number; compact?: boolean }> = ({
                         )}
                         {item.dueOn && (
                           <span className={item.overdue ? 'font-medium text-rose-700' : ''}>
-                            {item.overdue
+                            {/*
+                              Kelime SAYININ İŞARETİNE bağlı, `overdue`
+                              bayrağına değil. İkisi ayrı kaynaktan geliyor —
+                              `overdue` sunucudan, `days` burada
+                              `daysUntil`'den — ve ayrışabiliyorlar: tarihi
+                              geçmiş ama bayrağı düşmemiş bir kayıt ekrana
+                              "−236 gün kaldı" yazıyordu. Mütevelli
+                              kütüğündeki kusurun aynısı (TrusteeRegister):
+                              işaretli bir sayı yanlış okunur ve **zaman
+                              varmış gibi** görünür. Bayrak rengi seçer,
+                              aritmetik kelimeyi seçer.
+                            */}
+                            {(days ?? 0) < 0
                               ? tr
                                 ? `${Math.abs(days ?? 0)} gün gecikti`
                                 : `${Math.abs(days ?? 0)} days late`

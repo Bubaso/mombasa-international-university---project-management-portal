@@ -280,6 +280,21 @@ const settle = async () => {
 const found = [];
 let tabsClicked = 0;
 
+/**
+ * İşaretli bir sayı, zaman varmış gibi okunur.
+ *
+ * Mütevelli kütüğünde düzeltilen kusur (süresi dolmuş üye için "−1700 gün
+ * kaldı") 5 Ekim 2026'da gündem panelinde aynen duruyordu: "−236 gün kaldı".
+ * Sebebi iki kaynağın ayrışması — `overdue` sunucudan, gün sayısı istemcide
+ * `daysUntil`'den — ve kelimenin sayıya değil **bayrağa** bağlanmış olması.
+ *
+ * Bu yüzden kontrol tek bir bileşende değil, gezilen her ekranın metninde.
+ * Bir paneli düzeltmek kuralı kurmaz; kural, hiçbir ekranda negatif bir
+ * sayının ardından "kaldı" yazmamasıdır.
+ */
+const SIGNED_FUTURE = /[-−]\s?\d+\s*(?:gün kaldı|days left|gün var)/i;
+const signedCounts = [];
+
 for (const route of ROUTES) {
   pageErrors = [];
   culprits = [];
@@ -305,6 +320,10 @@ for (const route of ROUTES) {
     for (const message of await boundaries()) seen.add(`[${name}] ${message}`);
   }
 
+  const body = (await page.textContent('body')) ?? '';
+  const signed = body.match(new RegExp(SIGNED_FUTURE.source, 'gi')) ?? [];
+  if (signed.length) signedCounts.push(`${route}: ${[...new Set(signed)].join(', ')}`);
+
   const uncaught = [...new Set(pageErrors)];
   check(
     seen.size === 0 && uncaught.length === 0,
@@ -314,6 +333,12 @@ for (const route of ROUTES) {
   for (const message of seen) found.push(`${route} ${message}`);
   for (const name of [...new Set(culprits)]) found.push(`${route} ← ${name}`);
 }
+
+check(
+  signedCounts.length === 0,
+  'hiçbir ekran negatif bir sayıyı "kaldı" diye yazmıyor',
+  signedCounts.join(' | ').slice(0, 300),
+);
 
 // Kaç sekmenin tıklandığı raporlanıyor: tıklanmayan bir panel sınanmamıştır,
 // ve sessizce sınanmayan bir panel geçmiş gibi görünür. Ölçülen sayı 17 (üç
