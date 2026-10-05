@@ -37,8 +37,8 @@ function denialText(denial: AccessDenial | null, tr: boolean): string {
     case 'no_row':
     default:
       return tr
-        ? 'Giriş doğrulandı, ancak bu kimliğe karşılık gelen okunabilir bir profil satırı yok. İki sebebi olabilir: profiles tablosunda bu id ile bir satır hiç yok, ya da satır var fakat etkin değil veya süresi dolmuş — bu durumda politikalar satırı size hiç göstermez. Aşağıdaki id ile profiles tablosunu kontrol edin.'
-        : 'Your sign-in was verified, but no readable profile row matches this id. Two things produce that: no row in profiles carries this id, or a row does but is inactive or past its date, in which case the policies do not show it to you at all. Check the profiles table against the id below.';
+        ? 'Girişiniz doğrulandı ama portalda size karşılık gelen bir profil görünmüyor: ya hiç açılmamış, ya açılmış olup kapatılmış, ya da süresi dolmuş. Aşağıdaki kimliği yöneticinize iletin.'
+        : 'Your sign-in was verified, but no profile here matches it: either none was ever opened, or one was and is now closed or past its date. Pass the id below to your administrator.';
   }
 }
 

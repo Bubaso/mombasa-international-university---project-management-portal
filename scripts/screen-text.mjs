@@ -198,6 +198,13 @@ export function introsIn(source, strings) {
  * "Dava Özeti", "Okuma (özet)". Jargon olan şey `SHA-256`; kelimenin kendisi
  * doğru Türkçe. `sorgu` da çıktı: "üç ayrı sorgu" cümlesi kullanıcıya bir şey
  * anlatıyor, kolon adı gibi sızmış bir terim değil.
+ *
+ * `sütun` da aynı sebeple çıktı ve ölçüldü: üç isabet verdi, üçü de "savunma
+ * sütunları" — savunmanın dayanakları, veritabanı kolonu değil. Sıfır gerçek
+ * isabet, üç yanlış. Yerine `tablosu`/`tablosunda` girdi, çünkü ekrana sızan
+ * şey terimin kendisi değil cümlesiydi: "profiles **tablosunda** bu id ile bir
+ * satır yok" diyen bir hata mesajı, kilitlenen kullanıcıya tablo kontrol
+ * ettiriyor.
  */
 /**
  * Sıkı sınır: iki yanı da kelime dışı. Kimlik ve kolon adı için — `M13-09`
@@ -224,7 +231,9 @@ const STEM = (body) => new RegExp(`(?<![\\p{L}\\p{N}])(?:${body})`, 'u');
 export const JARGON = {
   'gereksinim kimliği': B(String.raw`[MTNG]\d{0,2}-\d{2}`),
   'kolon/tablo adı': B(String.raw`[a-z]+_[a-z]+(?:_[a-z]+)*`),
-  'veritabanı terimi': STEM('trigger|RLS|enum|jsonb|migration|PostgREST|politika|şema|sütun'),
+  'veritabanı terimi': STEM(
+    'trigger|RLS|enum|jsonb|migration|PostgREST|politika|şema|tablosu|tablosunda',
+  ),
   kriptografi: STEM('SHA-256|VAPID|JWT|CORS|Content-Range'),
   'mimari terimi': STEM('edge fonksiyon|service worker|localStorage|idempotent|önbelle'),
 };

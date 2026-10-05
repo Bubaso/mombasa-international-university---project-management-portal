@@ -56,8 +56,8 @@ process.chdir(root);
 // ölçüm düzeldiği için yükseltmek geri alma değil; düzeltmeden önceki sayıyı
 // korumak, körlüğü tavan olarak yazmak olurdu.
 const CEILING = {
-  textChars: 64049,
-  longChars: 32491,
+  textChars: 58388,
+  longChars: 28171,
   // Panel gerekçesi: T13-01'in kestiği şey. 8489 → 2753 (Faz 2).
   introChars: 2753,
   longestIntro: 98,
@@ -76,8 +76,8 @@ const CEILING = {
   // değil bir dava pozisyonu tarafından belirlenir. T13-04 o ekranın kendi
   // turu ve oradaki soru farklı: içerik koda gömülü, kısaltılacak değil
   // veritabanına taşınacak.
-  legalIntroChars: 786,
-  longestLegalIntro: 263,
+  legalIntroChars: 0,
+  longestLegalIntro: 0,
 
   /**
    * `LegalAffairsView`'ın tamamı (T13-04). Ekranın kendi tavanı var çünkü
@@ -88,7 +88,12 @@ const CEILING = {
    *
    * Faz 3'te 10.770 → 8.452 indi: tarihçe ve taraf listesi kayda bağlandı.
    */
-  legalScreenChars: 8452,
+  // Faz 4'te 8.452 → 2.149: kalan beş blok da kayda bağlandı (0053) ve dosya
+  // 1.577 satırdan 771'e indi. `legalIntroChars` ile `longestLegalIntro` artık
+  // sıfır ve bu bir tavan değil olgu: o paragraflar dava pozisyon metinleriydi
+  // ve kaynaktan çıktılar. Sıfır, tavanın en güçlü hâli — ekrana bir daha
+  // gömülü hukukî metin girerse test düşer.
+  legalScreenChars: 2166,
 };
 
 /** Davanın içeriği, panel gerekçesi değil (T13-04). */
@@ -102,7 +107,7 @@ const UNIVERSITY_NAME =
 const JARGON_CEILING = {
   'gereksinim kimliği': 3,
   'kolon/tablo adı': 2,
-  'veritabanı terimi': 2,
+  'veritabanı terimi': 1,
   kriptografi: 1,
   'mimari terimi': 2,
 };

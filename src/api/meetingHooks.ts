@@ -38,6 +38,14 @@ export const useActions = (meetingId?: string) =>
     queryFn: () => meetings.fetchActions(meetingId),
   });
 
+/** Bir davadan doğan aksiyonlar (0053). Sorumlu ve tarih zaten zorunlu. */
+export const useCaseActions = (legalCaseId: string | undefined) =>
+  useQuery({
+    queryKey: ['actions', 'case', legalCaseId],
+    queryFn: () => meetings.fetchActions(undefined, legalCaseId as string),
+    enabled: legalCaseId != null,
+  });
+
 export const useQuestions = (meetingId?: string) =>
   useQuery({
     queryKey: ['questions', meetingId ?? 'all'],

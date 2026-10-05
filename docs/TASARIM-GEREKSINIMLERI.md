@@ -494,6 +494,107 @@ Yargıtay içtihatları (90), Kenya ziyaret planı (93). Bunlar
 `docs/URUN-GEREKSINIMLERI.md`'de P2 olarak bekleyen **M5-11…M5-16**
 ("anlatıdan kayda geçiş") ve sıradaki faz o.
 
+### T13 · Faz 4 — ölçülen sonuç
+
+`/legal`'ın kalan beş bloğu da kayda bağlandı. Migration **0053**: dört yeni
+tablo, bir enum, `action_items`'a bir kolon, on altı politika.
+
+|                               | Faz 3  | **Faz 4**  |
+| ----------------------------- | ------ | ---------- |
+| `LegalAffairsView` metni      | 8.452  | **2.149**  |
+| `LegalAffairsView` satırı     | 1.371  | **771**    |
+| ekran metni (uygulama)        | 64.049 | **58.371** |
+| 80+ karakterlik metin         | 32.491 | **28.171** |
+| ekrana sızan geliştirici dili | 10     | **9**      |
+
+`LegalAffairsView` tura **1.577 satır ve 10.770 karakterle** başladı; **771
+satır ve 2.166 karakterle** bitti. Metin %80, dosya %51 küçüldü.
+
+**M5-12 bunu kelimesi kelimesine istiyordu:** "beklenen sorular, cevaplar,
+içtihat, savunma sütunları — **veri olarak**, koda gömülü değil". 5 Ekim
+2026'da hâlâ koda gömülüydü ve `loadHearingBrief()` adında `null` döndüren
+bir fonksiyon olarak duruyordu.
+
+Brifingin **başlığı** için tablo açılmadı ve açılmaması kararın kendisi: heyet
+`hearings.bench`, dava adı `legal_cases`, kayıttaki avukat `case_counsel`.
+Üçünü yeniden tutmak dördüncü bir doğruluk kaynağı olurdu (CLAUDE.md §4).
+
+#### Tablo açmadan önce gereksinim satırı yazıldı
+
+Dokuz temyiz itirazı koda gömülüydü ve **hiçbir gereksinim satırı onları
+istemiyordu** — yani ürün dokümanının bilmediği bir şey ekranda duruyordu.
+Tabloyu satır olmadan açmak, gereksinimi koddan uydurmak olurdu. **M5-17**
+bu migration'la birlikte yazıldı; doküman 252 → 253, M sayısı 209 → 210, ve
+`tests/doc-counts.mjs` tavanı onunla birlikte taşındı.
+
+#### Şemaya girmeyen iki şey
+
+**`topic` enum değil, serbest metin.** İstemcideki tip
+`'stay' | 'contempt' | 'trustees' | 'wall_repair' | 'jurisdiction'` diyordu ve
+`wall_repair` bu uyuşmazlığın bir olgusu. Bir davanın olgusunu Postgres
+enum'una koymak şemayı o davaya bağlar: ikinci bir dosya kendi konusunu
+eklemek için migration isterdi, ve enum sapması testi istemciyi tek davaya
+özgü değerlere bağlardı.
+
+**`app.add_common_columns` migration'a özel kaldı.** 0043 ve 0045'in kalıbı:
+tanımlanıyor, kullanılıyor, sonunda düşürülüyor. Kalıcı bir yardımcı, her
+tablonun gizlilik ve denetim kolonlarını tek yerden değiştirebilen bir kol
+olurdu.
+
+#### Yine kaynak sorunu, yine aynı cevap
+
+`action_plan` olduğu gibi yüklenemiyor: adımların her biri bir aksiyon ve
+`action_items` sorumlu ile tarihi **zorunlu** tutuyor (M3-02). Gömülü plan
+numaralı başlıklar ve durum rozetleri taşıyor, sorumlu ve tarih taşımıyor.
+`legal_authorities` de her içtihadın lehimize mi aleyhimize mi olduğunu
+zorunlu tutuyor; gömülü listede bu bilgi bazı kayıtlarda **rozetin rengine**
+saklı ve renkten okuyup veri yapmak ölçüme dayanmayan bir atama olurdu.
+
+Üç fazda üçüncü kez aynı şey çıktı: **tablo ekrandan daha katı, ve haklı olan
+tablo.** Gömülü metin doğrulanmamıştı çünkü güncellenemiyordu; kaydı
+değiştirmek bir dağıtım gerektiriyordu.
+
+#### Ratchet kendi işimi yakaladı
+
+Faz 4'ün bileşenlerini yazdıktan sonra `test:screen-text` düştü: "veritabanı
+terimi" 2'den 4'e çıkmıştı. Üçü yanlış pozitifti — "Savunma **sütunları**",
+yani savunmanın dayanakları; `sütun` Türkçede hem kolon hem direk. Ölçüldü:
+`sütun` üç isabet verdi, üçü de yanlış, sıfır gerçek. `özet` ile aynı sınıf
+hata, aynı cevapla çıktı listeden. Ürünün doğru terimini dedektörden kaçmak
+için değiştirmek, kuyruğun köpeği sallaması olurdu.
+
+Dördüncüsü **gerçekti** ve bulunması kazançtı: giriş hatası kilitlenen
+kullanıcıya SQL konuşuyordu — "profiles **tablosunda** bu id ile bir satır
+hiç yok… **politikalar** satırı size hiç göstermez… profiles **tablosunu**
+kontrol edin". Üç ayrı sebebi ayırt etmesi 0014'ün kasıtlı bir özelliği, o
+yüzden bilgi korundu, dili değişti: "ya hiç açılmamış, ya açılmış olup
+kapatılmış, ya da süresi dolmuş. Aşağıdaki kimliği yöneticinize iletin."
+Desen `tablosu`/`tablosunda` ile değiştirildi, çünkü ekrana sızan şey terimin
+kendisi değil o cümleydi.
+
+#### Politikalar mutasyonla sınandı, ve mutasyon koşucum yanlıştı
+
+Dört tablonun on altı politikası için sekiz iddia yazıldı (967 politika
+assertion'ı, önce 959). İlk mutasyon turunda ikisi de "düşmedi" göründü ve
+sebep politikalar değildi: `pg_temp.check` başarısızlığı `raise exception`
+ile veriyor, yani çıktıda `ERROR:  FAIL` yazıyor — benim koşucum
+`NOTICE:  FAIL` arıyordu. Desen düzeltilince ikisi de düştü.
+
+Bu turda beşinci kez ölçüm aletim yanlış cevap verdi. Beşinin tamamı
+yazılı: paragrafı başlık sayan tarama, metnin %16'sını görmeyen desen, ölü
+Türkçe jargon desenleri, veri dizilerini hiç görmeyen çıkarıcı, ve `FAIL`
+satırını tanımayan mutasyon koşucusu.
+
+#### Kalan
+
+`/legal` artık 2.166 karakter ve T13-04'ün kriteri (≤2.000) **henüz
+karşılanmadı** — 166 karakter yukarıda. Kalanın içinde dava oluşturma
+kipi ve sekme etiketleri var, yani buradan sonrası metin kesmek değil
+ekranın kendi işi.
+
+**0053 canlıya uygulanmadı.** Dört tablo, bir enum ve bir kolon bekliyor;
+uygulanana kadar beş sekme boş görünür ve neyin kayıtlı olmadığını söyler.
+
 ---
 
 ## Önerilen sıra

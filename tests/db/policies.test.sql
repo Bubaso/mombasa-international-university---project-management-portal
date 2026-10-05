@@ -1206,6 +1206,18 @@ select pg_temp.check('its exhibits',
 select pg_temp.check('and the chain of custody behind them',
   (select count(*) from exhibit_custody), 1::bigint);
 
+-- 0053 added four more, and the count above is why they are listed here one by
+-- one rather than summed: a sum hides which table answered wrongly, and the
+-- whole point of M5-16 is that EVERY table off a case answers the same way.
+select pg_temp.check('its grounds of appeal',
+  (select count(*) from appeal_grounds), 1::bigint);
+select pg_temp.check('the authorities relied on',
+  (select count(*) from legal_authorities), 1::bigint);
+select pg_temp.check('the questions expected from the bench',
+  (select count(*) from bench_questions), 1::bigint);
+select pg_temp.check('and the pillars of the defence',
+  (select count(*) from defence_pillars), 1::bigint);
+
 select pg_temp.act_as('66666666-6666-6666-6666-666666666666');  -- advocate two, on nothing
 select pg_temp.check('an advocate on another matter reads none of it',
   (select count(*) from legal_orders)
@@ -1214,6 +1226,17 @@ select pg_temp.check('an advocate on another matter reads none of it',
   + (select count(*) from exhibits)
   + (select count(*) from exhibit_custody),
   0::bigint);
+
+-- The brief is the part an opposing advocate would most want, so it is asked
+-- separately: a hearing brief that leaks is worse than a case list that leaks.
+select pg_temp.check('nor the brief prepared for it',
+  (select count(*) from appeal_grounds), 0::bigint);
+select pg_temp.check('nor the authorities',
+  (select count(*) from legal_authorities), 0::bigint);
+select pg_temp.check('nor the anticipated questions',
+  (select count(*) from bench_questions), 0::bigint);
+select pg_temp.check('nor the defence pillars',
+  (select count(*) from defence_pillars), 0::bigint);
 
 -- Writing on your own file is the reason an advocate has an account at all.
 select pg_temp.act_as('55555555-5555-5555-5555-555555555555');

@@ -28,6 +28,11 @@
  *   kapsamını 270 gösterir ve kimse farkı aramaz. Bu yüzden desenler
  *   prefikse göre ve satır başına bağlı.
  *
+ * 5 Ekim 2026: M5-17 eklendi (temyiz itirazları kütüğü) ve sayı 209 → 210,
+ * toplam 252 → 253. Satır, tablo açılmadan ÖNCE yazıldı: dokuz itiraz koda
+ * gömülüydü ve hiçbir gereksinim onları istemiyordu, yani tabloyu gereksinim
+ * satırı olmadan açmak gereksinimi koddan uydurmak olurdu.
+ *
  * Usage: npm run test:doc-counts
  */
 import { readFileSync } from 'node:fs';
@@ -55,7 +60,7 @@ const lines = doc.split('\n');
 const rowsMatching = (pattern) => lines.filter((l) => pattern.test(l)).length;
 
 const KINDS = [
-  { what: 'module requirement', prefix: 'M', pattern: /^\| *M[0-9]+-[0-9]+/, expect: 209 },
+  { what: 'module requirement', prefix: 'M', pattern: /^\| *M[0-9]+-[0-9]+/, expect: 210 },
   { what: 'non-functional requirement', prefix: 'N', pattern: /^\| *N-[0-9]+/, expect: 37 },
   { what: 'migration requirement', prefix: 'G', pattern: /^\| *G-[0-9]+/, expect: 6 },
 ];

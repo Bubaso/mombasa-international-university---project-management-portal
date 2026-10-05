@@ -265,6 +265,28 @@ insert into exhibits (id, legal_case_id, mark, description, source)
 values ('17000000-0000-0000-0000-000000000001', 'aaaa0000-0000-0000-0000-000000000002',
         'AUTK-1', 'Certified copy of the title', 'Land registry');
 
+-- 0053: duruşma brifingi ve içtihat kütüphanesi, veri olarak (M5-12, M5-13,
+-- M5-17). Dördü de davanın çocuğu, yani M5-16'nın aynı sorusuna cevap
+-- vermeleri gerekiyor: dosyadaki avukat görür, başka dosyadaki görmez.
+insert into appeal_grounds (id, legal_case_id, ordinal, title_en, judgment_paragraph)
+values ('19100000-0000-0000-0000-000000000001', 'aaaa0000-0000-0000-0000-000000000002',
+        1, 'Disregard of right to defence', '142');
+
+insert into legal_authorities (id, legal_case_id, citation, favours, principle_en)
+values ('19200000-0000-0000-0000-000000000001', 'aaaa0000-0000-0000-0000-000000000002',
+        'Githu v Ndungu [2019] eKLR', 'ours',
+        'Permissive occupation cannot ripen into adverse possession.');
+
+insert into bench_questions (id, legal_case_id, hearing_id, topic, question_en, answer_en)
+values ('19300000-0000-0000-0000-000000000001', 'aaaa0000-0000-0000-0000-000000000002',
+        '15000000-0000-0000-0000-000000000001', 'jurisdiction',
+        'Does the court have jurisdiction over the trust deed?',
+        'Yes; the deed is registered under Cap 164 and the land lies in Mombasa.');
+
+insert into defence_pillars (id, legal_case_id, ordinal, against, title_en)
+values ('19400000-0000-0000-0000-000000000001', 'aaaa0000-0000-0000-0000-000000000002',
+        1, 'contempt application', 'No construction was carried out by the trust');
+
 insert into exhibit_custody (id, exhibit_id, from_party, to_party)
 values ('18000000-0000-0000-0000-000000000001', '17000000-0000-0000-0000-000000000001',
         'Land registry', 'Advocate One');

@@ -30,6 +30,35 @@ export const useCustody = (caseId: string | undefined) =>
     enabled: caseId != null,
   });
 
+/** Duruşma brifinginin parçaları ve itirazlar (M5-12, M5-13, M5-17). */
+export const useAppealGrounds = (caseId: string | undefined) =>
+  useQuery({
+    queryKey: ['appealGrounds', caseId],
+    queryFn: () => legal.fetchAppealGrounds(caseId as string),
+    enabled: caseId != null,
+  });
+
+export const useLegalAuthorities = (caseId: string | undefined) =>
+  useQuery({
+    queryKey: ['legalAuthorities', caseId],
+    queryFn: () => legal.fetchLegalAuthorities(caseId as string),
+    enabled: caseId != null,
+  });
+
+export const useBenchQuestions = (caseId: string | undefined) =>
+  useQuery({
+    queryKey: ['benchQuestions', caseId],
+    queryFn: () => legal.fetchBenchQuestions(caseId as string),
+    enabled: caseId != null,
+  });
+
+export const useDefencePillars = (caseId: string | undefined) =>
+  useQuery({
+    queryKey: ['defencePillars', caseId],
+    queryFn: () => legal.fetchDefencePillars(caseId as string),
+    enabled: caseId != null,
+  });
+
 export const useCaseParties = (caseId: string | undefined) =>
   useQuery({
     queryKey: ['caseParties', caseId],

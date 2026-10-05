@@ -2,18 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import * as queries from '../api/hooks';
 import { QueryStatus } from '../components/QueryStatus';
-import {
-  Scale,
-  ShieldCheck,
-  FileText,
-  Plus,
-  FileCheck,
-  FolderOpen,
-  BookOpen,
-  HelpCircle,
-  Gavel,
-  TriangleAlert,
-} from 'lucide-react';
+import { Scale, ShieldCheck, Plus, FileCheck, FolderOpen, TriangleAlert } from 'lucide-react';
 
 import { useNavigate } from 'react-router-dom';
 import { CaseStrip } from '../components/legal/CaseStrip';
@@ -23,38 +12,27 @@ import { OrderList } from '../components/legal/OrderList';
 import { EvidenceList } from '../components/legal/EvidenceList';
 import { CounselPanel } from '../components/legal/CounselPanel';
 import { PartyList } from '../components/legal/PartyList';
+import { AppealGrounds } from '../components/legal/AppealGrounds';
+import { AuthorityLibrary } from '../components/legal/AuthorityLibrary';
+import { HearingBrief, BenchQuestions } from '../components/legal/HearingBrief';
+import { CaseActions } from '../components/legal/CaseActions';
 import { ChronologyPanel } from '../components/plan/ChronologyPanel';
 import { useAuthority } from '../api/adminHooks';
 import { ASSESSORS, actsAs } from '../lib/authority';
 import { EmptyState } from '../components/EmptyState';
-import type { BenchQuestion, LegalAuthority } from '../types';
-
-interface ContemptDefencePillar {
-  id: string;
-  titleEn: string;
-  titleTr: string;
-  detailEn: string;
-  detailTr: string;
-}
-
-interface HearingBrief {
-  bench: string;
-  caseTitle: string;
-  counselOnRecord: string;
-  contemptDefencePillars: ContemptDefencePillar[];
-  benchQuestions: BenchQuestion[];
-  authorities: LegalAuthority[];
-}
 
 /**
- * No hearing brief is stored anywhere yet. It used to be read off an untyped
- * stub whose fields were mostly missing, which crashed the Bench Q&A tab the
- * moment it was opened. This stays a function so the call sites already have
- * the shape they will need once briefs are fetched like any other record.
+ * Duruşma brifingi artık kayıt (M5-12), 0053.
+ *
+ * Burada `ContemptDefencePillar` ve `HearingBrief` adlı iki yerel arayüz ile
+ * `loadHearingBrief()` adında `null` döndüren bir fonksiyon duruyordu. Üçü de
+ * gitti: brifingin üç listesi `defence_pillars`, `bench_questions` ve
+ * `legal_authorities` tablolarında, başlığı ise zaten kayıtlı olan yerlerde —
+ * heyet `hearings.bench`, dava adı `legal_cases`, avukat `case_counsel`.
+ *
+ * Yerel arayüzün adı, içe aktarılan bileşenin adıyla aynıydı ve onu
+ * gölgeliyordu; bu, tipin kaldırılmasıyla birlikte düzeldi.
  */
-function loadHearingBrief(): HearingBrief | null {
-  return null;
-}
 
 /**
  * The legal screen's thirteen tabs, in four sections.
@@ -142,7 +120,6 @@ export const LegalAffairsView: React.FC = () => {
   const activeSection =
     LEGAL_SECTIONS.find((sec) => sec.tabs.some((t) => t.id === activeSubTab)) ?? LEGAL_SECTIONS[0];
   const [showNewMotionModal, setShowNewMotionModal] = useState(false);
-  const [qSearch, setQSearch] = useState('');
 
   // New Motion Form State
   const [motionTitle, setMotionTitle] = useState('');
@@ -161,9 +138,6 @@ export const LegalAffairsView: React.FC = () => {
   // document behind it, and the obligations it creates, none of which fitted
   // in the JSON array that used to sit on the case row.
   const caseOrders = queries.useCaseOrders(activeCase?.id).data ?? [];
-  const hearingBrief = loadHearingBrief();
-  const benchQuestions = hearingBrief?.benchQuestions ?? [];
-  const authorities = hearingBrief?.authorities ?? [];
 
   const handleCreateMotion = (e: React.FormEvent) => {
     e.preventDefault();
@@ -402,396 +376,24 @@ export const LegalAffairsView: React.FC = () => {
         )}
 
       {/* Subtab Content: Hearing Brief (28 Sept 2026) */}
-      {activeSubTab === 'hearing_brief' && (
-        <div className="space-y-6">
-          {/* Executive Privileged Summary Banner */}
-          <div className="bg-white border-2 border-amber-500/50 rounded-xl p-5 shadow-xs space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono font-bold uppercase text-rose-800 bg-rose-100 border border-rose-300 px-2 py-0.5 rounded">
-                    {language === 'tr' ? 'RESMİ DURUŞMA BRİFİNGİ' : 'PRIVILEGED HEARING BRIEF'}
-                  </span>
-                  <span className="text-sm text-slate-500 font-mono">
-                    {language === 'tr' ? 'Heyet: ' : 'Coram: '}
-                    {hearingBrief?.bench ?? (language === 'tr' ? 'kayıtlı değil' : 'not recorded')}
-                  </span>
-                </div>
-                <h2 className="text-base font-bold text-slate-900 mt-1">
-                  {hearingBrief?.caseTitle ??
-                    (language === 'tr'
-                      ? 'Sisteme kayıtlı duruşma brifingi yok'
-                      : 'No hearing brief on record')}
-                </h2>
-                <div className="text-sm text-amber-800 font-medium mt-0.5">
-                  {language === 'tr' ? 'Savunma Avukatları: ' : 'Counsel on record: '}
-                  {hearingBrief?.counselOnRecord ??
-                    (language === 'tr' ? 'kayıtlı değil' : 'not recorded')}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 self-start sm:self-center">
-                <button
-                  onClick={() => navigate('/documents')}
-                  className="inline-flex items-center gap-1.5 text-sm bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
-                >
-                  <FileText className="w-3.5 h-3.5 text-amber-600" />
-                  <span>
-                    {language === 'tr' ? 'Tam Layihayı Kasadan Aç' : 'Open Full Brief PDF'}
-                  </span>
-                </button>
-              </div>
-            </div>
-
-            {/* Two Motions at Play */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div className="bg-emerald-50/40 p-4 rounded-xl border border-emerald-200 space-y-2">
-                <span className="text-xs font-mono text-emerald-800 font-bold uppercase">
-                  {language === 'tr'
-                    ? '1. Başvuru: Yürütmeyi Durdurma (23 Temmuz 2025)'
-                    : 'Motion 1: Stay Application (23 July 2025)'}
-                </span>
-                <h3 className="font-bold text-slate-900">Notice of Motion under Rule 5(2)(b)</h3>
-                <p className="text-slate-700 leading-relaxed text-xs">
-                  {language === 'tr'
-                    ? 'Pozisyonumuz: Destekliyoruz; ancak bu başvuru 9 Şubat 2026 tarihli mutabakat emri (consent order) ile zaten nihayete erdirilmiştir (compromised). Heyetten bunu kayda geçirmesini ve E218/2025 numaralı asıl temyize öncelikli duruşma günü verilmesini talep ediyoruz.'
-                    : 'Our Position: In support, but the motion was already compromised by consent on 9th February 2026 on terms running until hearing and determination of appeal. Nothing remains to be determined on this motion.'}
-                </p>
-                <div className="text-xs text-emerald-800 font-semibold pt-1">
-                  {language === 'tr'
-                    ? 'Durum: Mutabakat Kararı ile Sonuçlandı'
-                    : 'Status: Compromised by Consent Order'}
-                </div>
-              </div>
-
-              <div className="bg-rose-50/40 p-4 rounded-xl border border-rose-200 space-y-2">
-                <span className="text-xs font-mono text-rose-800 font-bold uppercase">
-                  {language === 'tr'
-                    ? '2. Başvuru: İtaatsizlik Talebi (19 Haziran 2026)'
-                    : 'Motion 2: Contempt Application (19 June 2026)'}
-                </span>
-                <h3 className="font-bold text-slate-900">
-                  {language === 'tr'
-                    ? 'Chogo Ailesinin Başvurusu (Sherman Nyongesa & Mutubia)'
-                    : 'Filed by Chogos (Sherman Nyongesa & Mutubia)'}
-                </h3>
-                <p className="text-slate-700 leading-relaxed text-xs">
-                  {language === 'tr'
-                    ? 'Pozisyonumuz: Şiddetle Karşı Çıkıyoruz (Opposing). AUTK hiçbir inşaat yapmamıştır. Küçük çevre duvarı onarımı solely Zayed Vakfı tarafından Yazı İşleri’ne önceden yazılı bildirimle yapılmıştır ve mevcut duvarı onarmak 1(b) ihlali değildir.'
-                    : 'Our Position: Opposing. AUTK undertook NO works. The wall repair was announced and carried out solely by the Foundation. Order 1(b) restrains only walls not already in place; repairing an existing standing wall is no breach.'}
-                </p>
-                <div className="text-xs text-rose-800 font-semibold pt-1">
-                  {language === 'tr'
-                    ? 'Durum: Kusurlu Delil · Masraflarla Reddi Talep Edildi'
-                    : 'Status: Defective Evidence · To Be Dismissed With Costs'}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* 4 Pillars of Defense Against Contempt */}
-          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-4">
-            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-emerald-600" />
-              <span>
-                {language === 'tr'
-                  ? 'İtaatsizlik İddialarına Karşı 4 Temel Savunma Sütunu (Theory of the Case)'
-                  : 'Theory of Defense: 4 Pillars Opposing Contempt Committal'}
-              </span>
-            </h3>
-
-            {hearingBrief && hearingBrief.contemptDefencePillars.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                {hearingBrief.contemptDefencePillars.map((pillar) => (
-                  <div
-                    key={pillar.id}
-                    className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2"
-                  >
-                    <h4 className="font-bold text-amber-800 text-sm">
-                      {language === 'tr' ? pillar.titleTr : pillar.titleEn}
-                    </h4>
-                    <p className="text-slate-700 text-xs leading-relaxed">
-                      {language === 'tr' ? pillar.detailTr : pillar.detailEn}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <EmptyState
-                icon={ShieldCheck}
-                tone="unsourced"
-                title={
-                  language === 'tr'
-                    ? 'Savunma sütunları henüz kayıtlı değil'
-                    : 'No defence pillars on record'
-                }
-                description={
-                  language === 'tr'
-                    ? 'Bu bölüm sistemde tutulan bir duruşma brifingine bağlanacak. Şu anda böyle bir kayıt yok.'
-                    : 'This section will read from a hearing brief held in the system. No such record exists yet.'
-                }
-              />
-            )}
-          </div>
-
-          {/* Fallback Positions & Tactical Scripts */}
-          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-3">
-            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <Gavel className="w-4 h-4 text-purple-600" />
-              <span>
-                {language === 'tr'
-                  ? 'Duruşma Yedek Stratejileri (Part D: Fallback Positions)'
-                  : 'Part D: Tactical Fallback Positions'}
-              </span>
-            </h3>
-            <p className="text-sm text-slate-500">
-              {language === 'tr'
-                ? 'Müvekkillerimiz hiçbir ihlali kabul etmemektedir (no undertaking). Heyet duvar tamiratı konusunda tereddüt ederse:'
-                : 'Clients stand on strict compliance. If the bench appears troubled by the wall repair, counsel follows these sequential fallback positions:'}
-            </p>
-            <div className="space-y-2 text-sm">
-              <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                <span className="font-semibold text-slate-900">
-                  {language === 'tr'
-                    ? '1. Yalnızca Zayed Vakfı’nın Eylemi:'
-                    : '1. Foundation’s Act Alone:'}
-                </span>
-                <span className="text-slate-700 ml-1.5">
-                  {language === 'tr'
-                    ? 'Küçük duvar onarımı solely Zayed Vakfı tarafından yapılmıştır. Afrika Üniversitesi hiçbir inşaat yapmamıştır; heyetin bir tereddüdü varsa bu yalnızca mahkeme ile Zayed Vakfı arasındadır.'
-                    : 'The repair was solely the Zayed Foundation’s undertaking. Any concern is strictly between the Court and the Foundation.'}
-                </span>
-              </div>
-              <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                <span className="font-semibold text-slate-900">
-                  {language === 'tr'
-                    ? '2. Kasıt ve Kötü Niyetin Olmadığı (Mala Fides Yokluğu):'
-                    : '2. Negation of Wilful / Mala Fides Breach:'}
-                </span>
-                <span className="text-slate-700 ml-1.5">
-                  {language === 'tr'
-                    ? '11 Mayıs 2026 tarihinde Yargıtay Yazı İşleri Müdürlüğü’ne yazılı bildirim yapılmış olması, kasıtlı ve kötü niyetli ihlal iddiasını tamamen ortadan kaldırır (Consolidated Fish v Zive).'
-                    : 'The written notice of 11th May 2026 copied to the Deputy Registrar completely negates wilfulness and mala fides (Consolidated Fish v Zive).'}
-                </span>
-              </div>
-              <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                <span className="font-semibold text-slate-900">
-                  {language === 'tr'
-                    ? '3. İleriye Dönük Açıklık Getirilmesi:'
-                    : '3. Prospective Clarification:'}
-                </span>
-                <span className="text-slate-700 ml-1.5">
-                  {language === 'tr'
-                    ? 'Heyet 1(b) emrini geleceğe dönük açıklığa kavuşturmak isterse, müvekkillerimiz mahkemenin vereceği her türlü talimata uyacaktır (geçmişe dair bir ihlal kabul edilmeksizin).'
-                    : 'If minded to clarify Order 1(b) for the future, state that clients will abide by any directions (without making an undertaking or conceding past acts).'}
-                </span>
-              </div>
-              <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                <span className="font-semibold text-slate-900">
-                  {language === 'tr'
-                    ? '4. Şahsi Sorumluluk Güvencesi:'
-                    : '4. Individual Protection:'}
-                </span>
-                <span className="text-slate-700 ml-1.5">
-                  {language === 'tr'
-                    ? 'Mütevelli heyetinin yenilenmesinden sonra eski şahsi mütevellilerin hiçbir kişisel eylemi veya tasarrufu olmadığı için hiç kimse hapse sevk edilemez (committal to civil jail).'
-                    : 'No individual can be committed without proof of personal participation, especially after board reconstitution.'}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* M5-12 bunu kelimesi kelimesine istiyordu: "beklenen sorular, cevaplar,
+          içtihat, savunma sütunları — veri olarak, koda gömülü değil". 200
+          satır gömülüydü, ve `loadHearingBrief()` null döndüren bir fonksiyon
+          olarak duruyordu. Brifingin başlığı için tablo yok: heyet
+          `hearings.bench`, dava adı `legal_cases`, avukat `case_counsel`. */}
+      {activeCase && activeSubTab === 'hearing_brief' && <HearingBrief caseId={activeCase.id} />}
 
       {/* Subtab Content: Bench Q&A (Part E) */}
-      {activeSubTab === 'bench_qa' && (
-        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-xs space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
-            <div>
-              <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <HelpCircle className="w-5 h-5 text-amber-600" />
-                <span>
-                  {language === 'tr'
-                    ? 'Hâkimler Heyetinden Beklenen Sorular ve Taktik Cevaplar (Part E)'
-                    : 'Part E: Anticipated Questions from the Bench & Tactical Answers'}
-                </span>
-              </h2>
-              <p className="text-sm text-slate-500 mt-1">
-                {language === 'tr'
-                  ? '28 Eylül 2026 Pazartesi Duruşması İçin Avukatlarca Hazırlanan Taktik Rehber'
-                  : 'Prepared by Nzamsa Sankale & Co for Monday, 28th September 2026 Hearing'}
-              </p>
-            </div>
-
-            {/* Filter and Search */}
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                value={qSearch}
-                onChange={(e) => setQSearch(e.target.value)}
-                placeholder={
-                  language === 'tr' ? 'Soru veya cevap ara...' : 'Search question or response...'
-                }
-                className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-amber-500 w-48 sm:w-60"
-              />
-            </div>
-          </div>
-
-          {benchQuestions.length === 0 && (
-            <EmptyState
-              icon={HelpCircle}
-              tone="unsourced"
-              title={
-                language === 'tr'
-                  ? 'Hâkim soru-cevapları henüz kayıtlı değil'
-                  : 'No anticipated bench questions on record'
-              }
-              description={
-                language === 'tr'
-                  ? 'Bu bölüm sistemde tutulan bir duruşma brifingine bağlanacak. Şu anda böyle bir kayıt yok.'
-                  : 'This section will read from a hearing brief held in the system. No such record exists yet.'
-              }
-            />
-          )}
-
-          <div className="space-y-4">
-            {benchQuestions
-              .filter((item) => {
-                if (!qSearch) return true;
-                const q = qSearch.toLowerCase();
-                return (
-                  item.question.toLowerCase().includes(q) ||
-                  item.answer.toLowerCase().includes(q) ||
-                  item.questionTr.toLowerCase().includes(q) ||
-                  item.answerTr.toLowerCase().includes(q)
-                );
-              })
-              .map((qa, idx) => (
-                <div
-                  key={idx}
-                  className="p-4 rounded-xl bg-slate-50 border border-slate-200 hover:border-slate-300 transition-colors space-y-2.5"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm font-bold text-amber-800 font-mono flex items-center gap-1.5">
-                      <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center text-xs">
-                        {idx + 1}
-                      </span>
-                      <span>{language === 'tr' ? 'Hâkim Sorusu:' : 'Bench Question:'}</span>
-                    </span>
-                    <span className="text-xs font-mono uppercase px-2 py-0.5 rounded bg-white text-slate-600 border border-slate-200">
-                      {qa.category.replace('_', ' ')}
-                    </span>
-                  </div>
-
-                  <h4 className="text-sm font-semibold text-slate-900">
-                    "{language === 'tr' ? qa.questionTr : qa.question}"
-                  </h4>
-
-                  <div className="bg-white p-3 rounded-lg border border-slate-200 space-y-1 shadow-xs">
-                    <div className="text-xs font-bold uppercase tracking-wider text-emerald-700">
-                      {language === 'tr'
-                        ? 'Önerilen Cevap & Hukuki Not:'
-                        : 'Suggested Answer / Note:'}
-                    </div>
-                    <p className="text-sm text-slate-700 leading-relaxed font-sans">
-                      {language === 'tr' ? qa.answerTr : qa.answer}
-                    </p>
-                  </div>
-                </div>
-              ))}
-          </div>
-        </div>
-      )}
+      {/* Cevabı yazılmamış soru gizlenmiyor, sayılıyor: hazırlıkta eksik olan
+          şey listede olmayan değil, cevabı olmayandır. */}
+      {activeCase && activeSubTab === 'bench_qa' && <BenchQuestions caseId={activeCase.id} />}
 
       {/* Subtab Content: Legal Authorities (Part F) */}
-      {activeSubTab === 'authorities' && (
-        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-xs space-y-6">
-          <div className="border-b border-slate-100 pb-3">
-            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-purple-600" />
-              <span>
-                {language === 'tr'
-                  ? 'Hukuki Dayanaklar ve Emsal Kararlar (Part F: Authorities - Status & Use)'
-                  : 'Part F: Legal Authorities, Case Law & Judicial Precedents'}
-              </span>
-            </h2>
-            <p className="text-sm text-slate-500 mt-1">
-              {language === 'tr'
-                ? 'İtaatsizlik, Yürütmeyi Durdurma ve Olumsuz Zilyetlik Konusundaki Bağlayıcı Yargıtay İçtihatları'
-                : 'Binding Court of Appeal Precedents on Contempt, Stay of Execution, and Adverse Possession'}
-            </p>
-          </div>
-
-          {authorities.length === 0 && (
-            <EmptyState
-              icon={BookOpen}
-              tone="unsourced"
-              title={
-                language === 'tr'
-                  ? 'İçtihat listesi henüz kayıtlı değil'
-                  : 'No legal authorities on record'
-              }
-              description={
-                language === 'tr'
-                  ? 'Bu bölüm sistemde tutulan bir duruşma brifingine bağlanacak. Şu anda böyle bir kayıt yok.'
-                  : 'This section will read from a hearing brief held in the system. No such record exists yet.'
-              }
-            />
-          )}
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            {authorities.map((auth, idx) => (
-              <div
-                key={idx}
-                className={`p-4 rounded-xl border flex flex-col justify-between space-y-3 ${
-                  auth.party === 'ours'
-                    ? 'bg-emerald-50/40 border-emerald-200 hover:border-emerald-300'
-                    : 'bg-rose-50/40 border-rose-200 hover:border-rose-300'
-                }`}
-              >
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between text-xs">
-                    <span
-                      className={`px-2 py-0.5 rounded text-xs uppercase font-mono font-bold ${
-                        auth.party === 'ours'
-                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                          : 'bg-rose-100 text-rose-800 border border-rose-200'
-                      }`}
-                    >
-                      {auth.party === 'ours'
-                        ? language === 'tr'
-                          ? 'Bizim İçtihadımız'
-                          : 'Our Authority'
-                        : language === 'tr'
-                          ? 'Karşı Tarafın İçtihadı'
-                          : 'Their Authority (Distinguishable)'}
-                    </span>
-                  </div>
-                  <h4 className="font-bold text-slate-900 text-sm">{auth.citation}</h4>
-                  <div className="text-xs text-amber-800 font-mono font-medium">{auth.use}</div>
-                  <p className="text-xs text-slate-700 leading-relaxed pt-1">
-                    {language === 'tr' ? auth.principleTr : auth.principleEn}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Jurisdictional Note */}
-          <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-600 space-y-1">
-            <span className="font-bold text-amber-800 text-xs uppercase tracking-wider">
-              {language === 'tr'
-                ? 'Yargı Yetkisi Notu (Jurisdiction Note):'
-                : 'Court Jurisdiction Note:'}
-            </span>
-            <p className="text-xs leading-relaxed">
-              {language === 'tr'
-                ? "Karşı tarafın itaatsizlik başvurusu sehven Yargıtay Yasası'nın mülga 35. maddesine dayanmaktadır. Mukuha davasında (paragraf 13) belirtildiği üzere 35. madde 2016 yılında yürürlükten kaldırılmıştır; itaatsizlik yetkisi Yargı Teşkilatı Yasası s.5 maddesinden kaynaklanmaktadır. Avukatlarımız bunu usuli bir itiraz olarak öne sürmeyecek, doğrudan esasa ve hiçbir ihlalin bulunmadığı gerçeğine dayanacaktır."
-                : 'The contempt motion mistakenly cites s.35 of the Court of Appeal (Organization and Administration) Act. As noted in Mukuha (para 13), s.35 was deleted in 2016; contempt jurisdiction stems from s.5 of the Judicature Act. Counsel will not take this as a technical objection, standing rather on substantive innocence and complete lack of breach.'}
-            </p>
-          </div>
-        </div>
-      )}
+      {/* İçtihat kütüphanesi (M5-13): atıf, kullanım amacı, lehimize/aleyhimize,
+          ilke özeti — gereksinimin istediği dört şey. Aleyhe olanlar aynı
+          listede ve ayrı rozetle: yalnızca lehe olanı tutan bir kütüphane,
+          karşı tarafın kararını duruşmada ilk kez gösterir. */}
+      {activeCase && activeSubTab === 'authorities' && <AuthorityLibrary caseId={activeCase.id} />}
 
       {/* Subtab Content: Overview */}
       {activeSubTab === 'overview' && !activeCase && (
@@ -1013,223 +615,17 @@ export const LegalAffairsView: React.FC = () => {
       )}
 
       {/* Subtab Content: Grounds of Appeal */}
-      {activeSubTab === 'grounds' && (
-        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-xs space-y-6">
-          <div>
-            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <Scale className="w-5 h-5 text-amber-600" />
-              <span>
-                {language === 'tr'
-                  ? 'Temyiz İtiraznamesindeki 9 Temel Hukuki ve Maddi Hata (4 Aralık 2025)'
-                  : 'Memorandum of Appeal: 9 Grounds of Law & Fact (4 December 2025)'}
-              </span>
-            </h2>
-            <p className="text-sm text-slate-500 mt-1">
-              Khatib & Company Advocates & Simon Karina Advocates on behalf of Zayed Foundation &
-              AUTK
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
-            {[
-              {
-                num: '1',
-                titleEn: 'Disregard of Right to Defence',
-                titleTr: 'Savunma Hakkının Yok Sayılması',
-                descEn:
-                  'Judge misdirected himself in paragraph 142 by claiming the case was "undefended", when defendants mounted vigorous defense.',
-                descTr:
-                  'Hâkim 142. paragrafta davanın savunmasız bırakıldığını iddia etmiştir; oysa davalılar kararlı ve belgeli savunma yapmıştır.',
-              },
-              {
-                num: '2',
-                titleEn: 'Contradiction with Site Visit Report',
-                titleTr: 'Saha Keşfi Raporu ile Kararın Çelişmesi',
-                descEn:
-                  'Court’s own locus in quo on 9 Feb 2024 established Moli family occupied ONLY 5 ACRES, yet judge unlawfully awarded all 84 acres.',
-                descTr:
-                  'Hâkimin 9 Şubat 2024 tarihli kendi keşif raporunda Moli ailesinin yalnızca 20 dönümü (5 acre) işgal ettiği sabitken, 340 dönümün tamamı verilmiştir.',
-              },
-              {
-                num: '3',
-                titleEn: 'Error as to Duration of Occupation',
-                titleTr: 'Kesintisiz İşgal Süresi Hatası',
-                descEn:
-                  'Court wrongly held occupation was uninterrupted for 12 years, causing severe miscarriage of justice.',
-                descTr:
-                  'Mahkemenin zilyetliğin 12 yıl kesintisiz sürdüğü kabulü ağır adalet zafiyetine yol açmıştır.',
-              },
-              {
-                num: '4',
-                titleEn: 'Breach of the Five-Acre Boundary',
-                titleTr: 'Yirmi Dönümlük (5 Acre) Sınırın İhlali',
-                descEn:
-                  'Adverse possession boundary exceeded: claimants could not legally claim adverse possession beyond their 5-acre enclave.',
-                descTr:
-                  'Olumsuz zilyetlik sınırları aşıldı: Davacılar 20 dönümlük yerleşimlerinin ötesindeki 320 dönümde zilyetlik iddia edemez.',
-              },
-              {
-                num: '5',
-                titleEn: 'Permissive vs Adverse Occupation',
-                titleTr: 'Rızaya Dayalı Yerleşimin Hasmane Sayılması',
-                descEn:
-                  'Moli family entered the 5 acres with consent/permission of the owner. Permissive occupation cannot ripen into adverse possession (nec precario).',
-                descTr:
-                  'Moli ailesi araziye rıza ve izinle yerleşmiştir. İzinli yerleşim hukuken hasmane işgal (adverse possession) teşkil etmez.',
-              },
-              {
-                num: '6',
-                titleEn: 'Fatal Procedural Defect (Order 37 Rule 7)',
-                titleTr: 'Ölümcül Usul Hatası (Onaylı Tapu Sureti)',
-                descEn:
-                  'Claimants violated mandatory statutory rules by failing to attach a certified extract of title to the Originating Summons.',
-                descTr:
-                  'Davacılar asıl dava celbine onaylı tapu suretini eklemeyerek emredici usul kuralını (Order 37 Rule 7) ihlal etmiştir.',
-              },
-              {
-                num: '7',
-                titleEn: 'Material Non-Disclosure Concealment',
-                titleTr: 'Maddi Delil Gizleme (779.980 KShs Ödemesi)',
-                descEn:
-                  'Claimant Kadzitu Moli signed vacation agreement in Feb 2012 accepting KShs 779,980 compensation, concealed in bad faith.',
-                descTr:
-                  '5. Davacı Kadzitu Moli 2012’de 779.980 KShs tazminat alarak tahliye sözleşmesi imzalamış, bunu mahkemeden kötü niyetle gizlemiştir.',
-              },
-              {
-                num: '8',
-                titleEn: 'Disregard of Defendants’ Evidence',
-                titleTr: 'Davalıların Delillerinin Göz Ardı Edilmesi',
-                descEn:
-                  'Judge rendered decision without analyzing trial bundle exhibits submitted by the university and Zayed Foundation.',
-                descTr:
-                  'Hâkim, üniversite ve Zayed Vakfı tarafından dosyaya sunulan onlarca yazılı delili incelemeden hüküm kurmuştur.',
-              },
-              {
-                num: '9',
-                titleEn: 'Unjust Award of Costs of Suit',
-                titleTr: 'Yargılama Giderlerinin Haksız Yükletilmesi',
-                descEn:
-                  'Erred in imposing entire litigation costs on the appellant when foundation acted in good faith with millions invested.',
-                descTr:
-                  'Yüz milyonlarca şilin kamu yararına yatırım yapan vakfa yargılama giderlerinin yükletilmesi hukuka aykırıdır.',
-              },
-            ].map((ground) => (
-              <div
-                key={ground.num}
-                className="p-4 rounded-xl bg-slate-50 border border-slate-200 hover:border-amber-400 transition-colors space-y-2 shadow-2xs"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="w-6 h-6 rounded-full bg-amber-100 text-amber-800 font-bold text-sm flex items-center justify-center font-mono border border-amber-300">
-                    {ground.num}
-                  </span>
-                  <span className="text-xs uppercase font-mono text-slate-500 font-semibold">
-                    {language === 'tr' ? 'Hukuki ve Maddi Hata' : 'Error in Law & Fact'}
-                  </span>
-                </div>
-                <div className="font-semibold text-slate-900">
-                  {language === 'tr' ? ground.titleTr : ground.titleEn}
-                </div>
-                <p className="text-slate-600 leading-relaxed text-xs">
-                  {language === 'tr' ? ground.descTr : ground.descEn}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* İtirazlar kayıttan (M5-17). Dokuzu koda gömülü bir dizideydi ve hiçbir
+          gereksinim satırı onları istemiyordu — satır bu turda yazıldı. */}
+      {activeCase && activeSubTab === 'grounds' && <AppealGrounds caseId={activeCase.id} />}
 
       {/* Subtab Content: Action Plan */}
-      {activeSubTab === 'action_plan' && (
-        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-xs space-y-6">
-          <div>
-            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5 text-emerald-600" />
-              <span>
-                {language === 'tr'
-                  ? 'Kenya Ziyareti Eylem Planı (Taarruz & Koruma Stratejisi)'
-                  : 'Kenya Delegation Strategic Action Plan'}
-              </span>
-            </h2>
-            <p className="text-sm text-slate-500 mt-1">
-              Converting 9 February 2026 Status Quo & Priority Order into Complete Appellate Victory
-            </p>
-          </div>
-
-          <div className="space-y-4 text-sm">
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-amber-800 uppercase tracking-wider text-xs">
-                  {language === 'tr'
-                    ? '1. Mevcut Durum Emrinin İnfazı ve Denetimi'
-                    : '1. Enforcement of Status Quo Order'}
-                </span>
-                <span className="text-xs font-mono text-emerald-800 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded font-semibold">
-                  {language === 'tr' ? 'Aktif Devriye' : 'Active Patrol'}
-                </span>
-              </div>
-              <p className="text-slate-700 leading-relaxed">
-                {language === 'tr'
-                  ? 'Davacılar ve yerel emlak komisyoncularının araziyi bölme (subdivision) veya satma girişimlerine karşı anında Mahkemeye İtaatsizlik (Contempt of Court) davası açılması. Harrison Mkala nöbetçi kulesi kayıtları ve koordinat tutanakları hazır tutulmaktadır.'
-                  : 'Ensuring claimants remain strictly in the 5-acre enclave. Immediate Contempt of Court filings prepared if illicit subdivision brokers place boundary beacons on the remaining 79 acres.'}
-              </p>
-            </div>
-
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-rose-700 uppercase tracking-wider text-xs">
-                  {language === 'tr'
-                    ? '2. Mevcut Durum Emrinin Esnetilmesi (Çatı & Hava Koşulları)'
-                    : '2. Variation of Status Quo (Weatherproofing Urgency)'}
-                </span>
-                <span className="text-xs font-mono text-rose-800 bg-rose-100 border border-rose-300 px-2 py-0.5 rounded font-semibold">
-                  {language === 'tr' ? '8 Gün İçinde Başvuru' : 'Filing in 8 Days'}
-                </span>
-              </div>
-              <p className="text-slate-700 leading-relaxed">
-                {language === 'tr'
-                  ? 'Yargıtay Heyeti’ne acil başvuru (Certificate of Urgency): Blok A1 çatı kaplaması ve yalıtımının "yeni inşaat" değil, "mevcut dava konusunu koruma" (preservation of the suit property) olduğu; aksi halde yağmurlarla temyizin konusuz kalacağı (rendering appeal nugatory) Metraj Uzmanı Stephen Ndibui Kamau raporuyla sunulacaktır.'
-                  : 'Filing Notice of Motion under Certificate of Urgency. Works such as roofing and waterproofing are not advancing new development but are preservatory measures. Exposed reinforced concrete left to monsoon rains will cause catastrophic decay, destroying the subject matter.'}
-              </p>
-            </div>
-
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-blue-700 uppercase tracking-wider text-xs">
-                  {language === 'tr'
-                    ? '3. 807M KShs Delil Denetimi (Trial Bundle Audit)'
-                    : '3. KShs 807M Trial Bundle Audit'}
-                </span>
-                <span className="text-xs font-mono text-blue-800 bg-blue-100 border border-blue-300 px-2 py-0.5 rounded font-semibold">
-                  {language === 'tr' ? 'Denetlendi & Hazır' : 'Audited'}
-                </span>
-              </div>
-              <p className="text-slate-700 leading-relaxed">
-                {language === 'tr'
-                  ? 'Üniversite ve Türk hayırseverler tarafından bugüne kadar yapılan 807.322.110 KShs tutarındaki tüm fatura, hakediş ve mimari planların tasdikli delil dosyası halinde Yargıtay’a ibrazı.'
-                  : 'Complete binding of all civil works invoices, architectural plans, and 60-year lease encumbrances into the official Record of Appeal.'}
-              </p>
-            </div>
-
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-purple-700 uppercase tracking-wider text-xs">
-                  {language === 'tr'
-                    ? '4. Kıdemli Temyiz Avukatı (Senior Counsel - SC) Takviyesi'
-                    : '4. Senior Counsel (SC) Appellate Representation'}
-                </span>
-                <span className="text-xs font-mono text-purple-800 bg-purple-100 border border-purple-300 px-2 py-0.5 rounded font-semibold">
-                  {language === 'tr' ? 'Görüşmeler Sürüyor' : 'Scouting Underway'}
-                </span>
-              </div>
-              <p className="text-slate-700 leading-relaxed">
-                {language === 'tr'
-                  ? 'İlk derece mahkemesindeki usul zafiyetleri göz önüne alınarak, Yargıtay duruşmalarında Simon Karina ve Mohamed Faki Khatib ile koordineli çalışacak kıdemli bir Senior Counsel (SC) ile ikinci bir hukuki mütalaa alınması.'
-                  : 'Engaging top-tier Kenyan appellate litigation counsel with Senior Counsel designation to bolster legal arguments and coordinate unified strategy with Khatib & Company.'}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Ziyaret planı numaralı bir strateji metniydi ve her adımı aslında bir
+          aksiyon. Aksiyonun kütüğü sorumlu ile tarihi zorunlu tutuyor (M3-02);
+          gömülü plan ikisini de taşımıyordu. 0053 `action_items`'a
+          `legal_case_id` ekledi, yani dosyadan doğan aksiyon dosyada görünüyor
+          — kronolojide aynı bağ 0024'ten beri var. */}
+      {activeCase && activeSubTab === 'action_plan' && <CaseActions legalCaseId={activeCase.id} />}
 
       {/* Subtab Content: Who is Who */}
       {/* Taraflar artık kayıttan geliyor (M5-02). Burada altı kart koda gömülü

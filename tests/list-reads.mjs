@@ -131,7 +131,22 @@ for (const read of bounded) {
 // ("412 kayıttan 40 tanesi"); kesilmiş bir **küme** olamaz. Bir davanın
 // tarafları bir elin parmakları kadar ve `legal_case_id` ile zaten tek davaya
 // bağlı, yani okuma kütüğün tamamını değil bir davayı çekiyor.
-const UNBOUNDED_TODAY = 122;
+//
+// T13 Faz 4'ten sonra 126: brifingin üç listesi ve itirazlar eklendi
+// (`fetchAppealGrounds`, `fetchLegalAuthorities`, `fetchBenchQuestions`,
+// `fetchDefencePillars`), dördü de kasıtlı olarak sınırsız ve sebebi
+// `fetchCaseParties` ile aynı — bunlar dilim değil **küme**:
+//
+//   Dokuz itirazın dördünü gösteren bir liste, dört itiraz varmış gibi okunur,
+//   ve temyiz dilekçesinde kaç itiraz olduğu mahkeme kaydındaki bir olgu.
+//
+//   Kesilmiş bir içtihat kütüphanesi, görmediğiniz aleyhe kararı duruşmada
+//   gösterir. Kesilmiş bir hazırlık listesi, sorulan soruyu saklar. Kesilmiş
+//   bir savunma, delikli bir savunmadır.
+//
+// Dördü de `legal_case_id` ile tek dosyaya bağlı, yani okuma kütüğün tamamını
+// değil bir davayı çekiyor.
+const UNBOUNDED_TODAY = 126;
 
 // Sayan okumalar sayılmıyor: sorumuz "kaç okuma her satırı çekiyor", ve
 // `head: true` olan hiç satır çekmiyor.

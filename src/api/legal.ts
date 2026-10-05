@@ -24,6 +24,11 @@ import type {
   OrderState,
   PreparationState,
   CaseParty,
+  AppealGround,
+  AuthoritySide,
+  BenchQuestion,
+  DefencePillar,
+  LegalAuthorityRecord,
 } from '../types';
 
 function fail(error: { message: string } | null): void {
@@ -410,6 +415,142 @@ interface CounselRow {
  * zaman portalda bir kayıt değil — karşı tarafın avukatı paydaş kütüğünde
  * olmak zorunda değil.
  */
+/**
+ * Duruşma brifinginin üç listesi ve itirazlar (M5-12, M5-13, M5-17).
+ *
+ * Dördü de bir davanın çocuğu ve sınır koymuyorlar; sebebi `fetchCaseParties`
+ * ile aynı: bunlar dilim değil **küme**. Dokuz itirazın dördünü gösteren bir
+ * liste, dört itiraz varmış gibi okunur, ve temyiz dilekçesinde kaç itiraz
+ * olduğu mahkeme kaydındaki bir olgu. `legal_case_id` zaten tek davaya
+ * bağlıyor, yani okuma kütüğün tamamını değil bir dosyayı çekiyor.
+ */
+interface GroundRow {
+  id: string;
+  legal_case_id: string;
+  ordinal: number;
+  title_en: string;
+  title_tr: string | null;
+  detail_en: string | null;
+  detail_tr: string | null;
+  judgment_paragraph: string | null;
+}
+
+export async function fetchAppealGrounds(caseId: string): Promise<AppealGround[]> {
+  const { data, error } = await supabase
+    .from('appeal_grounds')
+    .select(
+      'id, legal_case_id, ordinal, title_en, title_tr, detail_en, detail_tr, judgment_paragraph',
+    )
+    .eq('legal_case_id', caseId)
+    .order('ordinal');
+  fail(error);
+  return ((data ?? []) as unknown as GroundRow[]).map((row) => ({
+    id: row.id,
+    legalCaseId: row.legal_case_id,
+    ordinal: row.ordinal,
+    titleEn: row.title_en,
+    titleTr: row.title_tr,
+    detailEn: row.detail_en,
+    detailTr: row.detail_tr,
+    judgmentParagraph: row.judgment_paragraph,
+  }));
+}
+
+interface AuthorityRow {
+  id: string;
+  legal_case_id: string;
+  citation: string;
+  favours: AuthoritySide;
+  principle_en: string;
+  principle_tr: string | null;
+  use_note_en: string | null;
+  use_note_tr: string | null;
+  document_id: string | null;
+}
+
+export async function fetchLegalAuthorities(caseId: string): Promise<LegalAuthorityRecord[]> {
+  const { data, error } = await supabase
+    .from('legal_authorities')
+    .select(
+      'id, legal_case_id, citation, favours, principle_en, principle_tr, ' +
+        'use_note_en, use_note_tr, document_id',
+    )
+    .eq('legal_case_id', caseId)
+    .order('citation');
+  fail(error);
+  return ((data ?? []) as unknown as AuthorityRow[]).map((row) => ({
+    id: row.id,
+    legalCaseId: row.legal_case_id,
+    citation: row.citation,
+    favours: row.favours,
+    principleEn: row.principle_en,
+    principleTr: row.principle_tr,
+    useNoteEn: row.use_note_en,
+    useNoteTr: row.use_note_tr,
+    documentId: row.document_id,
+  }));
+}
+
+interface BenchQuestionRow {
+  id: string;
+  legal_case_id: string;
+  hearing_id: string | null;
+  topic: string;
+  question_en: string;
+  question_tr: string | null;
+  answer_en: string | null;
+  answer_tr: string | null;
+}
+
+export async function fetchBenchQuestions(caseId: string): Promise<BenchQuestion[]> {
+  const { data, error } = await supabase
+    .from('bench_questions')
+    .select('id, legal_case_id, hearing_id, topic, question_en, question_tr, answer_en, answer_tr')
+    .eq('legal_case_id', caseId)
+    .order('topic');
+  fail(error);
+  return ((data ?? []) as unknown as BenchQuestionRow[]).map((row) => ({
+    id: row.id,
+    legalCaseId: row.legal_case_id,
+    hearingId: row.hearing_id,
+    topic: row.topic,
+    questionEn: row.question_en,
+    questionTr: row.question_tr,
+    answerEn: row.answer_en,
+    answerTr: row.answer_tr,
+  }));
+}
+
+interface PillarRow {
+  id: string;
+  legal_case_id: string;
+  ordinal: number;
+  against: string;
+  title_en: string;
+  title_tr: string | null;
+  detail_en: string | null;
+  detail_tr: string | null;
+}
+
+export async function fetchDefencePillars(caseId: string): Promise<DefencePillar[]> {
+  const { data, error } = await supabase
+    .from('defence_pillars')
+    .select('id, legal_case_id, ordinal, against, title_en, title_tr, detail_en, detail_tr')
+    .eq('legal_case_id', caseId)
+    .order('ordinal');
+  fail(error);
+  return ((data ?? []) as unknown as PillarRow[]).map((row) => ({
+    id: row.id,
+    legalCaseId: row.legal_case_id,
+    ordinal: row.ordinal,
+    against: row.against,
+    titleEn: row.title_en,
+    titleTr: row.title_tr,
+    detailEn: row.detail_en,
+    detailTr: row.detail_tr,
+  }));
+}
+
 interface PartyRow {
   id: string;
   legal_case_id: string;

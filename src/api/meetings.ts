@@ -480,9 +480,23 @@ function toAction(row: ActionRow): ActionItem {
   };
 }
 
-export async function fetchActions(meetingId?: string): Promise<ActionItem[]> {
+/**
+ * @param meetingId Verilirse yalnızca o toplantının aksiyonları.
+ * @param legalCaseId Verilirse yalnızca o davadan doğanlar (0053).
+ *
+ *   Dava süzgeci, hukuk ekranının "Kenya ziyaret planı" sekmesi için eklendi:
+ *   sekme numaralı bir strateji metnini koda gömülü tutuyordu ve adımların her
+ *   biri aslında bir aksiyondu. Aksiyonun kütüğü sorumlu ile tarihi **zorunlu**
+ *   tutuyor (M3-02), gömülü plan ikisini de taşımıyordu — yani ekranda
+ *   takip ediliyormuş gibi duran bir şey vardı, takip edeni olmadan.
+ */
+export async function fetchActions(
+  meetingId?: string,
+  legalCaseId?: string,
+): Promise<ActionItem[]> {
   let query = supabase.from('action_items').select(ACTION_COLUMNS).order('due_date');
   if (meetingId) query = query.eq('meeting_id', meetingId);
+  if (legalCaseId) query = query.eq('legal_case_id', legalCaseId);
   const { data, error } = await query;
   fail(error);
   return ((data ?? []) as unknown as ActionRow[]).map(toAction);

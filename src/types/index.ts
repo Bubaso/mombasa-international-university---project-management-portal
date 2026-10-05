@@ -758,20 +758,67 @@ export interface HearingBriefItem {
   content: string[];
 }
 
-export interface BenchQuestion {
-  question: string;
-  answer: string;
-  questionTr: string;
-  answerTr: string;
-  category: 'stay' | 'contempt' | 'trustees' | 'wall_repair' | 'jurisdiction';
+/**
+ * Duruşma brifingi ve içtihat kütüphanesi (M5-12, M5-13, M5-17), 0053.
+ *
+ * Bu dört tip koda gömülü hâlin yerine geçti ve iki şeyi değiştirdi.
+ *
+ * `topic` artık birleşim değil serbest metin. Eskisi
+ * `'stay' | 'contempt' | 'trustees' | 'wall_repair' | 'jurisdiction'` diyordu
+ * ve `wall_repair` bu uyuşmazlığın bir olgusu — bir davanın olgusunu tipe
+ * koymak, ikinci bir dosyayı tipi değiştirmeye zorlar.
+ *
+ * Her satır bir kaydın kimliğini taşıyor, çünkü artık kayıt: köken satırı
+ * (M13-21) ve denetim kütüğü kimliğe bağlı.
+ */
+export type AuthoritySide = 'ours' | 'theirs';
+
+export interface AppealGround {
+  id: string;
+  legalCaseId: string;
+  ordinal: number;
+  titleEn: string;
+  titleTr: string | null;
+  detailEn: string | null;
+  detailTr: string | null;
+  /** İtirazın dayandığı karar paragrafı; yoksa null. */
+  judgmentParagraph: string | null;
 }
 
-export interface LegalAuthority {
+export interface LegalAuthorityRecord {
+  id: string;
+  legalCaseId: string;
   citation: string;
-  use: string;
-  party: 'ours' | 'theirs';
+  favours: AuthoritySide;
   principleEn: string;
-  principleTr: string;
+  principleTr: string | null;
+  useNoteEn: string | null;
+  useNoteTr: string | null;
+  documentId: string | null;
+}
+
+export interface BenchQuestion {
+  id: string;
+  legalCaseId: string;
+  /** Belli bir duruşma için hazırlandıysa onun kimliği; genel soruda null. */
+  hearingId: string | null;
+  topic: string;
+  questionEn: string;
+  questionTr: string | null;
+  answerEn: string | null;
+  answerTr: string | null;
+}
+
+export interface DefencePillar {
+  id: string;
+  legalCaseId: string;
+  ordinal: number;
+  /** Hangi iddiaya karşı duruyor. */
+  against: string;
+  titleEn: string;
+  titleTr: string | null;
+  detailEn: string | null;
+  detailTr: string | null;
 }
 
 export interface CourtRecordVolume {

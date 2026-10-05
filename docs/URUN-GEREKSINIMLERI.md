@@ -228,16 +228,16 @@ Her kayıt (belge, not, karar, temas, risk) tam olarak bir seviye taşır:
 
 ## 5. Modüller
 
-Toplam **252 numaralandırılmış gereksinim**: 209 modül gereksinimi (`M2-01` gibi), 37
+Toplam **253 numaralandırılmış gereksinim**: 210 modül gereksinimi (`M2-01` gibi), 37
 fonksiyonel olmayan gereksinim (`N-01`…`N-37`) ve 6 göç gereksinimi (`G-01`…`G-06`).
 
 Sayı, bölüm 2'deki 18 numaralı satırı içermiyor: `S-1`…`S-10` yapısal sorunlar ve
 `H-1`…`H-8` doğrulanmış hatalar, yani **teşhis**, istenen iş değil. Dokümandaki bütün
-numaralı satır 270; gereksinim olan 252. Sayım tek komutla tekrarlanabilir olsun diye
+numaralı satır 271; gereksinim olan 253. Sayım tek komutla tekrarlanabilir olsun diye
 bunu burada yazıyoruz:
 
 ```
-grep -cE '^\| *M[0-9]+-[0-9]+' docs/URUN-GEREKSINIMLERI.md   # 209
+grep -cE '^\| *M[0-9]+-[0-9]+' docs/URUN-GEREKSINIMLERI.md   # 210
 grep -cE '^\| *N-[0-9]+'       docs/URUN-GEREKSINIMLERI.md   #  37
 grep -cE '^\| *G-[0-9]+'       docs/URUN-GEREKSINIMLERI.md   #   6
 ```
@@ -361,24 +361,25 @@ aynısı: 4 Ekim 2026'da sayıldı.
 >
 > Buradaki asıl değer, dava takvimini göstermek değil: **mahkeme kararını uyum yükümlülüğüne çevirmek** (M2-05) ve **hukukî durumu operasyonel kararlara bağlamak**.
 
-| ID    | P   | Gereksinim                                                                                                                                                                                    |
-| ----- | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| M5-01 | P1  | **Dava dosyası** varlığı: dosya no, mahkeme, tür, taraflar, konu, durum, açılış tarihi, risk seviyesi, sorumlu avukat, gizlilik. Çoklu dosya zorunlu                                          |
-| M5-02 | P1  | Dosyalar arası ilişki: `birleştirildi` · `temyizidir` · `bağlantılıdır`                                                                                                                       |
-| M5-03 | P1  | **Duruşma takvimi:** tarih, tür, heyet, hazırlık durumu, gereken belgeler, katılacak kişiler, geri sayım                                                                                      |
-| M5-04 | P1  | **Layiha/dilekçe kütüğü:** tür, sunum tarihi, **son sunum tarihi**, durum, dosyalayan, belge bağı. Usul süresi kaçırma bu projede fiilî bir risk                                              |
-| M5-05 | P1  | **Karar/emir kütüğü:** tarih, veren, metin, durum (yürürlükte/değiştirildi/kalktı), **ve otomatik yükümlülük üretimi** (M2-05)                                                                |
-| M5-06 | P1  | Delil/ek kütüğü: ek işareti, tanım, kaynak, ilgili olduğu iddia, belge bağı, **delil zinciri** (kim, ne zaman, kime teslim etti)                                                              |
-| M5-07 | P1  | Tasdikli suret takibi: hangi belgenin tasdikli sureti var, nerede, ne zaman alındı. _(Tasdikli tapu suretinin eklenmemesi temyiz gerekçelerinizden biri — bu takip doğrudan davanın konusu.)_ |
-| M5-08 | P1  | **Avukat portföyü:** hangi avukat hangi dosyada, vekâletname durumu, iletişim, sözleşme, ücret modeli                                                                                         |
-| M5-09 | P1  | **Hukuk harcaması takibi:** dosya bazında; M8 bütçesine bağlı                                                                                                                                 |
-| M5-10 | P1  | Hukukî görüş arşivi: kimden, ne zaman, hangi soruya, sonuç. Birden fazla avukattan alınan görüşler karşılaştırılabilir                                                                        |
-| M5-11 | P2  | **Senaryo analizi:** "kaybedersek", "ortak vakıf temyizden çekilirse", "karar bozulursa" — her senaryonun olasılığı, etkisi, hazırlık planı. Riskle (M6) bağlanır                             |
-| M5-12 | P2  | Duruşma brifingi: beklenen sorular, cevaplar, içtihat, savunma sütunları — **veri olarak**, koda gömülü değil                                                                                 |
-| M5-13 | P2  | İçtihat/mevzuat kütüphanesi: atıf, kullanım amacı, lehimize/aleyhimize, ilke özeti                                                                                                            |
-| M5-14 | P2  | **Kronoloji görünümü:** 30 yıllık mülkiyet ve dava tarihçesi; her olay kaynağa bağlı, düzenlenebilir                                                                                          |
-| M5-15 | P2  | Mahkemeye hazır dosya dışa aktarımı: seçilen belgeler numaralı, indeksli tek PDF                                                                                                              |
-| M5-16 | P1  | Dış avukat erişimi: yalnızca kendi dosyaları; kendi layihasını yükler; diğer dosyaları ve mali verileri **hiç görmez**                                                                        |
+| ID    | P   | Gereksinim                                                                                                                                                                                                                                                            |
+| ----- | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M5-01 | P1  | **Dava dosyası** varlığı: dosya no, mahkeme, tür, taraflar, konu, durum, açılış tarihi, risk seviyesi, sorumlu avukat, gizlilik. Çoklu dosya zorunlu                                                                                                                  |
+| M5-02 | P1  | Dosyalar arası ilişki: `birleştirildi` · `temyizidir` · `bağlantılıdır`                                                                                                                                                                                               |
+| M5-03 | P1  | **Duruşma takvimi:** tarih, tür, heyet, hazırlık durumu, gereken belgeler, katılacak kişiler, geri sayım                                                                                                                                                              |
+| M5-04 | P1  | **Layiha/dilekçe kütüğü:** tür, sunum tarihi, **son sunum tarihi**, durum, dosyalayan, belge bağı. Usul süresi kaçırma bu projede fiilî bir risk                                                                                                                      |
+| M5-05 | P1  | **Karar/emir kütüğü:** tarih, veren, metin, durum (yürürlükte/değiştirildi/kalktı), **ve otomatik yükümlülük üretimi** (M2-05)                                                                                                                                        |
+| M5-06 | P1  | Delil/ek kütüğü: ek işareti, tanım, kaynak, ilgili olduğu iddia, belge bağı, **delil zinciri** (kim, ne zaman, kime teslim etti)                                                                                                                                      |
+| M5-07 | P1  | Tasdikli suret takibi: hangi belgenin tasdikli sureti var, nerede, ne zaman alındı. _(Tasdikli tapu suretinin eklenmemesi temyiz gerekçelerinizden biri — bu takip doğrudan davanın konusu.)_                                                                         |
+| M5-08 | P1  | **Avukat portföyü:** hangi avukat hangi dosyada, vekâletname durumu, iletişim, sözleşme, ücret modeli                                                                                                                                                                 |
+| M5-09 | P1  | **Hukuk harcaması takibi:** dosya bazında; M8 bütçesine bağlı                                                                                                                                                                                                         |
+| M5-10 | P1  | Hukukî görüş arşivi: kimden, ne zaman, hangi soruya, sonuç. Birden fazla avukattan alınan görüşler karşılaştırılabilir                                                                                                                                                |
+| M5-11 | P2  | **Senaryo analizi:** "kaybedersek", "ortak vakıf temyizden çekilirse", "karar bozulursa" — her senaryonun olasılığı, etkisi, hazırlık planı. Riskle (M6) bağlanır                                                                                                     |
+| M5-12 | P2  | Duruşma brifingi: beklenen sorular, cevaplar, içtihat, savunma sütunları — **veri olarak**, koda gömülü değil                                                                                                                                                         |
+| M5-13 | P2  | İçtihat/mevzuat kütüphanesi: atıf, kullanım amacı, lehimize/aleyhimize, ilke özeti                                                                                                                                                                                    |
+| M5-14 | P2  | **Kronoloji görünümü:** 30 yıllık mülkiyet ve dava tarihçesi; her olay kaynağa bağlı, düzenlenebilir                                                                                                                                                                  |
+| M5-15 | P2  | Mahkemeye hazır dosya dışa aktarımı: seçilen belgeler numaralı, indeksli tek PDF                                                                                                                                                                                      |
+| M5-16 | P1  | Dış avukat erişimi: yalnızca kendi dosyaları; kendi layihasını yükler; diğer dosyaları ve mali verileri **hiç görmez**                                                                                                                                                |
+| M5-17 | P2  | **Temyiz itirazları kütüğü:** her itiraz numaralı, dayandığı karar paragrafıyla, iki dilde. _(5 Ekim 2026'da ölçüldü: dokuz itiraz koda gömülü duruyordu ve hiçbir gereksinim satırı onları istemiyordu — ürün dokümanının bilmediği bir şey ekranda duruyor demek.)_ |
 
 ---
 
