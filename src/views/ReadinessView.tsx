@@ -12,10 +12,26 @@
  * is missing from the board and that is deliberate: nothing records it, and a
  * bar drawn at zero would read as "nothing done" when the truth is "nothing
  * tracked".
+ *
+ * ---
+ *
+ * Sekmeler, 5 Ekim 2026 (T14-04). Altı panel alt alta duruyordu ve ekran
+ * **3.561 piksel** boyundaydı. Pano SEKMEYE ALINMADI ve sebebi bu dosyanın
+ * kendi cümlesi: şeritleri yan yana koyan tek görünüm o, yani ekranın özeti.
+ * `RiskMatrix` ile aynı karar — özet görünür kalır, kütükler bir tık arkaya
+ * geçer. Beş kütüğün beşi de duruyor, yeri değişti.
  */
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowUpRight, GraduationCap } from 'lucide-react';
+import {
+  ArrowUpRight,
+  BadgeCheck,
+  BookOpen,
+  CalendarCheck,
+  GraduationCap,
+  Route,
+  Target,
+} from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useApp } from '../context/AppContext';
 import { ReadinessBoard } from '../components/governance/ReadinessBoard';
@@ -27,10 +43,21 @@ import { TargetPanel } from '../components/governance/TargetPanel';
 import { DataFreshness } from '../components/DataFreshness';
 import { fetchReadiness } from '../api/governance';
 
+type Tab = 'compliance' | 'accreditation' | 'roadmap' | 'programmes' | 'targets';
+
 export const ReadinessView: React.FC = () => {
   const { language } = useApp();
   const tr = language === 'tr';
+  const [tab, setTab] = useState<Tab>('compliance');
   const readiness = useQuery({ queryKey: ['readiness'], queryFn: fetchReadiness });
+
+  const TABS: { key: Tab; icon: React.ElementType; label: string }[] = [
+    { key: 'compliance', icon: CalendarCheck, label: tr ? 'Mevzuat' : 'Compliance' },
+    { key: 'accreditation', icon: BadgeCheck, label: tr ? 'CUE şartları' : 'CUE' },
+    { key: 'roadmap', icon: Route, label: tr ? 'Berat yolu' : 'Charter' },
+    { key: 'programmes', icon: BookOpen, label: tr ? 'Programlar' : 'Programmes' },
+    { key: 'targets', icon: Target, label: tr ? 'Taahhütler' : 'Undertakings' },
+  ];
 
   return (
     <div className="space-y-4">
@@ -51,16 +78,35 @@ export const ReadinessView: React.FC = () => {
         <DataFreshness queries={[readiness]} />
       </header>
 
+      {/* Pano sekmenin dışında: ekranın özeti o, ve bir özeti sekmeye koymak
+          onu rapor hâline getirir (`RiskMatrix` ile aynı karar). */}
       <ReadinessBoard />
-      <CompliancePanel />
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <AccreditationPanel />
-        <RoadmapPanel />
+      <div role="tablist" className="flex flex-wrap gap-1.5">
+        {TABS.map(({ key, icon: Icon, label }) => (
+          <button
+            key={key}
+            type="button"
+            role="tab"
+            aria-selected={tab === key}
+            onClick={() => setTab(key)}
+            className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors ${
+              tab === key
+                ? 'border-indigo-300 bg-indigo-50 text-indigo-900'
+                : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+            <span>{label}</span>
+          </button>
+        ))}
       </div>
 
-      <ProgrammePanel />
-      <TargetPanel />
+      {tab === 'compliance' && <CompliancePanel />}
+      {tab === 'accreditation' && <AccreditationPanel />}
+      {tab === 'roadmap' && <RoadmapPanel />}
+      {tab === 'programmes' && <ProgrammePanel />}
+      {tab === 'targets' && <TargetPanel />}
 
       <Link
         to="/governance"

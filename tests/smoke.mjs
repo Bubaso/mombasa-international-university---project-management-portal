@@ -4796,6 +4796,30 @@ try {
   );
   check(pageErrors.length === 0, 'and the refusal renders without a runtime error');
 
+  /**
+   * Sayfanın metni, AÇILIŞ HÂLİ + HER SEKME.
+   *
+   * T14-04 ile ekranlar sekmelere bölündü: paneller duruyor, yeri değişti. Tek
+   * sayfanın metnine bakan bir iddia artık yalnızca açılış sekmesini görür ve
+   * "bu kayıt ekranda yok" der — oysa bir tık ötede.
+   *
+   * Birleşim iddiaları ZAYIFLATMIYOR, güçlendiriyor: "şu kayıt ekranda" artık
+   * "erişilebilir bir yerde" demek (doğru olan da bu), ve "şu uydurma rakam
+   * ekranda yok" tek sayfayı değil bütün sekmeleri tarıyor.
+   *
+   * DOM'a bakan kontroller bununla çözülmez: onlar kaydın O AN ekranda olmasını
+   * ister, ve kendi sekmesini açıkça seçmek zorundadır.
+   */
+  const bodyAcrossTabs = async (page) => {
+    let text = (await page.textContent('body')) ?? '';
+    for (const tab of await page.$$('[role="tab"]')) {
+      await tab.click();
+      await page.waitForTimeout(250);
+      text += '\n' + ((await page.textContent('body')) ?? '');
+    }
+    return text;
+  };
+
   // --- governance (M10-01 … M10-04, M10-11) ---------------------------------
   //
   // The screen this replaces held three resolutions in a React useState, one
@@ -4804,19 +4828,7 @@ try {
   pageErrors = [];
   await page.goto(BASE + '/governance', { waitUntil: 'networkidle' });
   await page.waitForTimeout(500);
-  // Ekran dört sekmeye bölündü (T14-04): organlar, vakıf senedi, kararlar,
-  // mütevelliler. Panellerin hepsi duruyor, yeri değişti — bu yüzden metin
-  // AÇILIŞ HÂLİ + HER SEKME olarak toplanıyor.
-  //
-  // Birleşim iddiaları zayıflatmıyor, güçlendiriyor: "şu kayıt ekranda" artık
-  // "erişilebilir bir yerde" demek (doğru olan da bu), ve "şu uydurma rakam
-  // ekranda yok" artık tek sayfayı değil dört sekmeyi birden tarıyor.
-  let governance = (await page.textContent('body')) ?? '';
-  for (const tab of await page.$$('[role="tab"]')) {
-    await tab.click();
-    await page.waitForTimeout(250);
-    governance += '\n' + ((await page.textContent('body')) ?? '');
-  }
+  const governance = await bodyAcrossTabs(page);
 
   check(
     !/34\.3M/.test(governance) && !/Enacted/.test(governance),
@@ -5118,7 +5130,7 @@ try {
   pageErrors = [];
   await page.goto(BASE + '/readiness', { waitUntil: 'networkidle' });
   await page.waitForTimeout(500);
-  const readiness = (await page.textContent('body')) ?? '';
+  const readiness = await bodyAcrossTabs(page);
 
   // M10-12. Four strands, and outreach deliberately absent.
   check(

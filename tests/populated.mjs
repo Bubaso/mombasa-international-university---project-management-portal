@@ -331,7 +331,7 @@ const DENSITY = {
   '/legal': { buttons: 53, headings: 9, height: 1277 },
   '/construction': { buttons: 44, headings: 10, height: 2830 },
   '/governance': { buttons: 54, headings: 8, height: 1132 },
-  '/readiness': { buttons: 60, headings: 13, height: 3561 },
+  '/readiness': { buttons: 45, headings: 9, height: 1090 },
   '/stakeholders': { buttons: 45, headings: 10, height: 1352 },
   '/meetings': { buttons: 52, headings: 14, height: 1709 },
   '/obligations': { buttons: 47, headings: 15, height: 1556 },
