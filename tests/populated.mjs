@@ -328,22 +328,22 @@ const signedCounts = [];
 const DENSITY = {
   '/': { buttons: 47, headings: 9, height: 1105 },
   '/project_info': { buttons: 38, headings: 11, height: 1419 },
-  '/legal': { buttons: 57, headings: 9, height: 1683 },
+  '/legal': { buttons: 53, headings: 9, height: 1277 },
   '/construction': { buttons: 44, headings: 10, height: 2830 },
-  '/governance': { buttons: 60, headings: 12, height: 3924 },
+  '/governance': { buttons: 54, headings: 8, height: 1132 },
   '/readiness': { buttons: 60, headings: 13, height: 3561 },
   '/stakeholders': { buttons: 45, headings: 10, height: 1352 },
   '/meetings': { buttons: 52, headings: 14, height: 1709 },
   '/obligations': { buttons: 47, headings: 15, height: 1556 },
-  '/risks': { buttons: 42, headings: 8, height: 1636 },
+  '/risks': { buttons: 52, headings: 9, height: 1636 },
   '/calendar': { buttons: 56, headings: 9, height: 1132 },
   '/plan': { buttons: 50, headings: 13, height: 3460 },
   '/reports': { buttons: 49, headings: 12, height: 1242 },
   '/procurement': { buttons: 56, headings: 11, height: 2974 },
-  '/finance': { buttons: 45, headings: 8, height: 1044 },
+  '/finance': { buttons: 45, headings: 9, height: 1044 },
   '/documents': { buttons: 47, headings: 7, height: 1061 },
   '/communication': { buttons: 107, headings: 16, height: 3050 },
-  '/assistant': { buttons: 49, headings: 10, height: 2041 },
+  '/assistant': { buttons: 52, headings: 10, height: 3199 },
   '/admin': { buttons: 37, headings: 11, height: 1044 },
 };
 const density = {};
@@ -355,6 +355,17 @@ for (const route of ROUTES) {
   await settle();
 
   const seen = new Set(await boundaries());
+
+  // Yoğunluk, SEKMELERE DOKUNMADAN ölçülüyor: ölçülmesi gereken şey ekranı
+  // açan kişinin gördüğü hâl. İlk yazımda ölçüm sekme döngüsünden SONRAYDI,
+  // yani son sekmenin hâlini alıyordu — ve sekmesiz bir ekranla sekmeli bir
+  // ekranı karşılaştırmak elma-armut oluyordu. Tam da ölçmeye çalıştığım
+  // kazancı göremeyecek bir ölçümdü.
+  density[route] = await page.evaluate(() => ({
+    buttons: document.querySelectorAll('button').length,
+    headings: document.querySelectorAll('h1,h2,h3,h4').length,
+    height: document.body.scrollHeight,
+  }));
 
   // Sekmeler: ilk ekranda görünmeyen bir panel, tıklanmadan sınanmaz.
   const tabs = await page.$$('[role="tab"]');
@@ -372,12 +383,6 @@ for (const route of ROUTES) {
     await settle();
     for (const message of await boundaries()) seen.add(`[${name}] ${message}`);
   }
-
-  density[route] = await page.evaluate(() => ({
-    buttons: document.querySelectorAll('button').length,
-    headings: document.querySelectorAll('h1,h2,h3,h4').length,
-    height: document.body.scrollHeight,
-  }));
 
   const body = (await page.textContent('body')) ?? '';
   const signed = body.match(new RegExp(SIGNED_FUTURE.source, 'gi')) ?? [];

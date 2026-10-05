@@ -4804,7 +4804,19 @@ try {
   pageErrors = [];
   await page.goto(BASE + '/governance', { waitUntil: 'networkidle' });
   await page.waitForTimeout(500);
-  const governance = (await page.textContent('body')) ?? '';
+  // Ekran dört sekmeye bölündü (T14-04): organlar, vakıf senedi, kararlar,
+  // mütevelliler. Panellerin hepsi duruyor, yeri değişti — bu yüzden metin
+  // AÇILIŞ HÂLİ + HER SEKME olarak toplanıyor.
+  //
+  // Birleşim iddiaları zayıflatmıyor, güçlendiriyor: "şu kayıt ekranda" artık
+  // "erişilebilir bir yerde" demek (doğru olan da bu), ve "şu uydurma rakam
+  // ekranda yok" artık tek sayfayı değil dört sekmeyi birden tarıyor.
+  let governance = (await page.textContent('body')) ?? '';
+  for (const tab of await page.$$('[role="tab"]')) {
+    await tab.click();
+    await page.waitForTimeout(250);
+    governance += '\n' + ((await page.textContent('body')) ?? '');
+  }
 
   check(
     !/34\.3M/.test(governance) && !/Enacted/.test(governance),
@@ -4816,6 +4828,12 @@ try {
   // registers would otherwise each have needed their own hook and their own
   // chance to key the badge to the reader's language instead of to the column
   // the words came from.
+  // Bu kontrol DOM'a bakıyor, toplanan metne değil — yani kaydın gerçekten
+  // o anda ekranda olması gerekiyor. Sekme turu sayfayı sonuncuda bırakıyor,
+  // o yüzden kararlar sekmesi AÇIKÇA seçiliyor. Örtük bir sekme sırasına
+  // güvenmek, sıradaki değişiklikte sessizce yanlış yeri sınamak olurdu.
+  await page.locator('[role="tab"]', { hasText: 'Kararlar' }).first().click();
+  await page.waitForTimeout(300);
   check(
     (await page
       .locator('tr, li, article', { hasText: 'Kira sözleşmesini sonraki alımdan önce yenile' })
@@ -4882,6 +4900,10 @@ try {
   // deleted when the entry turned out to be wrong, and had to be marked as
   // having stood down instead — which states that a person served and left
   // about somebody who never served.
+  // Mütevelli kütüğü kendi sekmesinde (T14-04). Aşağıdaki kontroller DOM'a
+  // bakıyor, yani kayıt o anda ekranda olmalı.
+  await page.locator('[role="tab"]', { hasText: 'Mütevelliler' }).first().click();
+  await page.waitForTimeout(300);
   const trusteeList = page.locator('section', {
     has: page.locator('h2', { hasText: /Mütevelli kütüğü|Trustee register/ }),
   });
@@ -4921,6 +4943,9 @@ try {
   );
 
   // (a) Seating somebody, which the portal could not do at all.
+  // Organlar sekmesine dön: yukarıdaki blok mütevelliler sekmesindeydi.
+  await page.locator('[role="tab"]', { hasText: 'Organlar' }).first().click();
+  await page.waitForTimeout(300);
   const organs = page.locator('section', {
     has: page.locator('h2', { hasText: /Organlar ve nisap|organs and their quorum/ }),
   });
@@ -4995,6 +5020,9 @@ try {
     return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
   });
 
+  // Mütevelliler sekmesine dön: yukarıdaki blok organlardaydı.
+  await page.locator('[role="tab"]', { hasText: 'Mütevelliler' }).first().click();
+  await page.waitForTimeout(300);
   await trusteeList
     .locator('button', { hasText: /Mütevelli ekle|Add a trustee/ })
     .first()
@@ -5043,6 +5071,9 @@ try {
   );
 
   // M10-13: the deed's words, somebody's reading, and whether anybody looked.
+  // Senet referansı kendi sekmesinde (T14-04).
+  await page.locator('[role="tab"]', { hasText: 'Vakıf senedi' }).first().click();
+  await page.waitForTimeout(300);
   const clauseList = (await page.textContent('ul[aria-label="Senet maddeleri"]')) ?? '';
   check(
     /senedin sözü|the deed’s words/.test(clauseList) &&
