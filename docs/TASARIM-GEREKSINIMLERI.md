@@ -169,16 +169,16 @@ Toplantılar ekranında ilk üç ekranda **tek bir veri satırı** görünüyor.
 
 ## T10 — Grafikler ve pano
 
-| ID     | Gereksinim                                                                                                                          | P   | Kabul kriteri                                                                              |
-| ------ | ----------------------------------------------------------------------------------------------------------------------------------- | --- | ------------------------------------------------------------------------------------------ |
-| T10-01 | Kategorik palet **doğrulayıcıdan geçsin**. Bugün iki kontrolden kalıyor: `#586e75` gri okunuyor; kırmızı↔yeşil döteranopide ΔE 4.1. | P0  | Kategorik palet tüm çiftlerde PASS; durum paleti kendi kuralına göre (bkz. 4. dalga notu). |
-| T10-02 | Durum renkleri (iyi/uyarı/ciddi/kritik) ayrılsın ve seri rengi olarak kullanılmasın.                                                | P0  | Durum renkleri kategorik paletten ayrı.                                                    |
-| T10-03 | İki serili her grafikte lejant olsun; dört seriye kadar doğrudan etiket.                                                            | P1  | Lejant mevcut.                                                                             |
-| T10-04 | Çift eksenli grafik olmasın.                                                                                                        | P0  | Hiçbir grafikte ikinci y ekseni yok.                                                       |
-| T10-05 | Ölçülen noktalar arası çizgi **basamak** olarak çizilsin (zaten yapılmış, korunsun).                                                | P0  | Mevcut davranış ve testi korunur.                                                          |
-| T10-06 | Grafiklerin tablo görünümü olsun.                                                                                                   | P1  | Her grafiğin yanında veri tablosu erişilebilir.                                            |
-| T10-07 | Telefonda grafik okunabilir kalsın: eksen etiketleri seyreltilsin, yatay kaydırma olmasın.                                          | P1  | 390px'te grafik taşmıyor.                                                                  |
-| T10-08 | Pano, sayfanın tamamını kaplayan metin yerine **birkaç karar sayısıyla** açılsın.                                                   | P1  | İlk ekranda en az üç ölçüm görünür.                                                        |
+| ID     | Gereksinim                                                                                                                          | P   | Kabul kriteri                                                                                                                                                           |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------- | --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T10-01 | Kategorik palet **doğrulayıcıdan geçsin**. Bugün iki kontrolden kalıyor: `#586e75` gri okunuyor; kırmızı↔yeşil döteranopide ΔE 4.1. | P0  | Kategorik palet tüm çiftlerde PASS; durum paleti kendi kuralına göre (bkz. 4. dalga notu).                                                                              |
+| T10-02 | Durum renkleri (iyi/uyarı/ciddi/kritik) ayrılsın ve seri rengi olarak kullanılmasın.                                                | P0  | Durum renkleri kategorik paletten ayrı.                                                                                                                                 |
+| T10-03 | İki serili her grafikte lejant olsun; dört seriye kadar doğrudan etiket.                                                            | P1  | ✅ `CurvePanel` lejant çiziyor, uç noktalar doğrudan etiketli; Gantt kimliği ŞEKİLLE taşıyor ve iki şekli de adlandırıyor. Kapıda assertion'ı yok — bakıldı, ölçülmedi. |
+| T10-04 | Çift eksenli grafik olmasın.                                                                                                        | P0  | Hiçbir grafikte ikinci y ekseni yok.                                                                                                                                    |
+| T10-05 | Ölçülen noktalar arası çizgi **basamak** olarak çizilsin (zaten yapılmış, korunsun).                                                | P0  | Mevcut davranış ve testi korunur.                                                                                                                                       |
+| T10-06 | Grafiklerin tablo görünümü olsun.                                                                                                   | P1  | ✅ Çizilen her `svg[role="img"]` grafiğin panelinde katlanmış bir veri tablosu var; kapı tabloyu açıp satır sayıyor.                                                    |
+| T10-07 | Telefonda grafik okunabilir kalsın: eksen etiketleri seyreltilsin, yatay kaydırma olmasın.                                          | P1  | ✅ 19 rotanın 19'u 390px'te yana kaymıyor, ve geniş kalan grafik KENDİ `overflow-x` kutusunda kayıyor.                                                                  |
+| T10-08 | Pano, sayfanın tamamını kaplayan metin yerine **birkaç karar sayısıyla** açılsın.                                                   | P1  | İlk ekranda en az üç ölçüm görünür.                                                                                                                                     |
 
 ## T11 — Tasarım sistemi ve tutarlılık
 
@@ -1296,10 +1296,25 @@ tarama yapılmadı" diye duruyordu. 6 Ekim 2026'da tarama yapıldı.
 | Adsız düğme / sekme / bağlantı                 | 0 / 972    | 0 / 972 | T9-06 |
 | Etiketsiz form alanı                           | 0 / 18     | 0 / 18  | T9-06 |
 | `alt` metni olmayan resim                      | 0 / 0      | 0 / 0   | T9-06 |
-| Adsız grafik (`svg[role="img"]`)               | 0 / 3      | 0 / 3   | T9-06 |
+| Adsız grafik (`svg[role="img"]`)               | **3 / 4**  | 0 / 4   | T9-06 |
 
-Temelin sağlam olduğu ortaya çıktı: adsız bir denetim, etiketsiz bir alan,
-`alt`'sız bir resim **yoktu**. Kusur tek bir yerdeydi ve orası en kötü yerdi.
+Temelin büyük kısmı sağlam çıktı: adsız bir denetim, etiketsiz bir alan,
+`alt`'sız bir resim **yoktu**.
+
+**Grafik satırı bir düzeltmedir ve 6 Ekim 2026'da T10 turunda yapıldı.** Bu
+bölümü ilk yazdığımda "adsız grafik 0 / 3" dedim; doğrusu **3 / 3**, yani
+`/reports`'un üç grafiğinin hiçbirinin adı yoktu. Kaçıran şey kontrolün
+kendisiydi: `svg.querySelector('title')` herhangi bir ALT `<title>`'ı ad
+sayıyordu, ve `StepChart`'ın her `<circle>`'ı nokta ipucu olarak kendi
+`<title>`'ını taşıyor. O çemberler çemberi adlandırıyordu, grafiği değil —
+bir SVG'nin erişilebilir adı yalnızca ilk doğrudan çocuk `<title>`'dan gelir.
+Kontrol düzeltildi, üç grafiğe `aria-label` kondu, ve rakam artık ölçülmüş
+0 / 4.
+
+Paydaki 4, `svg[role="img"]` grafiklerinin TOPLAMI: üç eğri ve bir zaman
+çizgisi. Bu bölümü ilk yazdığımda payda 3'tü, çünkü kapının bastığı sayıyı
+("en kalabalık rotada 3") toplam sanmıştım — iki ayrı ölçünün rakamını aynı
+kolona koymak, kolonun ne saydığını belirsiz kılıyordu.
 
 Uygulamadaki tek canlı bölge `QueryStatus`'un yükleme satırıydı ve o, yükleme
 bitince DOM'dan kalkıyor. Yani **bir yazma reddedildiğinde ekran okuyucu
@@ -1380,3 +1395,103 @@ duyurulması: bir kayıt eklendiğinde "eklendi" diyen bir canlı bölge yok, ve
 ekranın kendisi değiştiği için görenin bunu fark etmesi yeterli. Bunun bir
 kusur mu yoksa gürültü mü olduğu ölçülmedi — satır bu hâliyle kapanıyor ve
 eksiği burada yazılı.
+
+### T10 — ölçülen sonuç: grafikler
+
+Dört `role="img"` ögesi var ve üçü hakkında söyleyecek bir şey çıktı.
+
+| Ölçülen                                                | önce      | **sonra** | Satır  |
+| ------------------------------------------------------ | --------- | --------- | ------ |
+| Tablo görünümü olan grafik                             | **0 / 4** | 4 / 4     | T10-06 |
+| Açılan tablo satırı (sahte veriyle)                    | —         | 24        | T10-06 |
+| 390px'te yana kayan rota                               | 0 / 19    | 0 / 19    | T10-07 |
+| Kutusundan geniş kalıp kendi kutusunda kaymayan grafik | 0         | 0         | T10-07 |
+| Adsız grafik                                           | **3 / 4** | 0 / 4     | T9-06  |
+
+#### T10-06: grafik yaklaştırır, tablo rakamı verir
+
+Grafiklerin kendisi zaten dürüsttü — `CurvePanel` çizemediğinde hangi sayının
+eksik olduğunu söylüyor, `GanttPanel` tarihi olmayan bir planı çizmiyor. Kusur
+çizebildiklerinde başlıyordu: okunan tek şey piksel oluyordu.
+
+Bir grafik veriyi **yaklaştırır**. Bir noktanın yüksekliğinden 412 ile 418'i
+ayırt edemezsiniz, ve bu grafiğin kusuru değil işidir. Kusur, yaklaşık değerin
+tek sürüm olması: rakamı isteyen biri — bir mütevelli, bir denetçi — grafiğe
+bakıp tahmin etmek zorundaydı.
+
+`src/components/ui/ChartTable.tsx` beş tablo açtı: `/reports`'ta üç eğrinin
+her biri, `/plan`'da fazlar ve kilometre taşları ayrı. Üç karar ölçüme bağlı:
+
+**Kapalı açılıyor.** T14 turu en uzun ekranı 3.924'ten 2.351 piksele indirdi;
+her grafiğin altına kalıcı bir tablo koymak o kazancı geri verirdi. T10-06
+"erişilebilir" diyor, "görünür" demiyor.
+
+**Tablo kaydı bildiriyor, çizimin tuttuğu değeri değil.** Basamak çizim iki
+ölçüm arasında eski değeri yatay taşır — seri bir koşu toplamı ve o gün için
+doğru olan o. Ama o günde seriye ait bir KAYIT yok, ve tablo "kayıtlı değil"
+diyor. Tersini yapmak, ölçülmemiş bir günü ölçülmüş göstermek olurdu; grafiğin
+basamak olmasının sebebi tam olarak bunu yapmamak.
+
+**Gantt'ta iki tablo, bir değil.** Bir fazın "başlangıcı" ile bir kilometre
+taşının "hedefi" aynı kolona girmez; girseydi tablo, çizimin özellikle
+yapmadığı şeyi yapmış olurdu — kilometre taşını bir süre gibi göstermek.
+`slipDays` ulaşılmamış taşta `null`: vadesi gelmemiş bir taşın gecikmesi 0
+değil, bilinmiyor.
+
+İki ölçer (`ReadinessBoard`, `TargetPanel`) tablo ALMADI ve sebebi ölçülmüş:
+ikisi de rakamını çubuğun üstünde metin olarak basıyor (`{ready}/{total}
+{share}%`). Orada çubuk, zaten ekranda olan bir sayıyı pekiştiriyor; tek
+sayının tablosu gürültü olurdu. Kural bu yüzden `svg[role="img"]` ile sınırlı.
+
+#### Yoğunluk kilidi bu turu yakaladı — ve iki tavan YÜKSELDİ
+
+Tablolar eklenince `tests/populated.mjs` düştü: `/plan` düğme 53 > 51 ve boy
+1388 > 1340px, `/reports` düğme 57 > 54 ve boy 1266 > 1242px. Katlanmış hâlde
+bile her tablo bir düğme ve bir satır boy demek.
+
+Bu gerçek bir çatışma, ölçüm kusuru değil: **bir gereksinim satırı bir
+ratchet'i yendi.** Tavanlar ölçülen değerlere çıkarıldı ve bedel dosyada
+yazılı. Faz 3'te tavanlar ölçünün değişmesiyle yükselmişti; burada ekran
+gerçekten büyüdü, ve kazanan tarafın gerekçesi şu: grafiğe bakıp rakamı tahmin
+etmek zorunda kalmak, üç düğmeden pahalı. (Aynı şey `/construction`'da da
+olmuştu: iki sekme iki düğme ekledi, 44 → 45.)
+
+#### T10-07: kusur sayfanın taşmasında değil, `<main>`'in emmesinde
+
+İlk kontrolüm yalnızca sayfanın taşmasını sınıyordu ve 19/19 geçti. Gantt'ın
+`overflow-x-auto` kutusunu kaldırdım — **kontrol yine geçti.**
+
+Sebebi öğretici: `App.tsx`'teki `<main>` `overflow-y-auto` taşıyor, ve CSS'te
+bir eksen `visible` değilse öbürü `auto`'ya düşer. Yani yatay kaymayı `<main>`
+emiyor ve sayfa hiç taşmıyor. Grafik kırpılmıyor, erişilebilir kalıyor — ama
+yana kaydırmak **bütün ekranı** kaydırıyor, diğer paneller de gidiyor. Tam da
+_"her yerden bir şey çıkıyor"_ şikâyetinin kendisi.
+
+Asıl kural bu yüzden şu: telefonda kutusundan geniş kalan bir grafik KENDİ
+`overflow-x` kutusunda kaymak zorunda. Genişlik kusur değil — bir zaman
+çizgisini 390 piksele sıkıştırmak okunmaz yapar — **genişliğin nereye taştığı**
+kusur. Yeni kontrol mutasyonla düşüyor: `/plan: Proje zaman çizgisi 560px >
+332px`.
+
+#### Ve kendi erişilebilirlik kontrolüm yanlış ölçüyordu
+
+T10-06'nın mutasyon çıktısı üç grafiği "grafik" diye yazdı — yani `aria-label`
+yok. Ama bir gün önce yazdığım erişilebilirlik taraması "adsız grafik 0"
+diyordu. İkisi birden doğru olamaz, ve yanlış olan taramaydı:
+`svg.querySelector('title')` herhangi bir alt `<title>`'ı ad sayıyor, ve
+`StepChart`'ın her `<circle>`'ı nokta ipucu olarak kendi `<title>`'ını taşıyor.
+
+Bir SVG'nin erişilebilir adı yalnızca **ilk doğrudan çocuk** `<title>`'dan
+gelir. Kontrol `[...el.children].find((c) => c.tagName === 'title')`'a
+çevrildi, üç grafik adsız çıktı, `aria-label` kondu, ve mutasyon artık düşüyor.
+
+Bu, bu depoda bir ölçüm aracının **altıncı** kez yanlış sebeple yeşil
+göründüğü yer — ve yakalayan şey yine testin kendisi değil, başka bir testin
+mutasyon çıktısı oldu.
+
+#### Hâlâ ölçülmeyen
+
+T10-03 bakıldı, ölçülmedi: `CurvePanel`'in lejantı yerinde ve uç noktalar
+doğrudan etiketli, Gantt kimliği şekille taşıyıp iki şekli de adlandırıyor —
+ama kapıda bunu zorlayan bir assertion yok, çünkü bir grafiğin kaç serisi
+olduğu DOM'dan güvenilir biçimde sayılamıyor. Satır ✅ ve eksiği burada yazılı.

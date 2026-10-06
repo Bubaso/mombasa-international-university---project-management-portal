@@ -320,10 +320,24 @@ const signedCounts = [];
  * Hiçbiri tek başına "sadelik" demek değil, ama üçü birden geri büyürse
  * ekran ağırlaşmış demektir — ve karakter sayısı bunu göremiyordu.
  *
- * Tavanlar ÖLÇÜLEN değerler (5 Ekim 2026, T14 Faz 1 sonrası) ve yalnızca
- * aşağı iner. Faz 2 bunları düşürmek için var: her ekran özetle açılacak,
- * detay istenince gelecek. Rakam düşmezse faz işe yaramamıştır ve bunu
- * burada göreceğiz — geçen sefer göremedik.
+ * Tavanlar ÖLÇÜLEN değerler (5 Ekim 2026, T14 Faz 1 sonrası) ve kural olarak
+ * yalnızca aşağı iner. Faz 2 bunları düşürmek için vardı: her ekran özetle
+ * açılacak, detay istenince gelecek. Rakam düşmezse faz işe yaramamıştır ve
+ * bunu burada göreceğiz — geçen sefer göremedik.
+ *
+ * İKİ TAVAN 6 Ekim 2026'da YÜKSELDİ ve bu gizlenmiyor. T10-06 her grafiğin
+ * yanında bir veri tablosu istiyor; katlanmış hâlde bile her tablo bir düğme
+ * ve bir satır boy demek. Ölçülen bedel: `/plan` 51 → **53** düğme ve 1340 →
+ * **1388px**, `/reports` 54 → **57** düğme ve 1242 → **1266px**.
+ *
+ * Bu bir ölçüm değişikliği DEĞİL — Faz 3'te tavanlar ölçünün değişmesiyle
+ * yükselmişti, burada ekran gerçekten büyüdü. Bir gereksinim satırı bir
+ * ratchet'i yendi, ve kazanan taraf yazılı duruyor: grafiğe bakıp rakamı
+ * tahmin etmek zorunda kalmak, üç düğmeden pahalı.
+ *
+ * Aynı şey `/construction`'da da olmuştu (44 → 45 düğme, iki sekme iki düğme
+ * ekliyor). Tavanın yükselmesi her zaman bir bedel, ve bedeli yazmadan
+ * yükseltmek ratchet'i anlamsız kılar.
  */
 const DENSITY = {
   '/assistant': { buttons: 55, headings: 3, height: 2351 },
@@ -332,9 +346,9 @@ const DENSITY = {
   '/risks': { buttons: 57, headings: 4, height: 1474 },
   '/project_info': { buttons: 43, headings: 6, height: 1419 },
   '/stakeholders': { buttons: 50, headings: 5, height: 1352 },
-  '/plan': { buttons: 51, headings: 4, height: 1340 },
+  '/plan': { buttons: 53, headings: 4, height: 1388 },
   '/legal': { buttons: 58, headings: 4, height: 1277 },
-  '/reports': { buttons: 54, headings: 7, height: 1242 },
+  '/reports': { buttons: 57, headings: 7, height: 1266 },
   '/governance': { buttons: 59, headings: 3, height: 1132 },
   '/calendar': { buttons: 61, headings: 4, height: 1132 },
   '/': { buttons: 52, headings: 4, height: 1105 },
@@ -475,8 +489,15 @@ for (const route of ROUTES) {
       images: images.length,
       namelessImages: images.filter((el) => el.getAttribute('alt') === null).map(name),
       charts: charts.length,
+      // `querySelector('title')` DEĞİL, doğrudan çocuk.
+      //
+      // İlk yazımda herhangi bir alt `<title>`'ı ad sayıyordum ve ölçüm
+      // yanlış çıktı: `StepChart`'ın her `<circle>`'ı kendi `<title>`'ını
+      // taşıyor (nokta ipucu), ve o çemberi adlandırıyor — grafiği değil.
+      // Üç grafik adsızdı, kontrol 0 diyordu. SVG'nin erişilebilir adı
+      // yalnızca İLK doğrudan çocuk `<title>`'dan gelir.
       namelessCharts: charts
-        .filter((el) => !named(el) && !text(el.querySelector('title')))
+        .filter((el) => !named(el) && !text([...el.children].find((c) => c.tagName === 'title')))
         .map(name),
     };
   });
@@ -685,6 +706,161 @@ check(
   'enough in-screen tabs were opened to have seen their panels',
   `${tabsClicked} clicked`,
 );
+
+/**
+ * Telefon genişliğinde yatay kaydırma (T10-07, T2-01).
+ *
+ * Grafikler bu kontrolün sebebi: `GanttPanel`'in SVG'si `minWidth: 560`
+ * taşıyor, yani 390px'lik bir ekranda kendi kutusundan geniş. Doğrusu da bu —
+ * bir zaman çizgisini 390 piksele sıkıştırmak okunmaz yapar — ama o genişlik
+ * KENDİ `overflow-x-auto` kutusunda kalmak zorunda. Sayfanın gövdesine
+ * taşarsa bütün ekran yana kayar.
+ *
+ * ÜÇ kontrol var ve ikincisi ölçülerek eklendi. İlk yazımda yalnızca
+ * sayfanın taşmasını sınıyordum; Gantt'ın `overflow-x-auto` kutusunu
+ * kaldırdım ve kontrol GEÇTİ. Sebebi öğretici: `App.tsx`'teki `<main>`
+ * `overflow-y-auto` taşıyor, ve CSS'te bir eksen `visible` değilse öbürü
+ * `auto`'ya düşer — yani yatay kaymayı `<main>` emiyor ve sayfa hiç
+ * taşmıyor. Grafik kırpılmıyor, erişilebilir kalıyor, ama yana kaydırmak
+ * BÜTÜN ekranı kaydırıyor: diğer paneller de gidiyor. Tam da "her yerden
+ * bir şey çıkıyor" şikâyetinin kendisi.
+ *
+ * Asıl kural bu yüzden şu: telefonda kutusundan geniş kalan bir grafik
+ * KENDİ `overflow-x` kutusunda kaymak zorunda. Genişlik kusur değil — bir
+ * zaman çizgisini 390 piksele sıkıştırmak okunmaz yapar — genişliğin
+ * NEREYE taştığı kusur.
+ *
+ * Üçüncüsü körlük için: grafik hiç çizilmezse ilk ikisi de kendiliğinden
+ * geçer.
+ */
+{
+  await page.setViewportSize({ width: 390, height: 844 });
+  const overflows = [];
+  const escapees = [];
+  let narrowCharts = 0;
+
+  for (const route of ROUTES) {
+    await page.goto(BASE + route, { waitUntil: 'domcontentloaded' });
+    await settle();
+    const m = await page.evaluate(() => {
+      const root = document.documentElement;
+      const over = root.scrollWidth - root.clientWidth;
+
+      // Kutusundan geniş olup o kutusu kaydırmayan grafik. Ölçünün kendisi
+      // bu: genişlik kusur değil, genişliğin NEREYE taştığı kusur.
+      const escaped = [];
+      let drawn = 0;
+      for (const svg of document.querySelectorAll('svg[role="img"]')) {
+        if (svg.getClientRects().length === 0) continue;
+        drawn += 1;
+        const box = svg.parentElement;
+        if (!box) continue;
+        const w = svg.getBoundingClientRect().width;
+        if (w <= box.clientWidth + 1) continue; // kutusuna sığıyor
+        const ox = getComputedStyle(box).overflowX;
+        if (ox === 'auto' || ox === 'scroll') continue; // kendi kutusunda kayıyor
+        const name = svg.getAttribute('aria-label') ?? 'grafik';
+        escaped.push(`${name} ${Math.round(w)}px > ${box.clientWidth}px`);
+      }
+
+      // Sayfanın kendisi taşıyorsa taşıranı da yaz: "bir yerde taşma var"
+      // diyen bir kontrol, neyi düzelteceğini söylemeyen bir kontroldür.
+      let widest = '';
+      if (over > 0) {
+        let worst = 0;
+        for (const el of document.querySelectorAll('body *')) {
+          if (el.getClientRects().length === 0) continue;
+          const right = el.getBoundingClientRect().right - root.clientWidth;
+          if (right > worst) {
+            worst = right;
+            const cls = (el.className || '').toString().split(/\s+/).slice(0, 3).join('.');
+            widest = `${el.tagName.toLowerCase()}.${cls}`;
+          }
+        }
+      }
+
+      return { over, widest, escaped, drawn };
+    });
+    narrowCharts += m.drawn;
+    if (m.over > 0) overflows.push(`${route}: +${m.over}px (${m.widest})`);
+    for (const e of m.escaped) escapees.push(`${route}: ${e}`);
+  }
+
+  check(
+    overflows.length === 0,
+    "hiçbir ekran 390px'te yatay kaymıyor (T10-07)",
+    overflows.length ? overflows.slice(0, 6).join(' | ') : `${ROUTES.length} rota`,
+  );
+  check(
+    escapees.length === 0,
+    'telefonda geniş kalan her grafik KENDİ kutusunda kayıyor (T10-07)',
+    escapees.length ? escapees.slice(0, 6).join(' | ') : 'kaçan yok',
+  );
+  check(
+    narrowCharts >= 4,
+    'telefon turu grafikleri gerçekten çizili gördü',
+    `${narrowCharts} grafik`,
+  );
+
+  await page.setViewportSize({ width: 1440, height: 1000 });
+}
+
+/**
+ * Her grafiğin okunabilir bir sürümü var (T10-06).
+ *
+ * Ölçüm, 6 Ekim 2026: dört `role="img"` ögesinin hiçbirinin tablo görünümü
+ * yoktu. Bir grafik veriyi yaklaştırır — bir noktanın yüksekliğinden 412 ile
+ * 418'i ayırt edemezsiniz — ve bu grafiğin işi. Kusur, yaklaşık değerin tek
+ * sürüm olması: rakamı isteyen biri grafiğe bakıp tahmin etmek zorundaydı.
+ *
+ * Kural `svg[role="img"]` ile sınırlı ve sebebi ölçülmüş: `ReadinessBoard` ile
+ * `TargetPanel`'in `div role="img"` ölçerleri rakamını çubuğun ÜSTÜNDE metin
+ * olarak basıyor (`{ready}/{total} {share}%`). Orada çubuk, zaten ekranda olan
+ * bir sayıyı pekiştiriyor; tek sayının tablosu gürültü olurdu.
+ *
+ * Kontrol tabloyu açıp içine de bakıyor. Sadece düğmenin varlığına bakmak,
+ * kenar çubuğunda yapılan hatanın aynısı olurdu: ölü bir aç/kapa düğmesi
+ * varlık sınamasını geçer (T14-05 notu).
+ */
+{
+  let tablesFound = 0;
+  let bodyRows = 0;
+  const missing = [];
+  for (const route of ['/reports', '/plan']) {
+    await page.goto(BASE + route, { waitUntil: 'domcontentloaded' });
+    await settle();
+
+    // Çizilen her grafik, panelinde bir tablo düğmesi görmek zorunda.
+    const orphans = await page.evaluate(() =>
+      [...document.querySelectorAll('svg[role="img"]')]
+        .filter((svg) => svg.getClientRects().length > 0)
+        .filter((svg) => !svg.closest('section')?.querySelector('[data-chart-table]'))
+        .map((svg) => svg.getAttribute('aria-label') ?? 'grafik'),
+    );
+    for (const name of orphans) missing.push(`${route}: ${name}`);
+
+    const buttons = await page.$$('[data-chart-table]');
+    for (const button of buttons) {
+      tablesFound += 1;
+      await button.click({ timeout: 4000 });
+      await settle();
+    }
+    bodyRows += await page.evaluate(
+      () =>
+        [...document.querySelectorAll('table.register tbody tr')].filter(
+          (tr) => tr.getClientRects().length > 0,
+        ).length,
+    );
+  }
+
+  check(
+    missing.length === 0,
+    'çizilen her grafiğin panelinde bir veri tablosu var (T10-06)',
+    missing.length ? missing.join(', ') : `${tablesFound} tablo`,
+  );
+  check(tablesFound >= 5, 'grafik tabloları bulundu', `${tablesFound} / en az 5`);
+  check(bodyRows > 0, 'açılan tablolar gerçekten satır gösteriyor', `${bodyRows} satır`);
+}
 
 await browser.close();
 stop();

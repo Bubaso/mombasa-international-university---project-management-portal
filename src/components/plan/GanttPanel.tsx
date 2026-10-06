@@ -33,6 +33,7 @@ import { usePhases, usePlanMilestones } from '../../api/planHooks';
 import type { Milestone, PhasePosition } from '../../types';
 import { QueryStatus } from '../QueryStatus';
 import { Pill } from '../ui/Controls';
+import { ChartTable } from '../ui/ChartTable';
 import { formatDate } from '../../lib/site';
 
 // Every colour here comes from lib/palette.ts. These seven were written out
@@ -348,6 +349,46 @@ export const GanttPanel: React.FC = () => {
             })}
           </svg>
         </div>
+      )}
+
+      {/*
+        The same plan, read rather than looked at (T10-06).
+
+        İki tablo, bir değil: bir fazın "başlangıcı" ile bir kilometre taşının
+        "hedefi" aynı kolona girmez. Girseydi tablo, çizimin özellikle
+        yapmadığı şeyi yapmış olurdu — kilometre taşını bir süre gibi
+        göstermek.
+
+        `slipDays` ikisi için de kütükten geliyor ve ulaşılmamış olanda `null`:
+        vadesi gelmemiş bir taşın gecikmesi 0 değil, bilinmiyor.
+      */}
+      {bars.length > 0 && (
+        <ChartTable
+          label="phases"
+          columns={[tr ? 'faz' : 'phase', tr ? 'başlangıç' : 'start', tr ? 'bitiş' : 'end']}
+          rows={bars.map((phase) => [
+            (tr ? phase.nameTr : phase.nameEn) ?? phase.nameEn,
+            formatDate(phase.startsOn ?? null, language),
+            formatDate(phase.endsOn ?? null, language),
+          ])}
+        />
+      )}
+      {marks.length > 0 && (
+        <ChartTable
+          label="milestones"
+          columns={[
+            tr ? 'kilometre taşı' : 'milestone',
+            tr ? 'hedef' : 'target',
+            tr ? 'ulaşılan' : 'achieved',
+            tr ? 'gecikme (gün)' : 'slip (days)',
+          ]}
+          rows={marks.map((m) => [
+            (tr ? m.titleTr : m.titleEn) ?? m.titleEn,
+            formatDate(m.targetOn ?? null, language),
+            m.achievedOn ? formatDate(m.achievedOn, language) : null,
+            m.slipDays ?? null,
+          ])}
+        />
       )}
 
       {/* What could not be drawn, and why. */}

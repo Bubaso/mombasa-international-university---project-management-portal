@@ -25,6 +25,7 @@ import { ChartLine, Info } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useCurves } from '../../api/reportsHooks';
 import { QueryStatus } from '../QueryStatus';
+import { ChartTable } from '../ui/ChartTable';
 import type { Curve, Point } from '../../api/curves';
 
 // Categorical slots 1 and 2, in fixed order, from lib/palette.ts. The ΔE 24.7
@@ -47,7 +48,11 @@ interface Series {
  * changes on a date and holds until the next one. A smoothed line between two
  * recorded points would draw values on days nobody measured.
  */
-const StepChart: React.FC<{ series: Series[]; unit?: string }> = ({ series, unit }) => {
+const StepChart: React.FC<{ series: Series[]; name: string; unit?: string }> = ({
+  series,
+  name,
+  unit,
+}) => {
   const all = series.flatMap((s) => s.points);
   if (all.length === 0) return null;
 
@@ -73,7 +78,13 @@ const StepChart: React.FC<{ series: Series[]; unit?: string }> = ({ series, unit
   };
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img">
+    // `aria-label` 6 Ekim 2026'da kondu ve bir ölçüm kusuru sayesinde:
+    // erişilebilirlik taraması bu üç grafiği ADLI sayıyordu, çünkü her
+    // `<circle>` kendi `<title>`'ını taşıyor (nokta ipucu) ve tarama herhangi
+    // bir alt `<title>`'ı ad kabul ediyordu. SVG'nin erişilebilir adı
+    // yalnızca ilk doğrudan çocuk `<title>`'dan gelir; o çemberler çemberi
+    // adlandırıyordu, grafiği değil.
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label={name}>
       {/* Hairline, solid, recessive. */}
       <line x1={PAD.left} x2={W - PAD.right} y1={y(0)} y2={y(0)} stroke={GRID} strokeWidth="1" />
       <line
@@ -164,6 +175,35 @@ export const CurvePanel: React.FC = () => {
   const curves = useCurves();
   const data = curves.data;
 
+  /**
+   * Grafiğin okunan hâli (T10-06).
+   *
+   * Bir karar burada duruyor ve kasıtlı: tablo **kaydı** bildiriyor, grafiğin
+   * tuttuğu değeri değil. Basamak çizim iki ölçüm arasında eski değeri yatay
+   * taşır — çünkü seri bir koşu toplamı ve o gün için doğru olan o. Ama o
+   * günde seriye ait bir KAYIT yok, ve tablo "kayıtlı değil" diyor.
+   *
+   * Tersini yapmak, yani taşınan değeri hücreye yazmak, ölçülmemiş bir günü
+   * ölçülmüş göstermek olurdu — grafiğin basamak olmasının sebebi tam olarak
+   * bunu yapmamak.
+   */
+  const tableFor = (items: Series[], label: string, unit?: string) => {
+    const dates = [...new Set(items.flatMap((series) => series.points.map((p) => p.on)))].sort();
+    return (
+      <ChartTable
+        label={label}
+        columns={[
+          tr ? 'tarih' : 'date',
+          ...items.map((series) => (unit ? `${series.label} (${unit})` : series.label)),
+        ]}
+        rows={dates.map((on) => [
+          on,
+          ...items.map((series) => series.points.find((p) => p.on === on)?.value ?? null),
+        ])}
+      />
+    );
+  };
+
   const legend = (items: Series[]) => (
     <div className="mb-1 flex flex-wrap items-center gap-3">
       {items.map((s) => (
@@ -176,6 +216,15 @@ export const CurvePanel: React.FC = () => {
       ))}
     </div>
   );
+
+  // Üç başlık, her biri bir kez: `<h3>` de grafiğin erişilebilir adı da
+  // aynı dizgeyi kullanıyor. İkisini ayrı yazmak, ikisinin ayrışmasına izin
+  // vermek olurdu (CLAUDE.md §4).
+  const TITLES = {
+    milestones: tr ? 'Kilometre taşı ilerlemesi' : 'Milestone progress',
+    spend: tr ? 'Harcama' : 'Spend',
+    risk: tr ? 'Risk seyri' : 'Risk over time',
+  };
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-4">
@@ -198,7 +247,7 @@ export const CurvePanel: React.FC = () => {
           {/* --- progress --- */}
           <div>
             <h3 className="mb-1 text-xs font-semibold tracking-wider text-slate-500 uppercase">
-              {tr ? 'Kilometre taşı ilerlemesi' : 'Milestone progress'}
+              {TITLES.milestones}
             </h3>
             {plottable(data.targets, data.achieved) ? (
               <>
@@ -227,7 +276,23 @@ export const CurvePanel: React.FC = () => {
                       label: tr ? 'ulaşılan' : 'achieved',
                     },
                   ]}
+                  name={TITLES.milestones}
                 />
+                {tableFor(
+                  [
+                    {
+                      points: data.targets.points,
+                      colour: PLANNED,
+                      label: tr ? 'vadesi gelen' : 'due',
+                    },
+                    {
+                      points: data.achieved.points,
+                      colour: DONE,
+                      label: tr ? 'ulaşılan' : 'achieved',
+                    },
+                  ],
+                  'milestones',
+                )}
               </>
             ) : (
               <Waiting
@@ -249,7 +314,7 @@ export const CurvePanel: React.FC = () => {
           {/* --- spend --- */}
           <div>
             <h3 className="mb-1 text-xs font-semibold tracking-wider text-slate-500 uppercase">
-              {tr ? 'Harcama' : 'Spend'}
+              {TITLES.spend}
             </h3>
             {plottable(data.spend) ? (
               <>
@@ -264,8 +329,14 @@ export const CurvePanel: React.FC = () => {
                   series={[
                     { points: data.spend.points, colour: PLANNED, label: tr ? 'ödenen' : 'paid' },
                   ]}
+                  name={TITLES.spend}
                   unit="KES"
                 />
+                {tableFor(
+                  [{ points: data.spend.points, colour: PLANNED, label: tr ? 'ödenen' : 'paid' }],
+                  'spend',
+                  'KES',
+                )}
               </>
             ) : (
               <Waiting
@@ -287,7 +358,7 @@ export const CurvePanel: React.FC = () => {
           {/* --- risk --- */}
           <div>
             <h3 className="mb-1 text-xs font-semibold tracking-wider text-slate-500 uppercase">
-              {tr ? 'Risk seyri' : 'Risk over time'}
+              {TITLES.risk}
             </h3>
             {plottable(data.escalated) ? (
               <>
@@ -306,7 +377,18 @@ export const CurvePanel: React.FC = () => {
                       label: tr ? 'tırmandırma bandında' : 'in the escalation band',
                     },
                   ]}
+                  name={TITLES.risk}
                 />
+                {tableFor(
+                  [
+                    {
+                      points: data.escalated.points,
+                      colour: DONE,
+                      label: tr ? 'tırmandırma bandında' : 'in the escalation band',
+                    },
+                  ],
+                  'risk',
+                )}
               </>
             ) : (
               <Waiting
