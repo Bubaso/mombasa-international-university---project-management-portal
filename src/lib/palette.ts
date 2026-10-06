@@ -104,4 +104,17 @@ export const INK = '#475569';
 /** Grid rules, deliberately recessive: 1.23:1 on white. */
 export const GRID = '#e2e8f0';
 
+/**
+ * Grafiğin üzerinde durduğu yüzey — ve 6 Ekim 2026'da buraya taşındı.
+ *
+ * Üst üste binen işaretleri ayıran halka bu renkte çiziliyor (dataviz
+ * kuralı: iki piksel yüzey halkası). Üç çağrı yerinde `#fff` olarak elle
+ * yazılıydı, ve `tests/palette.mjs` kontrastı `#fcfcfb`'ye karşı
+ * doğruluyordu: aynı kural iki yerde, İKİ DEĞERLE. Kartlar `bg-white`,
+ * yani doğrusu beyaz; test sayfanın zeminini kart sanıyordu.
+ *
+ * Artık tek yerde ve test bunu kaynaktan okuyor (CLAUDE.md §4).
+ */
+export const SURFACE = '#ffffff';
+
 export type StatusKey = keyof typeof STATUS;

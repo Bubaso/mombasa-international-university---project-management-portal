@@ -91,14 +91,14 @@ olması bir şey ifade etmiyor.
 Bugünkü ölçek ters: açıklama metni büyük ve koyu, **veri küçük ve soluk**.
 Kullanıcı veriye bakmaya geliyor.
 
-| ID    | Gereksinim                                                                                                              | P   | Kabul kriteri                                                                |
-| ----- | ----------------------------------------------------------------------------------------------------------------------- | --- | ---------------------------------------------------------------------------- |
-| T3-01 | Gövde metni taban **14px**, telefonda da. Bugün baskın boyut 11px.                                                      | P0  | Hiçbir veri metni 14px'in altında değil; 12px yalnızca ikincil üstveri için. |
-| T3-02 | 9px ve 10px tamamen kalksın.                                                                                            | P0  | Kod tabanında `text-[9px]` ve `text-[10px]` yok.                             |
-| T3-03 | Beş basamaklı bir ölçek tanımlansın (ör. 12 · 14 · 16 · 20 · 28) ve token olarak kullanılsın; keyfi `text-[Npx]` yasak. | P0  | `text-\[[0-9]+px\]` eşleşmesi sıfır.                                         |
-| T3-04 | Hiyerarşi **veriyi** öne çıkarsın: kayıt başlığı, açıklama metninden büyük ve koyu olsun.                               | P1  | Her kütük satırında başlık ≥16px; panel açıklaması ≤14px ve ikincil renk.    |
-| T3-05 | Satır yüksekliği okunur olsun (gövde için ≥1.5).                                                                        | P2  | Gövde metinlerinde `line-height` ≥1.5.                                       |
-| T3-06 | Sayılar ve tarihler tabular rakamla hizalansın.                                                                         | P2  | Kütüklerdeki sayı sütunlarında `font-variant-numeric: tabular-nums`.         |
+| ID    | Gereksinim                                                                                                              | P   | Kabul kriteri                                                                                                                |
+| ----- | ----------------------------------------------------------------------------------------------------------------------- | --- | ---------------------------------------------------------------------------------------------------------------------------- |
+| T3-01 | Gövde metni taban **14px**, telefonda da. Bugün baskın boyut 11px.                                                      | P0  | Hiçbir veri metni 14px'in altında değil; 12px yalnızca ikincil üstveri için.                                                 |
+| T3-02 | 9px ve 10px tamamen kalksın.                                                                                            | P0  | ✅ `text-[9px]` 0, `text-[10px]` 0 — ve kapıda: bir tane eklemek `tests/palette.mjs`'i düşürüyor.                            |
+| T3-03 | Beş basamaklı bir ölçek tanımlansın (ör. 12 · 14 · 16 · 20 · 28) ve token olarak kullanılsın; keyfi `text-[Npx]` yasak. | P0  | ✅ Keyfi `text-[Npx]` **0**. Ölçek altı adlı adım (xs·sm·base·lg·xl·2xl) ve küme kayıtlı; yedincisi bir karar olmak zorunda. |
+| T3-04 | Hiyerarşi **veriyi** öne çıkarsın: kayıt başlığı, açıklama metninden büyük ve koyu olsun.                               | P1  | Her kütük satırında başlık ≥16px; panel açıklaması ≤14px ve ikincil renk.                                                    |
+| T3-05 | Satır yüksekliği okunur olsun (gövde için ≥1.5).                                                                        | P2  | Gövde metinlerinde `line-height` ≥1.5.                                                                                       |
+| T3-06 | Sayılar ve tarihler tabular rakamla hizalansın.                                                                         | P2  | Kütüklerdeki sayı sütunlarında `font-variant-numeric: tabular-nums`.                                                         |
 
 ## T4 — Dokunma hedefleri ve kontroller
 
@@ -1585,3 +1585,63 @@ karşılığı, yani kasıtlı. Kayıtsız büyümesi kasıtlı değil; tavanı 
 gelirse üç bayt bütçesi de **kendiliğinden geçer**. Mutasyonla sınandı —
 ölçümü körleştirdiğimde bütçe `0kb / 210kb` diye memnun geçti ve yakalayan tek
 şey "ölçüm gerçekten ağ trafiği gördü" kontrolü oldu.
+
+### T3 ve T11 — token disiplini: ölçülen sonuç
+
+| Ölçülen                            | 4. dalga | **6 Ekim 2026** | Satır  |
+| ---------------------------------- | -------- | --------------- | ------ |
+| `text-[9px]`                       | 3        | **0**           | T3-02  |
+| `text-[10px]`                      | 88       | **0**           | T3-02  |
+| Keyfi `text-[Npx]` (toplam)        | 811      | **0**           | T3-03  |
+| Kullanılan adlı boyut adımı        | —        | 6               | T3-03  |
+| Token dosyaları dışında keyfi renk | —        | **3 → 0**       | T11-01 |
+
+T3-02 ve T3-03'ün sayısal kısmı 4. dalgada kapanmıştı; bu tur onları **kapıya
+bağladı**, çünkü kapatılmış bir şeyin geri gelmemesi kendiliğinden olmuyor.
+Dördü de mutasyonla sınandı: keyfi bir hex, keyfi bir `text-[13px]`, ölçeğe
+yedinci bir adım (`text-3xl`) ve taramanın körleştirilmesi — dördü de düşüyor.
+
+#### Yüzey rengi iki yerde, iki değerle yazılıydı
+
+Üç çağrı yerinde `#fff` elle yazılıydı: grafikte üst üste binen işaretleri
+ayıran halka. Aynı zamanda `tests/palette.mjs` bütün kontrast oranlarını
+`#fcfcfb`'ye karşı ölçüyordu — yani **aynı kural iki yerde ve iki değerle**, ve
+sapan kopya her zaman ikincisi (CLAUDE.md §4).
+
+Hangisi doğru: kartlar `bg-white`, yani grafiğin üzerinde durduğu yüzey beyaz;
+test sayfanın zeminini kart sanıyordu. `SURFACE` token'ı
+`src/lib/palette.ts`'e kondu, üç çağrı yeri ona bağlandı, ve test artık değeri
+kaynaktan okuyor. **Kontrast oranları beyaza karşı da geçti**, yani eski
+`#fcfcfb` yanlış bir geçiş üretmiyordu — sadece ikinci kopyaydı.
+
+#### Rengin yazılabildiği yer iki tane, ve bu bir bulgu
+
+Kural "renk yalnızca token dosyalarında" diyor ve o dosyalar **iki** tane:
+`src/index.css` (67 hex, CSS değişkeni olarak UI paleti) ve
+`src/lib/palette.ts` (grafik paleti, çünkü SVG nitelikleri JS'ten geliyor ve
+bir CSS değişkenini `stroke=` içine koyamazsın).
+
+İkisi **birbirinden habersiz**: `lib/palette.ts`'in ızgara rengi `#e2e8f0`,
+`index.css`'in slate-200'ü `#dfd7c2`. Aynı kavram, iki değer. İkisini tek
+kaynağa indirmek T11-01'in geri kalanı ve bir tasarım sistemi işi; bu turda
+**yapılmadı** ve sebebi kapsam. Ama ikisinin DIŞINDA renk yazılmaması bugün
+sağlanabilirdi ve sağlandı.
+
+#### T3-01 hakkında bir bulgu: kriterin yarısı karşılanmış
+
+T3-01 iki şey istiyor ve 4. dalga **birini** kapattı:
+
+- "Hiçbir veri metni 14px'in altında değil" — **karşılanmıyor.** Bugün
+  kullanılan 1.182 metin boyutundan **819'u `text-xs`**, yani 12px: %69.
+- "12px yalnızca ikincil üstveri için" — %69 ikincil üstveri olamaz.
+
+4. dalganın tablosu "12px altı metin 2.635 → 0" diyor ve o doğru: 720 adet
+   `text-[11px]` ortadan kalktı. Ama o ölçüm **12px'in altını** sayıyordu, T3-01
+   ise **14px'in altını** istiyor. İki ölçü aynı satıra yazılınca kriter
+   karşılanmış göründü.
+
+Bunu bu turda düzeltmedim ve sebebi bir tercih değil, bir çatışma: 819 çağrı
+yerini 14px'e çıkarmak her ekranı belirgin biçimde uzatır ve **T14-03'ün on
+dokuz yoğunluk tavanının tamamını** birden aşar. Yani bu bir adım değil bir
+faz, ve iki P0 satırı arasında hangisinin önce geldiği bir ürün kararı.
+Rakamlar burada yazılı, karar verilmedi.

@@ -25,7 +25,7 @@
  * written next to both.
  */
 import React, { useMemo, useState } from 'react';
-import { CATEGORICAL, CATEGORICAL_FILL, GRID, INK, STATUS } from '../../lib/palette';
+import { CATEGORICAL, CATEGORICAL_FILL, GRID, INK, STATUS, SURFACE } from '../../lib/palette';
 import { Explain } from '../ui/Explain';
 import { GanttChartSquare, Info } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
@@ -310,7 +310,7 @@ export const GanttPanel: React.FC = () => {
                             cy={y + 9}
                             r="4.5"
                             fill={tone}
-                            stroke="#fff"
+                            stroke={SURFACE}
                             strokeWidth="2"
                           />
                         ) : (
@@ -320,7 +320,7 @@ export const GanttPanel: React.FC = () => {
                             width="8"
                             height="8"
                             transform={`rotate(45 ${target} ${y + 9})`}
-                            fill="#fff"
+                            fill={SURFACE}
                             stroke={tone}
                             strokeWidth="2"
                           />

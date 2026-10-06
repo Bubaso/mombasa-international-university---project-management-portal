@@ -20,7 +20,7 @@
  * import, and a line through them would show a trend that no time produced.
  */
 import React from 'react';
-import { CATEGORICAL, GRID, INK } from '../../lib/palette';
+import { CATEGORICAL, GRID, INK, SURFACE } from '../../lib/palette';
 import { ChartLine, Info } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useCurves } from '../../api/reportsHooks';
@@ -129,7 +129,7 @@ const StepChart: React.FC<{ series: Series[]; name: string; unit?: string }> = (
                 cy={y(p.value)}
                 r="4"
                 fill={s.colour}
-                stroke="#fff"
+                stroke={SURFACE}
                 strokeWidth="2"
               >
                 <title>{`${s.label} · ${p.on} · ${p.value.toLocaleString('tr-TR')}${unit ? ` ${unit}` : ''}`}</title>

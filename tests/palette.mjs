@@ -17,7 +17,7 @@
  *
  * Usage: npm run test:palette
  */
-import { readFileSync } from 'node:fs';
+import { globSync, readFileSync } from 'node:fs';
 
 let failures = 0;
 const check = (ok, label, detail = '') => {
@@ -94,7 +94,6 @@ const NORMAL_FLOOR = 15.0;
 const CHROMA_FLOOR = 0.1;
 const CONTRAST_MIN = 3.0; // a mark against its surface
 const TEXT_MIN = 4.5; // body text (T9-01)
-const SURFACE = '#fcfcfb';
 const ORDINAL_MIN_DL = 0.06;
 
 // --- what the application says it uses --------------------------------------
@@ -112,6 +111,19 @@ const STATUS = Object.fromEntries(
 );
 const INK = /export const INK = '(#[0-9a-f]{6})'/.exec(src)?.[1] ?? '';
 const GRID = /export const GRID = '(#[0-9a-f]{6})'/.exec(src)?.[1] ?? '';
+
+/**
+ * Yüzey, KAYNAKTAN okunuyor — ve 6 Ekim 2026'da öyle oldu.
+ *
+ * Önceden burada `const SURFACE = '#fcfcfb'` yazılıydı: bu dosya bütün
+ * kontrast oranlarını sayfanın zeminine karşı ölçüyordu, oysa grafikler
+ * `bg-white` kartların içinde duruyor. Yani aynı kural iki yerde ve iki
+ * değerleydi, ve sapan kopya her zaman ikincisi (CLAUDE.md §4). Token
+ * `src/lib/palette.ts`'e kondu, üç çağrı yeri ona bağlandı, ve bu satır
+ * artık uygulamanın söylediğini okuyor.
+ */
+const SURFACE = /export const SURFACE = '(#[0-9a-f]{3,8})'/.exec(src)?.[1] ?? '';
+check(/^#[0-9a-f]{3,8}$/.test(SURFACE), 'yüzey rengi kaynaktan okundu', SURFACE);
 
 check(CATEGORICAL.length >= 2, 'the categorical palette is readable from source', `${CATEGORICAL}`);
 check(
@@ -248,6 +260,74 @@ check(
   'T11-01 the chart components carry no colour of their own',
   stray.join(', '),
 );
+
+// ---------------------------------------------------------------------------
+// Token disiplini: renk ve tipografi (T3-02, T3-03, T11-01)
+// ---------------------------------------------------------------------------
+//
+// Ölçüm, 6 Ekim 2026: `text-[9px]` 0, `text-[10px]` 0, keyfi `text-[Npx]` 0.
+// Üçü de 4. dalgada kapandı (o zaman 720 + 88 + 3 kullanım vardı) ve bu blok
+// geri gelmemelerini sağlıyor.
+//
+// Keyfi hex ise 3 taneydi, hepsi `#fff`: grafikteki işaret halkası. Token
+// oldu, ve şimdi sıfır.
+//
+// Tipografi ölçeği bir TAVAN değil bir KÜME: bugün altı adlı boyut kullanımda
+// (text-xs/sm/base/lg/xl/2xl). Yedincisi bir karar olmalı, sessiz bir ekleme
+// değil — bu yüzden küme burada yazılı.
+{
+  /**
+   * Rengin yazılabildiği yerler — İKİ tane, ve bu bir bulgu.
+   *
+   * `index.css` 67 hex taşıyor ve hepsi CSS değişkeni tanımı: UI paleti orada.
+   * `lib/palette.ts` ise grafik paleti, çünkü SVG nitelikleri JS'ten geliyor
+   * ve bir CSS değişkenini `stroke=` içine koyamıyorsun.
+   *
+   * Yani iki tüketici için iki token dosyası var, ve ikisi BİRBİRİNDEN
+   * HABERSİZ: `lib/palette.ts`'in ızgara rengi `#e2e8f0`, `index.css`'in
+   * slate-200'ü `#dfd7c2`. İkisini tek kaynağa indirmek bir tasarım sistemi
+   * işi (T11-01'in geri kalanı) ve bu turda yapılmadı; ama ikisinin DIŞINDA
+   * renk yazılmaması bugün sağlanabilir ve sağlanıyor.
+   */
+  const TOKEN_FILES = ['lib/palette.ts', 'index.css'];
+  const files = globSync('src/**/*.{tsx,ts,css}').sort();
+  const read = (f) => readFileSync(f, 'utf8');
+
+  const pxSizes = [];
+  const hexes = [];
+  const sizes = new Map();
+  for (const file of files) {
+    const body = read(file);
+    for (const m of body.matchAll(/text-\[[0-9]+px\]/g)) pxSizes.push(`${file}: ${m[0]}`);
+    for (const m of body.matchAll(/\btext-(xs|sm|base|lg|xl|2xl|3xl|4xl|5xl)\b/g)) {
+      sizes.set(m[1], (sizes.get(m[1]) ?? 0) + 1);
+    }
+    if (TOKEN_FILES.some((t) => file.endsWith(t))) continue;
+    for (const m of body.matchAll(/#[0-9a-fA-F]{3,8}\b/g)) hexes.push(`${file}: ${m[0]}`);
+  }
+
+  check(files.length > 100, 'token taraması dosyaları gördü', `${files.length} dosya`);
+  check(
+    pxSizes.length === 0,
+    'keyfi `text-[Npx]` yok (T3-02, T3-03)',
+    pxSizes.length ? pxSizes.slice(0, 5).join(', ') : `${files.length} dosya tarandı`,
+  );
+  check(
+    hexes.length === 0,
+    'renk yalnızca token dosyalarında yazılı (T11-01)',
+    hexes.length ? hexes.slice(0, 5).join(', ') : '',
+  );
+
+  const SCALE = ['xs', 'sm', 'base', 'lg', 'xl', '2xl'];
+  const used = [...sizes.keys()].sort();
+  const extra = used.filter((k) => !SCALE.includes(k));
+  check(used.length >= 4, 'tipografi ölçeği gerçekten kullanımda', used.join(', '));
+  check(
+    extra.length === 0,
+    'tipografi ölçeği kayıtlı kümenin içinde (T3-03)',
+    extra.length ? `kayıtsız: ${extra.join(', ')}` : `${used.length} adım`,
+  );
+}
 
 console.log('');
 if (failures > 0) {
