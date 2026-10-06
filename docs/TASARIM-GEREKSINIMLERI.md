@@ -192,11 +192,11 @@ Toplantılar ekranında ilk üç ekranda **tek bir veri satırı** görünüyor.
 
 ## T12 — Algılanan hız
 
-| ID     | Gereksinim                                                                                      | P   | Kabul kriteri            |
-| ------ | ----------------------------------------------------------------------------------------------- | --- | ------------------------ |
-| T12-01 | İlk anlamlı çizim telefonda 3G'de 3 sn altında.                                                 | P1  | Ölçülür ve kaydedilir.   |
-| T12-02 | Rota geçişlerinde önceki içerik korunup üzerine yüklensin.                                      | P2  | Geçişte beyaz ekran yok. |
-| T12-03 | Service worker ilk yüklemede 12 sn sürüyor (ölçüldü); bu bir gecikme kaynağı olarak incelensin. | P2  | Ölçüm kaydedilir.        |
+| ID     | Gereksinim                                                                                      | P   | Kabul kriteri                                                                                                                                 |
+| ------ | ----------------------------------------------------------------------------------------------- | --- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| T12-01 | İlk anlamlı çizim telefonda 3G'de 3 sn altında.                                                 | P1  | ✅ Ölçüldü ve kaydedildi: Hızlı 3G'de FCP **2.256ms** (kriterin altında), Yavaş 3G'de 8.140ms. Kapıda zaman değil BAYT var: 7 istek / 191 KB. |
+| T12-02 | Rota geçişlerinde önceki içerik korunup üzerine yüklensin.                                      | P2  | ✅ Hızlı 3G'de, parçası inmemiş rotaya geçişte önceki içerik duruyor ve spinner çıkmıyor — mekanizma precache, ve o da kapıda.                |
+| T12-03 | Service worker ilk yüklemede 12 sn sürüyor (ölçüldü); bu bir gecikme kaynağı olarak incelensin. | P2  | ✅ Ölçüldü: 101 girdi / 1.588 KiB, ve kayıt `load` olayında — yani 12 saniye ilk çizimden SONRA. Bant genişliği bedeli, algılanan hız değil.  |
 
 ## T13 — İnce kesim: metnin hacmi
 
@@ -1495,3 +1495,93 @@ T10-03 bakıldı, ölçülmedi: `CurvePanel`'in lejantı yerinde ve uç noktalar
 doğrudan etiketli, Gantt kimliği şekille taşıyıp iki şekli de adlandırıyor —
 ama kapıda bunu zorlayan bir assertion yok, çünkü bir grafiğin kaç serisi
 olduğu DOM'dan güvenilir biçimde sayılamıyor. Satır ✅ ve eksiği burada yazılı.
+
+### T12 — ölçülen sonuç: algılanan hız
+
+Üç satırın üçü de "ölçülür ve kaydedilir" diyor, yani bu turun teslim ettiği
+şey bir kesim değil bir **ölçüm**. Ve ölçümün kendisi dört kez yanlış çıktı.
+
+| Ölçülen                                | Değer                 | Satır  |
+| -------------------------------------- | --------------------- | ------ |
+| FCP, Hızlı 3G (1.6 Mbps, 562ms RTT)    | **2.256ms**           | T12-01 |
+| FCP, Yavaş 3G (400 kbps, 2.000ms RTT)  | 8.140ms               | T12-01 |
+| FCP, kısıtsız                          | 156ms                 | T12-01 |
+| Soğuk yükleme                          | 7 istek · **191 KB**  | T12-01 |
+| En büyük tek varlık (ana paket)        | 104 KB                | T12-01 |
+| Geçişte spinner, service worker AÇIK   | **yok**               | T12-02 |
+| Geçişte spinner, service worker KAPALI | `/finance`'ta **var** | T12-02 |
+| Precache                               | 101 girdi · 1.588 KiB | T12-03 |
+| Precache'in kapsadığı rota parçası     | 95 / 95               | T12-02 |
+
+**T12-01 karşılanıyor, ama hangi 3G'de olduğu yazılmalı.** Kriter "3G'de 3 sn
+altında" diyor; Chrome'un iki 3G profili var ve ikisi arasında dört kat fark
+oluyor. Hızlı 3G'de 2.256ms (altında), Yavaş 3G'de 8.140ms (üstünde). Tek bir
+"3G" rakamı vermek, hangi profilin ölçüldüğünü saklamak olurdu.
+
+**Kapıya zaman değil bayt girdi.** Kısıtlı ağ ölçümü makineye bağlı: aynı
+derleme bu konteynerde 2.256ms, başka bir runner'da başka bir şey verir, ve
+kaypak bir kontrol er geç kapatılır. Baytlar ise derlemenin bir özelliği — ve
+3G'deki süreyi belirleyen şey o. Biri 500 KB'lık bir bağımlılık eklediğinde
+FCP 3 saniyeyi aşar; yakalayan şey `tests/populated.mjs`'teki bütçe olur.
+
+#### T12-02: özelliği sağlayan şey beklediğim şey değildi
+
+Uygulamanın her görünümü `lazy()` ve `Suspense` fallback'i **çıplak bir
+spinner**. Yani parça inmemişken rota içeriğinin yerine bir spinner geçmesi
+gerekir, ve `BrowserRouter` kullanıldığı için (veri router'ı değil) React'in
+`startTransition` ile eski ekranı tutma davranışı da devrede değil.
+
+Ama ölçüm spinner göstermedi. Sebebi service worker: ilk yüklemeden sonraki
+saniyelerde precache **95 rota parçasının tamamını** indiriyor, yani geçiş
+anında ağa hiç çıkılmıyor. Kanıtı karşılaştırma: aynı ölçüm
+`serviceWorkers: 'block'` ile koşturulduğunda `/finance` geçişinde spinner
+**çıkıyor**.
+
+Yani T12-02 karşılanıyor, ama **beklediğim mekanizmayla değil** — ve bu fark
+kayda değer, çünkü PWA eklentisi kaldırılsa özellik sessizce kaybolurdu.
+Girdi sayısı tavanı bunu yakalamaz (parçalar düşse sayı AZALIR ve tavan
+memnun geçer), o yüzden `tests/push-sw.mjs` kapsamı ayrıca sınıyor: derlemedeki
+her `assets/*.js`, precache listesinde olmak zorunda.
+
+**Kapsanmayan pencere yazılı:** bir kullanıcının ilk ziyaretinde, service
+worker etkinleşmeden önceki ilk geçiş. O pencerede rota içeriğinin yerine
+spinner geçer. Kapatmanın yolu router'ı veri router'ına çevirip gezinmeyi
+`startTransition`'a sarmak; bu turda **yapılmadı**, çünkü router tipini
+değiştirmek 19 ekranı etkileyen yapısal bir değişiklik ve bu turun kapsamı
+ölçüm. Satır ✅ ve eksiği burada.
+
+#### T12-03: 12 saniye ilk çizimden SONRA
+
+Dokümanda "service worker ilk yüklemede 12 sn sürüyor, bir gecikme kaynağı
+olarak incelensin" diye duruyordu. İncelendi ve bulgu şu: `dist/registerSW.js`
+kaydı `window.addEventListener('load', ...)` içinde yapıyor, yani precache ilk
+boyamayı beklemiyor. FCP 2.256ms ölçüldüğü anda inen şey 191 KB'dı; 1.588
+KiB'lık precache ondan sonra geliyor.
+
+Yani bu bir **algılanan hız** sorunu değil, bir **bant genişliği** bedeli:
+portalı telefonda bir kez açan kişi arka planda ~1,6 MB indiriyor. Bedel
+çevrimdışı toplantı kaydının (M3-11) ve yukarıdaki geçiş davranışının
+karşılığı, yani kasıtlı. Kayıtsız büyümesi kasıtlı değil; tavanı kapıda.
+
+#### Ölçümün dört kusuru, dördü de yazılı
+
+1. **`Network.enable` çağırmamak.** Kısıtlama hiç uygulanmadı ve Yavaş 3G,
+   Hızlı 3G'den **hızlı** FCP verdi (96ms < 116ms). İmkânsız bir ölçüm, ölçüm
+   değildir — ve imkânsız olduğunu söyleyen şey sıralamaydı, rakamın kendisi
+   değil.
+2. **Aynı sayfada ölçmek.** `transferSize` her istekte **0** çıktı: her şey
+   service worker'ın Cache Storage'ından geliyordu ve `clearBrowserCache` onu
+   temizlemiyor. Kısıtlama uygulanmıyor değildi, **kısıtlanacak trafik yoktu**.
+   Her ölçüm artık temiz bir bağlamda.
+3. **Isınmış oturumda ölçmek.** T12-02 bloğu 19 rotalık gezintiden SONRAydı,
+   yani her `lazy()` parçası çoktan inmişti: ölçtüğüm şey sorunun olmadığı
+   hâldi. Blok gezintiden öncesine alındı.
+4. **Pozisyona göre dolaşmak.** Kenar çubuğu gruplarını `$$()` sonucunda
+   konuma göre dolaşıyordum; ilk tık DOM'u yeniden çizince kalan tutamaçlar
+   görünmez oldu ve koşucu `TimeoutError` ile çöktü. Sekme gezgininde
+   düzelttiğim hatanın aynısı, ikinci kez — ve bu sefer kimliğe göre yazıldı.
+
+İkinci kusur ayrıca bir körlük tabanını gerekli kıldı: `transferSize` 0
+gelirse üç bayt bütçesi de **kendiliğinden geçer**. Mutasyonla sınandı —
+ölçümü körleştirdiğimde bütçe `0kb / 210kb` diye memnun geçti ve yakalayan tek
+şey "ölçüm gerçekten ağ trafiği gördü" kontrolü oldu.

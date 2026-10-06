@@ -19,7 +19,7 @@
  */
 import { chromium } from 'playwright';
 import { spawn } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { setTimeout as sleep } from 'node:timers/promises';
 
 const PORT = Number(process.env.PUSH_SW_PORT ?? 4174);
@@ -340,6 +340,101 @@ try {
     'a push with no payload at all still shows something, and says what it is',
     JSON.stringify(empty[0] ?? null),
   );
+
+  // -------------------------------------------------------------------------
+  // Service worker'ın ilk yükleme bedeli (T12-03)
+  // -------------------------------------------------------------------------
+  //
+  // Dokümanda "service worker ilk yüklemede 12 sn sürüyor" diye bir ölçüm
+  // duruyordu ve bir gecikme kaynağı olarak incelenmesi isteniyordu. 6 Ekim
+  // 2026'da incelendi ve bulgu şu: **12 saniye ilk çizimden SONRA.**
+  //
+  // `dist/registerSW.js` kaydı `window.addEventListener('load', ...)` içinde
+  // yapıyor, yani precache ilk boyamayı beklemiyor — Hızlı 3G'de FCP 2.256ms
+  // ölçüldü ve o anda 191 KB inmişti. Precache ise 101 girdi, 1.588 KiB.
+  //
+  // Yani bu bir ALGILANAN HIZ sorunu değil, bir BANT GENİŞLİĞİ bedeli:
+  // portalı telefonda bir kez açan kişi arka planda ~1,6 MB indiriyor. Bedel
+  // çevrimdışı toplantı kaydının (M3-11) karşılığı ve kasıtlı; kayıtsız
+  // büyümesi kasıtlı değil, o yüzden tavanı burada.
+  {
+    const sw = readFileSync('dist/sw.js', 'utf8');
+    const urls = [...sw.matchAll(/url:"([^"]+)"/g)].map((m) => m[1]);
+    let bytes = 0;
+    const missing = [];
+    for (const url of urls) {
+      try {
+        bytes += statSync(`dist/${url.replace(/^\//, '')}`).size;
+      } catch {
+        missing.push(url);
+      }
+    }
+    const kib = Math.round(bytes / 1024);
+    const BUDGET = { entries: 110, kib: 1700 };
+
+    check(urls.length > 50, 'precache listesi okundu', `${urls.length} girdi`);
+    check(
+      missing.length === 0,
+      'precache listesindeki her dosya derlemede var',
+      missing.length ? missing.slice(0, 4).join(', ') : '',
+    );
+    check(
+      urls.length <= BUDGET.entries,
+      'precache girdi sayısı bütçenin altında (T12-03)',
+      `${urls.length} / ${BUDGET.entries}`,
+    );
+
+    // Precache, HER rota parçasını kapsıyor — ve bu T12-02'nin mekanizması.
+    //
+    // Ölçüm, 6 Ekim 2026: Hızlı 3G'de, parçası inmemiş bir rotaya geçişte
+    // service worker AÇIKKEN spinner çıkmıyor, KAPALIYKEN `/finance`
+    // geçişinde çıkıyor. Yani "geçişte önceki içerik korunuyor" özelliğini
+    // sağlayan şey `startTransition` değil (uygulama `BrowserRouter`
+    // kullanıyor, veri router'ı değil) — precache'in rota parçalarını
+    // önceden indirmiş olması.
+    //
+    // Girdi sayısı tavanı bunu yakalamaz: parçalar listeden düşse sayı
+    // AZALIR ve tavan memnun geçer. Bu yüzden kapsamı ayrıca sınıyorum.
+    const assets = readdirSync('dist/assets').filter((f) => f.endsWith('.js'));
+    const precached = new Set(urls.map((u) => u.replace(/^\//, '')));
+    const uncovered = assets.filter((f) => !precached.has(`assets/${f}`));
+    check(assets.length > 50, 'derlemede rota parçaları bulundu', `${assets.length} parça`);
+    check(
+      uncovered.length === 0,
+      'her rota parçası precache listesinde (T12-02 mekanizması)',
+      uncovered.length
+        ? `${uncovered.length} kapsanmayan: ${uncovered.slice(0, 3).join(', ')}`
+        : '',
+    );
+    check(
+      kib <= BUDGET.kib,
+      'precache boyutu bütçenin altında (T12-03)',
+      `${kib}KiB / ${BUDGET.kib}KiB`,
+    );
+    // Kaydın `load`'a bağlı olması bulgunun kendisi: bu satır giderse
+    // precache ilk çizimin önüne geçer ve 12 saniye algılanan hıza döner.
+    //
+    // Kayıt İKİ yerden birinde olabilir ve ikisine de bakmak gerekiyor:
+    // `injectRegister: 'auto'` (bugünkü hâl) ayrı bir `registerSW.js`
+    // üretiyor, `'inline'` ise kodu doğrudan `index.html`'e gömüyor ve o
+    // dosyayı hiç yazmıyor. İlk yazımda yalnızca `registerSW.js`'e bakıyordum;
+    // mutasyonu denediğimde kontrol DÜŞMEDİ, süitin tamamı okunamayan dosyada
+    // çöktü (`ENOENT`). Kapı kırmızı oldu ama sebebi söylemeyen bir kırmızı,
+    // bir sonraki okuyucuyu yanlış yere gönderir.
+    const registrar = existsSync('dist/registerSW.js')
+      ? { file: 'registerSW.js', source: readFileSync('dist/registerSW.js', 'utf8') }
+      : { file: 'index.html', source: readFileSync('dist/index.html', 'utf8') };
+    check(
+      /serviceWorker/.test(registrar.source),
+      'service worker kaydı derlemede bulundu',
+      registrar.file,
+    );
+    check(
+      /addEventListener\(\s*['"]load['"]/.test(registrar.source),
+      'service worker kaydı `load` olayını bekliyor, ilk çizimi engellemiyor (T12-03)',
+      registrar.file,
+    );
+  }
 
   console.log('');
   if (failures > 0) {

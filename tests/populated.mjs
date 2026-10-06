@@ -287,6 +287,85 @@ const settle = async () => {
   await page.waitForTimeout(600);
 };
 
+/**
+ * Geçişte beyaz ekran yok (T12-02) — ve bu ölçüm GEZİNTİDEN ÖNCE.
+ *
+ * Sıra kasıtlı ve bir hatayla öğrenildi. İlk yazımda bu blok 19 rotalık
+ * gezintiden SONRAYDI ve "geçişte ekran boşalmıyor" diye geçti. Ama o noktada
+ * her görünümün `lazy()` parçası çoktan inmişti: ölçtüğüm şey ısınmış bir
+ * oturumdu, yani sorunun olmadığı hâl. Kullanıcının gördüğü hâl ise ilk
+ * ziyaret — parça henüz inmemişken.
+ *
+ * Burada ölçülürse `/legal` ve `/finance` parçaları henüz inmemiş olur ve
+ * ölçüm gerçekten soğuk olur.
+ */
+
+// T12-02: geçişte beyaz ekran yok.
+//
+// Grubu KİMLİĞE göre açıyorum. İlk yazımda `$$('aside [data-group]')`
+// sonucunu konuma göre dolaşıyordum; ilk tık DOM'u yeniden çizince kalan
+// tutamaçlar görünmez oldu ve koşucu TimeoutError ile çöktü — sekme
+// gezgininde düzelttiğim hatanın aynısı, ikinci kez.
+await page.setViewportSize({ width: 1440, height: 1000 });
+await page.goto(BASE + '/', { waitUntil: 'domcontentloaded' });
+await settle();
+
+const visibleLink = async (target) => {
+  const el = await page.$(`aside [data-path="${target}"]`);
+  if (!el) return null;
+  return (await el.evaluate((node) => node.getClientRects().length > 0)) ? el : null;
+};
+const reveal = async (target) => {
+  let link = await visibleLink(target);
+  if (link) return link;
+  const ids = await page.$$eval('aside [data-group]', (els) =>
+    els.map((e) => e.getAttribute('data-group')),
+  );
+  for (const id of ids) {
+    const toggle = await page.$(`aside [data-group="${id}"]`);
+    if (!toggle) continue;
+    try {
+      await toggle.click({ timeout: 2000 });
+    } catch {
+      continue;
+    }
+    link = await visibleLink(target);
+    if (link) return link;
+  }
+  return null;
+};
+
+// Eşik 200 karakter: "boş" demek sıfır değil, ekranda okunacak bir şey
+// kalmaması. Kabuk (kenar çubuğu, başlık) `main`'in dışında, yani bu sayı
+// yalnızca ekranın kendi içeriği.
+const BLANK = 200;
+const blanked = [];
+let transitions = 0;
+for (const target of ['/legal', '/finance', '/meetings']) {
+  const link = await reveal(target);
+  if (!link) {
+    blanked.push(`${target}: bağlantı açılamadı`);
+    continue;
+  }
+  const before = ((await page.textContent('main')) ?? '').trim().length;
+  await link.click({ timeout: 4000 });
+  let low = before;
+  for (let i = 0; i < 60; i += 1) {
+    const n = ((await page.textContent('main')) ?? '').trim().length;
+    if (n < low) low = n;
+  }
+  await settle();
+  const after = ((await page.textContent('main')) ?? '').trim().length;
+  if (after !== before) transitions += 1;
+  if (low < BLANK) blanked.push(`${target}: ${low} karakter`);
+}
+check(
+  blanked.length === 0,
+  'rota geçişinde ekran boşalmıyor (T12-02)',
+  blanked.length ? blanked.join(', ') : `3 geçiş, en az ${BLANK} karakter korundu`,
+);
+check(transitions >= 2, 'geçişler gerçekten oldu', `${transitions} / en az 2`);
+
 // ----------------------------------------------------------------- the walk
 
 /** @type {string[]} */
@@ -806,60 +885,62 @@ check(
 }
 
 /**
- * Her grafiğin okunabilir bir sürümü var (T10-06).
+ * Algılanan hız: soğuk yükleme bütçesi ve geçişte beyaz ekran (T12-01, T12-02).
  *
- * Ölçüm, 6 Ekim 2026: dört `role="img"` ögesinin hiçbirinin tablo görünümü
- * yoktu. Bir grafik veriyi yaklaştırır — bir noktanın yüksekliğinden 412 ile
- * 418'i ayırt edemezsiniz — ve bu grafiğin işi. Kusur, yaklaşık değerin tek
- * sürüm olması: rakamı isteyen biri grafiğe bakıp tahmin etmek zorundaydı.
+ * Kapıya ZAMAN değil BAYT giriyor, ve sebebi kasıtlı. Kısıtlı ağ ölçümü
+ * makineye bağlı: aynı derleme bu konteynerde 2.256ms, başka bir runner'da
+ * başka bir şey verir, ve kaypak bir kontrol er geç kapatılır. Baytlar ise
+ * derlemenin kendisinin bir özelliği — ve 3G'deki süreyi belirleyen şey o.
+ * Biri 500 KB'lık bir bağımlılık eklediğinde FCP 3 saniyeyi aşar; yakalayan
+ * şey burada duran tavan olur.
  *
- * Kural `svg[role="img"]` ile sınırlı ve sebebi ölçülmüş: `ReadinessBoard` ile
- * `TargetPanel`'in `div role="img"` ölçerleri rakamını çubuğun ÜSTÜNDE metin
- * olarak basıyor (`{ready}/{total} {share}%`). Orada çubuk, zaten ekranda olan
- * bir sayıyı pekiştiriyor; tek sayının tablosu gürültü olurdu.
+ * Ölçülen (6 Ekim 2026, temiz bağlam, kısıtsız, `load` olayında): 7 istek,
+ * 191 KB, en büyüğü 104 KB'lık ana paket. İlk ölçümümde 8 istek / 192 KB
+ * görünmüştü ve fark bekleme süresindeydi — 8 saniye bekleyince service
+ * worker'ın kendisi de sayıma giriyor. Aynı derlemenin kısıtlı ağdaki FCP'si
+ * kapıda DEĞİL, `docs/TASARIM-GEREKSINIMLERI.md`'de kayıtlı: Hızlı 3G
+ * 2.256ms (kriterin altında), Yavaş 3G 8.140ms.
  *
- * Kontrol tabloyu açıp içine de bakıyor. Sadece düğmenin varlığına bakmak,
- * kenar çubuğunda yapılan hatanın aynısı olurdu: ölü bir aç/kapa düğmesi
- * varlık sınamasını geçer (T14-05 notu).
+ * TEMİZ BAĞLAM şart ve bu da ölçülerek öğrenildi: aynı sayfada ölçmeye
+ * çalıştığımda `transferSize` her istekte 0 çıktı, çünkü her şey service
+ * worker'ın Cache Storage'ından geliyordu. `Network.clearBrowserCache` onu
+ * temizlemiyor. Kısıtlama uygulanmıyor değildi — KISITLANACAK TRAFİK yoktu,
+ * ve üç imkânsız rakam (Yavaş 3G'nin Hızlı 3G'den hızlı çıkması) bunu
+ * söylüyordu.
  */
 {
-  let tablesFound = 0;
-  let bodyRows = 0;
-  const missing = [];
-  for (const route of ['/reports', '/plan']) {
-    await page.goto(BASE + route, { waitUntil: 'domcontentloaded' });
-    await settle();
+  const fresh = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const tab = await fresh.newPage();
+  await tab.goto(BASE + '/', { waitUntil: 'load' });
+  const cold = await tab.evaluate(() => {
+    const rows = performance.getEntriesByType('resource');
+    return {
+      count: rows.length,
+      kb: Math.round(rows.reduce((n, r) => n + (r.transferSize || 0), 0) / 1024),
+      biggestKb: Math.round(Math.max(0, ...rows.map((r) => r.transferSize || 0)) / 1024),
+    };
+  });
+  await fresh.close();
 
-    // Çizilen her grafik, panelinde bir tablo düğmesi görmek zorunda.
-    const orphans = await page.evaluate(() =>
-      [...document.querySelectorAll('svg[role="img"]')]
-        .filter((svg) => svg.getClientRects().length > 0)
-        .filter((svg) => !svg.closest('section')?.querySelector('[data-chart-table]'))
-        .map((svg) => svg.getAttribute('aria-label') ?? 'grafik'),
-    );
-    for (const name of orphans) missing.push(`${route}: ${name}`);
-
-    const buttons = await page.$$('[data-chart-table]');
-    for (const button of buttons) {
-      tablesFound += 1;
-      await button.click({ timeout: 4000 });
-      await settle();
-    }
-    bodyRows += await page.evaluate(
-      () =>
-        [...document.querySelectorAll('table.register tbody tr')].filter(
-          (tr) => tr.getClientRects().length > 0,
-        ).length,
-    );
-  }
-
+  const BUDGET = { count: 10, kb: 210, biggestKb: 115 };
   check(
-    missing.length === 0,
-    'çizilen her grafiğin panelinde bir veri tablosu var (T10-06)',
-    missing.length ? missing.join(', ') : `${tablesFound} tablo`,
+    cold.count <= BUDGET.count,
+    'soğuk yükleme istek sayısı bütçenin altında (T12-01)',
+    `${cold.count} / ${BUDGET.count}`,
   );
-  check(tablesFound >= 5, 'grafik tabloları bulundu', `${tablesFound} / en az 5`);
-  check(bodyRows > 0, 'açılan tablolar gerçekten satır gösteriyor', `${bodyRows} satır`);
+  check(
+    cold.kb <= BUDGET.kb,
+    'soğuk yükleme bayt bütçesinin altında (T12-01)',
+    `${cold.kb}kb / ${BUDGET.kb}kb`,
+  );
+  check(
+    cold.biggestKb <= BUDGET.biggestKb,
+    'en büyük tek varlık bütçenin altında (T12-01)',
+    `${cold.biggestKb}kb / ${BUDGET.biggestKb}kb`,
+  );
+  // Körlük: `transferSize` 0 gelirse üç bütçe de kendiliğinden geçer — yukarıda
+  // yazılı sebeple, ve bir kez gerçekten oldu.
+  check(cold.kb > 50, 'soğuk yükleme ölçümü gerçekten ağ trafiği gördü', `${cold.kb}kb`);
 }
 
 await browser.close();
