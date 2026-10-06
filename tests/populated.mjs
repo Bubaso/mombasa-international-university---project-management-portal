@@ -349,6 +349,7 @@ const DENSITY = {
 const density = {};
 const tabsFound = {};
 const tabsOpened = {};
+const a11y = {};
 
 for (const route of ROUTES) {
   pageErrors = [];
@@ -426,6 +427,60 @@ for (const route of ROUTES) {
   tabsFound[route] = everSeen.size;
   tabsOpened[route] = opened.size;
 
+  // Erişilebilirlik: ADSIZ bir denetim, görmeyen biri için olmayan bir
+  // denetimdir (T9-06).
+  //
+  // Satır numarası T9-06 ve YENİ: ilk yazımda buraya "T9-01..T9-03" yazdım,
+  // ama o üç satır kontrast, renkle anlam ve klavye diyor — erişilebilir AD
+  // demiyor. Ölçtüğüm şeyi istemeyen bir satırı kapatmak, T13 turunda yapılan
+  // hatanın aynısı olurdu: karakter sayıp yoğunluk kapandı sanmak.
+  //
+  // Yoğunluk ölçümü sekmelere DOKUNMADAN alınıyor, bu ölçüm sekmeler
+  // açıldıktan SONRA — çünkü ikisi farklı şeyi soruyor. Yoğunluk "ekranı
+  // açan kişi ne görüyor" diye sorar; erişilebilirlik "bu ekranda adsız bir
+  // şey var mı" diye sorar ve kapalı bir sekmedeki adsız düğme de kusurdur.
+  //
+  // Dördü de SIFIR iddiası, tavan değil. Bir ad eklemek bir satır; eklenmemiş
+  // olmasının sebebi hep aynı: ikonun kendisi yazarın gözünde ad yerine
+  // geçiyor.
+  a11y[route] = await page.evaluate(() => {
+    const text = (el) => (el?.textContent ?? '').replace(/\s+/g, ' ').trim();
+    const named = (el) => {
+      if ((el.getAttribute('aria-label') ?? '').trim()) return true;
+      if ((el.getAttribute('title') ?? '').trim()) return true;
+      const ref = el.getAttribute('aria-labelledby');
+      if (ref && ref.split(/\s+/).some((id) => text(document.getElementById(id)))) return true;
+      return false;
+    };
+    const fors = [...document.querySelectorAll('label[for]')];
+    const controls = [...document.querySelectorAll('button,[role="tab"],a[href]')];
+    const fields = [...document.querySelectorAll('input,select,textarea')].filter(
+      (el) => el.type !== 'hidden',
+    );
+    const images = [...document.querySelectorAll('img')];
+    const charts = [...document.querySelectorAll('svg[role="img"]')];
+    const name = (el) => el.tagName.toLowerCase() + (el.id ? `#${el.id}` : '');
+    return {
+      controls: controls.length,
+      namelessControls: controls.filter((el) => !text(el) && !named(el)).map(name),
+      fields: fields.length,
+      namelessFields: fields
+        .filter(
+          (el) =>
+            !named(el) &&
+            !fors.some((l) => l.getAttribute('for') === el.id && text(l)) &&
+            !text(el.closest('label')),
+        )
+        .map(name),
+      images: images.length,
+      namelessImages: images.filter((el) => el.getAttribute('alt') === null).map(name),
+      charts: charts.length,
+      namelessCharts: charts
+        .filter((el) => !named(el) && !text(el.querySelector('title')))
+        .map(name),
+    };
+  });
+
   const body = (await page.textContent('body')) ?? '';
   const signed = body.match(new RegExp(SIGNED_FUTURE.source, 'gi')) ?? [];
   if (signed.length) signedCounts.push(`${route}: ${[...new Set(signed)].join(', ')}`);
@@ -460,6 +515,63 @@ for (const route of ROUTES) {
       over.length ? over.join(', ') : `${m.buttons} düğme · ${m.headings} başlık · ${m.height}px`,
     );
   }
+}
+
+/**
+ * Adsız denetim, adsız alan, adsız resim, adsız grafik — dördü de sıfır
+ * (T9-01, T9-02, T9-03).
+ *
+ * Ölçüm, 6 Ekim 2026: on dokuz rotada bu dört sayı zaten sıfırdı. Yani bu
+ * blok bir kusuru düzeltmiyor; **düzgün olanın bozulmamasını** sağlıyor.
+ * Sıfırı ölçmeden yazmak, kuralı kendi iddiasına yaslamak olurdu — bu yüzden
+ * önce ölçüldü, sonra kurala çevrildi.
+ *
+ * TABAN sayıları (`FLOOR`) kuralın kendisi kadar önemli: seçici bir gün
+ * eşleşmez olursa dört sıfır da kendiliğinden geçer ve kapı körleşir. Bu
+ * depoda tam bu oldu — sekme gezgini on yedi sekmenin yedisini açıyordu ve
+ * "bulunanların hepsi açıldı" kontrolü geçiyordu. Bu yüzden kaç şeye
+ * BAKILDIĞI da sınanıyor.
+ */
+{
+  // Ölçülen, 6 Ekim 2026: on dokuz rotada toplam 972 denetim, 18 form alanı,
+  // 0 resim (`<img>` yok, ikonlar inline SVG), ve en kalabalık rotada 3
+  // grafik. Taban ölçülenin biraz altında: amaç körlüğü yakalamak, rakamı
+  // dondurmak değil.
+  //
+  // İlk yazımda taban 30 alan ve 4 grafikti ve İKİSİ DE düştü — çünkü
+  // sayıları bu kapıdan değil, ayrı bir ölçüm betiğinden hatırlayarak
+  // yazmıştım. Ölçmediğim bir sayıyı yazmanın bedeli buydu; kapı yakaladı.
+  const FLOOR = { controls: 900, fields: 15, charts: 3 };
+  const total = (key) => Object.values(a11y).reduce((n, m) => n + m[key], 0);
+  const worst = (key) => Math.max(...Object.values(a11y).map((m) => m[key]));
+
+  for (const [key, label] of [
+    ['namelessControls', 'adsız düğme/sekme/bağlantı'],
+    ['namelessFields', 'etiketsiz form alanı'],
+    ['namelessImages', 'alt metni olmayan resim'],
+    ['namelessCharts', 'adsız grafik'],
+  ]) {
+    const bad = Object.entries(a11y)
+      .filter(([, m]) => m[key].length > 0)
+      .map(([route, m]) => `${route}: ${m[key].slice(0, 6).join(',')}`);
+    check(bad.length === 0, `hiçbir ekranda ${label} yok`, bad.join(' | ').slice(0, 300));
+  }
+
+  check(
+    total('controls') >= FLOOR.controls,
+    'erişilebilirlik taraması denetimleri gördü',
+    `${total('controls')} / en az ${FLOOR.controls}`,
+  );
+  check(
+    total('fields') >= FLOOR.fields,
+    'erişilebilirlik taraması form alanlarını gördü',
+    `${total('fields')} / en az ${FLOOR.fields}`,
+  );
+  check(
+    worst('charts') >= FLOOR.charts,
+    'erişilebilirlik taraması grafikleri gördü',
+    `en kalabalık rotada ${worst('charts')} / en az ${FLOOR.charts}`,
+  );
 }
 
 /**

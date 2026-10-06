@@ -158,13 +158,14 @@ Toplantılar ekranında ilk üç ekranda **tek bir veri satırı** görünüyor.
 
 ## T9 — Erişilebilirlik
 
-| ID    | Gereksinim                                                             | P   | Kabul kriteri                                            |
-| ----- | ---------------------------------------------------------------------- | --- | -------------------------------------------------------- |
-| T9-01 | Gövde metni kontrastı en az 4.5:1, büyük metin 3:1.                    | P0  | Ölçülen her metin/arka plan çifti eşiği geçer.           |
-| T9-02 | Renk tek başına anlam taşımasın; her durum ikon ya da etiketle gelsin. | P0  | Durum rozetlerinde metin var.                            |
-| T9-03 | Klavyeyle her eyleme erişilebilsin ve odak görünür olsun.              | P0  | Tab sırası mantıklı; `:focus-visible` her yerde görünür. |
-| T9-04 | Dinamik değişiklikler ekran okuyucuya duyurulsun.                      | P1  | Önemli bölgelerde `aria-live`.                           |
-| T9-05 | Hareket azaltma tercihi saygı görsün.                                  | P2  | `prefers-reduced-motion` uygulanır.                      |
+| ID    | Gereksinim                                                                   | P   | Kabul kriteri                                                                                       |
+| ----- | ---------------------------------------------------------------------------- | --- | --------------------------------------------------------------------------------------------------- |
+| T9-01 | Gövde metni kontrastı en az 4.5:1, büyük metin 3:1.                          | P0  | Ölçülen her metin/arka plan çifti eşiği geçer.                                                      |
+| T9-02 | Renk tek başına anlam taşımasın; her durum ikon ya da etiketle gelsin.       | P0  | Durum rozetlerinde metin var.                                                                       |
+| T9-03 | Klavyeyle her eyleme erişilebilsin ve odak görünür olsun.                    | P0  | Tab sırası mantıklı; `:focus-visible` her yerde görünür.                                            |
+| T9-04 | Dinamik değişiklikler ekran okuyucuya duyurulsun.                            | P1  | Reddi yazan paylaşılan bileşen canlı rol taşır; ekran onu atlatmaz.                                 |
+| T9-05 | Hareket azaltma tercihi saygı görsün.                                        | P2  | `prefers-reduced-motion` uygulanır.                                                                 |
+| T9-06 | Her denetimin, form alanının, resmin ve grafiğin erişilebilir bir adı olsun. | P0  | 19 rotada adsız düğme/sekme/bağlantı, etiketsiz alan, `alt`'sız resim ve adsız grafik sayısı sıfır. |
 
 ## T10 — Grafikler ve pano
 
@@ -294,14 +295,14 @@ istiyor ve yorumunda _"dokuzluk bir şerit listedir ve her ekranın tepesindeki
 bir liste, insanların okumayı bıraktığı mobilyadır"_ yazıyor. Dokuzu
 gösteren ürün değil, ölçüm aracıydı.
 
-| ID     | Gereksinim                                                                                                | P   | Kabul kriteri                                                                                                               |
-| ------ | --------------------------------------------------------------------------------------------------------- | --- | --------------------------------------------------------------------------------------------------------------------------- |
-| T14-01 | Ekran başlığının altı ya ekranın neyi topladığını söylesin ya da hiç olmasın; ilke beyanı olmasın.        | P0  | ✅ Faz 1: 1.323 → **677** karakter, en uzun 208 → **60**, İKİ dilde de; 14 ekran ölçülüyor.                                 |
-| T14-02 | Ham teknik metin ve her ekranda tekrarlanan künye bilgisi mobilyadan çıksın — silinmeden, yeri değişerek. | P0  | ✅ Faz 1: PostgREST hata metni katlandı; parsel/fasıl kenar çubuğu, footer ve mobil menüden kaldırıldı.                     |
-| T14-03 | Yoğunluk ölçülsün ve geri büyümesin: her rotada düğme, başlık ve sayfa boyu.                              | P0  | ✅ Faz 1: 19 rotanın 19'u `tests/populated.mjs` içinde tavanlı; tavanı yazılmamış rota ayrıca düşürür.                      |
-| T14-04 | Her ekran özetle açılsın; detay istenince gelsin. Hiçbir işlev kaybolmasın, yeri değişsin.                | P0  | ✅ Faz 2: yedi ağır ekran bölündü, en uzunu 3.924 → **2.351px**; hiçbir panel silinmedi.                                    |
-| T14-05 | Gezinme rolün işine yarayan kısmı açık tutsun; 20 giriş + beş büyük harf grup başlığı aynı anda durmasın. | P1  | ✅ Faz 3: gruplar katlandı, görünür gezinme girişi 19 → **3–6**; her rota bir tık arkada.                                   |
-| T14-06 | Giriş, girenin rolüne göre açılsın: mütevelliye yönetişim ve para, tedarikçiye kendi işi ve hakedişi.     | P1  | ⚠️ Gösterge paneli bunu ZATEN yapıyor (M12-01, `BY_ROLE`). Kenar çubuğu yapmıyor, ve orası politika kararı — aşağıya bakın. |
+| ID     | Gereksinim                                                                                                | P   | Kabul kriteri                                                                                                           |
+| ------ | --------------------------------------------------------------------------------------------------------- | --- | ----------------------------------------------------------------------------------------------------------------------- |
+| T14-01 | Ekran başlığının altı ya ekranın neyi topladığını söylesin ya da hiç olmasın; ilke beyanı olmasın.        | P0  | ✅ Faz 1: 1.323 → **677** karakter, en uzun 208 → **60**, İKİ dilde de; 14 ekran ölçülüyor.                             |
+| T14-02 | Ham teknik metin ve her ekranda tekrarlanan künye bilgisi mobilyadan çıksın — silinmeden, yeri değişerek. | P0  | ✅ Faz 1: PostgREST hata metni katlandı; parsel/fasıl kenar çubuğu, footer ve mobil menüden kaldırıldı.                 |
+| T14-03 | Yoğunluk ölçülsün ve geri büyümesin: her rotada düğme, başlık ve sayfa boyu.                              | P0  | ✅ Faz 1: 19 rotanın 19'u `tests/populated.mjs` içinde tavanlı; tavanı yazılmamış rota ayrıca düşürür.                  |
+| T14-04 | Her ekran özetle açılsın; detay istenince gelsin. Hiçbir işlev kaybolmasın, yeri değişsin.                | P0  | ✅ Faz 2: yedi ağır ekran bölündü, en uzunu 3.924 → **2.351px**; hiçbir panel silinmedi.                                |
+| T14-05 | Gezinme rolün işine yarayan kısmı açık tutsun; 20 giriş + beş büyük harf grup başlığı aynı anda durmasın. | P1  | ✅ Faz 3: gruplar katlandı, görünür gezinme girişi 19 → **3–6**; her rota bir tık arkada.                               |
+| T14-06 | Giriş, girenin rolüne göre açılsın: mütevelliye yönetişim ve para, tedarikçiye kendi işi ve hakedişi.     | P1  | ✅ Gösterge paneli bunu yapıyor (M12-01, `BY_ROLE`). Kenar çubuğu **filtrelenmeyecek** — 6 Ekim 2026, kullanıcı kararı. |
 
 ### T14 · Faz 2 — ölçülen sonuç
 
@@ -1166,7 +1167,8 @@ aynı dersi veriyor: aletin kendisi de ölçülmeli.
   görünümü), **T10-07** (telefonda eksen seyreltme) — P1, yapılmadı.
 - **T11-03**: 152 ham `<button>` kaldı, 224 `ActionButton`'a karşı. P1.
 - **T11-04** (karanlık tema), **T11-05** (ikon–kavram eşlemesi) — P2.
-- **T9-04** (`aria-live`): tek kullanım var, tarama yapılmadı. P1.
+- ~~**T9-04** (`aria-live`): tek kullanım var, tarama yapılmadı. P1.~~ 6 Ekim
+  2026'da ölçüldü ve kapandı — aşağıdaki `T9-04 ve T9-06` bölümüne bakın.
 
 ## Nasıl test edilir
 
@@ -1271,5 +1273,110 @@ dokuz rotayı görüyor. Ama bu **yapılmadı** ve sebebi teknik değil:
   ikincisidir.**
 
 Faz 3'ten sonra kenar çubuğu zaten 19'dan 3–6 girişe indi, yani şikâyetin
-kendisi karşılandı. Rol filtresi bir ürün kararı olarak açık duruyor ve
-kararı veren kişi bu satırı okuyan olmalı — ben değil.
+kendisi karşılandı.
+
+**Karar verildi (6 Ekim 2026): kenar çubuğu role göre FİLTRELENMEYECEK.**
+Kullanıcının kararı, ve T14-06 bununla kapanıyor. Satır artık "bekliyor"
+değil; bir şeyin yapılmamasına karar vermek de bir karardır ve kayda geçmesi
+gerekir — yoksa sonraki tur onu "unutulmuş iş" sanır.
+
+### T9-04 ve T9-06 — ölçülen sonuç
+
+Dört dalga boyunca T9 satırlarının üçü ölçüldü (kontrast, odak halkası,
+hareket azaltma) ve biri kenarda kaldı: **T9-04, dinamik değişikliklerin
+duyurulması.** 4. dalganın "henüz yapılmayan" listesinde "tek kullanım var,
+tarama yapılmadı" diye duruyordu. 6 Ekim 2026'da tarama yapıldı.
+
+#### Ölçüm: 19 rotada sıfır canlı bölge
+
+| Ölçülen                                        | Önce       | Sonra   | Satır |
+| ---------------------------------------------- | ---------- | ------- | ----- |
+| `aria-live` ya da canlı rol / rota             | **0 / 19** | 19 / 19 | T9-04 |
+| Reddi paylaşılan bileşenin dışında basan ekran | 0          | 0       | T9-04 |
+| Adsız düğme / sekme / bağlantı                 | 0 / 972    | 0 / 972 | T9-06 |
+| Etiketsiz form alanı                           | 0 / 18     | 0 / 18  | T9-06 |
+| `alt` metni olmayan resim                      | 0 / 0      | 0 / 0   | T9-06 |
+| Adsız grafik (`svg[role="img"]`)               | 0 / 3      | 0 / 3   | T9-06 |
+
+Temelin sağlam olduğu ortaya çıktı: adsız bir denetim, etiketsiz bir alan,
+`alt`'sız bir resim **yoktu**. Kusur tek bir yerdeydi ve orası en kötü yerdi.
+
+Uygulamadaki tek canlı bölge `QueryStatus`'un yükleme satırıydı ve o, yükleme
+bitince DOM'dan kalkıyor. Yani **bir yazma reddedildiğinde ekran okuyucu
+kullanan kişi hiçbir şey duymuyordu**: düğmeye basıyor, hiçbir şey olmuyor,
+ve sebebi ekranda yazılı ama ona okunmuyor.
+
+Bu, bu projenin kendi ilkesiyle çelişiyor. Portal reddi kelimesi kelimesine
+yazmayı ilke edindi (CLAUDE.md §2: bilinmeyeni ekrana çıkar) — ama o metnin
+okuyamayan biri için var olması, metni yazmaktan ayrı bir iş ve yapılmamıştı.
+
+#### Düzeltme tek satır, çünkü redd tek yerden geçiyor
+
+Önce atlatma arandı: `src/views` ve `src/components` içinde reddin metnini
+paylaşılan bileşenin dışında basan **sıfır** yer var. Yani `WriteError`'a
+`role="alert"` koymak 64 çağrı yerini birden kapsıyor.
+
+`alert`, `aria-live="assertive"` demek — ve seçim kasıtlı: bir redd beklenen
+bir sonuç değil, okuyucunun sırasını beklemesi gereken bir şey de değil.
+
+#### Kapıya iki yeni dosya değil, iki yeni soru
+
+`tests/a11y.mjs` (kaynakta, tarayıcısız): paylaşılan bileşen canlı rolünü
+taşıyor mu, ve hiçbir ekran onu atlatıyor mu. Tarayıcıda değil, çünkü
+`WriteError` yalnızca bir yazma reddedildiğinde çizilir; `tests/populated.mjs`
+okumaları sahteleyip 19 rotayı geziyor ama hiçbir yazma denemiyor.
+
+`tests/populated.mjs` (tarayıcıda, sekmeler açıldıktan sonra): dört adsızlık
+sayısı da sıfır mı. Yoğunluk ölçümü sekmelere **dokunmadan** alınıyor, bu
+ölçüm sekmeler **açıldıktan sonra** — ikisi farklı şeyi soruyor. Yoğunluk
+"ekranı açan kişi ne görüyor" der; erişilebilirlik "bu ekranda adsız bir şey
+var mı" der ve kapalı bir sekmedeki adsız düğme de kusurdur.
+
+#### Mutasyonlar: altısı da denendi, ikisi testin kendi kusurunu buldu
+
+| Mutasyon                                              | Sonuç                              |
+| ----------------------------------------------------- | ---------------------------------- |
+| `WriteError`'dan `role="alert"` kaldırıldı            | düştü                              |
+| `role="alert"` → `data-role="alert"`                  | **ilk hâlinde GEÇTİ** → düzeltildi |
+| Bir ekran reddi kendi `<p>`'sinde bastı               | düştü (`MeetingsView.tsx:336`)     |
+| 20 dosyada `<WriteError` → `<WriteErr0r`              | düştü (44 / en az 50)              |
+| `QueryStatus`'tan canlı rol **ve** `aria-live` kalktı | düştü                              |
+| İkon düğmesinin `aria-label` + `title`'ı kalktı       | düştü (19 rotada)                  |
+| Üç DOM seçicisi de körleştirildi                      | düştü (üç taban)                   |
+
+İki satır ayrıca yazılmayı hak ediyor, çünkü ikisi de **testin kendisinin
+kusuruydu**:
+
+**`data-role` geçti.** Desen `/role="(alert|status)"/` idi ve
+`data-role="status"` metninin içinde `role="status"` dizgesi aynen duruyor.
+Rol gitmişti, kontrol geçiyordu. Desen `[\s{]` ile sınırlandı. Düşmeyen bir
+mutasyon, kuralın değil testin kusurudur.
+
+**Üç seçici körleştirildiğinde dört sıfır da kendiliğinden geçti** — ve
+yakalayan şey kuralın kendisi değil, kaç şeye BAKILDIĞINI sınayan üç tabandı
+(972 denetim, 18 alan, 3 grafik). Bu depoda tam bu körlük bir kez oldu: sekme
+gezgini on yedi sekmenin yedisini açıyordu ve "bulunanların hepsi açıldı"
+kontrolü geçiyordu. Bir tavan körlüğü yakalayamaz; bir taban da sayıyı değil
+görmeyi sınadığı sürece yakalar.
+
+#### Ölçmediğim bir sayıyı yazdım, kapı yakaladı
+
+Tabanları ilk yazdığımda 30 form alanı ve 4 grafik yazdım. **İkisi de
+düştü** — gerçek sayılar 18 ve 3. Sebebi: bu rakamları kapıdan değil, ayrı
+bir ölçüm betiğinden hatırlayarak yazmıştım; o betik farklı bir durumda
+ölçüyordu. Tabanlar ölçülen değerlere indirildi ve sebep dosyada duruyor.
+
+#### T9-06 yeni bir satır ve neden yeni olduğu
+
+Taramanın ölçtüğü şey **erişilebilir ad**. T9-01 kontrast diyor, T9-02 renkle
+anlam, T9-03 klavye — hiçbiri ad demiyor. Ölçtüğüm şeyi istemeyen bir satırı
+kapatmak, T13 turunda yapılan hatanın aynısı olurdu: karakter sayıp yoğunluk
+kapandı sanmak. Bu yüzden T9-06 açıldı ve üç satır olduğu yerde kaldı.
+
+#### Hâlâ ölçülmeyen
+
+T9-04 artık **yazma reddini** kapsıyor. Kapsamadığı şey, başarılı bir yazmanın
+duyurulması: bir kayıt eklendiğinde "eklendi" diyen bir canlı bölge yok, ve
+ekranın kendisi değiştiği için görenin bunu fark etmesi yeterli. Bunun bir
+kusur mu yoksa gürültü mü olduğu ölçülmedi — satır bu hâliyle kapanıyor ve
+eksiği burada yazılı.

@@ -194,12 +194,30 @@ export const Td: React.FC<{ children?: React.ReactNode; className?: string }> = 
   className = '',
 }) => <td className={`px-2 py-2 align-middle text-slate-700 ${className}`}>{children}</td>;
 
-/** Why a write was refused, in the words the database used. */
+/**
+ * Why a write was refused, in the words the database used.
+ *
+ * `role="alert"` buraya 6 Ekim 2026'da kondu ve tek satır, altmış beş çağrı
+ * yerini birden kapsıyor (T9-04). Ölçüm: on dokuz rotanın on dokuzunda
+ * `aria-live` sayısı **sıfırdı** — tek canlı bölge `QueryStatus`'un yükleme
+ * satırıydı ve o, yükleme bitince kayboluyor.
+ *
+ * Yani bir yazma reddedildiğinde ekran okuyucu kullanan kişi HİÇBİR ŞEY
+ * duymuyordu: düğmeye basıyor, hiçbir şey olmuyor, ve sebebi ekranda yazılı
+ * ama ona okunmuyor. Reddi kelimesi kelimesine yazmanın anlamı, onu
+ * okuyabilen biri için var.
+ *
+ * `alert`, `aria-live="assertive"` demek: bir redd beklenen bir sonuç değil,
+ * ve okuyucunun sırasını beklemesi gereken bir şey de değil.
+ */
 export const WriteError: React.FC<{ error: unknown }> = ({ error }) => {
   if (!error) return null;
   const message = error instanceof Error ? error.message : String(error);
   return (
-    <p className="mt-2 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs text-rose-800">
+    <p
+      role="alert"
+      className="mt-2 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs text-rose-800"
+    >
       {message}
     </p>
   );
