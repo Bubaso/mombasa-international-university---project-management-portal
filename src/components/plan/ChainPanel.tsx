@@ -171,7 +171,7 @@ export const ChainPanel: React.FC = () => {
       <QueryStatus queries={[dependencies]} />
 
       {edges.length === 0 ? (
-        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
           {tr
             ? 'Kayıtlı bağımlılık yok. “Bu, şu bitmeden olmaz” cümlesi bir yere yazılmadıkça kimse göremez.'
             : 'No dependency is recorded. “This cannot happen until that does” is invisible until somebody writes it down.'}
@@ -229,7 +229,7 @@ export const ChainPanel: React.FC = () => {
               </span>
 
               {(tr ? d.noteEn : d.noteEn) && (
-                <p className="w-full text-xs text-slate-600">{d.noteEn}</p>
+                <p className="w-full text-sm text-slate-600">{d.noteEn}</p>
               )}
             </li>
           ))}

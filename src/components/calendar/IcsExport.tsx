@@ -53,7 +53,7 @@ export const IcsExport: React.FC<{ entries: CalendarEntry[] }> = ({ entries }) =
             <h2 className="text-base font-bold text-slate-900">
               {tr ? 'Takvimi dosya olarak al' : 'Take the calendar as a file'}
             </h2>
-            <p className="max-w-2xl text-xs text-slate-500">
+            <p className="max-w-2xl text-sm text-slate-500">
               {tr
                 ? 'Google Takvim, Outlook ve telefonunuz okur. Kopya alır: tarih değişirse yeniden alın.'
                 : 'Google Calendar, Outlook and your phone read it. It takes a copy: if a date moves, take it again.'}
@@ -63,7 +63,7 @@ export const IcsExport: React.FC<{ entries: CalendarEntry[] }> = ({ entries }) =
       </header>
 
       <div className="flex flex-wrap items-center gap-3">
-        <label className="flex cursor-pointer items-center gap-1.5 text-xs text-slate-700">
+        <label className="flex cursor-pointer items-center gap-1.5 text-sm text-slate-700">
           <input
             type="checkbox"
             checked={includeClosed}
@@ -99,7 +99,7 @@ export const IcsExport: React.FC<{ entries: CalendarEntry[] }> = ({ entries }) =
         )}
       </div>
 
-      <p className="mt-2 flex items-start gap-1.5 text-xs leading-relaxed text-amber-800">
+      <p className="mt-2 flex items-start gap-1.5 text-sm leading-relaxed text-amber-800">
         <Info className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
         {tr
           ? 'Bu dosya portalın erişim denetimini geride bırakır. Portalda bir kaydı kimin görebileceğine veritabanı karar veriyor; bir .ics dosyasına ise dizüstünü eline alan herkes bakar.'

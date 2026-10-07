@@ -90,7 +90,7 @@ export const StakeholderDetail: React.FC<Props> = ({
       <header className="flex items-start justify-between gap-3 border-b border-slate-200 px-4 py-3">
         <div className="min-w-0">
           <h2 className="truncate text-base font-bold text-slate-900">{stakeholder.fullName}</h2>
-          <p className="truncate text-xs text-slate-500">
+          <p className="truncate text-sm text-slate-500">
             {[stakeholder.title, stakeholder.organizationName].filter(Boolean).join(' · ') ||
               categoryLabel(stakeholder.category, language)}
           </p>
@@ -142,7 +142,7 @@ export const StakeholderDetail: React.FC<Props> = ({
               </Pill>
             </div>
 
-            <dl className="grid grid-cols-1 gap-x-4 gap-y-1.5 text-xs sm:grid-cols-2">
+            <dl className="grid grid-cols-1 gap-x-4 gap-y-1.5 text-sm sm:grid-cols-2">
               <Detail
                 icon={Building2}
                 label={tr ? 'Kurum' : 'Organization'}
@@ -187,7 +187,7 @@ export const StakeholderDetail: React.FC<Props> = ({
           ) : (
             <ol className="space-y-1">
               {(history.data ?? []).map((change) => (
-                <li key={change.id} className="flex items-baseline gap-2 text-xs">
+                <li key={change.id} className="flex items-baseline gap-2 text-sm">
                   <span className="shrink-0 font-mono text-slate-500">
                     {change.changedAt.slice(0, 10)}
                   </span>
@@ -231,10 +231,10 @@ export const StakeholderDetail: React.FC<Props> = ({
                       {entry.occurredAt.slice(0, 10)}
                     </span>
                   </div>
-                  <p className="mt-0.5 text-xs leading-relaxed text-slate-700">{entry.summary}</p>
+                  <p className="mt-0.5 text-sm leading-relaxed text-slate-700">{entry.summary}</p>
                   <RecordOrigin origin={origins.of(entry.id)} />
                   {entry.outcome && (
-                    <p className="mt-1 text-xs text-slate-500">
+                    <p className="mt-1 text-sm text-slate-500">
                       <span className="font-medium">{tr ? 'Sonuç: ' : 'Outcome: '}</span>
                       {entry.outcome}
                     </p>
@@ -271,7 +271,7 @@ export const StakeholderDetail: React.FC<Props> = ({
                   </span>
                 )}
               </div>
-              <p className="mt-1 text-xs text-slate-600">
+              <p className="mt-1 text-sm text-slate-600">
                 {record.keptPercent == null
                   ? tr
                     ? 'Henüz kapanmış bir taahhüdü yok — bu sıfır demek değil, ölçülecek bir şey olmaması demek.'
@@ -294,7 +294,7 @@ export const StakeholderDetail: React.FC<Props> = ({
                 const outgoing = edge.fromStakeholderId === stakeholder.id;
                 const other = outgoing ? edge.toName : edge.fromName;
                 return (
-                  <li key={edge.id} className="text-xs text-slate-700">
+                  <li key={edge.id} className="text-sm text-slate-700">
                     {outgoing ? (
                       <>
                         <span className="text-slate-500">
@@ -334,15 +334,15 @@ export const StakeholderDetail: React.FC<Props> = ({
           <div className="px-3 py-2">
             {canAssess && <AssessmentForm stakeholderId={stakeholder.id} />}
             {(assessments.data ?? []).length === 0 ? (
-              <p className="text-xs text-rose-900/60">
+              <p className="text-sm text-rose-900/60">
                 {tr ? 'Değerlendirme yazılmamış.' : 'No assessment written.'}
               </p>
             ) : (
               <ul className="mt-2 space-y-2">
                 {(assessments.data ?? []).map((note) => (
-                  <li key={note.id} className="text-xs">
+                  <li key={note.id} className="text-sm">
                     <p className="leading-relaxed text-rose-950">{note.body}</p>
-                    <p className="mt-0.5 text-xs text-rose-800/60">
+                    <p className="mt-0.5 text-sm text-rose-800/60">
                       {note.authorName ?? (tr ? 'bilinmiyor' : 'unknown')} ·{' '}
                       {note.assessedAt.slice(0, 10)}
                     </p>
@@ -390,7 +390,7 @@ const Block: React.FC<{
 );
 
 const Empty: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <p className="text-xs text-slate-500">{children}</p>
+  <p className="text-sm text-slate-500">{children}</p>
 );
 
 // ---------------------------------------------------------------------------
@@ -494,7 +494,7 @@ const EditForm: React.FC<{
         </Field>
       </div>
 
-      <p className="text-xs leading-relaxed text-slate-500">
+      <p className="text-sm leading-relaxed text-slate-500">
         {tr
           ? 'Tutumu değiştirmek geçmişe bir satır ekler; o satır sonradan düzeltilemez.'
           : 'Changing the stance appends a line to the history, and that line cannot be corrected later.'}

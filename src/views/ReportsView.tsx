@@ -219,7 +219,7 @@ export const ReportsView: React.FC = () => {
               {tr ? 'Derle' : 'Compile it'}
             </ActionButton>
             {shape && (
-              <p className="flex-1 text-xs text-slate-500">{tr ? shape.why.tr : shape.why.en}</p>
+              <p className="flex-1 text-sm text-slate-500">{tr ? shape.why.tr : shape.why.en}</p>
             )}
           </div>
           <div className="sm:col-span-4">
@@ -236,7 +236,7 @@ export const ReportsView: React.FC = () => {
       <CurvePanel />
 
       {list.length === 0 ? (
-        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600 print:hidden">
+        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 print:hidden">
           {tr
             ? 'Henüz derlenmiş rapor yok. Mütevelli dosyasının hazırlanması bugün saatler sürüyor; bu ekranın ölçütü on dakikanın altı.'
             : 'Nothing compiled yet. Preparing a board pack takes hours today; the measure for this screen is under ten minutes.'}
@@ -263,7 +263,7 @@ export const ReportsView: React.FC = () => {
                       {wordFor(STATE_LABEL, run.state, tr ? 'tr' : 'en')}
                     </Pill>
                   </div>
-                  <p className="mt-0.5 text-xs text-slate-500">
+                  <p className="mt-0.5 text-sm text-slate-500">
                     {kindName(run.kind, tr)} · {formatDate(run.preparedAt, language)} ·{' '}
                     {run.rows.length} {tr ? 'satır' : 'rows'}
                   </p>
@@ -284,7 +284,7 @@ export const ReportsView: React.FC = () => {
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div className="min-w-0">
                     <h2 className="text-base font-bold text-slate-900">{active.title}</h2>
-                    <p className="mt-0.5 text-xs text-slate-500">
+                    <p className="mt-0.5 text-sm text-slate-500">
                       {kindName(active.kind, tr)}
                       {active.periodFrom && active.periodTo && (
                         <>
@@ -296,7 +296,7 @@ export const ReportsView: React.FC = () => {
                       {active.meetingTitle && ` · ${active.meetingTitle}`}
                       {active.stakeholderName && ` · ${active.stakeholderName}`}
                     </p>
-                    <p className="mt-0.5 text-xs text-slate-500">
+                    <p className="mt-0.5 text-sm text-slate-500">
                       {tr ? 'Derleyen: ' : 'Compiled by '}
                       {active.preparedByName ?? '—'} · {formatDate(active.preparedAt, language)}
                       {active.approvedByName && (
@@ -332,7 +332,7 @@ export const ReportsView: React.FC = () => {
                 </div>
 
                 {/* The two limits, said rather than implied. */}
-                <p className="mt-2 text-xs text-slate-500 print:hidden">
+                <p className="mt-2 text-sm text-slate-500 print:hidden">
                   {tr
                     ? 'PDF tarayıcının yazdırma penceresinden çıkar — portalda PDF üreten bir şey yok. İndirme Markdown’dır; Word onu açar, ama bu bir .docx değil.'
                     : 'The PDF comes from the browser’s print dialogue — nothing here generates one. The download is Markdown, which Word opens; it is not a .docx.'}
@@ -417,7 +417,7 @@ export const ReportsView: React.FC = () => {
                 <WriteError error={approve.error} />
                 <WriteError error={publish.error} />
                 {active.withdrawnReason && (
-                  <p className="mt-2 text-xs text-rose-800">
+                  <p className="mt-2 text-sm text-rose-800">
                     {tr ? 'Geri çekildi: ' : 'Withdrawn: '}
                     {active.withdrawnReason}
                   </p>

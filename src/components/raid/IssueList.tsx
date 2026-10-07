@@ -46,7 +46,7 @@ export const IssueList: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
 
   /** Bir satır; iki yerde çiziliyor (bekleyen ve geri çekilmiş). */
   const row = (issue: Issue) => (
-    <li key={issue.id} className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs">
+    <li key={issue.id} className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-1.5">
@@ -144,7 +144,7 @@ export const IssueList: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
       <QueryStatus queries={[issues]} />
 
       {rows.length > 0 && (
-        <p className="mb-3 text-xs text-slate-600">
+        <p className="mb-3 text-sm text-slate-600">
           {tr
             ? `${rows.length} sorunun ${foreseen} tanesi önceden risk olarak kayıtlıydı.`
             : `${foreseen} of ${rows.length} were on the risk register before they happened.`}
@@ -224,7 +224,7 @@ export const IssueList: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
           <ul className="space-y-2">{waiting.map(row)}</ul>
 
           {waiting.length === 0 && settled.length > 0 && (
-            <p className="text-xs text-slate-500">
+            <p className="text-sm text-slate-500">
               {tr
                 ? 'Açık sorun yok; kütükteki hepsi çözülmüş.'
                 : 'No issue is open; every one in the register has been resolved.'}

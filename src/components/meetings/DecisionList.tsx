@@ -78,7 +78,7 @@ export const DecisionList: React.FC<{
         )}
 
         {rows.length === 0 && !adding ? (
-          <p className="text-xs text-slate-500">
+          <p className="text-sm text-slate-500">
             {tr ? 'Bu toplantıda karar alınmamış.' : 'No decision was taken here.'}
           </p>
         ) : (
@@ -113,7 +113,7 @@ export const DecisionList: React.FC<{
               </div>
 
               {bilingual(decision.rationaleEn, decision.rationaleTr, language) && (
-                <p className="mt-1 text-xs italic leading-relaxed text-slate-600">
+                <p className="mt-1 text-sm italic leading-relaxed text-slate-600">
                   {bilingual(decision.rationaleEn, decision.rationaleTr, language)}
                   {marks.is(
                     decision.id,
@@ -124,7 +124,7 @@ export const DecisionList: React.FC<{
               )}
 
               {decision.dissenters.length > 0 && (
-                <p className="mt-1 flex flex-wrap items-center gap-1 text-xs text-rose-800">
+                <p className="mt-1 flex flex-wrap items-center gap-1 text-sm text-rose-800">
                   <UserMinus className="h-3 w-3 shrink-0" aria-hidden="true" />
                   <span className="font-medium">{tr ? 'Karşı oy:' : 'Against:'}</span>
                   <span>{decision.dissenters.map((d) => d.name ?? '—').join(', ')}</span>

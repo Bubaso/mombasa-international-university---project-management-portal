@@ -55,7 +55,7 @@ const Card: React.FC<{
         <Icon className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" aria-hidden="true" />
         <div>
           <h2 className="text-base font-bold text-slate-900">{title}</h2>
-          {subtitle && <p className="text-xs text-slate-500">{subtitle}</p>}
+          {subtitle && <p className="text-sm text-slate-500">{subtitle}</p>}
         </div>
       </header>
       <div className="flex-1">{children}</div>
@@ -75,7 +75,7 @@ const Card: React.FC<{
 
 /** "Nothing here" and "nothing you may see" are different things to say. */
 const Nothing: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <p className="text-xs leading-relaxed text-slate-500">{children}</p>
+  <p className="text-sm leading-relaxed text-slate-500">{children}</p>
 );
 
 // ---------------------------------------------------------------------------
@@ -146,7 +146,7 @@ export const SiteToday: React.FC = () => {
             {blocks.slice(0, 5).map((block) => (
               <li
                 key={block.constructionBlockId}
-                className="flex items-center justify-between gap-2 text-xs"
+                className="flex items-center justify-between gap-2 text-sm"
               >
                 <span className="truncate text-slate-700">
                   {block.tasksWithEvidence}/{block.constructionTasks} {tr ? 'kanıtlı' : 'evidenced'}
@@ -211,7 +211,7 @@ export const LegalNext: React.FC = () => {
           {dated.map((entry) => {
             const days = daysUntil(entry.dueOn);
             return (
-              <li key={`${entry.kind}-${entry.id}`} className="text-xs">
+              <li key={`${entry.kind}-${entry.id}`} className="text-sm">
                 <div className="flex items-start justify-between gap-2">
                   <span className="min-w-0 truncate text-slate-800">
                     {tr ? (entry.titleTr ?? entry.titleEn) : entry.titleEn}
@@ -355,7 +355,7 @@ export const ProjectPulse: React.FC = () => {
       }
     >
       <QueryStatus queries={[progress, risks, obligations]} />
-      <dl className="space-y-2 text-xs">
+      <dl className="space-y-2 text-sm">
         <div className="flex items-center justify-between">
           <dt className="text-slate-600">{tr ? 'Kanıtlı ilerleme' : 'Evidenced progress'}</dt>
           <dd
@@ -454,7 +454,7 @@ export const ComingUp: React.FC = () => {
           {soon.map(({ entry, days }) => (
             <li
               key={`${entry.kind}-${entry.id}`}
-              className="flex items-start justify-between gap-2 text-xs"
+              className="flex items-start justify-between gap-2 text-sm"
             >
               <span className="min-w-0 truncate text-slate-800">
                 {tr ? (entry.titleTr ?? entry.titleEn) : entry.titleEn}
@@ -521,7 +521,7 @@ export const AuditQueue: React.FC = () => {
             : 'The ledger is empty — or the financial records are not yours to see.'}
         </Nothing>
       ) : (
-        <dl className="space-y-2 text-xs">
+        <dl className="space-y-2 text-sm">
           <div className="flex items-center justify-between">
             <dt className="text-slate-600">{tr ? 'Denetlenmemiş' : 'Not audited'}</dt>
             <dd className="font-mono font-semibold text-slate-900">

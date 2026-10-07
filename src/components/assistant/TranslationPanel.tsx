@@ -69,7 +69,7 @@ export const TranslationPanel: React.FC = () => {
             <h2 className="text-base font-bold text-slate-900">
               {tr ? 'Makine çevirileri' : 'Machine translations'}
             </h2>
-            <p className="max-w-2xl text-xs text-slate-500">
+            <p className="max-w-2xl text-sm text-slate-500">
               {tr
                 ? 'Boş olan dil otomatik dolduruluyor. Onaylanmamış çeviri bir öneridir, kayıt değil.'
                 : 'The empty language is filled automatically. An unapproved translation is a suggestion, not a record.'}
@@ -143,7 +143,7 @@ export const TranslationPanel: React.FC = () => {
 
       {swept && (
         <p
-          className={`mb-2 rounded-lg px-3 py-2 text-xs ${
+          className={`mb-2 rounded-lg px-3 py-2 text-sm ${
             swept.refused > 0 || swept.left > 0
               ? 'border border-amber-200 bg-amber-50 text-amber-900'
               : 'border border-emerald-200 bg-emerald-50 text-emerald-900'
@@ -165,7 +165,7 @@ export const TranslationPanel: React.FC = () => {
       <WriteError error={sweep.error} />
 
       {!translationConfigured && (
-        <p className="mb-2 flex items-start gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+        <p className="mb-2 flex items-start gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
           <TriangleAlert className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
           {tr
             ? 'Çeviri için bir model bağlı değil, yani hiçbir alan otomatik dolmuyor. Aşağıdaki liste geçmişte yapılanlar.'
@@ -176,7 +176,7 @@ export const TranslationPanel: React.FC = () => {
       <QueryStatus queries={[review, backlog]} />
 
       {rows.length === 0 ? (
-        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
           {tr
             ? 'Henüz makine çevirisi yok. Bir toplantı, karar, aksiyon veya soru tek dilde kaydedildiğinde diğer dili burada önerilir.'
             : 'No machine translations yet. When a meeting, decision, action or question is recorded in one language, the other is suggested here.'}
@@ -226,7 +226,7 @@ export const TranslationPanel: React.FC = () => {
                   it Y", which is the only way to learn which columns the
                   machine is bad at. */}
               {!row.stillTheMachinesWords && (
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-1 text-sm text-slate-500">
                   {tr ? 'Makinenin yazdığı: ' : 'The machine wrote: '}
                   <span className="italic">{row.machineText}</span>
                 </p>

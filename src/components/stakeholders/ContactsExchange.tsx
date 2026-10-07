@@ -125,7 +125,7 @@ export const ContactsExchange: React.FC<{ people: Stakeholder[] }> = ({ people }
           {tr ? 'Dışa' : 'Out'}
         </h3>
         <div className="flex flex-wrap items-center gap-3">
-          <label className="flex cursor-pointer items-center gap-1.5 text-xs text-slate-700">
+          <label className="flex cursor-pointer items-center gap-1.5 text-sm text-slate-700">
             <input
               type="checkbox"
               checked={includeClosed}
@@ -152,7 +152,7 @@ export const ContactsExchange: React.FC<{ people: Stakeholder[] }> = ({ people }
           >
             {tr ? 'CSV indir' : 'Download CSV'}
           </ActionButton>
-          <label className="flex cursor-pointer items-center gap-1.5 text-xs text-slate-700">
+          <label className="flex cursor-pointer items-center gap-1.5 text-sm text-slate-700">
             <input
               type="checkbox"
               checked={includeAssessment}
@@ -227,14 +227,14 @@ export const ContactsExchange: React.FC<{ people: Stakeholder[] }> = ({ people }
             </div>
 
             {parsed.ignoredColumns.length > 0 && (
-              <p className="text-xs text-slate-600">
+              <p className="text-sm text-slate-600">
                 {tr ? 'Karşılığı olmayan kolonlar: ' : 'Columns with no field here: '}
                 <span className="font-mono">{parsed.ignoredColumns.join(', ')}</span>
               </p>
             )}
 
             {parsed.contacts.filter((c) => c.takesDefaultGrid).length > 0 && (
-              <p className="flex items-start gap-1.5 rounded border border-amber-200 bg-amber-50 px-2 py-1.5 text-xs text-amber-900">
+              <p className="flex items-start gap-1.5 rounded border border-amber-200 bg-amber-50 px-2 py-1.5 text-sm text-amber-900">
                 <Info className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
                 {tr
                   ? `${parsed.contacts.filter((c) => c.takesDefaultGrid).length} satır nüfuz ve ilgi vermiyor. Kütük bu alanları boş bırakamıyor, varsayılan olarak 3 yazıyor — yani bu kişiler nüfuz/ilgi ızgarasının tam ortasına, kimsenin koymadığı bir yere düşer. Tutumları ise 'bilinmiyor' kalır, 'nötr' değil.`
@@ -245,7 +245,7 @@ export const ContactsExchange: React.FC<{ people: Stakeholder[] }> = ({ people }
             {parsed.refused.length > 0 && (
               <ul className="space-y-0.5">
                 {parsed.refused.map((r) => (
-                  <li key={r.line} className="text-xs text-rose-800">
+                  <li key={r.line} className="text-sm text-rose-800">
                     {tr ? `satır ${r.line}: ` : `line ${r.line}: `}
                     {r.reason}
                   </li>
@@ -258,7 +258,7 @@ export const ContactsExchange: React.FC<{ people: Stakeholder[] }> = ({ people }
                 {parsed.contacts
                   .filter((c) => c.matches.length > 0)
                   .map((c) => (
-                    <li key={c.line} className="text-xs text-amber-900">
+                    <li key={c.line} className="text-sm text-amber-900">
                       {tr ? `satır ${c.line}: ` : `line ${c.line}: `}
                       <span className="font-semibold">{c.fullName}</span>
                       {tr ? ' — kütükteki ' : ' — matches '}
@@ -301,7 +301,7 @@ export const ContactsExchange: React.FC<{ people: Stakeholder[] }> = ({ people }
 
         {imported && (
           <p
-            className={`mt-2 rounded px-2 py-1.5 text-xs ${
+            className={`mt-2 rounded px-2 py-1.5 text-sm ${
               imported.failed > 0
                 ? 'border border-amber-200 bg-amber-50 text-amber-900'
                 : 'border border-emerald-200 bg-emerald-50 text-emerald-900'

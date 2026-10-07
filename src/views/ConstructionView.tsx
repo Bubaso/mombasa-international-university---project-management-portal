@@ -257,7 +257,7 @@ export const ConstructionView: React.FC = () => {
                       <h2 className="text-base font-bold text-slate-900">
                         {selected.code} · {selected.name}
                       </h2>
-                      <p className="mt-0.5 text-xs text-slate-500">
+                      <p className="mt-0.5 text-sm text-slate-500">
                         {[
                           selected.phaseName,
                           selected.contractorName,
@@ -273,7 +273,7 @@ export const ConstructionView: React.FC = () => {
                           .join(' · ') || (tr ? 'Ayrıntı girilmemiş' : 'No details recorded')}
                       </p>
                       {(selected.purposeEn ?? selected.purposeTr) && (
-                        <p className="mt-1 max-w-2xl text-xs text-slate-600">
+                        <p className="mt-1 max-w-2xl text-sm text-slate-600">
                           {tr ? (selected.purposeTr ?? selected.purposeEn) : selected.purposeEn}
                         </p>
                       )}

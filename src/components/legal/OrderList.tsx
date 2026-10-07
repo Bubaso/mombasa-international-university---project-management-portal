@@ -154,7 +154,7 @@ export const OrderList: React.FC<{ caseId: string; canWrite: boolean; canOblige:
                 alan, "hepsi kaldırıldı" ile "hiç karar yoktu"yu birbirine
                 karıştırır. */}
             {waiting.length === 0 && settled.length > 0 && (
-              <p className="text-xs text-slate-500">
+              <p className="text-sm text-slate-500">
                 {tr
                   ? 'Yürürlükte karar yok; kayıtlı olanların hepsi kaldırılmış ya da hükmünü yitirmiş.'
                   : 'No order is in force; every one recorded here was discharged or has spent its effect.'}
@@ -238,7 +238,7 @@ const ConvertForm: React.FC<{ order: LegalOrder; onDone: () => void }> = ({ orde
         );
       }}
     >
-      <p className="text-xs leading-relaxed text-amber-900">
+      <p className="text-sm leading-relaxed text-amber-900">
         {tr
           ? 'Kararın her maddesini ayrı ayrı girin: biri bir şeyi yasaklıyor, diğeri bir şeyi emrediyor olabilir ve tarihleri farklıdır. Yasak olarak işaretlenenler, çakışan bir saha işi açılmadan önce uyarı üretir.'
           : 'Enter each clause on its own: one may forbid something and another require something, on different dates. Anything marked as a prohibition warns before conflicting site work is opened.'}
@@ -267,7 +267,7 @@ const ConvertForm: React.FC<{ order: LegalOrder; onDone: () => void }> = ({ orde
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <label className="flex cursor-pointer items-center gap-1.5 text-xs text-amber-900">
+        <label className="flex cursor-pointer items-center gap-1.5 text-sm text-amber-900">
           <input
             type="radio"
             checked={prohibits}
@@ -276,7 +276,7 @@ const ConvertForm: React.FC<{ order: LegalOrder; onDone: () => void }> = ({ orde
           />
           {tr ? 'Yasaklıyor' : 'It forbids something'}
         </label>
-        <label className="flex cursor-pointer items-center gap-1.5 text-xs text-amber-900">
+        <label className="flex cursor-pointer items-center gap-1.5 text-sm text-amber-900">
           <input
             type="radio"
             checked={!prohibits}

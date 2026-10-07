@@ -70,7 +70,7 @@ export const AppealGrounds: React.FC<{ caseId: string }> = ({ caseId }) => {
                   </Pill>
                 )}
                 {text(ground.detailEn, ground.detailTr) && (
-                  <p className="mt-0.5 text-xs leading-relaxed text-slate-600">
+                  <p className="mt-0.5 text-sm leading-relaxed text-slate-600">
                     {text(ground.detailEn, ground.detailTr)}
                   </p>
                 )}

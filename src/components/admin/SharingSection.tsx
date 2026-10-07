@@ -128,7 +128,7 @@ export const SharingSection: React.FC<{ canManage: boolean }> = ({ canManage }) 
       canUse={canManage}
     >
       {rows.length === 0 ? (
-        <p className="text-xs text-slate-500">
+        <p className="text-sm text-slate-500">
           {tr ? 'Kayda özel açılmış erişim yok.' : 'Nothing has been shared record by record.'}
         </p>
       ) : (
@@ -296,7 +296,7 @@ export const SharingSection: React.FC<{ canManage: boolean }> = ({ canManage }) 
             </Field>
           </div>
 
-          <p className="mt-2 text-xs leading-relaxed text-slate-500">
+          <p className="mt-2 text-sm leading-relaxed text-slate-500">
             {tr
               ? 'Kısıtlı sınıftaki bir kayıt dış paydaşa bu yolla açılamaz — bunun için kaydın sınıfının bilinçli olarak düşürülmesi gerekir. Bir bitiş tarihi vermek, unutulan erişimin en yaygın kaynağını kapatır.'
               : 'A restricted record cannot be handed to an external party this way; that needs a deliberate reclassification instead. Setting an end date closes off the commonest source of access nobody remembers granting.'}

@@ -199,7 +199,7 @@ export const MilestonePanel: React.FC = () => {
                 )
               )}
             </div>
-            {m.note && <p className="mt-0.5 text-xs text-slate-600">{m.note}</p>}
+            {m.note && <p className="mt-0.5 text-sm text-slate-600">{m.note}</p>}
             <RecordOrigin origin={origins.of(m.id)} />
           </div>
 
@@ -230,7 +230,7 @@ export const MilestonePanel: React.FC = () => {
                   {tr ? 'kaçırıldı' : 'missed'}
                 </button>
               )}
-              <label className="flex cursor-pointer items-center gap-1 text-xs text-slate-500">
+              <label className="flex cursor-pointer items-center gap-1 text-sm text-slate-500">
                 <CalendarClock className="h-3.5 w-3.5" aria-hidden="true" />
                 <span className="sr-only">
                   {tr ? 'Hedef tarihi değiştir' : 'Move the target date'}
@@ -420,7 +420,7 @@ export const MilestonePanel: React.FC = () => {
             </Select>
           </Field>
           <Field label={tr ? 'Kritik mi' : 'Critical'}>
-            <label className="flex items-center gap-2 pt-1.5 text-xs text-slate-600">
+            <label className="flex items-center gap-2 pt-1.5 text-sm text-slate-600">
               <input
                 type="checkbox"
                 checked={form.critical}
@@ -457,7 +457,7 @@ export const MilestonePanel: React.FC = () => {
       <WriteError error={miss.error} />
 
       {rows.length === 0 ? (
-        <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+        <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
           {tr
             ? 'Planda kilometre taşı yok. Portalda on beş modül var ama onları birbirine bağlayan zaman ekseni burada başlıyor — bir taş girilmeden ne geri sayım ne sapma hesaplanabilir.'
             : 'The plan has no milestones. The portal has fifteen registers and this is where the time axis joining them starts: without one, neither a countdown nor a variance can be computed.'}
@@ -470,7 +470,7 @@ export const MilestonePanel: React.FC = () => {
               kapananların altında "plan bitti" ile "planda taş yok"u birbirine
               karıştırır. */}
           {waiting.length === 0 && settled.length > 0 && (
-            <p className="text-xs text-slate-500">
+            <p className="text-sm text-slate-500">
               {tr
                 ? 'Bekleyen kilometre taşı yok; plandaki her taşa ulaşılmış ya da bırakılmış.'
                 : 'No milestone is waiting; every one in the plan was achieved or abandoned.'}

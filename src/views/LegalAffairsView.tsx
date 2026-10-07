@@ -231,7 +231,7 @@ export const LegalAffairsView: React.FC = () => {
             <div className="font-semibold text-slate-900">
               {tr ? '1. Sınırların Korunması' : '1. Boundary Protection'}
             </div>
-            <p className="text-slate-600 text-xs leading-relaxed">
+            <p className="text-slate-600 text-sm leading-relaxed">
               {tr
                 ? 'Moli ailesi (1.–7. davalılar) sadece fiilen işgal ettikleri 20 dönümlük (5 acre) alanda kalmaya devam edecektir.'
                 : 'Claimants strictly confined to the 5-acre enclave they actually occupied during site survey.'}
@@ -242,7 +242,7 @@ export const LegalAffairsView: React.FC = () => {
             <div className="font-semibold text-slate-900">
               {tr ? '2. Satış ve Devir Yasağı' : '2. Prohibition of Sale'}
             </div>
-            <p className="text-slate-600 text-xs leading-relaxed">
+            <p className="text-slate-600 text-sm leading-relaxed">
               {tr
                 ? 'Temyiz sonuçlanıncaya kadar arazinin hiçbir kısmı üçüncü kişilere devredilemez, satılamaz veya bölünemez.'
                 : 'No party may sell, subdivide or transfer any portion of the 84-acre parcel to third parties.'}
@@ -253,7 +253,7 @@ export const LegalAffairsView: React.FC = () => {
             <div className="font-semibold text-slate-900">
               {tr ? '3. Öncelikli Yargılama' : '3. Priority Hearing'}
             </div>
-            <p className="text-slate-600 text-xs leading-relaxed">
+            <p className="text-slate-600 text-sm leading-relaxed">
               {tr
                 ? 'Adaletin gecikmemesi amacıyla temyiz davasının sıradan dosyaların önüne alınarak öncelikli görülmesine karar verildi.'
                 : 'Expedited calendar granted ahead of standard queue due to magnitude of university investment.'}
@@ -264,7 +264,7 @@ export const LegalAffairsView: React.FC = () => {
             <div className="font-semibold text-slate-900">
               {tr ? '4. İnşaatların Durdurulması' : '4. Suspension of Works'}
             </div>
-            <p className="text-slate-600 text-xs leading-relaxed">
+            <p className="text-slate-600 text-sm leading-relaxed">
               {tr
                 ? 'Yeni inşaat ve çevre duvarı geçici olarak durdurulmuştur (Acil koruma başvurusu hariç).'
                 : 'New construction suspended; urgent weatherproofing allowed via variation application.'}
@@ -544,7 +544,7 @@ export const LegalAffairsView: React.FC = () => {
               </h3>
               <div className="space-y-3 text-sm">
                 {caseOrders.length === 0 ? (
-                  <p className="text-xs text-slate-500">
+                  <p className="text-sm text-slate-500">
                     {tr
                       ? 'Bu dosya için kayıtlı mahkeme kararı yok.'
                       : 'No court order recorded on this file.'}
@@ -570,10 +570,10 @@ export const LegalAffairsView: React.FC = () => {
                       {ord.referenceNo && (
                         <div className="font-semibold text-slate-900">{ord.referenceNo}</div>
                       )}
-                      <p className="text-slate-600 text-xs leading-relaxed">
+                      <p className="text-slate-600 text-sm leading-relaxed">
                         {(tr ? ord.textTr : ord.textEn) ?? ord.textEn ?? ord.textTr}
                       </p>
-                      {ord.madeBy && <p className="text-slate-500 text-xs">{ord.madeBy}</p>}
+                      {ord.madeBy && <p className="text-slate-500 text-sm">{ord.madeBy}</p>}
                     </div>
                   ))
                 )}
@@ -586,7 +586,7 @@ export const LegalAffairsView: React.FC = () => {
                 <FileCheck className="w-4 h-4 text-amber-600" />
                 <span>{tr ? 'Dava Layihaları ve Evrakları' : 'Case Trial Bundle Files'}</span>
               </div>
-              <p className="text-xs text-slate-700">
+              <p className="text-sm text-slate-700">
                 {tr
                   ? 'Kadzitu Moli 2012 tahliye makbuzu, 60 yıllık kira senedi ve onaylı tapu itirazlarını inceleyin.'
                   : 'Examine Kadzitu Moli 2012 payment receipt, 60-year lease and title certificates in vault.'}

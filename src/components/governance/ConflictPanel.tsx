@@ -44,7 +44,7 @@ export const ConflictPanel: React.FC = () => {
             <h2 className="text-base font-bold text-slate-900">
               {tr ? 'Çıkar çatışması beyanları' : 'Declared interests'}
             </h2>
-            <p className="text-xs text-slate-500">
+            <p className="text-sm text-slate-500">
               {tr
                 ? 'Herkes kendi beyanını yapar. Beyanlar varsayılan olarak gizli.'
                 : 'Everyone files their own declaration. Declarations are confidential by default.'}
@@ -128,7 +128,7 @@ export const ConflictPanel: React.FC = () => {
       <QueryStatus queries={[conflicts]} />
 
       {rows.length === 0 ? (
-        <p className="text-xs text-slate-500">
+        <p className="text-sm text-slate-500">
           {tr
             ? 'Görmeye yetkili olduğunuz beyan yok. Kendi beyanlarınızı her zaman görürsünüz, dolayısıyla bu liste boşsa siz de beyan vermemişsiniz.'
             : 'No declaration you are cleared to read. Your own are always visible to you, so an empty list means you have not made one either.'}
@@ -142,7 +142,7 @@ export const ConflictPanel: React.FC = () => {
                   <p className="text-sm text-slate-900">
                     {(tr ? row.interestTr : row.interestEn) ?? row.interestEn}
                   </p>
-                  <p className="mt-0.5 text-xs text-slate-500">
+                  <p className="mt-0.5 text-sm text-slate-500">
                     {[
                       row.personName,
                       `${tr ? 'beyan ' : 'declared '}${formatDate(row.declaredOn, language)}`,

@@ -96,7 +96,7 @@ export const CorrespondencePanel: React.FC = () => {
             <h2 className="text-base font-bold text-slate-900">
               {tr ? 'Resmî yazışma kütüğü' : 'Official correspondence'}
             </h2>
-            <p className="max-w-2xl text-xs text-slate-500">
+            <p className="max-w-2xl text-sm text-slate-500">
               {tr
                 ? 'Ne gönderildi, ne zaman, hangi yolla, eki ne ve ulaştığı teyit edildi mi.'
                 : 'What was sent, when, by what route, with what attached, and whether delivery was confirmed.'}
@@ -221,7 +221,7 @@ export const CorrespondencePanel: React.FC = () => {
             </div>
           </div>
           {form.direction === 'outgoing' && (
-            <p className="text-xs text-amber-800 sm:col-span-3">
+            <p className="text-sm text-amber-800 sm:col-span-3">
               {tr
                 ? 'Giden yazı, yazının kendisiyle birlikte kaydedilir. Eki olmayan bir yazışma kütüğü, iddialar listesidir.'
                 : 'An outgoing letter is filed with the letter. A register of letters whose letters are missing is a list of assertions.'}
@@ -233,7 +233,7 @@ export const CorrespondencePanel: React.FC = () => {
       <QueryStatus queries={[letters]} />
 
       {rows.length === 0 ? (
-        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
           {tr
             ? 'Kayıtlı resmî yazı yok. Bakanlığa gönderilen bir yazının ne zaman gittiği ve ulaşıp ulaşmadığı, altı ay sonra yalnızca buradan bilinebilir.'
             : 'No official letter is recorded. When a letter went to the Ministry, and whether it ever arrived, is knowable six months later only from here.'}

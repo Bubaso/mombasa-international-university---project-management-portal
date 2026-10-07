@@ -48,7 +48,7 @@ export const ReadinessBoard: React.FC = () => {
             <h2 className="text-base font-bold text-slate-900">
               {tr ? 'İlk öğrenci alımı hazırlığı' : 'First intake readiness'}
             </h2>
-            <p className="text-xs text-slate-500">
+            <p className="text-sm text-slate-500">
               {tr
                 ? 'Her şerit gerçek bir kütükten sayılıyor. Tanıtım şeridi yok: onu tutan bir kütük yok.'
                 : 'Every lane is counted from a real register. Outreach is missing: no register holds it.'}
@@ -58,7 +58,7 @@ export const ReadinessBoard: React.FC = () => {
         {daysToIntake != null ? (
           <div className="text-right">
             <p className="font-mono text-lg font-bold text-indigo-900">{daysToIntake}</p>
-            <p className="text-xs text-slate-500">
+            <p className="text-sm text-slate-500">
               {tr ? `gün — ${intakeYear} alımına` : `days to the ${intakeYear} intake`}
             </p>
           </div>
@@ -79,11 +79,11 @@ export const ReadinessBoard: React.FC = () => {
           const share = strand.total > 0 ? Math.round((100 * strand.ready) / strand.total) : null;
           return (
             <div key={strand.strand} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-              <p className="text-xs font-semibold tracking-wider text-slate-600 uppercase">
+              <p className="text-sm font-semibold tracking-wider text-slate-600 uppercase">
                 {strandLabel(strand.strand, language)}
               </p>
               {strand.total === 0 ? (
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-1 text-sm text-slate-500">
                   {tr ? 'kütükte kayıt yok' : 'nothing on the register'}
                 </p>
               ) : (
@@ -112,7 +112,7 @@ export const ReadinessBoard: React.FC = () => {
                 </>
               )}
               {strand.impeded > 0 && (
-                <p className="mt-1.5 flex items-center gap-1 text-xs font-semibold text-amber-800">
+                <p className="mt-1.5 flex items-center gap-1 text-sm font-semibold text-amber-800">
                   <TriangleAlert className="h-3 w-3" aria-hidden="true" />
                   {tr ? `${strand.impeded} engelli` : `${strand.impeded} impeded`}
                 </p>

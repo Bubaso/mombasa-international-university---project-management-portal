@@ -68,7 +68,7 @@ export const AccreditationPanel: React.FC = () => {
           {/* "mevcut durum": what is true today, in words, which the
                     state machine above cannot carry. */}
           {(tr ? item.positionTr : item.positionEn) && (
-            <p className="mt-0.5 text-xs text-slate-600">
+            <p className="mt-0.5 text-sm text-slate-600">
               {tr ? item.positionTr : item.positionEn}
             </p>
           )}
@@ -119,7 +119,7 @@ export const AccreditationPanel: React.FC = () => {
             <h2 className="text-base font-bold text-slate-900">
               {tr ? 'CUE akreditasyon kontrol listesi' : 'CUE accreditation checklist'}
             </h2>
-            <p className="text-xs text-slate-500">
+            <p className="text-sm text-slate-500">
               {tr
                 ? 'Hiçbir şart, kasada belgesi olmadan “karşılandı” olamıyor.'
                 : 'No requirement can be marked met without its document in the vault.'}
@@ -146,7 +146,7 @@ export const AccreditationPanel: React.FC = () => {
       <QueryStatus queries={[checklist]} />
 
       {rows.length === 0 ? (
-        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
           {tr
             ? 'Kontrol listesi boş. CUE şartları girilmeden akreditasyon hazırlığının nerede olduğu söylenemez — bu ekranın hiçbir şey uydurmaması da bu yüzden.'
             : 'The checklist is empty. Until the CUE standards are entered, nothing can be said about where accreditation stands — which is why this screen says nothing instead.'}
@@ -159,7 +159,7 @@ export const AccreditationPanel: React.FC = () => {
               karşılananların altında "hepsi tamam" ile "liste boş"u birbirine
               karıştırır. */}
           {waiting.length === 0 && settled.length > 0 && (
-            <p className="text-xs text-slate-500">
+            <p className="text-sm text-slate-500">
               {tr
                 ? 'Bekleyen şart yok; listedeki her şart karşılanmış ya da kapsam dışı.'
                 : 'No requirement is waiting; every one on the list is met or out of scope.'}

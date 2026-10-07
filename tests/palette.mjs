@@ -318,6 +318,80 @@ check(
     hexes.length ? hexes.slice(0, 5).join(', ') : '',
   );
 
+  /**
+   * Blok düzyazı 12px olamaz (T3-01).
+   *
+   * Ölçüm, 6 Ekim 2026: kullanılan 1.182 metin boyutundan **819'u** `text-xs`
+   * (12px), yani %69. T3-01 "hiçbir veri metni 14px'in altında değil; 12px
+   * yalnızca ikincil üstveri için" diyor ve %69 ikincil üstveri olamaz.
+   *
+   * 4. dalga bunu kapanmış sanmıştı ve sebebi öğretici: o tur "12px ALTI
+   * metin 2.635 → 0" ölçtü (720 adet `text-[11px]` kalktı), ama T3-01
+   * **14px'in** altını istiyor. İki ölçü aynı satıra yazılınca kriter
+   * karşılanmış göründü.
+   *
+   * Kural şu: **blok hâlindeki düzyazı 14px, satır içi açıklama 12px.** Bir
+   * `<p>`, `<li>`, `<label>` içerik taşır; bir `<span>` ya da `<div>` çoğu
+   * yerde sayının yanındaki birim, zaman damgası ya da rozet — T3-01'in
+   * "ikincil üstveri" dediği tam olarak o.
+   *
+   * Etiket tespiti GERİYE TARAYARAK yapılıyor ve bu şart: prettier çok prop'lu
+   * bir elemanı sarıyor, `className` ile `<p` ayrı satırlara düşüyor, ve aynı
+   * satırda arayan bir desen kullanımların yarısını görmez. Aradaki `>` bir
+   * önceki etiketi kapatmış demektir — orada durulur, yoksa bir sonraki
+   * `<button>`'ın sınıfı `<p>`'ye yazılmış sayılır.
+   */
+  const PROSE = new Set(['p', 'li', 'dd', 'dt', 'td', 'ul', 'dl', 'label', 'blockquote', 'Td']);
+  const tagOf = (body, at) => {
+    for (let i = at - 1; i >= 0; i -= 1) {
+      if (body[i] === '>') return null;
+      if (body[i] === '<')
+        return /^<([A-Za-z][A-Za-z0-9]*)/.exec(body.slice(i, i + 40))?.[1] ?? null;
+    }
+    return null;
+  };
+  // Ölçüm aracının kendisi: bilinen bir girdide bilineni buluyor mu?
+  //
+  // Bu depoda bir kontrolün körleşip memnun geçmesi altı kez oldu, ve en
+  // sinsisi hep aynı biçimde geldi: desen bir şeyi hiç görmüyor, sıfır
+  // çıkıyor, kural sağlanmış görünüyor. Burada körlük ÇOK SATIRLI `<p>`'de
+  // olurdu — prettier'ın sardığı hâl, yani gerçek kod.
+  {
+    const MULTILINE = '\n    <p\n      role="alert"\n      className="px-2.5 text-xs"\n    >\n';
+    const INLINE = '<span className="text-xs">x</span>';
+    const OUTSIDE = '<div>bir metin text-xs</div>';
+    const at = (t) => /(?<![-:\w])text-xs(?![-\w])/.exec(t).index;
+    check(tagOf(MULTILINE, at(MULTILINE)) === 'p', 'çok satırlı bir <p> tanınıyor');
+    check(tagOf(INLINE, at(INLINE)) === 'span', 'satır içi bir <span> tanınıyor');
+    check(tagOf(OUTSIDE, at(OUTSIDE)) === null, 'etiket dışındaki metin etiket sayılmıyor');
+  }
+
+  const smallProse = [];
+  for (const file of files) {
+    if (!file.endsWith('.tsx')) continue;
+    const body = read(file);
+    for (const m of body.matchAll(/(?<![-:\w])text-xs(?![-\w])/g)) {
+      const tag = tagOf(body, m.index);
+      if (tag && PROSE.has(tag)) {
+        smallProse.push(`${file}:${body.slice(0, m.index).split('\n').length} <${tag}>`);
+      }
+    }
+  }
+  check(
+    smallProse.length === 0,
+    'blok düzyazının hiçbiri 12px değil (T3-01)',
+    smallProse.length ? smallProse.slice(0, 5).join(', ') : `${files.length} dosya tarandı`,
+  );
+
+  // Ve geri sızmasın: 819 → 375, ve tavan ölçülen değer.
+  const XS_CEILING = 375;
+  const xs = [...sizes.entries()].find(([k]) => k === 'xs')?.[1] ?? 0;
+  check(
+    xs <= XS_CEILING,
+    '12px kullanımı kayıtlı tavanın altında (T3-01)',
+    `${xs} / ${XS_CEILING}`,
+  );
+
   const SCALE = ['xs', 'sm', 'base', 'lg', 'xl', '2xl'];
   const used = [...sizes.keys()].sort();
   const extra = used.filter((k) => !SCALE.includes(k));

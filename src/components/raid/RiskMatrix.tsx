@@ -99,7 +99,7 @@ export const RiskMatrix: React.FC = () => {
         </table>
       </div>
 
-      <p className="mt-2 text-xs text-slate-500">
+      <p className="mt-2 text-sm text-slate-500">
         {tr
           ? `${total} açık risk. Yatay eksen etki, dikey eksen olasılık; skor ikisinin çarpımı.`
           : `${total} open risks. Impact across, likelihood down; the score is the product.`}

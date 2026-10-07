@@ -114,7 +114,7 @@ export const ClosePanel: React.FC<{ canClose: boolean }> = ({ canClose }) => {
             <h3 className="text-sm font-semibold text-slate-900">
               {tr ? 'Dönemsel mali kapanış' : 'Periodic financial close'}
             </h3>
-            <p className="max-w-3xl text-xs leading-relaxed text-slate-500">
+            <p className="max-w-3xl text-sm leading-relaxed text-slate-500">
               {tr
                 ? 'Rakamlar kapanış anında dondurulur ve saklanır.'
                 : 'The figures are frozen at the moment of closing and kept.'}
@@ -179,7 +179,7 @@ export const ClosePanel: React.FC<{ canClose: boolean }> = ({ canClose }) => {
         <QueryStatus queries={[periods]} />
 
         {rows.length === 0 ? (
-          <p className="text-xs text-slate-500">
+          <p className="text-sm text-slate-500">
             {tr
               ? 'Tanımlı dönem yok. Bu, hiçbir şeyin kapanmadığı anlamına gelir — hepsinin yolunda olduğu anlamına gelmez.'
               : 'No period is defined. That means nothing has been closed — not that everything is in order.'}
@@ -228,13 +228,13 @@ export const ClosePanel: React.FC<{ canClose: boolean }> = ({ canClose }) => {
                   </div>
 
                   {closed ? (
-                    <p className="mt-1 font-mono text-xs text-slate-600">
+                    <p className="mt-1 font-mono text-sm text-slate-600">
                       {period.closingTransactions} {tr ? 'kayıt' : 'records'} ·{' '}
                       {amount(period.closingLedgerKes, 'KES')} {tr ? 'defter' : 'ledger'} ·{' '}
                       {amount(period.closingReceiptsKes, 'KES')} {tr ? 'tahsilat' : 'receipts'}
                     </p>
                   ) : (
-                    <p className="mt-1 text-xs text-slate-500">
+                    <p className="mt-1 text-sm text-slate-500">
                       {tr
                         ? 'Kapanış alınmadı, bu yüzden dondurulmuş bir rakam yok. Buradaki boşluklar da sayılmadı — sıfır oldukları anlamına gelmez.'
                         : 'The close has not been taken, so there is no frozen figure. The gaps have not been counted either, which does not mean they are zero.'}
@@ -244,13 +244,13 @@ export const ClosePanel: React.FC<{ canClose: boolean }> = ({ canClose }) => {
                   {/* What the close left out. */}
                   {closed &&
                     (gaps.length === 0 ? (
-                      <p className="mt-0.5 text-xs text-slate-500">
+                      <p className="mt-0.5 text-sm text-slate-500">
                         {tr
                           ? 'Kapanış anında sayılan eksik yok.'
                           : 'No gap was counted at the close.'}
                       </p>
                     ) : (
-                      <p className="mt-0.5 text-xs text-amber-800">
+                      <p className="mt-0.5 text-sm text-amber-800">
                         {tr ? 'Kapanışın dışında bıraktıkları: ' : 'What the close leaves out: '}
                         {gaps.join(' · ')}
                       </p>
@@ -258,7 +258,7 @@ export const ClosePanel: React.FC<{ canClose: boolean }> = ({ canClose }) => {
 
                   {/* The drift. A late invoice is a real payment. */}
                   {period.entriesAddedAfterTheClose > 0 && (
-                    <p className="mt-0.5 flex items-start gap-1.5 text-xs text-amber-900">
+                    <p className="mt-0.5 flex items-start gap-1.5 text-sm text-amber-900">
                       <ShieldAlert className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
                       <span>
                         {tr
@@ -278,7 +278,7 @@ export const ClosePanel: React.FC<{ canClose: boolean }> = ({ canClose }) => {
 
         {lastFile != null && (
           <p
-            className={`mt-2 rounded-lg border px-2.5 py-2 text-xs ${
+            className={`mt-2 rounded-lg border px-2.5 py-2 text-sm ${
               lastFile.withheld > 0
                 ? 'border-amber-200 bg-amber-50 text-amber-900'
                 : 'border-slate-200 bg-slate-50 text-slate-600'

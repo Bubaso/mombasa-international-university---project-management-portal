@@ -83,7 +83,7 @@ export const HearingBrief: React.FC<{ caseId: string }> = ({ caseId }) => {
                       {text(pillar.titleEn, pillar.titleTr)}
                     </span>
                     {text(pillar.detailEn, pillar.detailTr) && (
-                      <p className="mt-0.5 text-xs leading-relaxed text-slate-600">
+                      <p className="mt-0.5 text-sm leading-relaxed text-slate-600">
                         {text(pillar.detailEn, pillar.detailTr)}
                       </p>
                     )}
@@ -150,9 +150,9 @@ export const BenchQuestions: React.FC<{ caseId: string }> = ({ caseId }) => {
                 <Pill>{item.topic}</Pill>
               </div>
               {answer ? (
-                <p className="mt-1 text-xs leading-relaxed text-slate-600">{answer}</p>
+                <p className="mt-1 text-sm leading-relaxed text-slate-600">{answer}</p>
               ) : (
-                <p className="mt-1 text-xs text-amber-800">
+                <p className="mt-1 text-sm text-amber-800">
                   {tr ? 'Cevap yazılmadı.' : 'No answer written yet.'}
                 </p>
               )}

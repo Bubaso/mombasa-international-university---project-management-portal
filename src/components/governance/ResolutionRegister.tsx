@@ -49,7 +49,7 @@ export const ResolutionRegister: React.FC = () => {
             <h2 className="text-base font-bold text-slate-900">
               {tr ? 'Resmî karar kütüğü' : 'Formal resolution register'}
             </h2>
-            <p className="text-xs text-slate-500">
+            <p className="text-sm text-slate-500">
               {tr
                 ? 'Organların kararları, numaralı ve imzalı. İmzadan sonra metin değiştirilemez; üstüne karar alınır.'
                 : "The organs' resolutions, numbered and signed. After signing the text cannot change; a later resolution supersedes it."}
@@ -74,7 +74,7 @@ export const ResolutionRegister: React.FC = () => {
       <WriteError error={sign.error} />
 
       {rows.length === 0 ? (
-        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
           {tr
             ? 'Hiçbir organa bağlı karar yok. Toplantı ekranında bir kararı organa bağlayınca resmî kütüğe burada girer.'
             : 'No resolution belongs to an organ yet. Attach a decision to an organ on the meetings screen and it enters the formal register here.'}
@@ -166,7 +166,7 @@ export const ResolutionRegister: React.FC = () => {
       )}
 
       {unactioned > 0 && (
-        <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+        <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
           {tr
             ? '“Aksiyona bağlanmamış”, “başlanmadı” değildir: bu kararın ne yapılarak uygulanacağını kimse yazmamış. Bir karar sessizce uygulanmamaya işte böyle dönüşüyor.'
             : '“Not turned into an action” is not “not started”: nobody has written down what carrying this resolution out would consist of. That is how a decision quietly becomes a decision not to act.'}

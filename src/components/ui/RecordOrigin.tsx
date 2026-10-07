@@ -29,7 +29,7 @@ export const RecordOrigin: React.FC<{ origin: Provenance | undefined }> = ({ ori
 
   return (
     <div className="mt-1.5 rounded-lg border border-indigo-200 bg-indigo-50/60 px-2.5 py-2">
-      <p className="flex flex-wrap items-center gap-1.5 text-xs text-indigo-900">
+      <p className="flex flex-wrap items-center gap-1.5 text-sm text-indigo-900">
         <Quote className="h-3 w-3 shrink-0" aria-hidden="true" />
         <span className="font-medium">{tr ? 'Kaynağı:' : 'Came from:'}</span>
         <button
@@ -46,11 +46,11 @@ export const RecordOrigin: React.FC<{ origin: Provenance | undefined }> = ({ ori
           </span>
         )}
       </p>
-      <blockquote className="mt-1 border-l-2 border-indigo-300 pl-2 text-xs leading-relaxed text-slate-700 italic">
+      <blockquote className="mt-1 border-l-2 border-indigo-300 pl-2 text-sm leading-relaxed text-slate-700 italic">
         {origin.quote}
       </blockquote>
       {origin.why.trim() !== '' && (
-        <p className="mt-1 text-xs text-indigo-800">
+        <p className="mt-1 text-sm text-indigo-800">
           {tr ? 'Asistanın gerekçesi: ' : "The assistant's reason: "}
           {origin.why}
         </p>

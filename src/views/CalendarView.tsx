@@ -263,7 +263,7 @@ export const CalendarView: React.FC = () => {
                                 (tr ? '(başlıksız)' : '(untitled)')}
                               {machineWritten(entry) && <MachineBadge className="ml-1.5" />}
                             </p>
-                            <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-slate-500">
+                            <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-sm text-slate-500">
                               <span>{calendarKindWord(entry.kind, language)}</span>
                               {entry.detail && <span>· {entry.detail.replace(/_/g, ' ')}</span>}
                               {entry.state && entry.state !== entry.detail && (

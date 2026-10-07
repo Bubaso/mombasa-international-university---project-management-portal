@@ -70,11 +70,11 @@ export const AuthorityLibrary: React.FC<{ caseId: string }> = ({ caseId }) => {
                 <span className="font-mono text-sm font-medium text-slate-900">
                   {authority.citation}
                 </span>
-                <p className="mt-0.5 text-xs leading-relaxed text-slate-600">
+                <p className="mt-0.5 text-sm leading-relaxed text-slate-600">
                   {text(authority.principleEn, authority.principleTr)}
                 </p>
                 {text(authority.useNoteEn, authority.useNoteTr) && (
-                  <p className="mt-0.5 text-xs text-slate-500">
+                  <p className="mt-0.5 text-sm text-slate-500">
                     {tr ? 'kullanımı: ' : 'used for: '}
                     {text(authority.useNoteEn, authority.useNoteTr)}
                   </p>

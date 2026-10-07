@@ -75,7 +75,7 @@ export function SettledSection<T>({
           {children(shown)}
           {shown.length < rows.length && (
             <div className="mt-1.5 flex flex-wrap items-center gap-2">
-              <p className="text-xs text-slate-500">
+              <p className="text-sm text-slate-500">
                 {tr
                   ? `${rows.length} kayıttan ${shown.length} tanesi`
                   : `${shown.length} of ${rows.length}`}

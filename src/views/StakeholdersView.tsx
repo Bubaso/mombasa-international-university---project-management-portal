@@ -390,7 +390,7 @@ const AddStakeholderForm: React.FC<{
         </Field>
       </div>
 
-      <p className="mt-2 text-xs leading-relaxed text-slate-500">
+      <p className="mt-2 text-sm leading-relaxed text-slate-500">
         {tr
           ? 'Sorumlusu olmayan paydaş, dikkat listesinde uyarı olarak görünür. Nüfuz puanı aynı zamanda ne kadar sessizlikten sonra hatırlatma çıkacağını belirler.'
           : 'A stakeholder with nobody keeping them shows up on the attention list. The influence score also sets how long a silence has to run before the portal says something.'}

@@ -82,7 +82,7 @@ export const DigestPanel: React.FC = () => {
             <h2 className="text-base font-bold text-slate-900">
               {tr ? 'Haftalık özet' : 'The weekly digest'}
             </h2>
-            <p className="max-w-2xl text-xs text-slate-500">
+            <p className="max-w-2xl text-sm text-slate-500">
               {tr
                 ? 'Üç hedef kitle, üç ayrı derleme.'
                 : 'Three audiences, three separate compilations.'}
@@ -112,7 +112,7 @@ export const DigestPanel: React.FC = () => {
       </header>
 
       {chosen && (
-        <p className="mb-2 flex items-start gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+        <p className="mb-2 flex items-start gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
           <CalendarRange
             className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-500"
             aria-hidden="true"
@@ -124,7 +124,7 @@ export const DigestPanel: React.FC = () => {
       <QueryStatus queries={[digest]} />
 
       {rows.length === 0 ? (
-        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
           {tr
             ? 'Bu aralıkta bu kitle için gösterilecek bir şey yok. Boş bir özet, uydurulmuş bir özetten iyidir.'
             : 'Nothing to show for this audience in this range. An empty digest beats an invented one.'}
@@ -165,7 +165,7 @@ export const DigestPanel: React.FC = () => {
                           {r.entityKind}
                         </Pill>
                       )}
-                      {r.detail && <p className="w-full text-xs text-slate-600">{r.detail}</p>}
+                      {r.detail && <p className="w-full text-sm text-slate-600">{r.detail}</p>}
                     </li>
                   ))}
               </ul>

@@ -111,7 +111,7 @@ export const DelegationSection: React.FC<{ authority: Authority | null | undefin
       canUse={mayRaise}
     >
       {rows.length === 0 ? (
-        <p className="text-xs text-slate-500">
+        <p className="text-sm text-slate-500">
           {tr ? 'Hiç yetki devri talebi açılmamış.' : 'No delegation has ever been raised.'}
         </p>
       ) : (
@@ -278,7 +278,7 @@ export const DelegationSection: React.FC<{ authority: Authority | null | undefin
             </Field>
           </div>
 
-          <p className="mt-2 text-xs leading-relaxed text-slate-500">
+          <p className="mt-2 text-sm leading-relaxed text-slate-500">
             {tr
               ? 'Devir, kişinin kendi yetkisini ortadan kaldırmaz; üzerine ekler. Yürürlüğe girmesi için iki ayrı mütevellinin onayı gerekir ve yetkiyi alan kişi kendi devrini onaylayamaz. Devralınan yetkiyle yeni bir devir açılamaz.'
               : 'A delegation adds to what someone already holds, it never replaces it. Two separate trustees must approve, and the recipient cannot approve their own. Borrowed authority cannot raise a further delegation.'}

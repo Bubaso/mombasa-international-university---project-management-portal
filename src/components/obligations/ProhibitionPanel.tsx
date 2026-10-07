@@ -66,7 +66,7 @@ export const ProhibitionPanel: React.FC<{ canRecord: boolean }> = ({ canRecord }
 
       {expanded && (
         <div className="space-y-3 border-t border-rose-200 px-4 py-3">
-          <p className="text-xs leading-relaxed text-rose-900/80">
+          <p className="text-sm leading-relaxed text-rose-900/80">
             {tr
               ? 'Portal çakışan bir işi engellemez. Bilinçli olarak devam edilecekse, kararı ve gerekçesini buraya yazın — bu kayıt sonradan düzeltilemez ve silinemez.'
               : 'The portal does not block work that conflicts with these. If the decision is to proceed anyway, record it and why — the entry cannot be edited or deleted afterwards.'}
@@ -104,9 +104,9 @@ export const ProhibitionPanel: React.FC<{ canRecord: boolean }> = ({ canRecord }
                       key={r.id}
                       className="mt-2 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5"
                     >
-                      <p className="text-xs font-medium text-slate-800">{r.noteOfWhat}</p>
-                      <p className="text-xs leading-relaxed text-slate-600">{r.reason}</p>
-                      <p className="mt-0.5 text-xs text-slate-500">
+                      <p className="text-sm font-medium text-slate-800">{r.noteOfWhat}</p>
+                      <p className="text-sm leading-relaxed text-slate-600">{r.reason}</p>
+                      <p className="mt-0.5 text-sm text-slate-500">
                         {r.acknowledgedByName ?? '—'} · {r.acknowledgedAt.slice(0, 10)}
                       </p>
                     </div>
@@ -176,7 +176,7 @@ const OverrideForm: React.FC<{ obligation: Obligation; onDone: () => void }> = (
         </Select>
       </Field>
 
-      <p className="text-xs leading-relaxed text-rose-900/80">
+      <p className="text-sm leading-relaxed text-rose-900/80">
         {tr
           ? 'Bu kayıt adınızla ve tarihiyle kalıcıdır. Düzeltilemez, silinemez — bilinçli alınmış bir riskin sonradan silinebilmesi, hiç kaydedilmemiş olmasıyla aynı şeydir.'
           : 'This is recorded permanently, with your name and the date. It cannot be edited or deleted — a deliberate risk that can be erased later was never recorded at all.'}

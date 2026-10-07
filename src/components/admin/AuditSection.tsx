@@ -84,7 +84,7 @@ export const AuditSection: React.FC = () => {
       </div>
 
       {shown.length === 0 ? (
-        <p className="text-xs text-slate-500">
+        <p className="text-sm text-slate-500">
           {tr ? 'Gösterilecek kayıt yok.' : 'Nothing to show.'}
         </p>
       ) : (
@@ -100,7 +100,7 @@ export const AuditSection: React.FC = () => {
         >
           {shown.map((entry) => (
             <tr key={entry.id}>
-              <Td className="whitespace-nowrap font-mono text-xs text-slate-500">
+              <Td className="whitespace-nowrap font-mono text-sm text-slate-500">
                 {entry.at.slice(0, 16).replace('T', ' ')}
               </Td>
               <Td className="font-medium text-slate-900">

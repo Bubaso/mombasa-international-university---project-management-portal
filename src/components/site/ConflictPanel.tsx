@@ -42,7 +42,7 @@ export const ConflictPanel: React.FC<{ blockId: string | null; canAcknowledge: b
                   ? `Bu blokta ${unacknowledged.length} açık iş, yürürlükteki bir yasağın kapsamında`
                   : `${unacknowledged.length} open task(s) on this block fall under a live prohibition`}
               </p>
-              <p className="text-xs leading-relaxed text-rose-900/80">
+              <p className="text-sm leading-relaxed text-rose-900/80">
                 {tr
                   ? 'Portal işi durdurmaz. Ama devam ediliyorsa, bunu kimin hangi gerekçeyle üstlendiği kayda geçer — sonradan silinemez.'
                   : 'The portal does not stop the work. But if it proceeds, who decided that and on what grounds is recorded, and cannot be removed later.'}
@@ -63,7 +63,7 @@ export const ConflictPanel: React.FC<{ blockId: string | null; canAcknowledge: b
 
       {acknowledged.length > 0 && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2">
-          <p className="flex items-center gap-1.5 text-xs text-amber-900">
+          <p className="flex items-center gap-1.5 text-sm text-amber-900">
             <Gavel className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             {tr
               ? `${acknowledged.length} iş, yasağa rağmen bilerek sürdürülüyor ve bu kayıtlı.`
@@ -92,7 +92,7 @@ const ConflictRow: React.FC<{ conflict: TaskConflict; canAcknowledge: boolean }>
     : conflict.obligationTitleEn;
 
   return (
-    <li className="rounded-lg border border-rose-200 bg-white px-2.5 py-1.5 text-xs">
+    <li className="rounded-lg border border-rose-200 bg-white px-2.5 py-1.5 text-sm">
       <div className="font-medium text-slate-900">{taskTitle}</div>
       <div className="text-rose-800">
         {tr ? 'Yasak: ' : 'Prohibited by: '}

@@ -171,7 +171,7 @@ export const ProjectInfoView: React.FC = () => {
                     ? 'Arazi Fiili Kullanım Analizi (340 dönüm):'
                     : 'Land Area Physical Allocation (84 Acres):'}
                 </div>
-                <ul className="space-y-1 text-slate-700 text-xs leading-relaxed">
+                <ul className="space-y-1 text-slate-700 text-sm leading-relaxed">
                   <li className="flex items-start gap-1.5">
                     <span className="text-amber-700 font-bold">•</span>
                     <span>
@@ -223,7 +223,7 @@ export const ProjectInfoView: React.FC = () => {
                     6 Mütevelli (50%)
                   </span>
                 </div>
-                <p className="text-xs text-slate-600 mt-1">
+                <p className="text-sm text-slate-600 mt-1">
                   {tr
                     ? 'Merkezi Ankara ve İstanbul’da bulunan Türk hayırsever vakfı. Akademik koordinasyon ve sermaye finansmanı desteği.'
                     : 'Turkish philanthropic foundation based in Ankara/Istanbul, providing academic steering and capital funding.'}
@@ -237,7 +237,7 @@ export const ProjectInfoView: React.FC = () => {
                     3 Mütevelli (25%)
                   </span>
                 </div>
-                <p className="text-xs text-slate-600 mt-1">
+                <p className="text-sm text-slate-600 mt-1">
                   {tr
                     ? 'Mombasa merkezli eğitim vakfı. Yerel paydaş ilişkileri, arazi geliştirme ve toplumsal entegrasyon.'
                     : 'Mombasa-based education trust managing community integration, land development and local coordination.'}
@@ -251,7 +251,7 @@ export const ProjectInfoView: React.FC = () => {
                     3 Mütevelli (25%)
                   </span>
                 </div>
-                <p className="text-xs text-slate-600 mt-1">
+                <p className="text-sm text-slate-600 mt-1">
                   {tr
                     ? 'Kıyı bölgesi kalkınma ve hayırseverlik kuruluşu. Yerel idare ve düzenleyici kurumlar koordinasyonu.'
                     : 'Coastal region development trust liaising with county administration and regulatory bodies.'}
@@ -267,7 +267,7 @@ export const ProjectInfoView: React.FC = () => {
                     Destekçi / Bağışçı
                   </span>
                 </div>
-                <p className="text-xs text-slate-600 mt-1">
+                <p className="text-sm text-slate-600 mt-1">
                   {tr
                     ? 'BAE merkezli insani yardım vakfı. 807M KShs sermaye hibe sağlayıcısı ve Yargıtay temyiz başvurucusu.'
                     : 'UAE humanitarian foundation providing primary capital grant of KShs 807M and co-appellant before Court of Appeal.'}
@@ -295,7 +295,7 @@ export const ProjectInfoView: React.FC = () => {
                 <div className="font-semibold text-slate-900">
                   {tr ? 'Mühendislik & Teknoloji' : 'Engineering & Technology'}
                 </div>
-                <p className="text-xs text-slate-500">
+                <p className="text-sm text-slate-500">
                   {tr
                     ? 'İnşaat, Makine, Elektrik ve Bilgisayar Mühendisliği'
                     : 'Civil, Mechanical, Electrical & Computer Engineering'}
@@ -306,7 +306,7 @@ export const ProjectInfoView: React.FC = () => {
                 <div className="font-semibold text-slate-900">
                   {tr ? 'Sağlık Bilimleri & Tıp' : 'Health Sciences & Medicine'}
                 </div>
-                <p className="text-xs text-slate-500">
+                <p className="text-sm text-slate-500">
                   {tr
                     ? 'Hemşirelik, Eczacılık ve Halk Sağlığı Bölümleri'
                     : 'Nursing, Pharmacy & Public Health Departments'}
@@ -317,7 +317,7 @@ export const ProjectInfoView: React.FC = () => {
                 <div className="font-semibold text-slate-900">
                   {tr ? 'İktisadi & İdari Bilimler' : 'Business & Economics'}
                 </div>
-                <p className="text-xs text-slate-500">
+                <p className="text-sm text-slate-500">
                   {tr
                     ? 'İşletme, Uluslararası Finans ve Lojistik Yönetimi'
                     : 'Business Admin, Global Finance & Maritime Logistics'}
@@ -328,7 +328,7 @@ export const ProjectInfoView: React.FC = () => {
                 <div className="font-semibold text-slate-900">
                   {tr ? 'İslami İlimler & Kültür' : 'Islamic Studies & Culture'}
                 </div>
-                <p className="text-xs text-slate-500">
+                <p className="text-sm text-slate-500">
                   {tr
                     ? 'İlahiyat, Arap Dili ve Karşılaştırmalı Hukuk'
                     : 'Theology, Arabic Studies & Comparative Jurisprudence'}
@@ -357,7 +357,7 @@ export const ProjectInfoView: React.FC = () => {
                       ? '1. Aşama: Vakıf Senedi Tescili & Resmî Gazete İlanı'
                       : 'Phase 1: Trust Deed Gazette & Registration'}
                   </div>
-                  <p className="text-xs text-slate-600">
+                  <p className="text-sm text-slate-600">
                     {tr
                       ? 'Kenya Yasaları Fasıl 164 uyarınca 27 Mayıs 2025 tarihli tadil edilmiş vakıf senedi tescil edildi ve Resmî Gazete’de ilan edildi (Ağustos 2025).'
                       : 'Amended trust deed under Cap 164 registered and gazetted in August 2025 with 12 institutional trustees.'}
@@ -373,7 +373,7 @@ export const ProjectInfoView: React.FC = () => {
                       ? '2. Aşama: CUE Altyapı Denetimi ve Müfredat İncelemesi'
                       : 'Phase 2: CUE Infrastructure & Curriculum Review'}
                   </div>
-                  <p className="text-xs text-slate-600">
+                  <p className="text-sm text-slate-600">
                     {tr
                       ? 'Üniversite Eğitim Komisyonu (CUE) gereksinimlerine göre fiziksel karkas tamamlanması ve akademik müfredat uyumu devam etmektedir.'
                       : 'Commission for University Education technical inspections and curriculum validation currently in progress.'}
@@ -389,7 +389,7 @@ export const ProjectInfoView: React.FC = () => {
                       ? '3. Aşama: Cumhurbaşkanlığı Üniversite Beratı (Charter)'
                       : 'Phase 3: Presidential Charter Grant'}
                   </div>
-                  <p className="text-xs text-slate-600">
+                  <p className="text-sm text-slate-600">
                     {tr
                       ? 'Hedef: 2027 akademik yılına kadar üniversite beratının alınması ve ilk öğrenci alımının başlatılması.'
                       : 'Target: Final Presidential Charter grant conferring full degree-awarding authority ahead of 2027 student intake.'}

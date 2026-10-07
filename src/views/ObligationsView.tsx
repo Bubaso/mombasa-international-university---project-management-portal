@@ -134,7 +134,7 @@ export const ObligationsView: React.FC = () => {
       {unverified > 0 && (
         <div className="flex items-start gap-2.5 rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5">
           <FileX2 className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" aria-hidden="true" />
-          <p className="text-xs leading-relaxed text-amber-900">
+          <p className="text-sm leading-relaxed text-amber-900">
             <span className="font-semibold">
               {tr
                 ? `${unverified} yükümlülüğün arkasında belge yok.`
@@ -485,7 +485,7 @@ const NewObligationForm: React.FC<{ canMinuteOnly: boolean; onDone: () => void }
         </Field>
       </div>
 
-      <label className="mt-2.5 flex cursor-pointer items-start gap-1.5 text-xs text-slate-700">
+      <label className="mt-2.5 flex cursor-pointer items-start gap-1.5 text-sm text-slate-700">
         <input
           type="checkbox"
           checked={prohibits}
@@ -499,7 +499,7 @@ const NewObligationForm: React.FC<{ canMinuteOnly: boolean; onDone: () => void }
         </span>
       </label>
 
-      <p className="mt-2 text-xs leading-relaxed text-slate-500">
+      <p className="mt-2 text-sm leading-relaxed text-slate-500">
         {tr
           ? 'Kaynak belge sonradan eklenir; eklenene kadar kayıt "doğrulanmamış" görünür ve bu işaret elle kaldırılamaz. "Yerine getirildi" demek için de önce delil eklemek gerekir.'
           : 'The source document is attached later; until it is, the record reads as unverified and that mark cannot be cleared by hand. Marking it fulfilled needs evidence first.'}

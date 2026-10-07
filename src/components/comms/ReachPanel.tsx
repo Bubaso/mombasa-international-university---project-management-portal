@@ -54,7 +54,7 @@ export const ReachPanel: React.FC = () => {
           <h2 className="text-base font-bold text-slate-900">
             {tr ? 'Duyuru ulaştı mı, kim nerede' : 'Reach and membership'}
           </h2>
-          <p className="max-w-2xl text-xs text-slate-500">
+          <p className="max-w-2xl text-sm text-slate-500">
             {tr
               ? 'Payda, duyuruyu görebilecek kişiler — hesabı olan herkes değil.'
               : 'The denominator is who could see the announcement — not everyone with an account.'}
@@ -95,7 +95,7 @@ export const ReachPanel: React.FC = () => {
                   <span className="font-mono">{formatDate(a.createdAt, language)}</span>
                 </div>
                 {a.seenBy.length > 0 && (
-                  <p className="mt-0.5 text-xs text-slate-600">
+                  <p className="mt-0.5 text-sm text-slate-600">
                     {tr ? 'gören: ' : 'seen by: '}
                     {a.seenBy.join(', ')}
                   </p>
@@ -180,7 +180,7 @@ export const ReachPanel: React.FC = () => {
       )}
 
       {rows.length === 0 ? (
-        <p className="mt-2 text-xs text-slate-500">
+        <p className="mt-2 text-sm text-slate-500">
           {tr
             ? 'Kimse adıyla eklenmemiş — herkes kanallarda rolü üzerinden duruyor, ki olağan olan budur.'
             : 'Nobody has been added by name; everybody is in their channels by role, which is the ordinary case.'}

@@ -73,11 +73,11 @@ export const VoucherPanel: React.FC<{ canRule: boolean }> = ({ canRule }) => {
 
       {(thresholds.data ?? []).length > 0 && (
         <div className="mb-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-          <p className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+          <p className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-700">
             <Scale className="h-3.5 w-3.5" aria-hidden="true" />
             {tr ? 'Onay eşikleri' : 'Who has to sign'}
           </p>
-          <ul className="space-y-0.5 text-xs text-slate-600">
+          <ul className="space-y-0.5 text-sm text-slate-600">
             {(thresholds.data ?? []).map((threshold) => (
               <li key={threshold.id}>
                 <span className="font-mono">{fmt(threshold.minAmountKes, 'KES')}+</span>
@@ -213,7 +213,7 @@ export const VoucherPanel: React.FC<{ canRule: boolean }> = ({ canRule }) => {
           {/* Bekleyen kalmadıysa söylenir: kapanmışların altındaki boşluk,
               "hepsi ödendi" ile "hiç talep yok"u karıştırır. */}
           {waiting.length === 0 && settled.length > 0 && (
-            <p className="text-xs text-slate-500">
+            <p className="text-sm text-slate-500">
               {tr
                 ? 'Bekleyen ödeme fişi yok; hepsi karara bağlanmış.'
                 : 'No voucher is waiting; every one has been settled.'}

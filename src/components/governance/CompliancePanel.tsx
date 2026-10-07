@@ -51,7 +51,7 @@ export const CompliancePanel: React.FC = () => {
             <h2 className="text-base font-bold text-slate-900">
               {tr ? 'Mevzuat uyum takvimi' : 'Statutory compliance calendar'}
             </h2>
-            <p className="text-xs text-slate-500">
+            <p className="text-sm text-slate-500">
               {tr
                 ? 'Fasıl 164, KRA, CUE ve valilik yükümlülüklerinin takvimi.'
                 : 'The calendar of Cap 164, KRA, CUE and county obligations.'}
@@ -69,7 +69,7 @@ export const CompliancePanel: React.FC = () => {
       <WriteError error={raise.error} />
 
       {rows.length === 0 ? (
-        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
           {tr
             ? 'Takvimde kayıtlı mevzuat yükümlülüğü yok. Bu, yükümlülük olmadığı anlamına gelmiyor — Fasıl 164 beyanı ve KRA muafiyeti kimse yazmasa da vadesi geliyor.'
             : 'No statutory duty is on the calendar. That does not mean there are none: the Cap 164 return and the KRA exemption fall due whether or not anybody wrote them down.'}

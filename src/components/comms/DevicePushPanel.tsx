@@ -150,7 +150,7 @@ export const DevicePushPanel: React.FC = () => {
           cannot change it says who can. */}
       {state != null && (
         <p
-          className={`mt-1 flex items-start gap-1.5 text-xs ${
+          className={`mt-1 flex items-start gap-1.5 text-sm ${
             state === 'subscribed' || state === 'checking' ? 'text-slate-500' : 'text-amber-900'
           }`}
         >
@@ -167,7 +167,7 @@ export const DevicePushPanel: React.FC = () => {
       {/* Queued with no device of their own. The database names this state
           rather than letting a screen count it as a delivery. */}
       {health.data?.queuedWithNowhereToGo && (
-        <p className="mt-1 flex items-start gap-1.5 text-xs font-semibold text-rose-800">
+        <p className="mt-1 flex items-start gap-1.5 text-sm font-semibold text-rose-800">
           <TriangleAlert className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
           {tr
             ? `${health.data.myQueued} bildirim sırada bekliyor ve gidecek kayıtlı cihaz yok. Gönderilmiş sayılmıyorlar.`
@@ -178,7 +178,7 @@ export const DevicePushPanel: React.FC = () => {
       {/* What the queue has actually done for this reader. `sent` is as far
           as the record goes: a push service accepted the bytes. */}
       {health.data != null && (health.data.mySent > 0 || health.data.myFailed > 0) && (
-        <p className="mt-1 text-xs text-slate-500">
+        <p className="mt-1 text-sm text-slate-500">
           {tr
             ? `Bu hesap için ${health.data.mySent} bildirim bir anlık bildirim servisine iletildi`
             : `${health.data.mySent} accepted by a push service for this account`}

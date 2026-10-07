@@ -172,7 +172,7 @@ const InspectionRow: React.FC<{
           <QueryStatus queries={[findings]} />
 
           {(findings.data ?? []).length === 0 ? (
-            <p className="text-xs text-slate-500">
+            <p className="text-sm text-slate-500">
               {tr ? 'Bulgu kaydedilmemiş.' : 'No findings recorded.'}
             </p>
           ) : (
@@ -180,7 +180,7 @@ const InspectionRow: React.FC<{
               {(findings.data ?? []).map((finding) => (
                 <li
                   key={finding.id}
-                  className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs"
+                  className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm"
                 >
                   <div className="flex flex-wrap items-center gap-1.5">
                     {finding.isNonconformity && (
@@ -282,7 +282,7 @@ const InspectionRow: React.FC<{
                   </Select>
                 </Field>
               </div>
-              <label className="flex items-center gap-1.5 text-xs text-slate-700">
+              <label className="flex items-center gap-1.5 text-sm text-slate-700">
                 <input
                   type="checkbox"
                   checked={isNonconformity}
@@ -315,7 +315,7 @@ const InspectionRow: React.FC<{
           )}
 
           {signed && (
-            <p className="text-xs text-slate-500">
+            <p className="text-sm text-slate-500">
               {tr ? 'İmzalayan: ' : 'Signed by '}
               {inspection.signedOffByName ?? '—'} · {formatDate(inspection.signedOffAt, language)}
             </p>

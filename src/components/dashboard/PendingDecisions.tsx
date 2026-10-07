@@ -108,7 +108,7 @@ export const PendingDecisions: React.FC<{ limit?: number }> = ({ limit }) => {
             <h2 className="text-base font-bold text-slate-900">
               {tr ? 'Karar bekleyenler' : 'Waiting on a decision'}
             </h2>
-            <p className="text-xs text-slate-500">
+            <p className="text-sm text-slate-500">
               {tr
                 ? 'Altı kütükten, karar bekleyenler.'
                 : 'Waiting on a decision, from all six registers.'}
@@ -125,7 +125,7 @@ export const PendingDecisions: React.FC<{ limit?: number }> = ({ limit }) => {
       <QueryStatus queries={[decisions]} />
 
       {rows.length === 0 ? (
-        <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900">
+        <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
           {tr
             ? 'Hiçbir şey karar beklemiyor. Bu, kütüklerin boş olması da olabilir — dolduktan sonra burası asıl işini yapar.'
             : 'Nothing is waiting on a ruling. That may also mean the registers are empty — this panel earns its place once they are not.'}
@@ -203,7 +203,7 @@ export const PendingDecisions: React.FC<{ limit?: number }> = ({ limit }) => {
       )}
 
       {limit != null && rows.length > limit && (
-        <p className="mt-2 text-xs text-slate-500">
+        <p className="mt-2 text-sm text-slate-500">
           {tr
             ? `${rows.length - limit} tanesi daha bekliyor.`
             : `${rows.length - limit} more are waiting.`}

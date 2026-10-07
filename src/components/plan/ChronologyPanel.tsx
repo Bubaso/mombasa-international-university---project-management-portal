@@ -306,7 +306,7 @@ export const ChronologyPanel: React.FC<{ caseId?: string }> = ({ caseId }) => {
       <QueryStatus queries={[chronology]} />
 
       {rows.length === 0 ? (
-        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
           {tr
             ? 'Kronoloji boş. Kütükler 2024’te başlıyor; 1993’ten o tarihe kadarki otuz yıl yalnızca belgelerde duruyor ve buraya elle girilmesi gerekiyor.'
             : 'The chronology is empty. The registers begin in 2024; the thirty years before that exist only in documents and have to be entered here by hand.'}
@@ -349,7 +349,7 @@ export const ChronologyPanel: React.FC<{ caseId?: string }> = ({ caseId }) => {
                     />
                   </p>
                   {event.detailEn && (
-                    <p className="mt-0.5 line-clamp-2 text-xs text-slate-600">{event.detailEn}</p>
+                    <p className="mt-0.5 line-clamp-2 text-sm text-slate-600">{event.detailEn}</p>
                   )}
                   <RecordOrigin origin={origins.of(event.id)} />
                   {/* The source, named. Without it this is an account rather

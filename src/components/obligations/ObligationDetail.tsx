@@ -86,7 +86,7 @@ export const ObligationDetail: React.FC<{
         {obligation.prohibits && (
           <div className="flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2">
             <ShieldAlert className="mt-0.5 h-3.5 w-3.5 shrink-0 text-rose-700" aria-hidden="true" />
-            <p className="text-xs leading-relaxed text-rose-900">
+            <p className="text-sm leading-relaxed text-rose-900">
               {tr
                 ? 'Bu bir yasak. Çakışan bir iş yapılacaksa portal engellemez — ama kimin, hangi gerekçeyle devam ettiğini kalıcı olarak kaydeder.'
                 : 'This forbids something. The portal will not stop work that conflicts with it — but it records, permanently, who went ahead and why.'}
@@ -94,7 +94,7 @@ export const ObligationDetail: React.FC<{
           </div>
         )}
 
-        <dl className="grid grid-cols-1 gap-x-4 gap-y-1 text-xs sm:grid-cols-2">
+        <dl className="grid grid-cols-1 gap-x-4 gap-y-1 text-sm sm:grid-cols-2">
           <Row label={tr ? 'Yükümlü' : 'Owed by'} value={obligation.obligorName} />
           <Row label={tr ? 'Lehtar' : 'Owed to'} value={obligation.beneficiaryName} />
           <Row label={tr ? 'Son tarih' : 'Due by'} value={obligation.dueOn} />
@@ -117,7 +117,7 @@ export const ObligationDetail: React.FC<{
             <FileX2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-700" aria-hidden="true" />
           )}
           <p
-            className={`text-xs leading-relaxed ${
+            className={`text-sm leading-relaxed ${
               obligation.verified ? 'text-emerald-900' : 'text-amber-900'
             }`}
           >
@@ -173,7 +173,7 @@ export const ObligationDetail: React.FC<{
           <EvidenceForm obligationId={obligation.id} />
 
           {rows.length === 0 ? (
-            <p className="mt-2 text-xs text-slate-500">
+            <p className="mt-2 text-sm text-slate-500">
               {tr
                 ? 'Henüz kanıt yok. Delilsiz "yapıldı", bir kayıt değil bir iddiadır.'
                 : '"Done" without evidence is a claim, not a record.'}
@@ -182,8 +182,8 @@ export const ObligationDetail: React.FC<{
             <ul className="mt-2 space-y-1.5">
               {rows.map((item) => (
                 <li key={item.id} className="rounded-lg border border-slate-200 px-2.5 py-1.5">
-                  <p className="text-xs text-slate-800">{item.description}</p>
-                  <p className="mt-0.5 text-xs text-slate-500">
+                  <p className="text-sm text-slate-800">{item.description}</p>
+                  <p className="mt-0.5 text-sm text-slate-500">
                     {[item.observedOn, item.addedByName].filter(Boolean).join(' · ')}
                   </p>
                 </li>

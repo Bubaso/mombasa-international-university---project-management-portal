@@ -98,7 +98,7 @@ export const QueryStatus: React.FC<QueryStatusProps> = ({ queries, className = '
               <summary className="cursor-pointer text-xs text-rose-800/70 hover:underline">
                 {tr ? 'Teknik ayrıntı' : 'Technical detail'}
               </summary>
-              <p className="pt-1 font-mono text-xs break-words text-rose-800/70">{detail}</p>
+              <p className="pt-1 font-mono text-sm break-words text-rose-800/70">{detail}</p>
             </details>
           )}
         </div>

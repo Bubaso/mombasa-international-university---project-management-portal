@@ -57,7 +57,7 @@ function kindWords(kind: string, tr: boolean): string {
 function Row({ row, tr }: { row: SimilarRecord; tr: boolean }): React.ReactElement {
   const title = bilingual(row.titleEn, row.titleTr, tr ? 'tr' : 'en');
   return (
-    <li className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 py-1 text-xs">
+    <li className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 py-1 text-sm">
       <span className="text-slate-900">{title || '—'}</span>
       <span className="text-slate-500">({kindWords(row.kind, tr)})</span>
       {row.basis === 'recorded_link' ? (
@@ -94,7 +94,7 @@ export const SimilarRecords: React.FC<{ kind: SearchKind; id: string }> = ({ kin
       </h3>
 
       {rows.length === 0 ? (
-        <p className="mt-1 text-xs text-slate-500">
+        <p className="mt-1 text-sm text-slate-500">
           {tr
             ? 'Kayıtlı bir bağ yok. İlgisiz olduğu anlamına gelmez — kontrol edilebilir bir bağ bulunamadı.'
             : 'No recorded link. That does not mean unrelated — it means no checkable link was found.'}
@@ -103,7 +103,7 @@ export const SimilarRecords: React.FC<{ kind: SearchKind; id: string }> = ({ kin
         <div className="mt-1.5 space-y-2">
           {linked.length > 0 && (
             <div>
-              <p className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+              <p className="flex items-center gap-1.5 text-sm font-semibold text-slate-700">
                 <Link2 className="h-3 w-3 shrink-0 text-indigo-600" aria-hidden="true" />
                 {tr ? 'Kayıtlı bağ' : 'Recorded link'}
               </p>
@@ -120,11 +120,11 @@ export const SimilarRecords: React.FC<{ kind: SearchKind; id: string }> = ({ kin
 
           {guessed.length > 0 && (
             <div>
-              <p className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+              <p className="flex items-center gap-1.5 text-sm font-semibold text-slate-700">
                 <Sparkles className="h-3 w-3 shrink-0 text-amber-600" aria-hidden="true" />
                 {tr ? 'Tahmin — paylaşılan terime dayanıyor' : 'A guess — based on shared terms'}
               </p>
-              <p className="text-xs text-slate-500">
+              <p className="text-sm text-slate-500">
                 {tr
                   ? 'Bunlar bir bulgu değil. Hangi terimlere dayandığı yazılı, böylece bir bakışta eleyebilirsiniz. Arşivin onda birinden fazlasında geçen terimler hiç sayılmaz.'
                   : 'These are not a finding. The terms each rests on are written out so you can dismiss it at a glance. A term in more than a tenth of the archive is not counted at all.'}

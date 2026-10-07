@@ -177,7 +177,7 @@ const NoteSectionRow: React.FC<{
       ) : body ? (
         <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-800">{body}</p>
       ) : (
-        <p className="text-xs text-slate-500">
+        <p className="text-sm text-slate-500">
           {locked
             ? tr
               ? 'Bu başlık boş bırakılmış ve tutanak kesinleşti.'

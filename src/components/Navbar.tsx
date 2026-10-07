@@ -55,7 +55,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenMenu }) => {
               <span className="font-bold text-sm sm:text-base text-slate-900 group-hover:text-amber-600 transition-colors block leading-tight">
                 {name(UNIVERSITY_SHORT, language)}
               </span>
-              <p className="text-xs sm:text-xs text-slate-500 truncate max-w-[160px] sm:max-w-xs leading-none mt-0.5">
+              <p className="text-sm sm:text-xs text-slate-500 truncate max-w-[160px] sm:max-w-xs leading-none mt-0.5">
                 {tr ? 'Kenya Afrika Üniversitesi Vakfı' : 'African University Trust (AUTK)'}
               </p>
             </div>

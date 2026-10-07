@@ -148,7 +148,7 @@ export const IntakeQueue: React.FC = () => {
           {/* Kaçının gösterildiği ve kaç tane olduğu. "En yeni 20" diye
               sessizce kesmek, geri kalanın var olmadığını sandırıyordu. */}
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-xs text-slate-500">
+            <p className="text-sm text-slate-500">
               {tr
                 ? `${total} okumanın ${rows.length} tanesi gösteriliyor`
                 : `showing ${rows.length} of ${total}`}
@@ -219,7 +219,7 @@ const SettledRow: React.FC<{ row: QueueEntry }> = ({ row }) => {
     <li className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 rounded-lg border border-slate-200 bg-white px-3 py-2">
       <div className="min-w-0">
         <p className="truncate text-sm text-slate-900">{row.documentTitle}</p>
-        <p className="text-xs text-slate-500">
+        <p className="text-sm text-slate-500">
           {row.classifiedAs ?? (tr ? 'sınıflandırılmadı' : 'not classified')} ·{' '}
           {formatDate(row.createdAt, language)}
         </p>
@@ -254,7 +254,7 @@ const QueueCard: React.FC<{ row: QueueEntry; proposals: Proposal[] }> = ({ row, 
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-slate-900">{row.documentTitle}</p>
-          <p className="text-xs text-slate-500">
+          <p className="text-sm text-slate-500">
             {row.disposition === 'reading' ? (
               <span className="inline-flex items-center gap-1.5">
                 <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
@@ -304,7 +304,7 @@ const QueueCard: React.FC<{ row: QueueEntry; proposals: Proposal[] }> = ({ row, 
 
       {proposals.length > 0 && (
         <div className="mt-2.5">
-          <p className="text-xs font-medium text-slate-600">
+          <p className="text-sm font-medium text-slate-600">
             {tr
               ? `${proposals.length} kayıt teklifi — her biri onayınla açılır`
               : `${proposals.length} proposed record${proposals.length === 1 ? '' : 's'} — each is created when you approve`}
@@ -334,7 +334,7 @@ const QueueCard: React.FC<{ row: QueueEntry; proposals: Proposal[] }> = ({ row, 
       )}
 
       {row.extractedChars !== null && row.extractedChars > 30_000 && (
-        <p className="mt-2 text-xs text-slate-500">
+        <p className="mt-2 text-sm text-slate-500">
           {tr
             ? `${row.extractedChars.toLocaleString('tr-TR')} karakter çıkarıldı; okuma ilk 30.000 karakterden yapıldı.`
             : `${row.extractedChars.toLocaleString('en-GB')} characters extracted; the reading used the first 30,000.`}
@@ -432,7 +432,7 @@ const ReadAgain: React.FC<{ versionId: string; note: string | null }> = ({ versi
 
   return (
     <div className="mt-2">
-      {note && <p className="text-xs text-slate-500">{note}</p>}
+      {note && <p className="text-sm text-slate-500">{note}</p>}
       <ActionButton
         tone="quiet"
         className="mt-1.5"
@@ -445,7 +445,7 @@ const ReadAgain: React.FC<{ versionId: string; note: string | null }> = ({ versi
         />
         {again.isPending ? (tr ? 'Okunuyor…' : 'Reading…') : tr ? 'Yeniden oku' : 'Read again'}
       </ActionButton>
-      {again.data?.note && <p className="mt-1.5 text-xs text-slate-500">{again.data.note}</p>}
+      {again.data?.note && <p className="mt-1.5 text-sm text-slate-500">{again.data.note}</p>}
       {again.data?.error && <p className="mt-1.5 text-sm text-amber-900">{again.data.error}</p>}
       <WriteError error={again.error} />
     </div>

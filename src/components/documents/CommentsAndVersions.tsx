@@ -116,7 +116,7 @@ export const CommentsAndVersions: React.FC<{ documentId: string }> = ({ document
             <h4 className="text-sm font-semibold text-slate-900">
               {tr ? 'Sürümler arasındaki adım' : 'The step from one version to the next'}
             </h4>
-            <p className="text-xs leading-relaxed text-slate-500">
+            <p className="text-sm leading-relaxed text-slate-500">
               {tr
                 ? 'Portal çizimin içini okumuyor, bu yüzden "değişen alanlar" diye bir katman yok — olsa uydurma olurdu. Burada duran şey kayıtlı olan: revizyonu çıkaranın yazdığı değişiklik notu, ve sunucunun kendi hesapladığı iki digest.'
                 : 'The portal does not read inside a drawing, so there is no "changed areas" overlay — it would be invented. What is here is what was recorded: the change note whoever issued the revision wrote, and the two digests the server computed itself.'}
@@ -124,7 +124,7 @@ export const CommentsAndVersions: React.FC<{ documentId: string }> = ({ document
           </div>
         </header>
         {stepRows.length === 0 ? (
-          <p className="text-xs text-slate-500">
+          <p className="text-sm text-slate-500">
             {tr
               ? 'Karşılaştırılacak ikinci bir sürüm yok.'
               : 'There is no second version to compare against.'}
@@ -151,11 +151,11 @@ export const CommentsAndVersions: React.FC<{ documentId: string }> = ({ document
                     )}
                   </div>
                   <p
-                    className={`text-xs ${bytes.grave ? 'font-medium text-amber-800' : 'text-slate-500'}`}
+                    className={`text-sm ${bytes.grave ? 'font-medium text-amber-800' : 'text-slate-500'}`}
                   >
                     {bytes.text}
                   </p>
-                  <p className="text-xs text-slate-700">
+                  <p className="text-sm text-slate-700">
                     {step.changeNotDescribed ? (
                       <span className="text-amber-800">
                         {tr ? 'Neyin değiştiği kayıtlı değil' : 'Nobody wrote down what changed'}
@@ -181,7 +181,7 @@ export const CommentsAndVersions: React.FC<{ documentId: string }> = ({ document
             <h4 className="text-sm font-semibold text-slate-900">
               {tr ? 'Belge üzerine yorumlar' : 'Comments on the document'}
             </h4>
-            <p className="text-xs leading-relaxed text-slate-500">
+            <p className="text-sm leading-relaxed text-slate-500">
               {tr
                 ? 'Yorum bir sürüme ve bir sayfaya bağlanır; metin içinde vurgulama yok, çünkü portal metnin nerede olduğunu bilmiyor ve çizilecek dikdörtgen görüntüleyici değişince yerinden kayar. Alıntı, yorumu yazanın kendi aktardığı metindir — portal bunu belgede doğrulamıyor.'
                 : 'A comment is anchored to a version and a page. There is no highlight inside the text, because the portal does not know where the text is and a rectangle would move with the viewer. The excerpt is the commenter’s own transcription — the portal does not verify it against the document.'}
@@ -253,7 +253,7 @@ export const CommentsAndVersions: React.FC<{ documentId: string }> = ({ document
         )}
 
         {commentRows.length === 0 ? (
-          <p className="text-xs text-slate-500">
+          <p className="text-sm text-slate-500">
             {tr ? 'Bu belgeye yorum yazılmamış.' : 'No comment has been written on this document.'}
           </p>
         ) : (
@@ -274,7 +274,7 @@ export const CommentsAndVersions: React.FC<{ documentId: string }> = ({ document
                 </div>
 
                 {comment.quotedExcerpt != null && (
-                  <p className="mt-1 flex items-start gap-1.5 border-l-2 border-slate-300 pl-2 text-xs text-slate-700">
+                  <p className="mt-1 flex items-start gap-1.5 border-l-2 border-slate-300 pl-2 text-sm text-slate-700">
                     <Quote className="mt-0.5 h-3 w-3 shrink-0 text-slate-500" aria-hidden="true" />
                     <span>
                       {comment.quotedExcerpt}
@@ -292,7 +292,7 @@ export const CommentsAndVersions: React.FC<{ documentId: string }> = ({ document
                 </p>
 
                 {comment.writtenAgainstASupersededVersion && (
-                  <p className="mt-0.5 flex items-start gap-1.5 text-xs text-amber-900">
+                  <p className="mt-0.5 flex items-start gap-1.5 text-sm text-amber-900">
                     <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
                     <span>
                       {tr
@@ -303,7 +303,7 @@ export const CommentsAndVersions: React.FC<{ documentId: string }> = ({ document
                 )}
 
                 {comment.portalHasNotReadTheFile && (
-                  <p className="mt-0.5 text-xs text-slate-500">
+                  <p className="mt-0.5 text-sm text-slate-500">
                     {tr
                       ? 'Sunucu bu sürümün dosyasını hiç okumadı, bu yüzden yorumun hangi baytlar hakkında olduğu teyit edilemiyor.'
                       : 'The server has never read this version’s file, so which bytes the comment is about cannot be confirmed.'}
@@ -311,7 +311,7 @@ export const CommentsAndVersions: React.FC<{ documentId: string }> = ({ document
                 )}
 
                 {comment.resolutionNote != null && (
-                  <p className="mt-0.5 text-xs text-slate-600">
+                  <p className="mt-0.5 text-sm text-slate-600">
                     {tr ? 'Kapatma gerekçesi: ' : 'Closed because: '}
                     {comment.resolutionNote}
                   </p>

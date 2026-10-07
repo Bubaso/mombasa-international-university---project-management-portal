@@ -162,7 +162,7 @@ export const PeopleSection: React.FC<{ canAdminister: boolean }> = ({ canAdminis
             {group.label}
           </h3>
           {group.rows.length === 0 ? (
-            <p className="text-xs text-slate-500">{tr ? 'Kayıt yok.' : 'Nobody yet.'}</p>
+            <p className="text-sm text-slate-500">{tr ? 'Kayıt yok.' : 'Nobody yet.'}</p>
           ) : (
             <TableFrame
               head={
@@ -279,7 +279,7 @@ export const PeopleSection: React.FC<{ canAdminister: boolean }> = ({ canAdminis
                             </Field>
                           </div>
                           <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2">
-                            <label className="flex cursor-pointer items-center gap-1.5 text-xs text-slate-700">
+                            <label className="flex cursor-pointer items-center gap-1.5 text-sm text-slate-700">
                               <input
                                 type="checkbox"
                                 checked={draft.isActive}
@@ -311,7 +311,7 @@ export const PeopleSection: React.FC<{ canAdminister: boolean }> = ({ canAdminis
                             </div>
                           </div>
                           <WriteError error={updateProfile.error} />
-                          <p className="mt-2 text-xs text-slate-500">
+                          <p className="mt-2 text-sm text-slate-500">
                             {tr
                               ? 'Kişi silinmez; hesap kapatılır. Böylece bu kişinin geçmişteki işlemleri denetim kaydında kime ait olduğunu göstermeye devam eder.'
                               : 'Nobody is deleted, only deactivated — so that what they did in the past still has a name against it in the audit trail.'}
@@ -425,7 +425,7 @@ const InviteForm: React.FC<{
         </Field>
       </div>
 
-      <p className="mt-2 text-xs leading-relaxed text-slate-500">
+      <p className="mt-2 text-sm leading-relaxed text-slate-500">
         {external
           ? tr
             ? 'Dış paydaşlar yalnızca kendilerine atanan dava ve bloklara ulaşır. Davet gönderdikten sonra kapsamı aşağıdaki "Kapsam" bölümünden verin — kapsam verilmeden bu kişi neredeyse hiçbir şey göremez. Süreli erişim vermeniz önerilir.'

@@ -221,7 +221,7 @@ export const RiskList: React.FC<Props> = ({ canKeep, canAcknowledge }) => {
           </ul>
 
           {waiting.length === 0 && settled.length > 0 && (
-            <p className="text-xs text-slate-500">
+            <p className="text-sm text-slate-500">
               {tr
                 ? 'Açık risk yok; kütükteki her risk kapatılmış.'
                 : 'No risk is open; every one in the register has been closed.'}

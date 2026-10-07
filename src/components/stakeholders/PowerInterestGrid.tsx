@@ -57,7 +57,7 @@ export const PowerInterestGrid: React.FC<{
               <span className="text-xs text-slate-500">{hint[language]}</span>
             </div>
             {members.length === 0 ? (
-              <p className="text-xs text-slate-500">{tr ? 'Kimse yok.' : 'Nobody here.'}</p>
+              <p className="text-sm text-slate-500">{tr ? 'Kimse yok.' : 'Nobody here.'}</p>
             ) : (
               <ul className="space-y-1">
                 {members.map((s) => (

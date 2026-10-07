@@ -94,7 +94,7 @@ export const SignInPage: React.FC = () => {
             <h1 className="font-bold text-slate-900 leading-tight">
               {name(UNIVERSITY_SHORT, language)}
             </h1>
-            <p className="text-xs text-slate-500 leading-none mt-0.5">
+            <p className="text-sm text-slate-500 leading-none mt-0.5">
               {tr ? 'Kenya Afrika Üniversitesi Vakfı' : 'African University Trust (AUTK)'}
             </p>
           </div>
@@ -130,7 +130,7 @@ export const SignInPage: React.FC = () => {
                 <p className="leading-relaxed text-rose-900/80">{denialText(denial, tr)}</p>
 
                 {denial?.kind === 'error' && (
-                  <p className="rounded-md bg-white/70 px-2 py-1 font-mono text-xs leading-relaxed break-words text-rose-900">
+                  <p className="rounded-md bg-white/70 px-2 py-1 font-mono text-sm leading-relaxed break-words text-rose-900">
                     {denial.message}
                   </p>
                 )}
@@ -142,7 +142,7 @@ export const SignInPage: React.FC = () => {
                     which is what people compare by eye and which is not what
                     the profile is keyed on. */}
                 {denial && (
-                  <dl className="space-y-0.5 rounded-md bg-white/70 px-2 py-1.5 text-xs text-rose-900">
+                  <dl className="space-y-0.5 rounded-md bg-white/70 px-2 py-1.5 text-sm text-rose-900">
                     <div className="flex flex-wrap gap-x-1.5">
                       <dt className="font-semibold">{tr ? 'Hesap' : 'Account'}</dt>
                       <dd className="font-mono break-all">{denial.email ?? '—'}</dd>

@@ -89,7 +89,7 @@ export const CaseActions: React.FC<{ legalCaseId: string }> = ({ legalCaseId }) 
         {open.map(row)}
 
         {open.length === 0 && settled.length > 0 && (
-          <p className="text-xs text-slate-500">
+          <p className="text-sm text-slate-500">
             {tr
               ? 'Bekleyen aksiyon yok; kayıtlı olanların hepsi bitti ya da iptal edildi.'
               : 'Nothing is waiting; every action linked here is done or cancelled.'}

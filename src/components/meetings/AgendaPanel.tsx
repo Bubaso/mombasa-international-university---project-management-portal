@@ -84,7 +84,7 @@ export const AgendaPanel: React.FC<{ limit?: number; compact?: boolean }> = ({
               {tr ? 'Bir sonraki gündem' : 'The next agenda'}
             </h2>
             {!compact && (
-              <p className="text-xs text-slate-500">
+              <p className="text-sm text-slate-500">
                 {tr
                   ? 'Kapanmamış her aksiyon ve cevaplanmamış her soru.'
                   : 'Every action still open and every question still unanswered.'}

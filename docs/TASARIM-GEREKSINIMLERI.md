@@ -91,14 +91,14 @@ olması bir şey ifade etmiyor.
 Bugünkü ölçek ters: açıklama metni büyük ve koyu, **veri küçük ve soluk**.
 Kullanıcı veriye bakmaya geliyor.
 
-| ID    | Gereksinim                                                                                                              | P   | Kabul kriteri                                                                                                                |
-| ----- | ----------------------------------------------------------------------------------------------------------------------- | --- | ---------------------------------------------------------------------------------------------------------------------------- |
-| T3-01 | Gövde metni taban **14px**, telefonda da. Bugün baskın boyut 11px.                                                      | P0  | Hiçbir veri metni 14px'in altında değil; 12px yalnızca ikincil üstveri için.                                                 |
-| T3-02 | 9px ve 10px tamamen kalksın.                                                                                            | P0  | ✅ `text-[9px]` 0, `text-[10px]` 0 — ve kapıda: bir tane eklemek `tests/palette.mjs`'i düşürüyor.                            |
-| T3-03 | Beş basamaklı bir ölçek tanımlansın (ör. 12 · 14 · 16 · 20 · 28) ve token olarak kullanılsın; keyfi `text-[Npx]` yasak. | P0  | ✅ Keyfi `text-[Npx]` **0**. Ölçek altı adlı adım (xs·sm·base·lg·xl·2xl) ve küme kayıtlı; yedincisi bir karar olmak zorunda. |
-| T3-04 | Hiyerarşi **veriyi** öne çıkarsın: kayıt başlığı, açıklama metninden büyük ve koyu olsun.                               | P1  | Her kütük satırında başlık ≥16px; panel açıklaması ≤14px ve ikincil renk.                                                    |
-| T3-05 | Satır yüksekliği okunur olsun (gövde için ≥1.5).                                                                        | P2  | Gövde metinlerinde `line-height` ≥1.5.                                                                                       |
-| T3-06 | Sayılar ve tarihler tabular rakamla hizalansın.                                                                         | P2  | Kütüklerdeki sayı sütunlarında `font-variant-numeric: tabular-nums`.                                                         |
+| ID    | Gereksinim                                                                                                              | P   | Kabul kriteri                                                                                                                                                       |
+| ----- | ----------------------------------------------------------------------------------------------------------------------- | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T3-01 | Gövde metni taban **14px**, telefonda da. Bugün baskın boyut 11px.                                                      | P0  | ✅ 443 çağrı yeri 12px → 14px. Blok düzyazı (`<p>`, `<li>`, `<label>`…) 14px, satır içi açıklama 12px; kural kapıda ve ölçüm aracının kendisi fixture'la sınanıyor. |
+| T3-02 | 9px ve 10px tamamen kalksın.                                                                                            | P0  | ✅ `text-[9px]` 0, `text-[10px]` 0 — ve kapıda: bir tane eklemek `tests/palette.mjs`'i düşürüyor.                                                                   |
+| T3-03 | Beş basamaklı bir ölçek tanımlansın (ör. 12 · 14 · 16 · 20 · 28) ve token olarak kullanılsın; keyfi `text-[Npx]` yasak. | P0  | ✅ Keyfi `text-[Npx]` **0**. Ölçek altı adlı adım (xs·sm·base·lg·xl·2xl) ve küme kayıtlı; yedincisi bir karar olmak zorunda.                                        |
+| T3-04 | Hiyerarşi **veriyi** öne çıkarsın: kayıt başlığı, açıklama metninden büyük ve koyu olsun.                               | P1  | Her kütük satırında başlık ≥16px; panel açıklaması ≤14px ve ikincil renk.                                                                                           |
+| T3-05 | Satır yüksekliği okunur olsun (gövde için ≥1.5).                                                                        | P2  | Gövde metinlerinde `line-height` ≥1.5.                                                                                                                              |
+| T3-06 | Sayılar ve tarihler tabular rakamla hizalansın.                                                                         | P2  | Kütüklerdeki sayı sütunlarında `font-variant-numeric: tabular-nums`.                                                                                                |
 
 ## T4 — Dokunma hedefleri ve kontroller
 
@@ -1645,3 +1645,88 @@ yerini 14px'e çıkarmak her ekranı belirgin biçimde uzatır ve **T14-03'ün o
 dokuz yoğunluk tavanının tamamını** birden aşar. Yani bu bir adım değil bir
 faz, ve iki P0 satırı arasında hangisinin önce geldiği bir ürün kararı.
 Rakamlar burada yazılı, karar verilmedi.
+
+### T3-01 — tipografi fazı: ölçülen sonuç
+
+Bir önceki bölüm T3-01'in yarısının karşılanmadığını ölçmüş ve kararı
+kullanıcıya bırakmıştı, çünkü düzeltmek T14-03'ün tavanlarıyla çatışıyordu.
+7 Ekim 2026'da karar verildi: **faz koşuldu.**
+
+| Ölçülen                            | önce | **sonra** |
+| ---------------------------------- | ---- | --------- |
+| `text-xs` (12px) kullanımı         | 819  | **375**   |
+| `text-sm` (14px) kullanımı         | 246  | **690**   |
+| 12px'in toplam metin içindeki payı | %69  | **%32**   |
+| Değişen çağrı yeri                 | —    | 443       |
+| Değişen dosya                      | —    | 107       |
+
+#### Kural: blok düzyazı 14px, satır içi açıklama 12px
+
+819 kullanımı tek tek sınıflandırmak yerine, T3-01'in kendi cümlesinden
+mekanik bir ayrım çıktı: _"hiçbir **veri** metni 14px'in altında değil; 12px
+yalnızca **ikincil üstveri** için."_
+
+**14px olan:** `<p>`, `<li>`, `<dd>`, `<dt>`, `<td>`, `<ul>`, `<dl>`,
+`<label>`, `<blockquote>` — içerik taşıyan bloklar. 383'ü tek başına `<p>`.
+
+**12px kalan:** `<span>` (163) ve `<div>` (95) — sayının yanındaki birim,
+zaman damgası, rozet; `<h2>/<h3>/<h4>` (22) büyük harfli bölüm etiketleri;
+`<button>` ve `<input>` (86) denetimler; `<th>/<thead>` sütun başlıkları;
+`<kbd>`, `<pre>`, `<summary>`, `<footer>`.
+
+Bir **adlı istisna** var ve tek yerde duruyor: `Field` bileşeninin etiketi bir
+`<span>`, yani kurala göre 12px kalmalıydı. Ama o span bir form alanının
+etiketi — ne yazdığını söyleyen şey o, bir zaman damgasıyla aynı statüde
+değil. Tek satır, bütün formları kapsıyor, ve sebebi dosyada yazılı.
+
+#### Etiket tespiti geriye tarayarak yapıldı, ve bu şart
+
+Prettier çok prop'lu bir elemanı sarıyor: `<p` bir satırda, `className` üç
+satır aşağıda. Aynı satırda arayan bir desen 819 kullanımın yaklaşık yarısını
+görmez — ve görmediğini sıfır sanır.
+
+Tarama `text-xs`'in konumundan geriye gidip en yakın açılış etiketini buluyor;
+aradaki bir `>` bir önceki etiketin kapandığı anlamına geldiği için orada
+duruyor (yoksa bir sonraki `<button>`'ın sınıfı `<p>`'ye yazılmış sayılırdı).
+Kapıdaki **üç fixture** tam bunu sınıyor: çok satırlı bir `<p>` tanınıyor mu,
+satır içi bir `<span>` tanınıyor mu, etiket dışındaki metin etiket sayılmıyor
+mu. Bu depoda bir ölçüm aracının körleşip memnun geçmesi altı kez oldu;
+yedincisini beklemek yerine aracın kendisi sınanıyor.
+
+#### On dört tavanın BOYU yükseldi — ve yalnızca boyu
+
+Ölçüm, değişiklikten sonra: **on dokuz rotanın hiçbirinde düğme ya da başlık
+sayısı değişmedi.** On dördünde boy arttı.
+
+| ekran           | önce   | **sonra** | fark   |
+| --------------- | ------ | --------- | ------ |
+| `/reports`      | 1266px | 1394px    | +%10,1 |
+| `/calendar`     | 1132px | 1198px    | +%5,8  |
+| `/governance`   | 1132px | 1196px    | +%5,7  |
+| `/project_info` | 1419px | 1487px    | +%4,8  |
+| `/meetings`     | 1709px | 1767px    | +%3,4  |
+| `/`             | 1105px | 1141px    | +%3,3  |
+| `/legal`        | 1277px | 1316px    | +%3,1  |
+| `/assistant`    | 2351px | 2392px    | +%1,7  |
+| `/stakeholders` | 1352px | 1356px    | +%0,3  |
+
+Beş ekran hiç değişmedi (zaten görüntü alanından kısaydılar).
+
+Ayrım bu turun gerekçesi: **ekrana bir şey eklenmedi, duran şey okunur oldu.**
+Yoğunluğun asıl ölçüsü düğme ve başlık sayısı — _"aynı anda kaç şey duruyor"_
+sorusunun cevabı o — ve o iki sayı **kilitli kaldı**. Boy, yazı büyüyünce
+büyümek zorunda; onu da sabit tutmak, kullanıcının şikâyet ettiği küçük
+sıkışık metni koruyan bir kural yazmak olurdu.
+
+T14 turu en uzun ekranı 3.924'ten 2.351 piksele indirmişti; bu faz onu
+2.392'ye çıkardı. Kazancın %98'i duruyor, ve geri verilen %2 karşılığında
+arayüzün üçte ikisi 12px'ten 14px'e çıktı.
+
+#### Geri sızmasın diye iki kontrol
+
+**Kural:** blok düzyazı elemanlarının hiçbiri `text-xs` taşımıyor. Bir `<p>`'yi
+12px'e geri döndüren mutasyon düşüyor (`RiskList.tsx:224 <p>`).
+
+**Ratchet:** `text-xs` toplamı ≤ 375, ölçülen değer. Tavanı 300'e indiren
+mutasyon düşüyor, ve bir `<p>`'yi geri alan mutasyon **ikisini birden**
+düşürüyor (376 / 375) — yani iki kontrol birbirini de doğruluyor.

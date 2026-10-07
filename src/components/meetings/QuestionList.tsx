@@ -88,7 +88,7 @@ export const QuestionList: React.FC<{
         )}
 
         {rows.length === 0 && !adding ? (
-          <p className="text-xs leading-relaxed text-slate-500">
+          <p className="text-sm leading-relaxed text-slate-500">
             {tr
               ? 'Cevapsız kalan bir konu yok. Bir görüş ayrılığı kapanmadan kaybolmasın diye burası var.'
               : 'Nothing is waiting for an answer. This is where a disagreement lives so it does not vanish unresolved.'}
@@ -110,7 +110,7 @@ export const QuestionList: React.FC<{
             {/* Bekleyen soru kalmadıysa söylenir: kapanmışların altındaki boş
                 alan, "hepsi cevaplandı" ile "hiç sorulmadı"yı karıştırır. */}
             {waiting.length === 0 && settled.length > 0 && (
-              <p className="text-xs text-slate-500">
+              <p className="text-sm text-slate-500">
                 {tr
                   ? 'Cevap bekleyen soru yok; sorulanların hepsi karara bağlanmış.'
                   : 'No question is waiting; every one asked has been settled.'}
@@ -199,7 +199,7 @@ const QuestionRow: React.FC<{
       </div>
 
       {question.answerEn && (
-        <p className="mt-1 text-xs leading-relaxed text-slate-700">
+        <p className="mt-1 text-sm leading-relaxed text-slate-700">
           <span className="font-medium">{tr ? 'Cevap: ' : 'Answer: '}</span>
           {question.answerEn}
         </p>

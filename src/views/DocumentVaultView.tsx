@@ -118,7 +118,7 @@ export const DocumentVaultView: React.FC = () => {
       {unverified > 0 && (
         <div className="flex items-start gap-2.5 rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5">
           <FileX2 className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" aria-hidden="true" />
-          <p className="text-xs leading-relaxed text-amber-900">
+          <p className="text-sm leading-relaxed text-amber-900">
             <span className="font-semibold">
               {tr
                 ? `${unverified} belgenin geçerli sürümü doğrulanmamış.`
@@ -284,7 +284,7 @@ export const DocumentVaultView: React.FC = () => {
         )}
       </div>
 
-      <p className="flex items-start gap-1.5 text-xs leading-relaxed text-slate-500">
+      <p className="flex items-start gap-1.5 text-sm leading-relaxed text-slate-500">
         <Eye className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
         <span>
           {tr
@@ -387,7 +387,7 @@ const NewDocumentForm: React.FC<{ onDone: () => void }> = ({ onDone }) => {
         </Field>
       </div>
 
-      <p className="mt-2 text-xs leading-relaxed text-slate-500">
+      <p className="mt-2 text-sm leading-relaxed text-slate-500">
         {tr
           ? 'Dosya yüklendikten sonra sunucu depodaki baytları okuyup SHA-256 özetini kaydeder. Bu kaydedilene kadar belge "doğrulanmadı" görünür — ve bu işaret hiçbir kullanıcı tarafından konulamaz ya da kaldırılamaz.'
           : 'After the upload the server reads the stored bytes and records their SHA-256. Until it has, the document reads as unverified — and that mark is not something any user can set or clear.'}
@@ -395,7 +395,7 @@ const NewDocumentForm: React.FC<{ onDone: () => void }> = ({ onDone }) => {
 
       <WriteError error={create.error ?? upload.error} />
       {notice && (
-        <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs text-amber-900">
+        <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-sm text-amber-900">
           {tr
             ? `Dosya yüklendi ama özeti hesaplanamadı: ${notice}`
             : `The file was stored but its digest could not be computed: ${notice}`}

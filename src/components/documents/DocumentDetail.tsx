@@ -101,7 +101,7 @@ export const DocumentDetail: React.FC<{
           </h3>
 
           {rows.length === 0 ? (
-            <p className="text-xs text-slate-500">
+            <p className="text-sm text-slate-500">
               {tr ? 'Henüz dosya yüklenmemiş.' : 'No file uploaded yet.'}
             </p>
           ) : (
@@ -162,7 +162,7 @@ export const DocumentDetail: React.FC<{
                         {copied === version.id && <span>{tr ? 'kopyalandı' : 'copied'}</span>}
                       </button>
                     ) : (
-                      <p className="mt-1 flex items-start gap-1.5 rounded border border-amber-200 bg-amber-50 px-1.5 py-1 text-xs leading-relaxed text-amber-900">
+                      <p className="mt-1 flex items-start gap-1.5 rounded border border-amber-200 bg-amber-50 px-1.5 py-1 text-sm leading-relaxed text-amber-900">
                         <FileX2 className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
                         <span>
                           {tr
@@ -187,13 +187,13 @@ export const DocumentDetail: React.FC<{
               {tr ? 'Kim okudu' : 'Who has read it'}
             </h3>
             {(access.data?.rows ?? []).length === 0 ? (
-              <p className="text-xs text-slate-500">
+              <p className="text-sm text-slate-500">
                 {tr ? 'Henüz kimse açmamış.' : 'Nobody has opened it yet.'}
               </p>
             ) : (
               <ul className="space-y-0.5">
                 {(access.data?.rows ?? []).map((entry) => (
-                  <li key={entry.id} className="flex items-baseline gap-2 text-xs">
+                  <li key={entry.id} className="flex items-baseline gap-2 text-sm">
                     <span className="shrink-0 font-mono text-slate-500">
                       {entry.at.slice(0, 16).replace('T', ' ')}
                     </span>
@@ -277,7 +277,7 @@ const UploadForm: React.FC<{ documentId: string; onDone: () => void }> = ({
         <TextInput value={note} onChange={(e) => setNote(e.target.value)} />
       </Field>
 
-      <p className="text-xs leading-relaxed text-slate-500">
+      <p className="text-sm leading-relaxed text-slate-500">
         {tr
           ? 'Yeni sürüm geçerli hâle gelir; öncekiler kalır ve silinemez.'
           : 'The new version becomes the one in force. The earlier ones stay and cannot be removed.'}
@@ -285,7 +285,7 @@ const UploadForm: React.FC<{ documentId: string; onDone: () => void }> = ({
 
       <WriteError error={upload.error} />
       {notice && (
-        <p className="rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs text-amber-900">
+        <p className="rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-sm text-amber-900">
           {tr
             ? `Yüklendi ama özeti hesaplanamadı: ${notice}`
             : `Stored, but the digest could not be computed: ${notice}`}

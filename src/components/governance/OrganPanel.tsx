@@ -74,7 +74,7 @@ export const OrganPanel: React.FC = () => {
           <h2 className="text-base font-bold text-slate-900">
             {tr ? 'Organlar ve nisap' : 'The organs and their quorum'}
           </h2>
-          <p className="text-xs text-slate-500">
+          <p className="text-sm text-slate-500">
             {tr
               ? 'Üç organ, üyeleri ve nisap kuralı. Oturumun yetkili olup olmadığı yoklamadan hesaplanır.'
               : 'Three organs, their members and the quorum rule. Whether a sitting may decide is computed from the attendance.'}
@@ -100,11 +100,11 @@ export const OrganPanel: React.FC = () => {
               <p className="text-sm font-semibold text-slate-900">
                 {tr ? organ.nameTr : organ.nameEn}
               </p>
-              <p className="mt-0.5 text-xs text-slate-500">
+              <p className="mt-0.5 text-sm text-slate-500">
                 {organ.memberCount} {tr ? 'üye' : organ.memberCount === 1 ? 'member' : 'members'}
                 {organ.cadence ? ` · ${cadenceLabel(organ.cadence, language)}` : ''}
               </p>
-              <p className="mt-1 text-xs">
+              <p className="mt-1 text-sm">
                 {organ.quorumMembers == null && organ.quorumFraction == null ? (
                   <span className="text-amber-800">
                     {tr ? 'nisap kuralı kayıtlı değil' : 'no quorum rule recorded'}
@@ -124,7 +124,7 @@ export const OrganPanel: React.FC = () => {
                 )}
               </p>
               {organ.charterClause && (
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-1 text-sm text-slate-500">
                   {tr ? 'senet md. ' : 'deed cl. '}
                   {organ.charterClause}
                 </p>
@@ -216,13 +216,13 @@ export const OrganPanel: React.FC = () => {
         <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
           <div className="mb-1.5 flex items-center gap-1.5">
             <Users2 className="h-3.5 w-3.5 text-slate-500" aria-hidden="true" />
-            <p className="text-xs font-semibold tracking-wider text-slate-600 uppercase">
+            <p className="text-sm font-semibold tracking-wider text-slate-600 uppercase">
               {tr ? 'Koltuklar' : 'Seats'}
             </p>
           </div>
           <QueryStatus queries={[members]} />
           {(members.data ?? []).length === 0 ? (
-            <p className="text-xs text-slate-500">
+            <p className="text-sm text-slate-500">
               {tr
                 ? 'Bu organa henüz kimse atanmamış — nisap da bu yüzden hesaplanamıyor.'
                 : 'Nobody is seated on this organ yet, which is also why no quorum can be computed for it.'}
@@ -409,7 +409,7 @@ export const OrganPanel: React.FC = () => {
                   </div>
                 </form>
               ) : serving.length === 0 ? (
-                <p className="text-xs text-amber-900">
+                <p className="text-sm text-amber-900">
                   {tr
                     ? 'Kütükte görevde olan mütevelli yok, o yüzden oturtulacak kimse de yok. Önce Mütevelli kütüğüne ekleyin.'
                     : 'No serving trustee is on the register, so there is nobody to seat. Add one to the trustee register first.'}
@@ -428,13 +428,13 @@ export const OrganPanel: React.FC = () => {
       <div className="mt-4 border-t border-slate-100 pt-3">
         <div className="mb-1.5 flex items-center gap-1.5">
           <Scale className="h-3.5 w-3.5 text-slate-500" aria-hidden="true" />
-          <p className="text-xs font-semibold tracking-wider text-slate-600 uppercase">
+          <p className="text-sm font-semibold tracking-wider text-slate-600 uppercase">
             {tr ? 'Oturumlar' : 'Sittings'}
           </p>
         </div>
         <QueryStatus queries={[sittings]} />
         {(sittings.data?.rows ?? []).length === 0 ? (
-          <p className="text-xs text-slate-500">
+          <p className="text-sm text-slate-500">
             {tr
               ? 'Henüz bir organ oturumu kaydedilmemiş. Bir toplantıyı organa bağlayınca burada nisabıyla görünür.'
               : 'No organ sitting is recorded yet. Attach a meeting to an organ and it appears here with its quorum.'}
@@ -450,7 +450,7 @@ export const OrganPanel: React.FC = () => {
                 >
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-slate-900">{sitting.title}</p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-sm text-slate-500">
                       {organLabel(sitting.organKind, language)} ·{' '}
                       {formatDate(sitting.heldAt, language)}
                     </p>

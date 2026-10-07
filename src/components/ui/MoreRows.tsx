@@ -36,7 +36,7 @@ export const MoreRows: React.FC<{
 
   return (
     <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-slate-200 pt-2">
-      <p className="text-xs text-slate-500">
+      <p className="text-sm text-slate-500">
         {hidden > 0
           ? tr
             ? `${total} kayıttan ${shown} tanesi`

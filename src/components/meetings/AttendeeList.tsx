@@ -98,7 +98,7 @@ export const AttendeeList: React.FC<{ meetingId: string; canKeep: boolean }> = (
         )}
 
         {rows.length === 0 ? (
-          <p className="text-xs text-slate-500">
+          <p className="text-sm text-slate-500">
             {tr ? 'Katılımcı kaydedilmemiş.' : 'Nobody recorded.'}
           </p>
         ) : (

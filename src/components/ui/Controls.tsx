@@ -46,11 +46,11 @@ export const Section: React.FC<SectionProps> = ({
             {title}
             {waiting != null && <Pill>{waiting}</Pill>}
           </h2>
-          <p className="text-xs leading-relaxed text-slate-500">{subtitle}</p>
+          <p className="text-sm leading-relaxed text-slate-500">{subtitle}</p>
         </div>
       </div>
       <p
-        className={`flex shrink-0 items-center gap-1.5 rounded-lg border px-2 py-1 text-xs ${
+        className={`flex shrink-0 items-center gap-1.5 rounded-lg border px-2 py-1 text-sm ${
           canUse
             ? 'border-slate-200 bg-slate-50 text-slate-600'
             : 'border-amber-200 bg-amber-50 text-amber-900'
@@ -75,7 +75,15 @@ export const Field: React.FC<{ label: string; children: React.ReactNode; classNa
   className = '',
 }) => (
   <label className={`flex flex-col gap-1 ${className}`}>
-    <span className="text-xs font-medium text-slate-600">{label}</span>
+    {/*
+      Alan etiketi 12px DEĞİL, ve bu kuralın adlı istisnası.
+      
+      Tipografi turunun kuralı "blok düzyazı 14px, satır içi açıklama 12px"
+      ve bir `<span>` normalde ikinci kümede. Ama bu span bir form alanının
+      etiketi: ne yazdığını söyleyen şey o, ve bir timestamp'la aynı statüde
+      değil. Tek yer, bütün formları kapsıyor.
+    */}
+    <span className="text-sm font-medium text-slate-600">{label}</span>
     {children}
   </label>
 );
@@ -216,7 +224,7 @@ export const WriteError: React.FC<{ error: unknown }> = ({ error }) => {
   return (
     <p
       role="alert"
-      className="mt-2 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs text-rose-800"
+      className="mt-2 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-sm text-rose-800"
     >
       {message}
     </p>

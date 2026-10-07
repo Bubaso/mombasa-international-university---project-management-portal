@@ -133,12 +133,12 @@ export const WatchPanel: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
               <p className="text-sm font-semibold text-amber-900">
                 {tr ? 'Nöbet defterinin söylemediği şeyler' : 'What the watch book does not say'}
               </p>
-              <p className="mt-0.5 text-xs leading-relaxed text-amber-900/80">
+              <p className="mt-0.5 text-sm leading-relaxed text-amber-900/80">
                 {tr
                   ? 'Bunların hiçbiri portalın kusuru değil; her biri birinin gidip öğrenmesi gereken bir şey. Bir nöbet defteri tam görünerek bozulur.'
                   : 'None of these is a defect in the portal; each is something somebody has to go and find out. A watch register fails by looking complete.'}
               </p>
-              <ul className="mt-1.5 space-y-0.5 text-xs text-amber-900">
+              <ul className="mt-1.5 space-y-0.5 text-sm text-amber-900">
                 {unfinished.map((line) => (
                   <li key={line}>· {line}</li>
                 ))}
@@ -156,7 +156,7 @@ export const WatchPanel: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
             <h3 className="text-sm font-semibold text-slate-900">
               {tr ? 'Çıkışı kayıtlı olmayan girişler' : 'Entries with no exit recorded'}
             </h3>
-            <p className="text-xs leading-relaxed text-slate-500">
+            <p className="text-sm leading-relaxed text-slate-500">
               {tr
                 ? 'Çıkışı yazılmamış girişler. Defter kişinin sahada olup olmadığını bilmiyor.'
                 : 'Entries with no exit written. The book does not know whether the person is on site.'}
@@ -164,7 +164,7 @@ export const WatchPanel: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
           </div>
         </header>
         {entryRows.length === 0 ? (
-          <p className="text-xs text-slate-500">
+          <p className="text-sm text-slate-500">
             {tr
               ? 'Açık giriş yok — ya da hiç giriş kaydedilmemiş. İkisi bu ekrandan ayırt edilemez.'
               : 'No open entries — or none were ever recorded. This screen cannot tell those apart.'}
@@ -208,12 +208,12 @@ export const WatchPanel: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
                     </ActionButton>
                   )}
                 </div>
-                <p className="mt-0.5 text-xs text-slate-600">
+                <p className="mt-0.5 text-sm text-slate-600">
                   {openEntryWords(entry.openHours, entry.outlastedItsWatch)}
                 </p>
-                {entry.purpose != null && <p className="text-xs text-slate-500">{entry.purpose}</p>}
+                {entry.purpose != null && <p className="text-sm text-slate-500">{entry.purpose}</p>}
                 {!entry.idDocumentSeen && (
-                  <p className="text-xs text-slate-500">
+                  <p className="text-sm text-slate-500">
                     {tr
                       ? 'Kimlik görüldüğü kayıtlı değil'
                       : 'No record that identification was seen'}
@@ -234,7 +234,7 @@ export const WatchPanel: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
             <h3 className="text-sm font-semibold text-slate-900">
               {tr ? 'Olay kaydı' : 'Incident record'}
             </h3>
-            <p className="text-xs leading-relaxed text-slate-500">
+            <p className="text-sm leading-relaxed text-slate-500">
               {tr
                 ? 'Teyit edilen bir olayın anlatısı donar; sonraki müdahale ayrı eklenir.'
                 : "Once confirmed, an incident's account is frozen; what was done next is added separately."}
@@ -303,7 +303,7 @@ export const WatchPanel: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
               <ActionButton type="submit" disabled={record.isPending}>
                 {tr ? 'Olayı kaydet' : 'Record the incident'}
               </ActionButton>
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-sm text-slate-500">
                 {tr
                   ? 'Resmî bildirim bu formda yok: "bildirildi" demek yazının kendisini ister, ve olay ilk yazıldığında kimsenin elinde yazı olmaz.'
                   : 'Notification is not on this form: claiming an authority was told requires the letter, and nobody has one when the incident is first written down.'}
@@ -314,7 +314,7 @@ export const WatchPanel: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
         )}
 
         {incidentRows.length === 0 ? (
-          <p className="text-xs text-slate-500">
+          <p className="text-sm text-slate-500">
             {tr ? 'Kayıtlı olay yok.' : 'No incidents recorded.'}
           </p>
         ) : (
@@ -362,7 +362,7 @@ export const WatchPanel: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
                     />
                   </p>
 
-                  <p className="mt-0.5 text-xs text-slate-600">
+                  <p className="mt-0.5 text-sm text-slate-600">
                     {incident.interventionUnrecorded ? (
                       <span className="text-amber-800">
                         {tr ? 'Müdahale kayıtlı değil' : 'No response recorded'}
@@ -427,7 +427,7 @@ export const WatchPanel: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
             <h3 className="text-sm font-semibold text-slate-900">
               {tr ? 'Nöbetler ve turlar' : 'Watches and rounds'}
             </h3>
-            <p className="text-xs leading-relaxed text-slate-500">
+            <p className="text-sm leading-relaxed text-slate-500">
               {tr
                 ? 'Yürüdüğü kaydedilen turlar. Eksik turlar hesaplanır.'
                 : 'The rounds recorded as walked. What is missing is computed.'}
@@ -435,7 +435,7 @@ export const WatchPanel: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
           </div>
         </header>
         {watchRows.length === 0 ? (
-          <p className="text-xs text-slate-500">
+          <p className="text-sm text-slate-500">
             {tr ? 'Kayıtlı nöbet yok.' : 'No watches recorded.'}
           </p>
         ) : (
@@ -452,7 +452,7 @@ export const WatchPanel: React.FC<{ canKeep: boolean }> = ({ canKeep }) => {
               return (
                 <li
                   key={shift.watchShiftId}
-                  className="flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs"
+                  className="flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-sm"
                 >
                   <span className="font-medium text-slate-900">
                     {wordFor(POST_LABELS, shift.post, tr ? 'tr' : 'en')}

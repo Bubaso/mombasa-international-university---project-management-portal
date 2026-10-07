@@ -201,7 +201,7 @@ export const MeetingsView: React.FC = () => {
                   alan, yapılmışların altında "takvim boş" ile "hiç toplantı
                   yok"u birbirine karıştırır. */}
               {waiting.length === 0 && settled.length > 0 && (
-                <p className="text-xs text-slate-500">
+                <p className="text-sm text-slate-500">
                   {tr
                     ? 'Önümüzde toplantı yok; kayıtlı olanların hepsi yapılmış ya da iptal edilmiş.'
                     : 'No meeting is ahead; every one recorded has been held or cancelled.'}
@@ -323,7 +323,7 @@ const NewMeetingForm: React.FC<{
         </Field>
       </div>
 
-      <p className="mt-2 flex items-start gap-1.5 text-xs leading-relaxed text-slate-500">
+      <p className="mt-2 flex items-start gap-1.5 text-sm leading-relaxed text-slate-500">
         <Lock className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
         <span>
           {tr

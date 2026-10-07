@@ -404,6 +404,19 @@ const signedCounts = [];
  * açılacak, detay istenince gelecek. Rakam düşmezse faz işe yaramamıştır ve
  * bunu burada göreceğiz — geçen sefer göremedik.
  *
+ * ON DÖRT TAVANIN BOYU 7 Ekim 2026'da YÜKSELDİ, ve yalnızca boyu.
+ *
+ * Tipografi fazı 443 çağrı yerini 12px'ten 14px'e çıkardı (T3-01: "hiçbir
+ * veri metni 14px'in altında değil"). Sonuç ölçüldü: on dokuz rotanın
+ * **hiçbirinde** düğme ya da başlık sayısı değişmedi, on dördünde boy arttı —
+ * en çok `/reports` (+128px, %10), en az `/stakeholders` (+4px, %0,3).
+ *
+ * Ayrım bu yüzden önemli: ekrana bir şey EKLENMEDİ, duran şey okunur oldu.
+ * Yoğunluğun asıl ölçüsü düğme ve başlık sayısı — "aynı anda kaç şey duruyor"
+ * sorusunun cevabı o — ve o iki sayı KİLİTLİ kaldı. Boy, yazı büyüyünce
+ * büyümek zorunda; onu da sabit tutmak, kullanıcının şikâyet ettiği küçük
+ * sıkışık metni koruyan bir kural yazmak olurdu.
+ *
  * İKİ TAVAN 6 Ekim 2026'da YÜKSELDİ ve bu gizlenmiyor. T10-06 her grafiğin
  * yanında bir veri tablosu istiyor; katlanmış hâlde bile her tablo bir düğme
  * ve bir satır boy demek. Ölçülen bedel: `/plan` 51 → **53** düğme ve 1340 →
@@ -419,20 +432,20 @@ const signedCounts = [];
  * yükseltmek ratchet'i anlamsız kılar.
  */
 const DENSITY = {
-  '/assistant': { buttons: 55, headings: 3, height: 2351 },
-  '/meetings': { buttons: 57, headings: 9, height: 1709 },
-  '/obligations': { buttons: 52, headings: 10, height: 1556 },
-  '/risks': { buttons: 57, headings: 4, height: 1474 },
-  '/project_info': { buttons: 43, headings: 6, height: 1419 },
-  '/stakeholders': { buttons: 50, headings: 5, height: 1352 },
-  '/plan': { buttons: 53, headings: 4, height: 1388 },
-  '/legal': { buttons: 58, headings: 4, height: 1277 },
-  '/reports': { buttons: 57, headings: 7, height: 1266 },
-  '/governance': { buttons: 59, headings: 3, height: 1132 },
-  '/calendar': { buttons: 61, headings: 4, height: 1132 },
-  '/': { buttons: 52, headings: 4, height: 1105 },
-  '/readiness': { buttons: 50, headings: 4, height: 1090 },
-  '/documents': { buttons: 52, headings: 2, height: 1061 },
+  '/assistant': { buttons: 55, headings: 3, height: 2392 },
+  '/meetings': { buttons: 57, headings: 9, height: 1767 },
+  '/obligations': { buttons: 52, headings: 10, height: 1567 },
+  '/risks': { buttons: 57, headings: 4, height: 1481 },
+  '/project_info': { buttons: 43, headings: 6, height: 1487 },
+  '/stakeholders': { buttons: 50, headings: 5, height: 1356 },
+  '/plan': { buttons: 53, headings: 4, height: 1412 },
+  '/legal': { buttons: 58, headings: 4, height: 1316 },
+  '/reports': { buttons: 57, headings: 7, height: 1394 },
+  '/governance': { buttons: 59, headings: 3, height: 1196 },
+  '/calendar': { buttons: 61, headings: 4, height: 1198 },
+  '/': { buttons: 52, headings: 4, height: 1141 },
+  '/readiness': { buttons: 50, headings: 4, height: 1110 },
+  '/documents': { buttons: 52, headings: 2, height: 1072 },
   '/construction': { buttons: 50, headings: 2, height: 1044 },
   '/procurement': { buttons: 57, headings: 3, height: 1044 },
   '/finance': { buttons: 47, headings: 4, height: 1044 },

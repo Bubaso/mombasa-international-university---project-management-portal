@@ -156,7 +156,7 @@ export const MeetingDetailView: React.FC = () => {
             </Field>
 
             {locked ? (
-              <p className="flex items-center gap-1.5 pb-1.5 text-xs text-slate-500">
+              <p className="flex items-center gap-1.5 pb-1.5 text-sm text-slate-500">
                 <Lock className="h-3 w-3 shrink-0" aria-hidden="true" />
                 {tr
                   ? 'Tutanak kesinleşti. Düzeltme, yeni bir zeyilnamedir; bu kayıt artık değişmez.'
@@ -164,7 +164,7 @@ export const MeetingDetailView: React.FC = () => {
               </p>
             ) : confirmingFinal ? (
               <div className="flex flex-wrap items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-2">
-                <p className="text-xs text-amber-900">
+                <p className="text-sm text-amber-900">
                   {tr
                     ? 'Kesinleştirince tutanak bir daha düzenlenemez ve taslağa geri alınamaz.'
                     : 'Once final, the minutes cannot be edited or put back into draft.'}

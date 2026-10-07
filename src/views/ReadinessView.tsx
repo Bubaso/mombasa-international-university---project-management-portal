@@ -116,7 +116,7 @@ export const ReadinessView: React.FC = () => {
           <p className="text-base font-semibold text-slate-900">
             {tr ? 'Yönetişim' : 'Governance'}
           </p>
-          <p className="text-xs text-slate-500">
+          <p className="text-sm text-slate-500">
             {tr
               ? 'Üç organ ve nisapları, mütevelli kütüğü, resmî karar kütüğü, çıkar beyanları.'
               : 'The three organs and their quorum, the trustee register, the formal resolutions, the declarations.'}

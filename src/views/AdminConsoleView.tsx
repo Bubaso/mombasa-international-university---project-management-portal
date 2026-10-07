@@ -73,7 +73,7 @@ export const AdminConsoleView: React.FC = () => {
       {canReadAudit && <AuditSection />}
 
       {!isInternal && (
-        <p className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs leading-relaxed text-slate-500">
+        <p className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm leading-relaxed text-slate-500">
           {tr
             ? 'Eksik gördüğünüz erişim için proje direktörüne başvurun.'
             : 'For access you think is missing, ask the project director.'}

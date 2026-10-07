@@ -63,7 +63,7 @@ export const MobileMoreSheet: React.FC<MobileMoreSheetProps> = ({ isOpen, onClos
               <h3 className="font-bold text-slate-900 text-base">
                 {tr ? 'Tüm bölümler' : 'All sections'}
               </h3>
-              <p className="text-xs text-slate-500">{tr ? UNIVERSITY.tr : UNIVERSITY.en}</p>
+              <p className="text-sm text-slate-500">{tr ? UNIVERSITY.tr : UNIVERSITY.en}</p>
             </div>
           </div>
           <button

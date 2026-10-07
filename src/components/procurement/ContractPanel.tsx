@@ -103,7 +103,7 @@ export const ContractPanel: React.FC = () => {
                   </Pill>
                 )}
               </div>
-              <p className="mt-0.5 text-xs text-slate-600">
+              <p className="mt-0.5 text-sm text-slate-600">
                 {(tr ? c.subjectTr : c.subjectEn) ?? c.subjectEn}
               </p>
               <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
@@ -160,7 +160,7 @@ export const ContractPanel: React.FC = () => {
             <div>
               <div className="mb-1.5 flex items-center gap-1.5">
                 <ScrollText className="h-3.5 w-3.5 text-slate-500" aria-hidden="true" />
-                <p className="text-xs font-semibold tracking-wider text-slate-600 uppercase">
+                <p className="text-sm font-semibold tracking-wider text-slate-600 uppercase">
                   {tr
                     ? 'Şartlar ve düştüğü yükümlülükler'
                     : 'Terms, and the obligations they raised'}
@@ -168,7 +168,7 @@ export const ContractPanel: React.FC = () => {
               </div>
               <QueryStatus queries={[terms]} />
               {(terms.data ?? []).length === 0 ? (
-                <p className="text-xs text-slate-500">
+                <p className="text-sm text-slate-500">
                   {tr
                     ? 'Şart girilmemiş. Girilen her şart kendiliğinden M2’de bir yükümlülük açar.'
                     : 'No term entered. Each one recorded raises an obligation in M2 by itself.'}
@@ -229,11 +229,11 @@ export const ContractPanel: React.FC = () => {
 
             {/* M14-07: the schedule, and whether it outgrew the contract. */}
             <div className="border-t border-slate-200 pt-2">
-              <p className="mb-1.5 text-xs font-semibold tracking-wider text-slate-600 uppercase">
+              <p className="mb-1.5 text-sm font-semibold tracking-wider text-slate-600 uppercase">
                 {tr ? 'Ödeme planı' : 'Payment schedule'}
               </p>
               {s?.overCommitted && (
-                <p className="mb-1.5 rounded border border-amber-200 bg-amber-50 px-2 py-1 text-xs text-amber-900">
+                <p className="mb-1.5 rounded border border-amber-200 bg-amber-50 px-2 py-1 text-sm text-amber-900">
                   {tr
                     ? 'Plan, kayıtlı sözleşme tutarını aşıyor. Bu bir tadil olabilir — engellenmiyor, söyleniyor.'
                     : 'The schedule exceeds the recorded contract value. That may be a variation — it is reported, not blocked.'}
@@ -241,7 +241,7 @@ export const ContractPanel: React.FC = () => {
               )}
               <QueryStatus queries={[milestones]} />
               {(milestones.data ?? []).length === 0 ? (
-                <p className="text-xs text-slate-500">
+                <p className="text-sm text-slate-500">
                   {tr ? 'Ödeme planı girilmemiş.' : 'No schedule has been entered.'}
                 </p>
               ) : (
@@ -284,7 +284,7 @@ export const ContractPanel: React.FC = () => {
                 </ul>
               )}
               {s && (
-                <p className="mt-1.5 font-mono text-xs text-slate-500">
+                <p className="mt-1.5 font-mono text-sm text-slate-500">
                   {tr ? 'planlanan ' : 'scheduled '}
                   {s.scheduledKes ?? 0} KES · {tr ? 'ödenen ' : 'paid '}
                   {s.paidKes ?? 0} KES
@@ -316,7 +316,7 @@ export const ContractPanel: React.FC = () => {
               {tr ? 'Sözleşme kütüğü' : 'Contract register'}
               <Pill>{waiting.length}</Pill>
             </h2>
-            <p className="text-xs text-slate-500">
+            <p className="text-sm text-slate-500">
               {tr
                 ? 'Taraf, konu, tutar, süre, yenileme ve fesih. Taslak olmayanın belgesi kasada olmak zorunda.'
                 : 'Party, subject, amount, term, renewal and termination. Anything past draft must have its document in the vault.'}
@@ -336,7 +336,7 @@ export const ContractPanel: React.FC = () => {
       <QueryStatus queries={[alerts, settlement]} />
 
       {rows.length === 0 ? (
-        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
           {tr
             ? 'Kütükte sözleşme yok. Avukat vekâletnamesi, müteahhit sözleşmesi ve danışmanlık anlaşmaları burada durur — ve 90/60/30 uyarısı buradan çıkar. Sona ermiş sözleşmeler de burada kalır; bir ihtilafta en çok okunan sözleşme, biteni olur.'
             : 'No contract is on the register. The advocates’ retainers, the works contracts and the consultancy agreements belong here — and the 90/60/30 warning comes off them. Contracts that have ended stay too: in a dispute, the one most read is usually the one that ended.'}
@@ -349,7 +349,7 @@ export const ContractPanel: React.FC = () => {
               alan, sona ermişlerin altında "hepsi bitti" ile "kütük boş"u
               birbirine karıştırır. */}
           {waiting.length === 0 && settled.length > 0 && (
-            <p className="text-xs text-slate-500">
+            <p className="text-sm text-slate-500">
               {tr
                 ? 'Yürürlükte sözleşme yok; kayıtlı olanların hepsi sona ermiş ya da feshedilmiş.'
                 : 'No contract is live; every one on the register has expired or been terminated.'}

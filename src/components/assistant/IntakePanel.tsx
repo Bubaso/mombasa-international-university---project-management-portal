@@ -181,7 +181,7 @@ export const IntakePanel: React.FC<{ canWrite: boolean }> = ({ canWrite }) => {
               {/* Fonksiyonun reddi bir hata değil, bir cevaptır: alım kaydı
                   oluştu ve sebebini taşıyor. Kelimesi kelimesine gösterilir. */}
               {/* Hata değil, sayı: zaten kayıtlı olduğu için üretilmeyenler. */}
-              {run.data?.note && <p className="mt-2 text-xs text-slate-500">{run.data.note}</p>}
+              {run.data?.note && <p className="mt-2 text-sm text-slate-500">{run.data.note}</p>}
               {run.data?.error && (
                 <p className="mt-2 flex items-start gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-sm text-amber-900">
                   <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />

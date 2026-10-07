@@ -174,7 +174,7 @@ export const FilingList: React.FC<{ caseId: string; canWrite: boolean }> = ({
                 sonuçlanmışların altında "hepsi bitti" ile "hiç yoktu"yu
                 birbirine karıştırır. */}
             {waiting.length === 0 && settled.length > 0 && (
-              <p className="text-xs text-slate-500">
+              <p className="text-sm text-slate-500">
                 {tr
                   ? 'Bekleyen layiha yok; kayıtlı olanların hepsi tebliğ edilmiş ya da geri çekilmiş.'
                   : 'Nothing is waiting; every filing recorded here was served or withdrawn.'}

@@ -43,7 +43,7 @@ export const PhasePanel: React.FC = () => {
       <QueryStatus queries={[phases]} />
 
       {rows.length === 0 ? (
-        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
           {tr
             ? 'Faz girilmemiş. Bloklar ve bütçe satırları faza bağlanabiliyor ama bağlanacak bir faz yok.'
             : 'No phase is recorded. Blocks and budget lines can belong to one, but there is none to belong to.'}
@@ -80,18 +80,18 @@ export const PhasePanel: React.FC = () => {
                       )}
                     </div>
                     {(tr ? phase.scopeTr : phase.scopeEn) ? (
-                      <p className="mt-0.5 text-xs text-slate-700">
+                      <p className="mt-0.5 text-sm text-slate-700">
                         {tr ? phase.scopeTr : phase.scopeEn}
                       </p>
                     ) : (
-                      <p className="mt-0.5 text-xs text-amber-800">
+                      <p className="mt-0.5 text-sm text-amber-800">
                         {tr
                           ? 'Kapsam yazılmamış — bu fazın neyi kapsadığı kayıtlı değil.'
                           : 'No scope recorded — what this phase covers is not written down.'}
                       </p>
                     )}
                     {(tr ? phase.objectiveTr : phase.objectiveEn) && (
-                      <p className="mt-0.5 text-xs text-slate-500 italic">
+                      <p className="mt-0.5 text-sm text-slate-500 italic">
                         {tr ? phase.objectiveTr : phase.objectiveEn}
                       </p>
                     )}
@@ -115,21 +115,21 @@ export const PhasePanel: React.FC = () => {
                   </div>
 
                   <div className="shrink-0 space-y-1 text-right">
-                    <p className="text-xs text-slate-500">
+                    <p className="text-sm text-slate-500">
                       {tr ? 'bloklar' : 'blocks'}{' '}
                       <span className="font-mono text-slate-800">
                         {phase.blocksComplete}/{phase.blocks}
                         {blockShare != null && ` · ${blockShare}%`}
                       </span>
                     </p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-sm text-slate-500">
                       {tr ? 'taşlar' : 'milestones'}{' '}
                       <span className="font-mono text-slate-800">
                         {phase.milestonesAchieved}/{phase.milestones}
                       </span>
                     </p>
                     {phase.milestonesMissed > 0 && (
-                      <p className="text-xs font-semibold text-rose-700">
+                      <p className="text-sm font-semibold text-rose-700">
                         {tr
                           ? `${phase.milestonesMissed} kaçırıldı`
                           : `${phase.milestonesMissed} missed`}

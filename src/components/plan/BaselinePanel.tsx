@@ -175,7 +175,7 @@ export const BaselinePanel: React.FC = () => {
           >
             {tr ? 'vazgeç' : 'cancel'}
           </button>
-          <p className="flex w-full items-center gap-1 text-xs text-amber-800">
+          <p className="flex w-full items-center gap-1 text-sm text-amber-800">
             <CameraOff className="h-3 w-3" aria-hidden="true" />
             {tr
               ? 'Alındıktan sonra değiştirilemez — düzeltilebilen bir temel plan, eski tarih takmış güncel plandır.'
@@ -190,19 +190,19 @@ export const BaselinePanel: React.FC = () => {
       <QueryStatus queries={[baselines, variance]} />
 
       {list.length === 0 ? (
-        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
           {tr
             ? 'Henüz temel plan alınmamış. “Altı ay önce ne demiştik” sorusunun cevabı, altı ay önce birinin bunu kaydetmiş olmasına bağlı — bugün alınan bir plan, altı ay sonra o cevabı verir.'
             : 'No baseline has been taken. The answer to “what did we say six months ago” depends on somebody having written it down six months ago — one taken today answers it six months from now.'}
         </p>
       ) : rows.length === 0 ? (
-        <p className="text-xs text-slate-500">
+        <p className="text-sm text-slate-500">
           {tr ? 'Bu temel planda kayıt yok.' : 'This baseline holds no milestones.'}
         </p>
       ) : (
         <>
           {totalPush > 0 && (
-            <p className="mb-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+            <p className="mb-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
               {tr
                 ? `Bu temel plandan bu yana ${pushed.length} tarih toplam ${totalPush} gün ertelendi.`
                 : `Since this baseline, ${pushed.length} ${pushed.length === 1 ? 'date has' : 'dates have'} been pushed out by ${totalPush} days in total.`}

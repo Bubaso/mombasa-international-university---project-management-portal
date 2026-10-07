@@ -158,7 +158,7 @@ export const ProposalCard: React.FC<{ proposal: Proposal }> = ({ proposal }) => 
       </blockquote>
 
       {settled ? (
-        <p className="mt-2 text-xs text-slate-500">
+        <p className="mt-2 text-sm text-slate-500">
           {proposal.state === 'applied'
             ? tr
               ? `Bu teklif kayda dönüştü${proposal.decidedAt ? ` — ${formatDate(proposal.decidedAt, language)}` : ''}.`
@@ -183,7 +183,7 @@ export const ProposalCard: React.FC<{ proposal: Proposal }> = ({ proposal }) => 
           </div>
 
           {missing.length > 0 && (
-            <p className="mt-2 text-xs text-slate-500">
+            <p className="mt-2 text-sm text-slate-500">
               {tr
                 ? `Kaydetmeden önce doldurulması gereken: ${missing.map((f) => f.label.tr).join(', ')}.`
                 : `Still needed before this can be recorded: ${missing.map((f) => f.label.en).join(', ')}.`}
@@ -240,7 +240,7 @@ export const ProposalCard: React.FC<{ proposal: Proposal }> = ({ proposal }) => 
           </div>
 
           {rejecting && (
-            <p className="mt-1.5 text-xs text-slate-500">
+            <p className="mt-1.5 text-sm text-slate-500">
               {tr
                 ? 'Reddedilen teklif kuyruktan çıkar, kararı belgenin yanında kalır ve aynı cümle bir daha teklif edilmez.'
                 : 'A declined proposal leaves the queue, its decision stays with the document, and the same sentence is not proposed again.'}

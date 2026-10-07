@@ -321,7 +321,7 @@ export const AssistantView: React.FC = () => {
                       {tr ? option.titleTr : option.titleEn}
                     </span>
                   </div>
-                  <p className="mt-1 text-xs text-slate-500">{tr ? option.whyTr : option.whyEn}</p>
+                  <p className="mt-1 text-sm text-slate-500">{tr ? option.whyTr : option.whyEn}</p>
                 </button>
               );
             })}
@@ -354,7 +354,7 @@ export const AssistantView: React.FC = () => {
 
             {shape.needs === 'window' && (
               <div className="flex flex-wrap items-end gap-3">
-                <label className="text-xs text-slate-600">
+                <label className="text-sm text-slate-600">
                   {tr ? 'Başlangıç' : 'From'}
                   <input
                     type="date"
@@ -364,7 +364,7 @@ export const AssistantView: React.FC = () => {
                     className="mt-0.5 block rounded border border-slate-300 px-2 py-1 text-sm"
                   />
                 </label>
-                <label className="text-xs text-slate-600">
+                <label className="text-sm text-slate-600">
                   {tr ? 'Bitiş' : 'To'}
                   <input
                     type="date"
@@ -374,7 +374,7 @@ export const AssistantView: React.FC = () => {
                     className="mt-0.5 block rounded border border-slate-300 px-2 py-1 text-sm"
                   />
                 </label>
-                <p className="text-xs text-slate-500">
+                <p className="text-sm text-slate-500">
                   {tr
                     ? `bugün ${formatDate(today, language)}`
                     : `today ${formatDate(today, language)}`}
@@ -383,7 +383,7 @@ export const AssistantView: React.FC = () => {
             )}
 
             <div className="flex items-center justify-between gap-2">
-              <p className="text-xs text-slate-500">
+              <p className="text-sm text-slate-500">
                 {tr
                   ? 'Sorduğunuz kaydedilir: kim ne sordu, kaç kayda dayandı.'
                   : 'What you ask is logged: who asked what, and how many records it rested on.'}
@@ -493,7 +493,7 @@ export const AssistantView: React.FC = () => {
 
               {answer.sources.length > 0 && (
                 <div className="mt-4 border-t border-slate-100 pt-3">
-                  <p className="mb-1.5 text-xs font-semibold tracking-wider text-slate-600 uppercase">
+                  <p className="mb-1.5 text-sm font-semibold tracking-wider text-slate-600 uppercase">
                     {tr ? 'Dayandığı kayıtlar' : 'What it rests on'}
                   </p>
                   <ol className="space-y-1">
@@ -531,7 +531,7 @@ export const AssistantView: React.FC = () => {
                 </div>
               )}
 
-              <p className="mt-3 text-xs text-slate-500">
+              <p className="mt-3 text-sm text-slate-500">
                 {tr
                   ? 'Kaydetme düğmesi yok. Bu metni bir kayda eklemek isteyen kişi ilgili ekranda kendi adıyla ekler.'
                   : 'There is no save button. Putting this into a record is done on that record’s own screen, under the name of whoever does it .'}
@@ -558,14 +558,14 @@ export const AssistantView: React.FC = () => {
             <h2 className="text-base font-bold text-slate-900">
               {tr ? 'Son sorulanlar' : 'Recently asked'}
             </h2>
-            <p className="mb-2 text-xs text-slate-500">
+            <p className="mb-2 text-sm text-slate-500">
               {tr
                 ? 'Kendi sorularınız. Yönetici ve denetçiler herkesin sorularını görür.'
                 : "Your own questions. Administrators and auditors see everyone's."}
             </p>
             <QueryStatus queries={[log]} />
             {(log.data?.rows ?? []).length === 0 ? (
-              <p className="text-xs text-slate-500">
+              <p className="text-sm text-slate-500">
                 {tr ? 'Henüz bir şey sorulmadı.' : 'Nothing has been asked yet.'}
               </p>
             ) : (
@@ -577,7 +577,7 @@ export const AssistantView: React.FC = () => {
                   >
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm text-slate-900">{row.question}</p>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-sm text-slate-500">
                         {[
                           row.askerName,
                           tr ? TASKS[row.task]?.titleTr : TASKS[row.task]?.titleEn,

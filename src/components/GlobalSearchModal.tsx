@@ -230,7 +230,7 @@ export const GlobalSearchModal: React.FC = () => {
                   ? 'On dokuz kütüğün tamamında arar: davalar, kararlar, tutanaklar, belgeler, paydaşlar, yükümlülükler, riskler, saha işleri, ödemeler.'
                   : 'Searches all nineteen registers: cases, orders, minutes, documents, stakeholders, obligations, risks, site work, payments.'}
               </p>
-              <p className="text-xs text-slate-500">
+              <p className="text-sm text-slate-500">
                 {tr
                   ? 'Türkçe sorgu İngilizce kaydı bulur, çünkü kayıtlar iki dilli tutuluyor. Dava numarası yazarsanız harfi harfine eşleşir.'
                   : 'A Turkish query finds an English record, because the records are kept in both. Type a case number and it matches literally.'}
@@ -240,7 +240,7 @@ export const GlobalSearchModal: React.FC = () => {
                   suggestions this box has any business showing (M13-11). */}
               {(saved.data ?? []).length > 0 && (
                 <div className="mx-auto max-w-md space-y-1.5 text-left">
-                  <p className="text-xs font-semibold tracking-wider text-slate-600 uppercase">
+                  <p className="text-sm font-semibold tracking-wider text-slate-600 uppercase">
                     {tr ? 'Kayıtlı aramalarınız' : 'Your saved searches'}
                   </p>
                   {(saved.data ?? []).map((item) => (
@@ -293,7 +293,7 @@ export const GlobalSearchModal: React.FC = () => {
           {rows.length > 0 && (
             <>
               <div className="flex items-center justify-between">
-                <p className="text-xs text-slate-500">
+                <p className="text-sm text-slate-500">
                   {tr ? `${rows.length} sonuç` : `${rows.length} results`}
                 </p>
                 {!naming ? (
@@ -389,10 +389,10 @@ export const GlobalSearchModal: React.FC = () => {
                             )}
                           </div>
                           {hit.subtitle && (
-                            <p className="mt-0.5 truncate text-xs text-slate-500">{hit.subtitle}</p>
+                            <p className="mt-0.5 truncate text-sm text-slate-500">{hit.subtitle}</p>
                           )}
                           {hit.snippet && (
-                            <p className="mt-0.5 line-clamp-2 text-xs text-slate-600">
+                            <p className="mt-0.5 line-clamp-2 text-sm text-slate-600">
                               <Snippet text={hit.snippet} />
                             </p>
                           )}

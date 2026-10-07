@@ -117,7 +117,7 @@ export const TriagePanel: React.FC = () => {
             <h2 className="text-base font-bold text-slate-900">
               {tr ? 'Aksiyon adayları' : 'Action candidates'}
             </h2>
-            <p className="max-w-2xl text-xs text-slate-500">
+            <p className="max-w-2xl text-sm text-slate-500">
               {tr
                 ? 'Tutanaklardan gelen aksiyon cümleleri. Sorumlusu ve tarihi yazılmadan aksiyon sayılmıyor.'
                 : 'Action sentences from the minutes. Nothing counts as an action until it has an owner and a date.'}
@@ -160,7 +160,7 @@ export const TriagePanel: React.FC = () => {
       <QueryStatus queries={[candidates]} />
 
       {shown.length === 0 ? (
-        <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900">
+        <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
           {filter === 'pending'
             ? tr
               ? 'Kuyruk boş — tutanaklardaki her aksiyon cümlesi ya bir aksiyona dönüştü ya da gerekçesiyle elendi.'
@@ -243,7 +243,7 @@ export const TriagePanel: React.FC = () => {
                     </div>
 
                     {c.dismissedReason && (
-                      <p className="mt-1 text-xs text-slate-600">
+                      <p className="mt-1 text-sm text-slate-600">
                         {tr ? 'Gerekçe: ' : 'Reason: '}
                         {c.dismissedReason}
                       </p>
@@ -308,7 +308,7 @@ export const TriagePanel: React.FC = () => {
                           {tr ? 'vazgeç' : 'cancel'}
                         </button>
                         {!c.namesADate && (
-                          <p className="w-full text-xs text-amber-800">
+                          <p className="w-full text-sm text-amber-800">
                             {tr
                               ? 'Tutanakta tarih yok. Tarihi siz koyuyorsunuz — bu bir alan doldurmak değil, bir karar vermek.'
                               : 'The minute gives no date. You are setting one, which is a decision rather than a field.'}

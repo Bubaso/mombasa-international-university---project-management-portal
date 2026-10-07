@@ -201,13 +201,13 @@ const TaskGroup: React.FC<{
       <div className="mb-1.5 flex flex-wrap items-baseline gap-2">
         <h3 className="text-sm font-semibold text-slate-800">{heading}</h3>
         <Pill>{waiting.length}</Pill>
-        {note && <p className="text-xs text-slate-500">{note}</p>}
+        {note && <p className="text-sm text-slate-500">{note}</p>}
       </div>
       <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white">
         {waiting.map(row)}
       </ul>
       {waiting.length === 0 && settled.length > 0 && (
-        <p className="mt-1.5 text-xs text-slate-500">
+        <p className="mt-1.5 text-sm text-slate-500">
           {tr
             ? 'Bu grupta bekleyen görev yok; hepsi tamamlanmış.'
             : 'No task is waiting in this group; every one is complete.'}
@@ -234,7 +234,7 @@ const TaskDetail: React.FC<{ task: SiteTask; canReport: boolean }> = ({ task, ca
   return (
     <div className="space-y-3 border-t border-slate-100 bg-slate-50/60 px-3 py-3">
       {task.kind === 'preservation' && (task.legalBasisEn ?? task.legalBasisTr) && (
-        <p className="rounded-lg border border-orange-200 bg-orange-50 px-2.5 py-1.5 text-xs leading-relaxed text-orange-900">
+        <p className="rounded-lg border border-orange-200 bg-orange-50 px-2.5 py-1.5 text-sm leading-relaxed text-orange-900">
           <span className="font-semibold">{tr ? 'Hukukî dayanak: ' : 'Legal basis: '}</span>
           {tr ? (task.legalBasisTr ?? task.legalBasisEn) : task.legalBasisEn}
         </p>
@@ -243,7 +243,7 @@ const TaskDetail: React.FC<{ task: SiteTask; canReport: boolean }> = ({ task, ca
       <QueryStatus queries={[reports]} />
 
       {(reports.data ?? []).length === 0 ? (
-        <p className="text-xs text-amber-800">
+        <p className="text-sm text-amber-800">
           {tr
             ? 'Hiç rapor yok. Bu görev hakkında kimse bir şey söylememiş — sıfırda olduğu söylenmemiş.'
             : 'No reports. Nobody has said anything about this task — not that it is at nought.'}
@@ -255,7 +255,7 @@ const TaskDetail: React.FC<{ task: SiteTask; canReport: boolean }> = ({ task, ca
             return (
               <li
                 key={report.id}
-                className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs"
+                className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm"
               >
                 <div className="flex flex-wrap items-center gap-x-2.5">
                   <span className="font-mono font-semibold text-slate-900">
@@ -354,7 +354,7 @@ const ReportForm: React.FC<{ taskId: string; onDone: () => void }> = ({ taskId, 
       </Field>
 
       {(documents.data ?? []).length === 0 && (
-        <p className="text-xs text-amber-800">
+        <p className="text-sm text-amber-800">
           {tr
             ? 'Kasada belge yok. Fotoğrafı veya raporu önce Belge Kasası’na yükleyin — kanıt oraya, özetiyle birlikte konur.'
             : 'The vault is empty. Upload the photograph or the report there first — evidence belongs in the vault, with a digest against it.'}
@@ -432,7 +432,7 @@ const NewTaskForm: React.FC<{
         }}
         className="space-y-2 rounded-lg border border-slate-200 bg-white p-2.5"
       >
-        <p className="text-xs text-slate-600">
+        <p className="text-sm text-slate-600">
           {tr
             ? 'Bu blokta iş paketi yok; önce bir tane açın.'
             : 'This block has no work package yet; open one first.'}

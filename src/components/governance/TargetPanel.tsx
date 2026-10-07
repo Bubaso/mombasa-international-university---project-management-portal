@@ -37,7 +37,7 @@ export const TargetPanel: React.FC = () => {
           <h2 className="text-base font-bold text-slate-900">
             {tr ? 'Sayılı yükümlülükler' : 'Obligations with a number'}
           </h2>
-          <p className="text-xs text-slate-500">
+          <p className="text-sm text-slate-500">
             {tr
               ? 'Burs, cami ve kira sözleşmesinden doğan taahhütler. Belgesiz kayıt kabul edilmiyor.'
               : 'Scholarship, mosque and the other undertakings from the lease. No entry is accepted without its document.'}
@@ -48,7 +48,7 @@ export const TargetPanel: React.FC = () => {
       <QueryStatus queries={[progress]} />
 
       {rows.length === 0 ? (
-        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
           {tr
             ? 'Sayılı bir yükümlülük kaydedilmemiş. Kira sözleşmesindeki %20 tam burs ve kampüs camisi bu şekilde takip edilir.'
             : 'No quantified obligation is recorded. The lease’s twenty per cent full-scholarship share and the campus mosque are tracked this way.'}
@@ -69,7 +69,7 @@ export const TargetPanel: React.FC = () => {
                       <Pill>{row.source}</Pill>
                       {row.periodLabel && <Pill>{row.periodLabel}</Pill>}
                     </div>
-                    <p className="mt-0.5 text-xs text-slate-600">
+                    <p className="mt-0.5 text-sm text-slate-600">
                       {(tr ? row.basisTr : row.basisEn) ?? row.basisEn}
                     </p>
                     <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
@@ -101,7 +101,7 @@ export const TargetPanel: React.FC = () => {
                           {row.achieved ?? 0}
                           <span className="text-slate-500">/{row.targetValue}</span>
                         </p>
-                        <p className="text-xs text-slate-500">
+                        <p className="text-sm text-slate-500">
                           {row.unit}
                           {share != null && ` · ${share}%`}
                         </p>

@@ -132,7 +132,7 @@ export const GovernanceCharterView: React.FC = () => {
           <p className="text-base font-semibold text-slate-900">
             {tr ? 'Uyum ve akademik hazırlık' : 'Compliance and academic readiness'}
           </p>
-          <p className="text-xs text-slate-500">
+          <p className="text-sm text-slate-500">
             {tr
               ? 'Fasıl 164 ve KRA takvimi, CUE listesi, berat yolu, programlar.'
               : 'The Cap 164 and KRA calendar, the CUE checklist, the road map.'}

@@ -151,7 +151,7 @@ const StepChart: React.FC<{ series: Series[]; name: string; unit?: string }> = (
 /** What a series is waiting for, said as a count rather than as "no data". */
 const Waiting: React.FC<{ lines: string[] }> = ({ lines }) => (
   <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
-    <p className="flex items-start gap-1.5 text-xs leading-relaxed text-amber-900">
+    <p className="flex items-start gap-1.5 text-sm leading-relaxed text-amber-900">
       <Info className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
       <span>
         {lines.map((line) => (
@@ -232,7 +232,7 @@ export const CurvePanel: React.FC = () => {
         <ChartLine className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" aria-hidden="true" />
         <div>
           <h2 className="text-base font-bold text-slate-900">{tr ? 'Eğriler' : 'The curves'}</h2>
-          <p className="max-w-2xl text-xs text-slate-500">
+          <p className="max-w-2xl text-sm text-slate-500">
             {tr
               ? 'İlerleme, harcama ve risk seyri. Çizilemiyorsa hangi sayının eksik olduğunu söyler.'
               : 'Progress, spend and risk over time. Where a curve cannot be drawn, it names the missing figure.'}
@@ -414,7 +414,7 @@ export const CurvePanel: React.FC = () => {
       )}
 
       {data && (
-        <p className="mt-3 text-xs text-slate-500">
+        <p className="mt-3 text-sm text-slate-500">
           {tr
             ? 'Her nokta kayıttan gelen bir tarihtir; aradaki çizgi basamak şeklinde, çünkü iki ölçüm arasını eğri geçirmek kimsenin ölçmediği günlere değer yazmak olur.'
             : 'Every point is a date from the record, and the line between two of them is a step: smoothing it would write values on days nobody measured.'}

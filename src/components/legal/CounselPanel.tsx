@@ -152,7 +152,7 @@ export const CounselPanel: React.FC<{ caseId: string; canManage: boolean }> = ({
                         ))}
                       </Select>
                     </Field>
-                    <label className="flex cursor-pointer items-center gap-1.5 pb-1.5 text-xs text-slate-700">
+                    <label className="flex cursor-pointer items-center gap-1.5 pb-1.5 text-sm text-slate-700">
                       <input
                         type="checkbox"
                         checked={entry.powerOfAttorneyFiled}
@@ -192,7 +192,7 @@ export const CounselPanel: React.FC<{ caseId: string; canManage: boolean }> = ({
           {recording && <OpinionForm caseId={caseId} onDone={() => setRecording(false)} />}
 
           {byQuestion.length === 0 && !recording ? (
-            <p className="text-xs leading-relaxed text-slate-500">
+            <p className="text-sm leading-relaxed text-slate-500">
               {tr
                 ? 'Aynı soruya birden fazla avukattan alınan görüşler burada yan yana okunur. Tek tek okununca yazışma, yan yana okununca karşılaştırmadır.'
                 : 'Opinions from different advisers on the same question are read side by side here. One at a time they are correspondence; together they are a comparison.'}
@@ -207,7 +207,7 @@ export const CounselPanel: React.FC<{ caseId: string; canManage: boolean }> = ({
                 <ul className="mt-1.5 space-y-1.5">
                   {(group.rows ?? []).map((opinion) => (
                     <li key={opinion.id} className="border-l-2 border-slate-200 pl-2.5">
-                      <p className="text-xs font-medium text-slate-700">
+                      <p className="text-sm font-medium text-slate-700">
                         {opinion.givenByName ?? (tr ? 'kim olduğu kayıtlı değil' : 'unattributed')}
                         {opinion.givenOn && (
                           <span className="ml-1.5 font-mono text-xs text-slate-500">
@@ -216,7 +216,7 @@ export const CounselPanel: React.FC<{ caseId: string; canManage: boolean }> = ({
                         )}
                       </p>
                       {opinion.conclusion && (
-                        <p className="text-xs leading-relaxed text-slate-600">
+                        <p className="text-sm leading-relaxed text-slate-600">
                           {opinion.conclusion}
                         </p>
                       )}
@@ -278,7 +278,7 @@ const AssignForm: React.FC<{ caseId: string; onDone: () => void }> = ({ caseId, 
       </div>
 
       {advocates.length === 0 && (
-        <p className="mt-2 text-xs text-slate-500">
+        <p className="mt-2 text-sm text-slate-500">
           {tr
             ? 'Paydaş kütüğünde "Hukuk" kategorisinde kimse yok. Avukatı önce kütüğe ekleyin.'
             : 'Nobody in the register is categorised as legal. Add the advocate there first.'}
@@ -333,7 +333,7 @@ const OpinionForm: React.FC<{ caseId: string; onDone: () => void }> = ({ caseId,
       <Field label={tr ? 'Hangi soruya' : 'The question it answers'}>
         <TextInput value={question} onChange={(e) => setQuestion(e.target.value)} required />
       </Field>
-      <p className="mt-1 text-xs text-slate-500">
+      <p className="mt-1 text-sm text-slate-500">
         {tr
           ? 'Aynı soruyu aynı sözlerle yazın: görüşler soruya göre gruplanıyor, farklı yazılan soru ayrı bir soru sayılır.'
           : 'Word the same question the same way: opinions are grouped by it, so a different wording reads as a different question.'}

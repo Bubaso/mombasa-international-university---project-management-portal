@@ -71,7 +71,7 @@ export const ReviewPanel: React.FC = () => {
             <h2 className="text-base font-bold text-slate-900">
               {tr ? 'Tedarikçi performansı' : 'Supplier performance'}
             </h2>
-            <p className="text-xs text-slate-500">
+            <p className="text-sm text-slate-500">
               {tr
                 ? 'Tarihli, puanlı ve sonradan değiştirilemez; düzeltme yeni değerlendirme olarak yazılır.'
                 : 'Dated, scored and unalterable; a correction is written as a new review.'}
@@ -172,7 +172,7 @@ export const ReviewPanel: React.FC = () => {
             </Field>
           </div>
 
-          <p className="flex items-center gap-1 text-xs text-amber-800">
+          <p className="flex items-center gap-1 text-sm text-amber-800">
             <Lock className="h-3 w-3" aria-hidden="true" />
             {tr ? 'Kaydedildikten sonra düzeltilemez.' : 'Once recorded this cannot be edited.'}
           </p>
@@ -196,7 +196,7 @@ export const ReviewPanel: React.FC = () => {
       <QueryStatus queries={[reviews]} />
 
       {rows.length === 0 ? (
-        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
           {tr
             ? 'Değerlendirme yok. Bir tedarikçinin nasıl çalıştığı, sözleşme yenilenirken sorulacak ilk soru — ve kayıt yoksa cevabı hatırada kalıyor.'
             : 'No review yet. How a supplier performed is the first question asked when a contract comes up for renewal, and without a record the answer lives in somebody’s memory.'}
@@ -223,7 +223,7 @@ export const ReviewPanel: React.FC = () => {
                       {review.overall.toFixed(2)} / 5
                     </Pill>
                   </div>
-                  <p className="mt-0.5 text-xs text-slate-700">
+                  <p className="mt-0.5 text-sm text-slate-700">
                     {(tr ? review.noteTr : review.noteEn) ?? review.noteEn}
                   </p>
                   <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -237,7 +237,7 @@ export const ReviewPanel: React.FC = () => {
                       </span>
                     ))}
                   </div>
-                  <p className="mt-0.5 text-xs text-slate-500">
+                  <p className="mt-0.5 text-sm text-slate-500">
                     {[
                       review.reviewedByName,
                       formatDate(review.reviewedAt, language),

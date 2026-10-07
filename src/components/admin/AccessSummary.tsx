@@ -71,13 +71,13 @@ export const AccessSummary: React.FC<{ authority: Authority | null | undefined }
         <div className="space-y-4">
           <dl className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-              <dt className="text-xs text-slate-500">{tr ? 'Göreviniz' : 'Your role'}</dt>
+              <dt className="text-sm text-slate-500">{tr ? 'Göreviniz' : 'Your role'}</dt>
               <dd className="text-sm font-semibold text-slate-900">
                 {roleLabel(authority.role, language)}
               </dd>
             </div>
             <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-              <dt className="text-xs text-slate-500">
+              <dt className="text-sm text-slate-500">
                 {tr ? 'Gizlilik seviyeniz' : 'Your clearance'}
               </dt>
               <dd>
@@ -87,7 +87,7 @@ export const AccessSummary: React.FC<{ authority: Authority | null | undefined }
               </dd>
             </div>
             <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-              <dt className="text-xs text-slate-500">{tr ? 'Konumunuz' : 'Standing'}</dt>
+              <dt className="text-sm text-slate-500">{tr ? 'Konumunuz' : 'Standing'}</dt>
               <dd className="text-sm font-semibold text-slate-900">
                 {authority.isInternal
                   ? tr
@@ -110,7 +110,7 @@ export const AccessSummary: React.FC<{ authority: Authority | null | undefined }
                     : 'You are acting on a delegation'}
                 </span>
               </div>
-              <ul className="mt-1.5 space-y-1 text-xs text-amber-900/90">
+              <ul className="mt-1.5 space-y-1 text-sm text-amber-900/90">
                 {lent.map((d) => (
                   <li key={d.lenderId}>
                     {tr
@@ -119,7 +119,7 @@ export const AccessSummary: React.FC<{ authority: Authority | null | undefined }
                   </li>
                 ))}
               </ul>
-              <p className="mt-1.5 text-xs text-amber-900/70">
+              <p className="mt-1.5 text-sm text-amber-900/70">
                 {tr
                   ? 'Yaptığınız her işlem denetim kaydına kendi adınızla yazılır.'
                   : 'Everything you do is written to the audit trail under your own name.'}
@@ -175,11 +175,11 @@ const ScopeList: React.FC<{
       <span>{title}</span>
     </div>
     {items.length === 0 ? (
-      <p className="mt-1.5 text-xs text-slate-500">{empty}</p>
+      <p className="mt-1.5 text-sm text-slate-500">{empty}</p>
     ) : (
       <ul className="mt-1.5 space-y-1">
         {items.map((item) => (
-          <li key={item.key} className="flex items-baseline justify-between gap-2 text-xs">
+          <li key={item.key} className="flex items-baseline justify-between gap-2 text-sm">
             <span className="min-w-0 truncate text-slate-700">{item.label}</span>
             {item.note && <span className="shrink-0 text-slate-500">{item.note}</span>}
           </li>

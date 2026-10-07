@@ -139,7 +139,7 @@ export const RequestPanel: React.FC = () => {
                 {requestStateLabel(request.state, language)}
               </Pill>
             </div>
-            <p className="mt-0.5 text-xs text-slate-600">
+            <p className="mt-0.5 text-sm text-slate-600">
               {(tr ? request.justificationTr : request.justificationEn) ?? request.justificationEn}
             </p>
             <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
@@ -186,7 +186,7 @@ export const RequestPanel: React.FC = () => {
         {open && (
           <div className="mt-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
             <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-              <p className="text-xs font-semibold tracking-wider text-slate-600 uppercase">
+              <p className="text-sm font-semibold tracking-wider text-slate-600 uppercase">
                 {tr ? 'Adaylar' : 'Candidates'}
               </p>
               {!adding && request.state !== 'awarded' && (
@@ -300,7 +300,7 @@ export const RequestPanel: React.FC = () => {
             <WriteError error={reject.error} />
 
             {(candidates.data ?? []).length === 0 ? (
-              <p className="text-xs text-slate-500">
+              <p className="text-sm text-slate-500">
                 {tr ? 'Henüz aday girilmemiş.' : 'No candidate has been entered yet.'}
               </p>
             ) : (
@@ -462,7 +462,7 @@ export const RequestPanel: React.FC = () => {
               {tr ? 'Tedarik talepleri ve aday karşılaştırması' : 'Requests and candidates'}
               <Pill>{waiting.length}</Pill>
             </h2>
-            <p className="text-xs text-slate-500">
+            <p className="text-sm text-slate-500">
               {tr
                 ? 'Onay, ödemelerdeki aynı tutar bandından geçer; talep eden kendi talebini onaylayamaz.'
                 : 'Approval uses the same money bands as a payment; a requester cannot approve their own.'}
@@ -579,7 +579,7 @@ export const RequestPanel: React.FC = () => {
             >
               {tr ? 'vazgeç' : 'cancel'}
             </button>
-            <p className="text-xs text-slate-500">
+            <p className="text-sm text-slate-500">
               {tr
                 ? 'Tahmin, kimin onaylayabileceğini belirleyen bandı seçiyor.'
                 : 'The estimate decides which approval band applies.'}
@@ -595,7 +595,7 @@ export const RequestPanel: React.FC = () => {
       <WriteError error={approve.error} />
 
       {rows.length === 0 ? (
-        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
           {tr
             ? 'Kayıtlı tedarik talebi yok. Dört avukat adayı, müteahhit seçimi ve denetçi arayışı bu kütükte durur.'
             : 'No procurement is on the register. The four counsel candidates, the contractor selection and the search for an auditor belong here.'}
@@ -608,7 +608,7 @@ export const RequestPanel: React.FC = () => {
               kapananların altında "hepsi sonuçlandı" ile "hiç talep yoktu"yu
               birbirine karıştırır. */}
           {waiting.length === 0 && settled.length > 0 && (
-            <p className="text-xs text-slate-500">
+            <p className="text-sm text-slate-500">
               {tr
                 ? 'Bekleyen tedarik talebi yok; kayıtlı olanların hepsi ihale edilmiş ya da iptal edilmiş.'
                 : 'No request is waiting; every one recorded here was awarded or cancelled.'}

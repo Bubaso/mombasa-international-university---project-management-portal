@@ -62,7 +62,7 @@ export const DocumentOrigin: React.FC<{ documentId: string }> = ({ documentId })
 
       {created.length > 0 && (
         <div>
-          <p className="flex items-center gap-1.5 text-xs font-medium text-emerald-800">
+          <p className="flex items-center gap-1.5 text-sm font-medium text-emerald-800">
             <FileCheck2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             {tr
               ? `${created.length} kayıt açıldı`
@@ -83,7 +83,7 @@ export const DocumentOrigin: React.FC<{ documentId: string }> = ({ documentId })
                     {row.decidedByName ? ` · ${row.decidedByName}` : ''}
                   </span>
                 </div>
-                <p className="mt-1 flex gap-1.5 text-xs leading-relaxed text-slate-600 italic">
+                <p className="mt-1 flex gap-1.5 text-sm leading-relaxed text-slate-600 italic">
                   <Quote className="mt-0.5 h-3 w-3 shrink-0 text-emerald-700" aria-hidden="true" />
                   {row.quote}
                 </p>
@@ -95,7 +95,7 @@ export const DocumentOrigin: React.FC<{ documentId: string }> = ({ documentId })
 
       {declined.length > 0 && (
         <div>
-          <p className="flex items-center gap-1.5 text-xs font-medium text-slate-600">
+          <p className="flex items-center gap-1.5 text-sm font-medium text-slate-600">
             <Trash2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             {tr
               ? `${declined.length} teklif reddedildi — bir daha teklif edilmiyor`
@@ -113,8 +113,8 @@ export const DocumentOrigin: React.FC<{ documentId: string }> = ({ documentId })
                     {formatDate(row.decidedAt, language)}
                   </span>
                 </div>
-                {row.note && <p className="mt-1 text-xs text-slate-600">{row.note}</p>}
-                <p className="mt-1 flex gap-1.5 text-xs leading-relaxed text-slate-500 italic">
+                {row.note && <p className="mt-1 text-sm text-slate-600">{row.note}</p>}
+                <p className="mt-1 flex gap-1.5 text-sm leading-relaxed text-slate-500 italic">
                   <Quote className="mt-0.5 h-3 w-3 shrink-0 text-slate-400" aria-hidden="true" />
                   {row.quote}
                 </p>

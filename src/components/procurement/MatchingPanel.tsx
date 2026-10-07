@@ -143,7 +143,7 @@ export const MatchingPanel: React.FC = () => {
             <h2 className="text-base font-semibold text-slate-900">
               {tr ? 'Ödeme planı ↔ hakediş eşleştirmesi' : 'Payment schedule ↔ valuation match'}
             </h2>
-            <p className="max-w-2xl text-xs leading-relaxed text-slate-500">
+            <p className="max-w-2xl text-sm leading-relaxed text-slate-500">
               {tr
                 ? 'Hiçbiri engellenmiyor; engellenen şey iki kaydın sessizce ayrı rakam söylemesi.'
                 : 'Nothing here is blocked; what is blocked is two records quietly saying different figures.'}
@@ -156,13 +156,13 @@ export const MatchingPanel: React.FC = () => {
         <QueryStatus queries={[matching, unscheduled, health]} />
 
         {nothingToMatch ? (
-          <p className="text-xs text-slate-500">
+          <p className="text-sm text-slate-500">
             {tr
               ? 'Eşleştirilecek bir şey yok: ne ödeme planı taksiti ne de ölçülmüş bir hakediş kayıtlı. Bu "her şey yerinde" demek değil — henüz karşılaştırılacak iki kayıt yok.'
               : 'There is nothing to match: no schedule instalment and no measured valuation is recorded. That is not "all in order" — there are not yet two registers to compare.'}
           </p>
         ) : lines.length === 0 ? (
-          <p className="text-xs text-slate-500">
+          <p className="text-sm text-slate-500">
             {tr
               ? 'İki kayıt arasında ölçülebilir bir uyuşmazlık yok. Bu, her taksitin ölçülmüş bir işe bağlı olduğu anlamına gelmez — planlanmış bir taksitin arkasında henüz hakediş olmaması normaldir.'
               : 'No measurable disagreement between the two registers. That does not mean every instalment cites measured work — a planned instalment with no valuation yet is the normal state of a payment plan.'}
@@ -173,7 +173,7 @@ export const MatchingPanel: React.FC = () => {
               <ScaleIcon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
               {tr ? 'İki kaydın ayrıldığı yerler' : 'Where the two registers part company'}
             </p>
-            <ul className="mt-1.5 space-y-0.5 text-xs text-amber-900">
+            <ul className="mt-1.5 space-y-0.5 text-sm text-amber-900">
               {lines.map((line) => (
                 <li key={line}>· {line}</li>
               ))}
@@ -183,11 +183,11 @@ export const MatchingPanel: React.FC = () => {
 
         {/* Measured work with no instalment: the half that was missing. */}
         <div>
-          <p className="mb-1.5 text-xs font-semibold tracking-wider text-slate-600 uppercase">
+          <p className="mb-1.5 text-sm font-semibold tracking-wider text-slate-600 uppercase">
             {tr ? 'Ödemesi planlanmamış hakediş' : 'Measured work with no instalment'}
           </p>
           {owed.length === 0 ? (
-            <p className="text-xs text-slate-500">
+            <p className="text-sm text-slate-500">
               {nothingToMatch
                 ? tr
                   ? 'Kayıtlı hakediş yok.'
@@ -246,11 +246,11 @@ export const MatchingPanel: React.FC = () => {
 
         {/* Instalments something is wrong with. */}
         <div className="border-t border-slate-200 pt-2">
-          <p className="mb-1.5 text-xs font-semibold tracking-wider text-slate-600 uppercase">
+          <p className="mb-1.5 text-sm font-semibold tracking-wider text-slate-600 uppercase">
             {tr ? 'Hakedişiyle ayrışan taksitler' : 'Instalments that part from their valuation'}
           </p>
           {flagged.length === 0 ? (
-            <p className="flex items-center gap-1.5 text-xs text-slate-500">
+            <p className="flex items-center gap-1.5 text-sm text-slate-500">
               <SearchX className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
               {nothingToMatch
                 ? tr
@@ -291,7 +291,7 @@ export const MatchingPanel: React.FC = () => {
                       )}
                     </div>
                     <p
-                      className={`text-xs ${verdict.grave ? 'font-medium text-rose-700' : 'text-slate-500'}`}
+                      className={`text-sm ${verdict.grave ? 'font-medium text-rose-700' : 'text-slate-500'}`}
                     >
                       {money(row.amount, row.currency)}
                       {row.valuationAmount != null && (

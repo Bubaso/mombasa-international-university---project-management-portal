@@ -79,7 +79,7 @@ export const NotificationPanel: React.FC = () => {
             <h2 className="text-base font-bold text-slate-900">
               {tr ? 'Bildirimler' : 'Notifications'}
             </h2>
-            <p className="max-w-2xl text-xs text-slate-500">
+            <p className="max-w-2xl text-sm text-slate-500">
               {tr
                 ? 'Duruşma ve son tarih bildirimi portal içinde kapatılamaz.'
                 : 'Hearing and deadline notifications cannot be switched off inside the portal.'}
@@ -110,7 +110,7 @@ export const NotificationPanel: React.FC = () => {
           whether or not there is anything in the list. */}
       <div className="mb-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
         {health.data == null ? (
-          <p className="flex items-start gap-1.5 text-xs text-amber-900">
+          <p className="flex items-start gap-1.5 text-sm text-amber-900">
             <TriangleAlert className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
             {tr
               ? 'Bildirim taraması hiç çalışmamış. Gelen kutusu bu yüzden boş olabilir — bir şeyin olmaması değil, kimsenin bakmamış olması.'
@@ -169,7 +169,7 @@ export const NotificationPanel: React.FC = () => {
             {tr ? 'Gelen kutusu' : 'Inbox'}
           </h3>
           {rows.length === 0 ? (
-            <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+            <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
               {tr
                 ? 'Bildirim yok. Bildirimler taramadan gelir; yukarıdaki satır en son ne zaman çalıştığını söylüyor.'
                 : 'No notifications. They come from the sweep; the line above says when it last ran.'}
@@ -207,14 +207,14 @@ export const NotificationPanel: React.FC = () => {
                       </button>
                     )}
                   </div>
-                  {n.body && <p className="mt-0.5 text-xs text-slate-600">{n.body}</p>}
+                  {n.body && <p className="mt-0.5 text-sm text-slate-600">{n.body}</p>}
                   <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-slate-500">
                     <span className="font-mono">{formatDate(n.raisedAt, language)}</span>
                     {n.raisedBy && <span>{n.raisedBy}</span>}
                   </div>
                   {/* The column that keeps this honest. */}
                   {n.awaitingAProvider.length > 0 && (
-                    <p className="mt-1 flex items-start gap-1 text-xs text-amber-800">
+                    <p className="mt-1 flex items-start gap-1 text-sm text-amber-800">
                       <TriangleAlert className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
                       {tr
                         ? `${n.awaitingAProvider.map((m) => mediumName(m, tr)).join(', ')} ile gönderilmedi — bu proje için sağlayıcı bağlı değil.`
@@ -277,7 +277,7 @@ export const NotificationPanel: React.FC = () => {
               <tbody className="divide-y divide-slate-100">
                 {TOPICS.map((t) => (
                   <tr key={t.key}>
-                    <td className="px-2 py-1.5 text-xs text-slate-800">
+                    <td className="px-2 py-1.5 text-sm text-slate-800">
                       {tr ? t.tr : t.en}
                       {t.critical && (
                         <span className="ml-1 text-xs text-rose-700">
@@ -318,7 +318,7 @@ export const NotificationPanel: React.FC = () => {
             </table>
           </div>
           <WriteError error={setPreference.error} />
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-sm text-slate-500">
             {tr
               ? 'Bu tercihler yalnızca sizindir — yönetici dahil kimse okuyamaz. Kritik olanların açık kalmasını denetim değil, veritabanı garanti ediyor.'
               : 'These preferences are yours alone; nobody, an administrator included, can read them. What keeps the critical ones on is the database, not supervision.'}

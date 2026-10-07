@@ -35,7 +35,7 @@ export const RoadmapPanel: React.FC = () => {
           <h2 className="text-base font-bold text-slate-900">
             {tr ? 'Berat yol haritası' : 'Charter road map'}
           </h2>
-          <p className="text-xs text-slate-500">
+          <p className="text-sm text-slate-500">
             {tr
               ? 'Aşamalar, bağımlılıkları ve hedef tarihleri.'
               : 'The stages, their dependencies and target dates.'}
@@ -46,7 +46,7 @@ export const RoadmapPanel: React.FC = () => {
       <QueryStatus queries={[roadmap]} />
 
       {rows.length === 0 ? (
-        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
           {tr
             ? 'Yol haritası boş. Aşamalar girilene kadar beratın ne kadar yakın olduğu söylenemez.'
             : 'The road map is empty. Until the stages are entered, nothing can be said about how close the charter is.'}
@@ -95,7 +95,7 @@ export const RoadmapPanel: React.FC = () => {
                       )}
                     </div>
                     {(tr ? stage.detailTr : stage.detailEn) && (
-                      <p className="mt-0.5 text-xs text-slate-600">
+                      <p className="mt-0.5 text-sm text-slate-600">
                         {tr ? stage.detailTr : stage.detailEn}
                       </p>
                     )}

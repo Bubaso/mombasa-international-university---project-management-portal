@@ -197,7 +197,7 @@ const BoqItems: React.FC<{
       <QueryStatus queries={[items]} />
 
       {(items.data ?? []).length === 0 ? (
-        <p className="text-xs text-slate-500">
+        <p className="text-sm text-slate-500">
           {tr ? 'Bu sürümde kalem yok.' : 'No lines in this version.'}
         </p>
       ) : (
@@ -533,7 +533,7 @@ const ValuationSection: React.FC<{
               kapananların altında "hepsi ödendi" ile "hiç hakediş yoktu"yu
               birbirine karıştırır. */}
           {waiting.length === 0 && settled.length > 0 && (
-            <p className="text-xs text-slate-500">
+            <p className="text-sm text-slate-500">
               {tr
                 ? 'İmza bekleyen hakediş yok; düzenlenmiş olanların hepsi ödenmiş ya da reddedilmiş.'
                 : 'No valuation is waiting for a signature; every one raised was paid or rejected.'}
