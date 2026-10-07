@@ -102,14 +102,14 @@ Kullanıcı veriye bakmaya geliyor.
 
 ## T4 — Dokunma hedefleri ve kontroller
 
-| ID    | Gereksinim                                                                      | P   | Kabul kriteri                                                    |
-| ----- | ------------------------------------------------------------------------------- | --- | ---------------------------------------------------------------- |
-| T4-01 | Telefonda her etkileşimli öğe en az **44×44px**. Bugün %75'i altında.           | P0  | ≤768px'te 44px altı görünür etkileşimli öğe sayısı 0.            |
-| T4-02 | Masaüstünde taban **32px**. Bugün %45'i altında.                                | P1  | ≥1024px'te 32px altı etkileşimli öğe sayısı 0.                   |
-| T4-03 | Komşu dokunma hedefleri arasında en az 8px boşluk.                              | P1  | Hiçbir iki etkileşimli öğenin kenarı 8px'ten yakın değil.        |
-| T4-04 | Birincil eylem her ekranda tek ve belirgin olsun; ikincil eylemler sessiz.      | P1  | Her sayfada en çok bir dolu-renk düğme.                          |
-| T4-05 | Telefonda birincil eylem başparmak erişiminde olsun (alt bölge) ya da yapışkan. | P2  | Form gönderme düğmeleri ekranın alt üçte birinde ya da yapışkan. |
-| T4-06 | Her ikon-düğmenin erişilebilir adı olsun.                                       | P0  | Metinsiz her `button`'da `aria-label` var.                       |
+| ID    | Gereksinim                                                                      | P   | Kabul kriteri                                                                                                                                                           |
+| ----- | ------------------------------------------------------------------------------- | --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T4-01 | Telefonda her etkileşimli öğe en az **44×44px**. Bugün %75'i altında.           | P0  | ≤768px'te **hem genişliği hem yüksekliği** 44px'e ulaşmayan görünür etkileşimli öğe sayısı 0. (Eski kriter yalnızca yüksekliği ölçüyordu — aşağıdaki düzeltmeye bakın.) |
+| T4-02 | Masaüstünde taban **32px**. Bugün %45'i altında.                                | P1  | ≥1024px'te 32px altı etkileşimli öğe sayısı 0.                                                                                                                          |
+| T4-03 | Komşu dokunma hedefleri arasında en az 8px boşluk.                              | P1  | Hiçbir iki etkileşimli öğenin kenarı 8px'ten yakın değil.                                                                                                               |
+| T4-04 | Birincil eylem her ekranda tek ve belirgin olsun; ikincil eylemler sessiz.      | P1  | Her sayfada en çok bir dolu-renk düğme.                                                                                                                                 |
+| T4-05 | Telefonda birincil eylem başparmak erişiminde olsun (alt bölge) ya da yapışkan. | P2  | Form gönderme düğmeleri ekranın alt üçte birinde ya da yapışkan.                                                                                                        |
+| T4-06 | Her ikon-düğmenin erişilebilir adı olsun.                                       | P0  | Metinsiz her `button`'da `aria-label` var.                                                                                                                              |
 
 ## T5 — Kütükler, tablolar, listeler
 
@@ -248,6 +248,104 @@ Rota başına yük (uzun metin sayısı / karakteri):
 | T13-07 | Geliştirici dili ekrandan çıksın: gereksinim kimliği (3), snake_case kolon adı (2), veritabanı terimi (4), "özet/SHA-256" (7), "service worker" (1). | P1  | ✅ Faz 5: 9 → 3, kalan üçü gerekçeli; üç kategorinin tavanı sıfır, ölçüm iki dili de okuyor.      |
 | T13-08 | Boş durum açıklamaları kısalsın. (Satırdaki "20 açıklama, 2355 karakter" **yanlış ölçümdü**; gerçek 32 açıklama, 3.501 karakter.)                    | P1  | ✅ Faz 5: 3.501 → 2.906 karakter, 120 üstü 11 → 0; neyin kayıtlı olmadığı korundu (T5-05).        |
 | T13-09 | Kesim bir ratchet'e bağlansın; metin sessizce geri büyümesin.                                                                                        | P0  | ✅ Faz 1–5: `tests/screen-text.mjs`, 29 kontrol (7'si ölçümün kendi fixture'ı), `verify` içinde.  |
+
+## T15 — Telefon: ilk ekranın üçte biri mobilya
+
+Masaüstü T13 ve T14 turlarıyla rahatladı; kullanıcı 7 Ekim 2026'da _"en azından
+desktop ekran rahatladı"_ dedi ve turu telefona çevirdi. Ölçüm, 390×844'te 19
+rota, **kesimden önce**:
+
+| Ölçülen                         | 7 Ekim 2026               |
+| ------------------------------- | ------------------------- |
+| `main` nerede başlıyor          | **232px** (%27,5)         |
+| — sticky başlık                 | 57px                      |
+| — kritik tarih şeridi           | **175px**                 |
+| sabit alt çubuk                 | 65px                      |
+| **toplam mobilya**              | **297px = %35**           |
+| Kaydırma derinliği              | 1,5 – **3,9** ekran       |
+| 44px altı dokunma hedefi / rota | **5 – 9** (T4-01)         |
+| En küçük hedef                  | **18×44px**               |
+| 16px altı form alanı            | **6 / 6**                 |
+| `user-scalable=no`              | **var**                   |
+| Görüntü alanından geniş kutu    | 4 (hepsi kendi kutusunda) |
+| 14px altı metin ögesi / rota    | 21 – 115                  |
+
+| ID     | Gereksinim                                                                      | P   | Kabul kriteri                                                                  |
+| ------ | ------------------------------------------------------------------------------- | --- | ------------------------------------------------------------------------------ |
+| T15-01 | İlk ekranın en az %85'i içerik olsun; mobilya üstte bir şerit kadar yer tutsun. | P0  | 390px'te `main`'in tepesi ≤ **130px** (bugün 232px).                           |
+| T15-02 | Kritik tarih şeridi telefonda **şerit** kalsın, listeye dönüşmesin.             | P0  | Şeridin yüksekliği 390px'te ≤ **60px** (bugün 175px).                          |
+| T15-04 | Hiçbir ekran telefonda üç ekrandan uzun olmasın.                                | P1  | 19 rotanın hiçbirinin boyu > **2.532px** (bugün ikisi aşıyor).                 |
+| T15-05 | Form alanı telefonda odaklanınca ekranı yakınlaştırmasın.                       | P0  | Her `input`/`select`/`textarea` ≥ **16px** (bugün 6/6 altında).                |
+| T15-06 | Parmakla yakınlaştırma engellenmesin.                                           | P0  | `index.html` içinde `user-scalable=no` ve `maximum-scale` **yok**.             |
+| T15-07 | Telefonda 19 rotanın hepsi erişilebilir kalsın; kesim bir rotayı kaybetmesin.   | P0  | Alt çubuk + "daha fazla" sayfası birlikte 19/19 (bugün sağlanıyor, korunacak). |
+
+### Neden bu satırlar, ve neden şimdi
+
+**Mobilya %35.** Telefon ekranının üçte biri, hangi rotada olursanız olun,
+içerik değil. Sticky başlık 57px ve alt çubuk 65px savunulabilir — biri kimlik
+ve menü, öbürü gezinme. Savunulamayan şey aradaki **175 piksel**.
+
+**Şerit telefonda şerit değil.** `DeadlineAlertBanner` masaüstünde tek satırlık
+yatay bir şerit (`sm:flex-row`), telefonda ise `flex-col` ile üç satıra
+yığılıyor: etiket + üç tarih = 175px. Dosyanın kendi yorumu şöyle diyor:
+
+> _"Üç, çünkü gereksinim üç diyor. Dokuz satırlık bir şerit bir listedir, ve
+> her ekranın tepesindeki bir liste insanların okumayı bıraktığı mobilyadır."_
+
+Kural doğru yazılmış ve **telefonda kendi kuralını ihlal ediyor.** Üç tarih
+yatayda bir şerit, dikeyde bir liste; aradaki fark genişlik.
+
+**18 piksellik düğme — ve T4-01 bunu kapanmış sanıyordu.**
+
+En küçük dokunma hedefi `18×44` ve o, şeridin "Gördüm" düğmesi. Yüksekliği
+doğru, genişliği değil: ikon 12px, dolgu 2×2px. Parmak ucu 44px'lik bir alana
+basar, 18px'lik bir alana _nişan alır_.
+
+4. dalganın tablosu **"44px altı dokunma hedefi (390px): 454 → 0"** diyor ve o
+   rakam yanlış değil — **eksik.** `tests/design.mjs` şöyle ölçüyor:
+
+```js
+if (r.height < 44) {
+  smallTargets.push(...);
+}
+```
+
+Yalnızca **yükseklik.** T4-01'in metni ise "en az **44×44px**" diyor, yani iki
+boyut. Kabul kriteri ("44px altı görünür etkileşimli öğe sayısı 0") hangi
+boyuttan söz ettiğini söylemiyordu ve araç onu yükseklik diye uyguladı. Sonuç:
+satır 0 ile kapandı, ve bugün her rotada **genişliği** 44px'e ulaşmayan beş
+hedef duruyor.
+
+Bu, bu projede bir satırın kısmi ölçümle kapandığı **dördüncü** yer (T13-08,
+T14-06, T3-01, ve şimdi T4-01). Düzeltme iki parçalı: T4-01'in kriteri artık
+iki boyutu da adlandırıyor, ve ölçüm `tests/populated.mjs` içinde — yani
+`verify` kapısında, elle koşulan `design.mjs`'te değil.
+
+**T15-03 yazılmadı ve sebebi bu.** Önce "her dokunma hedefi 44×44" diye yeni
+bir satır yazdım; sonra T4-01'in zaten tam olarak bunu istediğini gördüm. Aynı
+kuralı iki satıra yazmak, sapan kopyayı yazmak olurdu (CLAUDE.md §4). T15
+numaralandırması bu yüzden 01, 02, 04, 05, 06, 07 diye gidiyor — eksik numara
+bir hatanın değil, bir kararın izi.
+
+Her rotada çıkan beş hedefin kaynağı kabuk: Navbar'ın iki ikon düğmesi (36×44
+ve 32×44) ve şeridin üç "Gördüm" düğmesi (18×44). `/stakeholders` dokuzla en
+kötüsü.
+
+**6/6 form alanı 14px.** iOS Safari 16px'ten küçük bir alana odaklanınca
+sayfayı yakınlaştırır ve geri çıkmaz; kullanıcı yazarken ekranın yarısını
+kaybeder. Bu, tipografi fazının kuralıyla çelişmiyor — o kural _okunan_ metni
+14px'e çıkardı; bu satır _yazılan_ alanı 16px istiyor, ve sebebi okunabilirlik
+değil tarayıcı davranışı.
+
+**`user-scalable=no`.** Az gören biri metni büyütemiyor (WCAG 1.4.4). Bu
+telefona özgü bir kusur ve T9 turunda görülmedi, çünkü o tur erişilebilir
+**ad** ve canlı bölge ölçtü; yakınlaştırma `index.html`'de duruyor ve hiçbir
+tarama oraya bakmıyordu.
+
+**Kaydırma derinliği.** `/project_info` 3,9 ekran, `/assistant` 3,7. Masaüstünde
+T14 en uzun ekranı 2,4 ekrana indirmişti; aynı içerik telefonda 3,9 ediyor,
+çünkü tek kolona düşüyor. T15-04'ün tavanı üç ekran: telefonda dört ekran
+kaydırmak, aradığınızı bulmak için ekranın tamamını üç kez geçmek demek.
 
 ## T14 — Yoğunluk: ekranda aynı anda kaç şey duruyor
 

@@ -956,6 +956,141 @@ check(
   check(cold.kb > 50, 'soğuk yükleme ölçümü gerçekten ağ trafiği gördü', `${cold.kb}kb`);
 }
 
+/**
+ * Telefon ölçümü (T15) — ve tavanlar KESİMDEN ÖNCE yazıldı.
+ *
+ * Masaüstü T13/T14 ile rahatladı; bu blok aynı soruyu 390×844'te soruyor.
+ * Ölçüm, 7 Ekim 2026, 19 rota:
+ *
+ *   `main` 232px'te başlıyor — görüntü alanının %27,5'i. Sticky başlık 57px,
+ *   kritik tarih şeridi 175px, sabit alt çubuk 65px: toplam mobilya %35.
+ *
+ *   Kaydırma 1,5 – 3,9 ekran. 44px altı dokunma hedefi rota başına 3–5, en
+ *   küçüğü 18×44. Form alanlarının 6/6'sı 16px altında. `user-scalable=no`
+ *   var.
+ *
+ * Tavanlar bu ölçülen değerler ve yalnızca AŞAĞI iner. T13-09'un dersi:
+ * tavanı kesimden sonra yazmak, kendi sonucuna bakıp hedefi ona uydurmak
+ * olurdu — bu yüzden ilk tavan kesimden önce buraya yazıldı ve her faz onu
+ * düşürecek. Rakam düşmezse faz işe yaramamıştır.
+ */
+{
+  const MOBILE = {
+    mainTop: 232, // T15-01, hedef ≤ 130
+    bannerH: 175, // T15-02, hedef ≤ 60
+    smallTargets: 9, // T4-01, hedef 0 (rota başına en kötü)
+    height: 3270, // T15-04, hedef ≤ 2532
+    smallFields: 6, // T15-05, hedef 0
+  };
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const mobile = {};
+  for (const route of ROUTES) {
+    await page.goto(BASE + route, { waitUntil: 'domcontentloaded' });
+    await settle();
+    mobile[route] = await page.evaluate(() => {
+      const vis = (el) => el.getClientRects().length > 0;
+      const all = [...document.querySelectorAll('body *')].filter(vis);
+
+      // Dokunma hedefi: 44px'den kısa YA DA dar olan tıklanabilir öge.
+      // Genişlik de sayılıyor ve sebebi ölçülmüş: en küçük hedef 18×44, yani
+      // yüksekliği doğru genişliği yanlış. Yalnızca yüksekliğe bakan bir
+      // kontrol onu geçirirdi.
+      const tappable = all.filter(
+        (el) =>
+          /^(button|a|input|select|textarea|summary)$/i.test(el.tagName) ||
+          el.getAttribute('role') === 'tab',
+      );
+      const small = tappable.filter((el) => {
+        const r = el.getBoundingClientRect();
+        return r.height > 0 && (r.height < 44 || r.width < 44);
+      });
+
+      const fields = [...document.querySelectorAll('input, select, textarea')].filter(vis);
+
+      const main = document.querySelector('main');
+      return {
+        height: document.documentElement.scrollHeight,
+        mainTop: main ? Math.round(main.getBoundingClientRect().top) : 0,
+        tappable: tappable.length,
+        small: small.length,
+        smallWorst: small
+          .map((el) => {
+            const r = el.getBoundingClientRect();
+            return `${el.tagName.toLowerCase()} ${Math.round(r.width)}x${Math.round(r.height)}`;
+          })
+          .slice(0, 2),
+        fields: fields.length,
+        smallFields: fields.filter((el) => parseFloat(getComputedStyle(el).fontSize) < 16).length,
+      };
+    });
+  }
+
+  // Şeridin kendisi: her rotada duruyor, bir kez ölçmek yeter.
+  await page.goto(BASE + '/meetings', { waitUntil: 'domcontentloaded' });
+  await settle();
+  const bannerH = await page.evaluate(() => {
+    const strip = [...document.querySelectorAll('div')].find(
+      (el) => el.className?.toString().includes('bg-amber-50/90') && el.getClientRects().length > 0,
+    );
+    return strip ? Math.round(strip.getBoundingClientRect().height) : 0;
+  });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+
+  const worst = (key) => Math.max(...Object.values(mobile).map((m) => m[key]));
+  const over = (key, cap) =>
+    Object.entries(mobile)
+      .filter(([, m]) => m[key] > cap)
+      .map(([route, m]) => `${route}: ${m[key]}`);
+
+  // Körlük: tarama hiçbir şey görmezse bütün tavanlar kendiliğinden geçer.
+  check(
+    worst('tappable') > 10,
+    'telefon taraması dokunma hedeflerini gördü',
+    `en kalabalık rotada ${worst('tappable')}`,
+  );
+  check(bannerH > 20, 'kritik tarih şeridi telefonda bulundu', `${bannerH}px`);
+
+  check(
+    over('mainTop', MOBILE.mainTop).length === 0,
+    `telefonda içerik ${MOBILE.mainTop}px'ten önce başlıyor (T15-01)`,
+    over('mainTop', MOBILE.mainTop).join(', ') || `${worst('mainTop')}px`,
+  );
+  check(
+    bannerH <= MOBILE.bannerH,
+    `kritik tarih şeridi telefonda ${MOBILE.bannerH}px'i aşmıyor (T15-02)`,
+    `${bannerH} / ${MOBILE.bannerH}`,
+  );
+  console.log(
+    `     [T4-01 taban] ` +
+      Object.entries(mobile)
+        .filter(([, m]) => m.small > 0)
+        .sort((a, b) => b[1].small - a[1].small)
+        .map(([r, m]) => `${r}:${m.small}`)
+        .join(' '),
+  );
+  console.log(
+    `     [T4-01 örnek] ` +
+      [...new Set(Object.values(mobile).flatMap((m) => m.smallWorst))].slice(0, 6).join(' · '),
+  );
+  check(
+    over('small', MOBILE.smallTargets).length === 0,
+    `hiçbir rotada ${MOBILE.smallTargets}'ten fazla küçük dokunma hedefi yok (T4-01)`,
+    over('small', MOBILE.smallTargets).join(', ') ||
+      `en kötü ${worst('small')} · ${Object.values(mobile).flatMap((m) => m.smallWorst)[0] ?? '-'}`,
+  );
+  check(
+    over('height', MOBILE.height).length === 0,
+    `hiçbir ekran telefonda ${MOBILE.height}px'i aşmıyor (T15-04)`,
+    over('height', MOBILE.height).join(', ') || `en uzun ${worst('height')}px`,
+  );
+  check(
+    over('smallFields', MOBILE.smallFields).length === 0,
+    `hiçbir rotada ${MOBILE.smallFields}'dan fazla 16px altı form alanı yok (T15-05)`,
+    over('smallFields', MOBILE.smallFields).join(', ') || `en kötü ${worst('smallFields')}`,
+  );
+}
+
 await browser.close();
 stop();
 
