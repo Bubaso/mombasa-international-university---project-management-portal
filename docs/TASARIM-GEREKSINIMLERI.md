@@ -270,14 +270,14 @@ rota, **kesimden önce**:
 | Görüntü alanından geniş kutu    | 4 (hepsi kendi kutusunda) |
 | 14px altı metin ögesi / rota    | 21 – 115                  |
 
-| ID     | Gereksinim                                                                                                | P   | Kabul kriteri                                                                                                                                   |
-| ------ | --------------------------------------------------------------------------------------------------------- | --- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| T15-01 | İlk ekranın en az %85'i içerik olsun; mobilya üstte bir şerit kadar yer tutsun.                           | P0  | ✅ Faz 1: `main`'in tepesi 232 → **114px** (kriter ≤130).                                                                                       |
-| T15-02 | Kritik tarih şeridi telefonda **şerit** kalsın, listeye dönüşmesin.                                       | P0  | ✅ Faz 1: şerit 175 → **57px**; telefonda da yatay, geniş kalırsa kendi kutusunda kayıyor.                                                      |
-| T15-04 | Hiçbir ekranın **kurgusu** telefonda üç ekrandan uzun olmasın. (Kriter Faz 3'te değişti — aşağıya bakın.) | P1  | ✅ Ekranın kurgusu (sayfa eksi en uzun kayıt listesi) en kötü **2.243px**, kriterin altında. Toplam boy ayrıca ratchet'li: 3.270 → **2.967px**. |
-| T15-05 | Form alanı telefonda odaklanınca ekranı yakınlaştırmasın.                                                 | P0  | ✅ Faz 1: **0** — kural `index.css`'te tek yerde, telefon genişliğinde.                                                                         |
-| T15-06 | Parmakla yakınlaştırma engellenmesin.                                                                     | P0  | ✅ Faz 1: `user-scalable=no` ve `maximum-scale` kaldırıldı; kapıda `tests/a11y.mjs` sınıyor.                                                    |
-| T15-07 | Telefonda 19 rotanın hepsi erişilebilir kalsın; kesim bir rotayı kaybetmesin.                             | P0  | Alt çubuk + "daha fazla" sayfası birlikte 19/19 (bugün sağlanıyor, korunacak).                                                                  |
+| ID     | Gereksinim                                                                                                | P   | Kabul kriteri                                                                                                                                       |
+| ------ | --------------------------------------------------------------------------------------------------------- | --- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T15-01 | İlk ekranın en az %85'i içerik olsun; mobilya üstte bir şerit kadar yer tutsun.                           | P0  | ✅ Faz 1: `main`'in tepesi 232 → **114px** (kriter ≤130).                                                                                           |
+| T15-02 | Kritik tarih şeridi telefonda **şerit** kalsın, listeye dönüşmesin.                                       | P0  | ✅ Faz 1: şerit 175 → **57px**; telefonda da yatay, geniş kalırsa kendi kutusunda kayıyor.                                                          |
+| T15-04 | Hiçbir ekranın **kurgusu** telefonda üç ekrandan uzun olmasın. (Kriter Faz 3'te değişti — aşağıya bakın.) | P1  | ✅ Ekranın kurgusu (sayfa eksi en uzun kayıt listesi) en kötü **2.243px**, kriterin altında. Toplam boy ayrıca ratchet'li: 3.270 → **2.967px**.     |
+| T15-05 | Form alanı telefonda odaklanınca ekranı yakınlaştırmasın.                                                 | P0  | ✅ Faz 1: **0** — kural `index.css`'te tek yerde, telefon genişliğinde.                                                                             |
+| T15-06 | Parmakla yakınlaştırma engellenmesin.                                                                     | P0  | ✅ Faz 1: `user-scalable=no` ve `maximum-scale` kaldırıldı; kapıda `tests/a11y.mjs` sınıyor.                                                        |
+| T15-07 | Telefonda 19 rotanın hepsi erişilebilir kalsın; kesim bir rotayı kaybetmesin.                             | P0  | ✅ Alt çubuk (4 rota) + 'daha fazla' sayfası birlikte 19/19, ve artık KAPIDA: T14-05'in kontrolü masaüstü kenar çubuğunu ölçüyordu, telefonu değil. |
 
 ### Neden bu satırlar, ve neden şimdi
 
@@ -2049,6 +2049,24 @@ bir kopyası olamıyor — olursa kapı söylüyor.
 | ----------------------------------- | ------------------------------------ |
 | Kurgu tavanı 2.243 → 1.500 yapıldı  | düştü (6 rota)                       |
 | Liste çıkarma körleştirildi (hep 0) | düştü (3 rota) — ölçü zayıflayamıyor |
+
+#### T15-07 kapıda değildi, ve bu da bir boşluktu
+
+Satır _"telefonda 19 rotanın hepsi erişilebilir kalsın"_ diyor ve bugün
+sağlanıyor. Ama **hiçbir kontrol bunu telefonda ölçmüyordu.** T14-05'in
+kontrolü `aside [data-path]` sayıyor, yani masaüstü kenar çubuğunu; telefonda
+kenar çubuğu hiç yok — gezinme alt çubuk (4 rota) artı "daha fazla" sayfası.
+
+T1-05 bunu 4. dalgada ölçmüştü, ama `tests/design.mjs` içinde: o dosya canlı
+giriş istiyor ve `verify` içinde değil. **Elle koşulan bir ölçüm, koşulmadığı
+sürece ölçüm değil** — ve bu turda `design.mjs`'in yarım ölçtüğü bir satır
+(T4-01) çıktıktan sonra, o dosyaya güvenerek bir satırı kapalı saymak
+tutarsız olurdu.
+
+Kontrol `tests/populated.mjs`'e eklendi: 390px'te alt çubuğun rotaları artı
+"daha fazla" sayfası açıldıktan sonra görünen rotalar, birleşim olarak 19.
+Mutasyon ("daha fazla" sayfası yalnız iki grubu dolaşsın) **9/19** verip eksik
+on rotayı tek tek adlandırıyor.
 
 #### Ve bir şeyi kesmedim: tipografi fazının bedeli burada görünüyor
 

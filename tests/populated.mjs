@@ -1231,6 +1231,51 @@ check(
   );
   check(bannerH > 20, 'kritik tarih şeridi telefonda bulundu', `${bannerH}px`);
 
+  /**
+   * Telefonda 19 rotanın hepsi erişilebilir (T15-07).
+   *
+   * Bu kontrol 7 Ekim 2026'da eklendi ve sebebi bir boşluktu: T14-05'in
+   * kontrolü `aside [data-path]` ölçüyor, yani MASAÜSTÜ kenar çubuğunu.
+   * Telefonda kenar çubuğu hiç yok — gezinme alt çubuk (4 rota) artı
+   * "daha fazla" sayfası. Yani T15-07'nin iddiası kapıda değildi ve bir
+   * kesim bir rotayı telefondan düşürse kimse görmezdi.
+   *
+   * T1-05 bunu 4. dalgada ölçmüştü, ama `tests/design.mjs` içinde — o dosya
+   * canlı giriş istiyor ve `verify` içinde değil. Elle koşulan bir ölçüm,
+   * koşulmadığı sürece ölçüm değil.
+   */
+  {
+    await page.goto(BASE + '/', { waitUntil: 'domcontentloaded' });
+    await settle();
+    const direct = await page.$$eval('[data-path]', (els) =>
+      els.filter((el) => el.getClientRects().length > 0).map((el) => el.getAttribute('data-path')),
+    );
+    // "Daha fazla" sayfasını aç: telefonda görünen menü düğmesi.
+    for (const sel of ['button[aria-label*="enü"]', 'button[aria-label*="enu"]', 'header button']) {
+      const btn = await page.$(sel);
+      if (!btn) continue;
+      const shown = await btn.evaluate((n) => n.getClientRects().length > 0);
+      if (!shown) continue;
+      try {
+        await btn.click({ timeout: 2000 });
+      } catch {
+        continue;
+      }
+      await settle();
+      if ((await page.$$('[data-path]')).length > direct.length) break;
+    }
+    const all = await page.$$eval('[data-path]', (els) =>
+      els.filter((el) => el.getClientRects().length > 0).map((el) => el.getAttribute('data-path')),
+    );
+    const reach = new Set([...direct, ...all]);
+    check(
+      reach.size === ROUTES.length,
+      `telefonda ${ROUTES.length} rotanın hepsi erişilebilir (T15-07)`,
+      `${reach.size}/${ROUTES.length}${reach.size < ROUTES.length ? ` · eksik: ${ROUTES.filter((r) => !reach.has(r)).join(', ')}` : ''}`,
+    );
+    check(direct.length >= 3, 'alt çubuk doğrudan rota taşıyor', `${direct.length} rota`);
+  }
+
   check(
     over('mainTop', MOBILE.mainTop).length === 0,
     `telefonda içerik ${MOBILE.mainTop}px'ten önce başlıyor (T15-01)`,
