@@ -30,7 +30,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenMenu }) => {
           {/* Mobile Sandwich Button */}
           <button
             onClick={onOpenMenu}
-            className="md:hidden p-2 -ml-1 text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-lg focus:outline-none cursor-pointer"
+            className="md:hidden inline-flex h-11 w-11 items-center justify-center -ml-1 text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-lg focus:outline-none cursor-pointer"
             aria-label="Menüyü Aç"
           >
             <Menu className="w-5 h-5" />
@@ -87,7 +87,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenMenu }) => {
           {/* Quick Search on mobile */}
           <button
             onClick={() => setIsSearchOpen(true)}
-            className="lg:hidden p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 cursor-pointer"
+            className="lg:hidden inline-flex h-11 w-11 items-center justify-center rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 cursor-pointer"
             title={tr ? 'Ara' : 'Search'}
           >
             <Search className="w-4 h-4" />

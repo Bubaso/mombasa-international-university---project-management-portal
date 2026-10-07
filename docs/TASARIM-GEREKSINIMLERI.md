@@ -102,14 +102,14 @@ Kullanıcı veriye bakmaya geliyor.
 
 ## T4 — Dokunma hedefleri ve kontroller
 
-| ID    | Gereksinim                                                                      | P   | Kabul kriteri                                                                                                                                                           |
-| ----- | ------------------------------------------------------------------------------- | --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| T4-01 | Telefonda her etkileşimli öğe en az **44×44px**. Bugün %75'i altında.           | P0  | ≤768px'te **hem genişliği hem yüksekliği** 44px'e ulaşmayan görünür etkileşimli öğe sayısı 0. (Eski kriter yalnızca yüksekliği ölçüyordu — aşağıdaki düzeltmeye bakın.) |
-| T4-02 | Masaüstünde taban **32px**. Bugün %45'i altında.                                | P1  | ≥1024px'te 32px altı etkileşimli öğe sayısı 0.                                                                                                                          |
-| T4-03 | Komşu dokunma hedefleri arasında en az 8px boşluk.                              | P1  | Hiçbir iki etkileşimli öğenin kenarı 8px'ten yakın değil.                                                                                                               |
-| T4-04 | Birincil eylem her ekranda tek ve belirgin olsun; ikincil eylemler sessiz.      | P1  | Her sayfada en çok bir dolu-renk düğme.                                                                                                                                 |
-| T4-05 | Telefonda birincil eylem başparmak erişiminde olsun (alt bölge) ya da yapışkan. | P2  | Form gönderme düğmeleri ekranın alt üçte birinde ya da yapışkan.                                                                                                        |
-| T4-06 | Her ikon-düğmenin erişilebilir adı olsun.                                       | P0  | Metinsiz her `button`'da `aria-label` var.                                                                                                                              |
+| ID    | Gereksinim                                                                      | P   | Kabul kriteri                                                                                                                                                                                   |
+| ----- | ------------------------------------------------------------------------------- | --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T4-01 | Telefonda her etkileşimli öğe en az **44×44px**. Bugün %75'i altında.           | P0  | ✅ Faz 1: **0** — hem genişlik hem yükseklik, 19 rotada. Ölçüm `tests/populated.mjs` içinde, yani `verify` kapısında. (Eski kriter yalnızca yüksekliği ölçüyordu — aşağıdaki düzeltmeye bakın.) |
+| T4-02 | Masaüstünde taban **32px**. Bugün %45'i altında.                                | P1  | ≥1024px'te 32px altı etkileşimli öğe sayısı 0.                                                                                                                                                  |
+| T4-03 | Komşu dokunma hedefleri arasında en az 8px boşluk.                              | P1  | Hiçbir iki etkileşimli öğenin kenarı 8px'ten yakın değil.                                                                                                                                       |
+| T4-04 | Birincil eylem her ekranda tek ve belirgin olsun; ikincil eylemler sessiz.      | P1  | Her sayfada en çok bir dolu-renk düğme.                                                                                                                                                         |
+| T4-05 | Telefonda birincil eylem başparmak erişiminde olsun (alt bölge) ya da yapışkan. | P2  | Form gönderme düğmeleri ekranın alt üçte birinde ya da yapışkan.                                                                                                                                |
+| T4-06 | Her ikon-düğmenin erişilebilir adı olsun.                                       | P0  | Metinsiz her `button`'da `aria-label` var.                                                                                                                                                      |
 
 ## T5 — Kütükler, tablolar, listeler
 
@@ -270,14 +270,14 @@ rota, **kesimden önce**:
 | Görüntü alanından geniş kutu    | 4 (hepsi kendi kutusunda) |
 | 14px altı metin ögesi / rota    | 21 – 115                  |
 
-| ID     | Gereksinim                                                                      | P   | Kabul kriteri                                                                  |
-| ------ | ------------------------------------------------------------------------------- | --- | ------------------------------------------------------------------------------ |
-| T15-01 | İlk ekranın en az %85'i içerik olsun; mobilya üstte bir şerit kadar yer tutsun. | P0  | 390px'te `main`'in tepesi ≤ **130px** (bugün 232px).                           |
-| T15-02 | Kritik tarih şeridi telefonda **şerit** kalsın, listeye dönüşmesin.             | P0  | Şeridin yüksekliği 390px'te ≤ **60px** (bugün 175px).                          |
-| T15-04 | Hiçbir ekran telefonda üç ekrandan uzun olmasın.                                | P1  | 19 rotanın hiçbirinin boyu > **2.532px** (bugün ikisi aşıyor).                 |
-| T15-05 | Form alanı telefonda odaklanınca ekranı yakınlaştırmasın.                       | P0  | Her `input`/`select`/`textarea` ≥ **16px** (bugün 6/6 altında).                |
-| T15-06 | Parmakla yakınlaştırma engellenmesin.                                           | P0  | `index.html` içinde `user-scalable=no` ve `maximum-scale` **yok**.             |
-| T15-07 | Telefonda 19 rotanın hepsi erişilebilir kalsın; kesim bir rotayı kaybetmesin.   | P0  | Alt çubuk + "daha fazla" sayfası birlikte 19/19 (bugün sağlanıyor, korunacak). |
+| ID     | Gereksinim                                                                      | P   | Kabul kriteri                                                                                  |
+| ------ | ------------------------------------------------------------------------------- | --- | ---------------------------------------------------------------------------------------------- |
+| T15-01 | İlk ekranın en az %85'i içerik olsun; mobilya üstte bir şerit kadar yer tutsun. | P0  | ✅ Faz 1: `main`'in tepesi 232 → **114px** (kriter ≤130).                                      |
+| T15-02 | Kritik tarih şeridi telefonda **şerit** kalsın, listeye dönüşmesin.             | P0  | ✅ Faz 1: şerit 175 → **57px**; telefonda da yatay, geniş kalırsa kendi kutusunda kayıyor.     |
+| T15-04 | Hiçbir ekran telefonda üç ekrandan uzun olmasın.                                | P1  | ⏳ Faz 1 sonrası en uzun ekran 3.270 → **3.152px**; kriter ≤2.532 ve **hâlâ üstünde** — Faz 2. |
+| T15-05 | Form alanı telefonda odaklanınca ekranı yakınlaştırmasın.                       | P0  | ✅ Faz 1: **0** — kural `index.css`'te tek yerde, telefon genişliğinde.                        |
+| T15-06 | Parmakla yakınlaştırma engellenmesin.                                           | P0  | ✅ Faz 1: `user-scalable=no` ve `maximum-scale` kaldırıldı; kapıda `tests/a11y.mjs` sınıyor.   |
+| T15-07 | Telefonda 19 rotanın hepsi erişilebilir kalsın; kesim bir rotayı kaybetmesin.   | P0  | Alt çubuk + "daha fazla" sayfası birlikte 19/19 (bugün sağlanıyor, korunacak).                 |
 
 ### Neden bu satırlar, ve neden şimdi
 
@@ -1828,3 +1828,91 @@ arayüzün üçte ikisi 12px'ten 14px'e çıktı.
 **Ratchet:** `text-xs` toplamı ≤ 375, ölçülen değer. Tavanı 300'e indiren
 mutasyon düşüyor, ve bir `<p>`'yi geri alan mutasyon **ikisini birden**
 düşürüyor (376 / 375) — yani iki kontrol birbirini de doğruluyor.
+
+### T15 · Faz 1 — kabuk: ölçülen sonuç
+
+Dört değişiklik, dördü de kabukta, dördü de 19 rotayı birden etkiliyor.
+
+| Ölçülen                         | önce    | **sonra** | kriter    |
+| ------------------------------- | ------- | --------- | --------- |
+| `main` nerede başlıyor          | 232px   | **114px** | ≤130 ✅   |
+| Kritik tarih şeridi             | 175px   | **57px**  | ≤60 ✅    |
+| 44px'e ulaşmayan dokunma hedefi | 5–9     | **0**     | 0 ✅      |
+| 16px altı form alanı            | 6       | **0**     | 0 ✅      |
+| `user-scalable=no`              | var     | **yok**   | ✅        |
+| En uzun ekran                   | 3.270px | 3.152px   | ≤2.532 ⏳ |
+
+Mobilya %35'ten **%20'ye** indi: 844px'in 232'si değil 114'ü içerik değil.
+
+#### Şerit telefonda şerit oldu, ve üç tarih de kaldı
+
+`flex-col` kaldırıldı: liste telefonda da yatay, ve genişliği aşarsa **kendi
+kutusunda** kayıyor (`overflow-x-auto`). Bu, T10-07'de grafikler için kurulan
+kuralın aynısı — genişlik kusur değil, genişliğin nereye taştığı kusur.
+
+Üç tarihin hiçbiri atılmadı. Bir an "telefonda en acil olanı göster, gerisini
+say" diye düşündüm; M15-04 üç diyor ve şeridin kendi yorumu üçün gerekçesini
+yazıyor. Kaydırmak, atmaktan iyidir.
+
+#### Dört hedefin dördü de aynı kör noktadan geliyordu
+
+Faz 1'in başında 5–9 küçük hedef vardı; şeridin düzeltilmesi beşini birden
+götürdü (üç "Gördüm" düğmesi 18×44 → 44×44, iki Navbar ikonu 36/32×44 →
+44×44). Kalan dördü tek tek bulundu:
+
+| nerede                       | önce   | sebep                                     |
+| ---------------------------- | ------ | ----------------------------------------- |
+| `/stakeholders` Liste/Matris | 40×44  | etiket `hidden sm:inline`, yani ikon-only |
+| `TriagePanel` "ele"          | 34×44  | dar bir metin eylemi                      |
+| `RequestPanel` "ele"         | 34×44  | aynısı                                    |
+| `IntakeQueue` alanı          | 288×40 | açıkça `min-h-10`                         |
+
+İlk üçünün kökü **`ActionButton`'un kendisi**: primitif `min-h-11 md:min-h-8`
+taşıyor ve üstündeki yorum _"44px of tap target on a phone"_ diyordu — ama
+yalnızca **yüksekliği** ayarlıyordu. `tests/design.mjs` de `r.height < 44`
+ölçüyordu. Yani primitif ve ölçüm aracı **birbiriyle hemfikirdi ve ikisi de
+yarım ölçüyordu**; bir ikon-only düğme 40×44 çıkıyor ve kimse görmüyordu.
+`min-w-11 md:min-w-0` eklendi ve yorum iki boyutu adlandırıyor.
+
+#### İki muafiyet, ikisi de uydurma değil
+
+Ölçüm iki şeyi hedef saymıyor ve ikisinin de dayanağı var. **Onay kutusu ve
+radyo:** denetim 16px, hedef yanındaki etiket — bunu `tests/design.mjs` 4.
+dalgada böyle kaydetmişti ve gerekçesi aynen geçerli, yani yeni bir tanım
+uydurmak yerine o karar taşındı. **Paragrafın içindeki bağlantı:** WCAG 2.5.5
+satır içi hedefleri açıkça muaf tutuyor, çünkü bir cümlenin ortasındaki
+kelimeyi 44px yapmak cümleyi bozar.
+
+Muafiyet rakamı güzelleştirmek için değil: ikisi de kaldırılsa rakam 0 değil
+4 olurdu, ve o 4'ün hiçbiri gerçek bir kusur olmazdı.
+
+#### Form alanı 16px, ve kural tek yerde
+
+`index.css`'te bir `@media (max-width: 767px)` kuralı: `input`, `select`,
+`textarea` 16px. Çağrı yerlerinde değil, çünkü bugün 6 alan var ve yarın
+eklenen yedinci de kuralı kendiliğinden alsın.
+
+Tipografi fazının kuralıyla çelişmiyor: o kural **okunan** metni 14px'e
+çıkardı, bu kural **yazılan** alanı 16px istiyor, ve sebebi okunabilirlik
+değil tarayıcı davranışı (iOS Safari 16px altına odaklanınca sayfayı
+yakınlaştırır ve geri çıkmaz). Masaüstünde 14px kalıyor, çünkü orada böyle bir
+davranış yok.
+
+#### Mutasyonlar
+
+| Mutasyon                                 | Sonuç                                                  |
+| ---------------------------------------- | ------------------------------------------------------ |
+| `user-scalable=no` geri kondu            | düştü (T15-06)                                         |
+| Şerit yine `flex-col` yapıldı            | düştü — **üç kontrol birden** (T15-01, T15-02, T15-04) |
+| `ActionButton`'dan `min-w-11` kaldırıldı | düştü (`/stakeholders: 2`)                             |
+| `index.css`'ten 16px kuralı kaldırıldı   | düştü (5 rotada 1–4 alan)                              |
+
+İkincisi ayrıca kontrollerin birbirini doğruladığını gösteriyor: şeridin
+yüksekliği sayfanın boyunu da besliyor, yani tek bir gerileme üç yerden
+görünüyor.
+
+#### Faz 2'ye kalan
+
+T15-04 **karşılanmadı** ve rakamı burada: en uzun ekran 3.152px, kriter 2.532.
+`/project_info` ve `/assistant` telefonda üç ekrandan uzun. Masaüstünde T14
+bunu özet+detay kalıbıyla çözdü; telefonda aynı işi yapmak Faz 2.

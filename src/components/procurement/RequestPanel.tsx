@@ -373,7 +373,7 @@ export const RequestPanel: React.FC = () => {
                                   setDeciding({ id: c.id, how: 'reject' });
                                   setReason('');
                                 }}
-                                className="flex cursor-pointer items-center gap-1 text-xs text-slate-500 hover:underline"
+                                className="flex min-h-11 min-w-11 cursor-pointer items-center justify-center gap-1 text-xs text-slate-500 hover:underline sm:min-h-0 sm:min-w-0 sm:justify-start"
                               >
                                 <CircleX className="h-3 w-3" aria-hidden="true" />
                                 {tr ? 'ele' : 'reject'}

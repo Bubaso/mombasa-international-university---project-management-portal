@@ -225,7 +225,7 @@ export const TriagePanel: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => start(c, 'dismiss')}
-                            className="flex cursor-pointer items-center gap-1 text-xs text-slate-500 hover:underline"
+                            className="flex min-h-11 min-w-11 cursor-pointer items-center justify-center gap-1 text-xs text-slate-500 hover:underline sm:min-h-0 sm:min-w-0 sm:justify-start"
                           >
                             <CircleSlash className="h-3.5 w-3.5" aria-hidden="true" />
                             {tr ? 'ele' : 'drop it'}

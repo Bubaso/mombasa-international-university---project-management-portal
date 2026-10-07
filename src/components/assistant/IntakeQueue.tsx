@@ -118,7 +118,7 @@ export const IntakeQueue: React.FC = () => {
             setSize(PAGE);
           }}
           placeholder={tr ? 'Belge adında ara' : 'Search the document title'}
-          className="min-h-10 w-full bg-transparent py-1.5 text-sm text-slate-900 focus:outline-none md:min-h-8"
+          className="min-h-11 w-full bg-transparent py-1.5 text-sm text-slate-900 focus:outline-none md:min-h-8"
         />
       </label>
 

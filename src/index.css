@@ -1,5 +1,28 @@
 @import 'tailwindcss';
 
+/*
+ * Telefonda form alanı 16px (T15-05).
+ *
+ * iOS Safari 16px'ten küçük bir alana odaklanınca SAYFAYI yakınlaştırır ve
+ * odak kalkınca geri çıkmaz: kullanıcı bir tarih yazarken ekranın yarısını
+ * kaybediyor. Ölçüm, 7 Ekim 2026: alanların 6/6'sı 14px'ti.
+ *
+ * Tipografi fazının kuralıyla çelişmiyor. O kural OKUNAN metni 14px'e
+ * çıkardı; bu kural YAZILAN alanı 16px istiyor, ve sebebi okunabilirlik
+ * değil tarayıcı davranışı. Masaüstünde 14px kalıyor, çünkü orada böyle bir
+ * davranış yok.
+ *
+ * Tek yerde ve çağrı yerlerinde değil: 6 alan bugün, ve yarın eklenen yedinci
+ * de kuralı kendiliğinden alıyor.
+ */
+@media (max-width: 767px) {
+  input:not([type='checkbox']):not([type='radio']),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
 @theme {
   --color-solar-base03: #002b36;
   --color-solar-base02: #073642;

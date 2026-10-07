@@ -47,18 +47,34 @@ export const DeadlineAlertBanner: React.FC = () => {
 
   return (
     <div className="border-b border-amber-200 bg-amber-50/90 px-3 py-1.5 sm:px-4 sm:py-2.5">
-      <div className="mx-auto flex max-w-7xl flex-col gap-1.5 text-sm sm:flex-row sm:items-center sm:gap-3">
+      <div className="mx-auto flex max-w-7xl items-center gap-2 text-sm sm:gap-3">
         <div className="flex shrink-0 items-center gap-2 text-xs font-semibold tracking-wider text-amber-900 uppercase sm:text-sm">
           <ShieldAlert className="h-3.5 w-3.5 shrink-0 text-amber-600" aria-hidden="true" />
           <span>{tr ? 'Kritik tarihler' : 'Critical dates'}</span>
         </div>
 
-        <ul className="flex min-w-0 flex-1 flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
+        {/*
+          Telefonda da YATAY, ve kaymasına izin verilmiş (T15-02).
+
+          Ölçüm, 7 Ekim 2026: `flex-col` yüzünden şerit telefonda 175px
+          tutuyordu — görüntü alanının %21'i, her rotada. Bu dosyanın kendi
+          yorumu "dokuz satırlık bir şerit bir listedir, ve her ekranın
+          tepesindeki bir liste insanların okumayı bıraktığı mobilyadır"
+          diyor; kural doğruydu ve telefonda kendi kuralını ihliyordu.
+
+          Üç tarihin hiçbiri atılmadı (M15-04 üç diyor): şerit yatay kalıyor
+          ve genişliği aşarsa KENDİ kutusunda kayıyor — T10-07'de grafikler
+          için kurulan kuralın aynısı. Kaybolan bir şey yok, yeri değişti.
+        */}
+        <ul className="flex min-w-0 flex-1 items-center gap-3 overflow-x-auto sm:gap-4">
           {rows.map((date) => {
             const title = tr ? (date.titleTr ?? date.titleEn) : (date.titleEn ?? date.titleTr);
             const past = date.daysAway < 0;
             return (
-              <li key={`${date.kind}-${date.id}`} className="flex min-w-0 items-center gap-1.5">
+              <li
+                key={`${date.kind}-${date.id}`}
+                className="flex min-w-0 shrink-0 items-center gap-1.5 sm:shrink"
+              >
                 {date.kind === 'hearing' ? (
                   <Gavel className="h-3 w-3 shrink-0 text-amber-700" aria-hidden="true" />
                 ) : (
@@ -67,7 +83,7 @@ export const DeadlineAlertBanner: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => navigate(calendarKindRoute(date.kind))}
-                  className="min-w-0 cursor-pointer truncate text-left text-amber-900 hover:underline"
+                  className="min-w-0 max-w-[40vw] cursor-pointer truncate text-left text-amber-900 hover:underline sm:max-w-none"
                 >
                   {title ?? (tr ? '(başlıksız)' : '(untitled)')}
                 </button>
@@ -109,7 +125,11 @@ export const DeadlineAlertBanner: React.FC = () => {
                       ? 'Gördüm. Yalnızca sizin şeridinizden kalkar.'
                       : 'Seen it. Taken off your strip only.'
                   }
-                  className="shrink-0 cursor-pointer p-0.5 text-amber-600 hover:text-amber-900 disabled:opacity-50"
+                  // 44×44, ve yalnızca telefonda: ölçülen hâli 18×44'tü, yani
+                  // yüksekliği doğru genişliği yanlış. Parmak ucu 44px'lik bir
+                  // alana basar, 18px'lik bir alana nişan alır. Masaüstünde
+                  // kompakt kalıyor (T4-02 tabanı 32px).
+                  className="inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center text-amber-600 hover:text-amber-900 disabled:opacity-50 sm:h-auto sm:w-auto sm:p-0.5"
                 >
                   <Check className="h-3.5 w-3.5" aria-hidden="true" />
                 </button>

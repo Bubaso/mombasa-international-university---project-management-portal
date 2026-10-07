@@ -128,6 +128,34 @@ for (const file of SPEAKERS) {
   check(LIVE.test(source), `${file.replace('src/components/', '')} canlı bölgesini koruyor`);
 }
 
+// ---------------------------------------------------------------------------
+// 5. Yakınlaştırma engellenmiyor (T15-06)
+// ---------------------------------------------------------------------------
+//
+// Ölçüm, 7 Ekim 2026: `index.html` şunu taşıyordu —
+// `maximum-scale=1.0, user-scalable=no`. Yani az gören biri telefonda metni
+// parmakla büyütemiyordu (WCAG 1.4.4, "Resize text").
+//
+// T9 turu bunu görmedi ve sebebi öğretici: o tur erişilebilir AD ve canlı
+// bölge ölçtü, ikisi de DOM'da. Yakınlaştırma kısıtı `index.html`'de bir meta
+// etiketinde duruyor ve hiçbir tarama oraya bakmıyordu. Bir taramanın
+// kapsamadığı yer, kapsamadığını söylemez.
+//
+// Tipografi fazı metni 14px'e çıkardı; bu satır ondan bağımsız. Daha büyük
+// bir taban, yakınlaştırmaya ihtiyacı olan birinin ihtiyacını ortadan
+// kaldırmıyor.
+{
+  const html = readFileSync('index.html', 'utf8');
+  const viewport = /<meta\s+name="viewport"[^>]*content="([^"]*)"/.exec(html)?.[1] ?? '';
+  check(viewport.length > 0, 'viewport meta okundu', viewport);
+  check(
+    !/user-scalable\s*=\s*no/i.test(viewport),
+    'parmakla yakınlaştırma engellenmiyor (T15-06)',
+    viewport,
+  );
+  check(!/maximum-scale/i.test(viewport), 'yakınlaştırma üst sınırı konmuyor (T15-06)', viewport);
+}
+
 console.log('');
 if (failures > 0) {
   console.error(`${failures} a11y check(s) failed.`);

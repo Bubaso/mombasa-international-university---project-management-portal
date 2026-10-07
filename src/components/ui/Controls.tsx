@@ -119,8 +119,16 @@ export const ActionButton: React.FC<
     {...props}
     className={
       'inline-flex shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-lg border ' +
-      // See CONTROL: 44px of tap target on a phone, 32px once there is a mouse.
-      `min-h-11 md:min-h-8 px-3 py-1.5 text-sm font-semibold transition-colors disabled:cursor-not-allowed ` +
+      // 44px of tap target on a phone, 32px once there is a mouse — in BOTH
+      // dimensions, which this line did not say until 7 Ekim 2026.
+      //
+      // It set `min-h-11` only, and the comment above it claimed "44px of tap
+      // target". An icon-only button (the label is `hidden sm:inline` on
+      // /stakeholders) came out 40×44: the height right, the width four pixels
+      // short. The same blind spot sat in `tests/design.mjs`, which measured
+      // `r.height < 44` and reported zero faults — so the primitive and the
+      // tool agreed with each other and both were half-measuring.
+      `min-h-11 min-w-11 md:min-h-8 md:min-w-0 px-3 py-1.5 text-sm font-semibold transition-colors disabled:cursor-not-allowed ` +
       `disabled:opacity-50 ${TONES[tone]} ${className}`
     }
   />

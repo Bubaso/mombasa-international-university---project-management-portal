@@ -975,12 +975,14 @@ check(
  * düşürecek. Rakam düşmezse faz işe yaramamıştır.
  */
 {
+  // Faz 1 sonrası ölçülen değerler. Kapıya giren ilk tavanlar kesimden ÖNCE
+  // yazılmıştı (232 · 175 · 9 · 3270 · 6); bunlar onların düştüğü yer.
   const MOBILE = {
-    mainTop: 232, // T15-01, hedef ≤ 130
-    bannerH: 175, // T15-02, hedef ≤ 60
-    smallTargets: 9, // T4-01, hedef 0 (rota başına en kötü)
-    height: 3270, // T15-04, hedef ≤ 2532
-    smallFields: 6, // T15-05, hedef 0
+    mainTop: 114, // T15-01: 232 → 114 (kriter ≤130, altında)
+    bannerH: 57, // T15-02: 175 → 57 (kriter ≤60, altında)
+    smallTargets: 0, // T4-01: 9 → 0, artık bir tavan değil bir KURAL
+    height: 3152, // T15-04: 3270 → 3152 (kriter ≤2532, HÂLÂ ÜSTÜNDE — Faz 2)
+    smallFields: 0, // T15-05: 6 → 0, kural
   };
 
   await page.setViewportSize({ width: 390, height: 844 });
@@ -1001,7 +1003,30 @@ check(
           /^(button|a|input|select|textarea|summary)$/i.test(el.tagName) ||
           el.getAttribute('role') === 'tab',
       );
+
+      // İki muafiyet, ikisi de uydurma değil.
+      //
+      // Onay kutusu ve radyo: denetim 16px, hedef yanındaki ETİKET. Bunu
+      // `tests/design.mjs` 4. dalgada böyle kaydetmişti ve gerekçesi aynen
+      // geçerli — kutuyu ölçmek olmayan bir kusuru bildirmek olur. Yeni bir
+      // tanım uydurmak yerine o kararı taşıyorum.
+      //
+      // Paragrafın içindeki bağlantı: WCAG 2.5.5 satır içi hedefleri açıkça
+      // muaf tutuyor, çünkü bir cümlenin ortasındaki kelimeyi 44px yapmak
+      // cümleyi bozar.
+      const exempt = (el) => {
+        if (el.tagName === 'INPUT' && /^(checkbox|radio|hidden)$/.test(el.type)) return true;
+        if (el.tagName === 'A') {
+          const parent = el.parentElement;
+          // Satır içi: ebeveyninde bu bağlantının dışında da metin var.
+          const own = (el.textContent ?? '').trim();
+          const around = (parent?.textContent ?? '').trim();
+          if (parent && around.length > own.length + 2) return true;
+        }
+        return false;
+      };
       const small = tappable.filter((el) => {
+        if (exempt(el)) return false;
         const r = el.getBoundingClientRect();
         return r.height > 0 && (r.height < 44 || r.width < 44);
       });
@@ -1017,11 +1042,34 @@ check(
         smallWorst: small
           .map((el) => {
             const r = el.getBoundingClientRect();
-            return `${el.tagName.toLowerCase()} ${Math.round(r.width)}x${Math.round(r.height)}`;
+            const name = (el.getAttribute('aria-label') ?? el.textContent ?? '')
+              .trim()
+              .slice(0, 30);
+            return `${el.tagName.toLowerCase()}[${el.className?.toString().split(/\s+/)[0] ?? ''}] ${Math.round(r.width)}x${Math.round(r.height)} "${name}"`;
           })
-          .slice(0, 2),
+          .slice(0, 3),
+        smallFieldList: fields
+          .filter(
+            (el) =>
+              !/^(checkbox|radio|hidden)$/.test(el.type ?? '') &&
+              parseFloat(getComputedStyle(el).fontSize) < 16,
+          )
+          .map(
+            (el) =>
+              `${el.tagName.toLowerCase()}[${el.type ?? ''}] ${getComputedStyle(el).fontSize} .${el.className?.toString().split(/\s+/).slice(0, 2).join('.')}`,
+          )
+          .slice(0, 3),
         fields: fields.length,
-        smallFields: fields.filter((el) => parseFloat(getComputedStyle(el).fontSize) < 16).length,
+        // Onay kutusu ve radyo muaf, ve sebebi CSS kuralının kendisiyle aynı:
+        // iOS yalnızca METİN girilen bir alana odaklanınca yakınlaştırır. Bir
+        // onay kutusunun font boyutu o davranışı tetiklemiyor, ve kural da
+        // (`index.css`) onları açıkça dışarıda bırakıyor. Ölçümün kuraldan
+        // farklı bir şey sayması, ikisini ayrıştırmak olurdu.
+        smallFields: fields.filter(
+          (el) =>
+            !/^(checkbox|radio|hidden)$/.test(el.type ?? '') &&
+            parseFloat(getComputedStyle(el).fontSize) < 16,
+        ).length,
       };
     });
   }
@@ -1069,10 +1117,10 @@ check(
         .map(([r, m]) => `${r}:${m.small}`)
         .join(' '),
   );
-  console.log(
-    `     [T4-01 örnek] ` +
-      [...new Set(Object.values(mobile).flatMap((m) => m.smallWorst))].slice(0, 6).join(' · '),
-  );
+  for (const x of [...new Set(Object.values(mobile).flatMap((m) => m.smallWorst))])
+    console.log(`     [T4-01] ${x}`);
+  for (const x of [...new Set(Object.values(mobile).flatMap((m) => m.smallFieldList))])
+    console.log(`     [T15-05] ${x}`);
   check(
     over('small', MOBILE.smallTargets).length === 0,
     `hiçbir rotada ${MOBILE.smallTargets}'ten fazla küçük dokunma hedefi yok (T4-01)`,
