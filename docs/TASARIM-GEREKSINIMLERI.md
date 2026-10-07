@@ -270,14 +270,14 @@ rota, **kesimden önce**:
 | Görüntü alanından geniş kutu    | 4 (hepsi kendi kutusunda) |
 | 14px altı metin ögesi / rota    | 21 – 115                  |
 
-| ID     | Gereksinim                                                                      | P   | Kabul kriteri                                                                                  |
-| ------ | ------------------------------------------------------------------------------- | --- | ---------------------------------------------------------------------------------------------- |
-| T15-01 | İlk ekranın en az %85'i içerik olsun; mobilya üstte bir şerit kadar yer tutsun. | P0  | ✅ Faz 1: `main`'in tepesi 232 → **114px** (kriter ≤130).                                      |
-| T15-02 | Kritik tarih şeridi telefonda **şerit** kalsın, listeye dönüşmesin.             | P0  | ✅ Faz 1: şerit 175 → **57px**; telefonda da yatay, geniş kalırsa kendi kutusunda kayıyor.     |
-| T15-04 | Hiçbir ekran telefonda üç ekrandan uzun olmasın.                                | P1  | ⏳ Faz 1 sonrası en uzun ekran 3.270 → **3.152px**; kriter ≤2.532 ve **hâlâ üstünde** — Faz 2. |
-| T15-05 | Form alanı telefonda odaklanınca ekranı yakınlaştırmasın.                       | P0  | ✅ Faz 1: **0** — kural `index.css`'te tek yerde, telefon genişliğinde.                        |
-| T15-06 | Parmakla yakınlaştırma engellenmesin.                                           | P0  | ✅ Faz 1: `user-scalable=no` ve `maximum-scale` kaldırıldı; kapıda `tests/a11y.mjs` sınıyor.   |
-| T15-07 | Telefonda 19 rotanın hepsi erişilebilir kalsın; kesim bir rotayı kaybetmesin.   | P0  | Alt çubuk + "daha fazla" sayfası birlikte 19/19 (bugün sağlanıyor, korunacak).                 |
+| ID     | Gereksinim                                                                      | P   | Kabul kriteri                                                                                                                     |
+| ------ | ------------------------------------------------------------------------------- | --- | --------------------------------------------------------------------------------------------------------------------------------- |
+| T15-01 | İlk ekranın en az %85'i içerik olsun; mobilya üstte bir şerit kadar yer tutsun. | P0  | ✅ Faz 1: `main`'in tepesi 232 → **114px** (kriter ≤130).                                                                         |
+| T15-02 | Kritik tarih şeridi telefonda **şerit** kalsın, listeye dönüşmesin.             | P0  | ✅ Faz 1: şerit 175 → **57px**; telefonda da yatay, geniş kalırsa kendi kutusunda kayıyor.                                        |
+| T15-04 | Hiçbir ekran telefonda üç ekrandan uzun olmasın.                                | P1  | ⏳ Faz 1: 3.270 → 3.152px · Faz 2: → **2.967px**. Kriter ≤2.532 ve hâlâ üstünde; kalan iki ekran `/assistant` ve `/stakeholders`. |
+| T15-05 | Form alanı telefonda odaklanınca ekranı yakınlaştırmasın.                       | P0  | ✅ Faz 1: **0** — kural `index.css`'te tek yerde, telefon genişliğinde.                                                           |
+| T15-06 | Parmakla yakınlaştırma engellenmesin.                                           | P0  | ✅ Faz 1: `user-scalable=no` ve `maximum-scale` kaldırıldı; kapıda `tests/a11y.mjs` sınıyor.                                      |
+| T15-07 | Telefonda 19 rotanın hepsi erişilebilir kalsın; kesim bir rotayı kaybetmesin.   | P0  | Alt çubuk + "daha fazla" sayfası birlikte 19/19 (bugün sağlanıyor, korunacak).                                                    |
 
 ### Neden bu satırlar, ve neden şimdi
 
@@ -1916,3 +1916,66 @@ görünüyor.
 T15-04 **karşılanmadı** ve rakamı burada: en uzun ekran 3.152px, kriter 2.532.
 `/project_info` ve `/assistant` telefonda üç ekrandan uzun. Masaüstünde T14
 bunu özet+detay kalıbıyla çözdü; telefonda aynı işi yapmak Faz 2.
+
+### T15 · Faz 2 — `/project_info` sekmeye geçti
+
+Faz 1 kabuğu düzeltti; Faz 2 kaydırma derinliğine girdi. Ama önce teşhis, ve
+teşhis planı değiştirdi.
+
+| rota            | telefon boyu | en uzun blok | ne olduğu                   |
+| --------------- | ------------ | ------------ | --------------------------- |
+| `/project_info` | 3.152px      | 2.215px      | bir **kolon**: 4 kart       |
+| `/assistant`    | 2.967px      | 2.488px      | tek **panel** ("Belge oku") |
+| `/stakeholders` | 2.735px      | 1.518px      | kütük **listesi**           |
+
+Üçü de üç ekrandan uzun, ama üçünün sebebi farklı — ve bu plan yazarken
+bilmediğim şeydi. "Telefonda uzun ekranları sekmeye geçir" diye yazmıştım;
+`/assistant` **zaten sekmeli** ve 2.488 pikseli bir sekmenin İÇİNDE, yani
+sekme eklemek hiçbir şey çözmez. `/stakeholders`'ın boyu ise kütüğün kendisi,
+ve bir listeyi kısaltmak kayıt saklamak olur (depoda `MoreRows` tam bunun için
+var, ama o ayrı bir karar).
+
+Faz 2 bu yüzden tek ekrana daraltıldı: `/project_info`.
+
+#### Ölçüyü tek genişlikte almak, iki genişlikten birini hiç görmemek
+
+`/project_info` masaüstünde **1.487px**'ti, yani T14 turunun "ağır ekran"
+listesine hiç girmedi — yedi ekran bölündü, bu girmedi. Telefonda ise
+**3,7 ekran**: `lg:grid-cols-12` tek kolona düşünce dört kart (632 + 554 + 539
+
+- 418. alt alta diziliyor.
+
+Kusur içerikte değil, **iki genişlikte iki farklı şey olmasında.**
+
+#### Sonuç: üç sayının ikisi masaüstünde de düştü
+
+| Ölçülen                          | önce    | **sonra**              |
+| -------------------------------- | ------- | ---------------------- |
+| Telefon boyu                     | 3.152px | ilk sekizden **çıktı** |
+| Masaüstü boyu                    | 1.487px | **1.044px**            |
+| Masaüstü başlık                  | 6       | **3**                  |
+| Masaüstü düğme                   | 43      | 47                     |
+| En uzun telefon ekranı (tüm app) | 3.152px | **2.967px**            |
+
+Yani bu bir bedel değil bir **takas**: dört sekme dört düğme ekledi, karşılığında
+masaüstü boyu %30 düştü ve telefon ekranı listeden tamamen çıktı. Künye ve altı
+istatistik kartı sekmelerin **dışında** — onlar ekranın ne olduğunu söyleyen
+özet, ve bir sekmenin arkasına koymak "bu ekran ne?" sorusunu tahmine bağlamak
+olurdu.
+
+Telefona özel ikinci bir düzen **yazılmadı** ve sebebi CLAUDE.md §4: aynı
+ekranı iki yere yazmak, sapan kopyayı yazmak olur. Sekme iki genişlikte de
+aynı şeyi yapıyor.
+
+#### Mutasyon
+
+Sekmeleri geri aldım ve **üç kontrol birden** düştü: masaüstü yoğunluğu
+(`başlık 6>3, boy 1487>1044px`), kayıtlı sekme sayısı (`/project_info: 0 ≠ 4`),
+ve telefon boyu (`/project_info: 3152`). Bir ekranın bölünmesi üç yerden
+ölçülüyor, yani geri alınması üç yerden görünüyor.
+
+#### Faz 3'e kalan
+
+T15-04 **hâlâ karşılanmadı**: en uzun ekran 2.967px, kriter 2.532. İki ekran
+kaldı ve ikisi ayrı iş — `/assistant`'ın "Belge oku" paneli (2.488px, bir
+sekmenin içinde) ve `/stakeholders`'ın kütük listesi (1.518px).

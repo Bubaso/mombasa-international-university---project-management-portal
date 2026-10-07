@@ -430,13 +430,22 @@ const signedCounts = [];
  * Aynı şey `/construction`'da da olmuştu (44 → 45 düğme, iki sekme iki düğme
  * ekliyor). Tavanın yükselmesi her zaman bir bedel, ve bedeli yazmadan
  * yükseltmek ratchet'i anlamsız kılar.
+ *
+ * `/project_info` 7 Ekim 2026'da sekmeye geçti (T15-04) ve üç sayısının ikisi
+ * DÜŞTÜ: boy 1.487 → **1.044px**, başlık 6 → **3**. Yalnızca düğme 43 → **47**
+ * çıktı, dört sekme dört düğme. Yani bu bir bedel değil bir takas: masaüstü de
+ * kazandı, telefon ise 3.152 → 1.0xx piksele indi.
+ *
+ * Ekran masaüstünde 1.487px'ti, yani T14 turunun "ağır ekran" listesine hiç
+ * girmedi — ve telefonda 3,7 ekrandı. Ölçüyü tek genişlikte almak, iki
+ * genişlikten birini hiç görmemek demekti.
  */
 const DENSITY = {
   '/assistant': { buttons: 55, headings: 3, height: 2392 },
   '/meetings': { buttons: 57, headings: 9, height: 1767 },
   '/obligations': { buttons: 52, headings: 10, height: 1567 },
   '/risks': { buttons: 57, headings: 4, height: 1481 },
-  '/project_info': { buttons: 43, headings: 6, height: 1487 },
+  '/project_info': { buttons: 47, headings: 3, height: 1044 },
   '/stakeholders': { buttons: 50, headings: 5, height: 1356 },
   '/plan': { buttons: 53, headings: 4, height: 1412 },
   '/legal': { buttons: 58, headings: 4, height: 1316 },
@@ -749,6 +758,7 @@ const TABS_EXPECTED = {
   '/plan': 5,
   '/finance': 5,
   '/governance': 4,
+  '/project_info': 4,
 };
 
 {
@@ -981,7 +991,7 @@ check(
     mainTop: 114, // T15-01: 232 → 114 (kriter ≤130, altında)
     bannerH: 57, // T15-02: 175 → 57 (kriter ≤60, altında)
     smallTargets: 0, // T4-01: 9 → 0, artık bir tavan değil bir KURAL
-    height: 3152, // T15-04: 3270 → 3152 (kriter ≤2532, HÂLÂ ÜSTÜNDE — Faz 2)
+    height: 2967, // T15-04: 3270 → 3152 (Faz 1) → 2967 (Faz 2); kriter ≤2532, hâlâ üstünde
     smallFields: 0, // T15-05: 6 → 0, kural
   };
 
@@ -1085,6 +1095,46 @@ check(
   });
   await page.setViewportSize({ width: 1440, height: 1000 });
 
+  for (const route of ['/project_info', '/stakeholders', '/assistant']) {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(BASE + route, { waitUntil: 'domcontentloaded' });
+    await settle();
+    const blocks = await page.evaluate(() => {
+      const main = document.querySelector('main');
+      if (!main) return [];
+      return [...main.querySelectorAll('section, [class*="rounded-xl"], [class*="grid"]')]
+        .filter((el) => el.getClientRects().length > 0)
+        .map((el) => {
+          const r = el.getBoundingClientRect();
+          const head = el.querySelector('h1,h2,h3')?.textContent?.trim().slice(0, 28) ?? '';
+          return {
+            h: Math.round(r.height),
+            head,
+            cls:
+              (el.className || '')
+                .toString()
+                .split(/\s+/)
+                .find((c) => c.startsWith('grid')) ?? '',
+          };
+        })
+        .filter((x) => x.h > 150)
+        .sort((a, b) => b.h - a.h)
+        .slice(0, 6);
+    });
+    console.log(`     [blok] ${route}`);
+    for (const b of blocks)
+      console.log(`       ${String(b.h).padStart(5)}px  ${b.cls.padEnd(10)} ${b.head}`);
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+
+  console.log(
+    '     [telefon boy] ' +
+      Object.entries(mobile)
+        .sort((a, b) => b[1].height - a[1].height)
+        .slice(0, 8)
+        .map(([r, m]) => `${r}:${m.height}(${(m.height / 844).toFixed(1)}e)`)
+        .join(' '),
+  );
   const worst = (key) => Math.max(...Object.values(mobile).map((m) => m[key]));
   const over = (key, cap) =>
     Object.entries(mobile)

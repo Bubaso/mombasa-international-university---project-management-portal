@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import {
   GraduationCap,
@@ -18,6 +18,7 @@ export const ProjectInfoView: React.FC = () => {
   const navigate = useNavigate();
   const { language } = useApp();
   const tr = language === 'tr';
+  const [tab, setTab] = useState<'land' | 'foundations' | 'academic' | 'charter'>('land');
 
   return (
     <div className="space-y-6">
@@ -122,283 +123,336 @@ export const ProjectInfoView: React.FC = () => {
       </div>
 
       {/* Two Column Layout: Land & Campus Info + Academic Faculties */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Land & Campus Geography */}
-        <div className="lg:col-span-6 space-y-6">
-          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-4">
-            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-amber-600" />
-              <span>
-                {tr ? 'Arazi, Tapu ve Konum Bilgileri' : 'Land, Deed & Location Specifications'}
-              </span>
-            </h2>
+      {/*
+        Dört bölüm sekmeye alındı (T15-04).
 
-            <div className="space-y-3 text-sm">
-              <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-500">
-                    {tr ? 'Parsel Numarası:' : 'Cadastral Plot No:'}
-                  </span>
-                  <span className="font-mono font-bold text-slate-900">Plot No. MN/I/5141</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-500">
-                    {tr ? 'Konum / İlçe:' : 'Location / District:'}
-                  </span>
-                  <span className="text-slate-800 font-medium">
-                    Utange / Majaoni, Mombasa County, Kenya
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-500">
-                    {tr ? 'Tapu Statüsü:' : 'Title Deed Nature:'}
-                  </span>
-                  <span className="text-emerald-700 font-semibold">
-                    {tr
-                      ? '60 Yıllık Tescilli Kira Tapusu (Leasehold)'
-                      : '60-Year Registered Leasehold'}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-500">{tr ? 'Yasal Dayanak:' : 'Statutory Act:'}</span>
-                  <span className="font-mono text-slate-700">Cap 164, Laws of Kenya</span>
-                </div>
-              </div>
+        Ölçüm, 7 Ekim 2026: bu ekran masaüstünde 1.487px — yani T14 turunun
+        "ağır ekran" listesine hiç girmedi. Telefonda ise 3.152px, 3,7 ekran:
+        `lg:grid-cols-12` tek kolona düşünce dört kart (632 + 554 + 539 + 418)
+        alt alta diziliyor.
 
-              <div className="p-3.5 bg-amber-50/60 border border-amber-200 rounded-lg space-y-2">
-                <div className="font-semibold text-amber-900 text-sm">
-                  {tr
-                    ? 'Arazi Fiili Kullanım Analizi (340 dönüm):'
-                    : 'Land Area Physical Allocation (84 Acres):'}
-                </div>
-                <ul className="space-y-1 text-slate-700 text-sm leading-relaxed">
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-amber-700 font-bold">•</span>
-                    <span>
-                      <strong className="text-slate-900">{tr ? '320 dönüm:' : '79 Acres:'}</strong>{' '}
-                      {tr
-                        ? 'Üniversite ana yerleşkesi, akademik fakülteler, yurtlar, laboratuvarlar, cami ve spor tesisleri.'
-                        : 'Core university campus, faculty blocks, dormitories, research labs, campus mosque, and sports grounds.'}
+        Yani kusur ekranın içeriğinde değil, iki genişlikte iki farklı şey
+        olmasında. Sekme ikisini birden çözüyor ve depoda zaten var olan kalıp
+        (`RisksView`) — telefona özel ikinci bir düzen yazmak, aynı ekranı iki
+        yere yazmak olurdu (CLAUDE.md §4).
+
+        Künye ve altı istatistik kartı sekmelerin DIŞINDA: onlar ekranın ne
+        olduğunu söyleyen özet, ve bir sekmenin arkasına koymak "bu ekran ne?"
+        sorusunu tahmine bağlamak olurdu.
+      */}
+      <div className="flex flex-wrap gap-1.5" role="tablist">
+        {(
+          [
+            ['land', tr ? 'Arazi ve tapu' : 'Land & deed'],
+            ['foundations', tr ? 'Vakıflar' : 'Foundations'],
+            ['academic', tr ? 'Akademik yapı' : 'Academic structure'],
+            ['charter', tr ? 'Berat yol haritası' : 'Charter roadmap'],
+          ] as const
+        ).map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={tab === id}
+            onClick={() => setTab(id)}
+            className={`min-h-11 min-w-11 cursor-pointer rounded-lg border px-3 py-1.5 text-sm font-semibold transition-colors md:min-h-8 ${
+              tab === id
+                ? 'border-amber-400 bg-amber-50 text-amber-900'
+                : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div className="space-y-6">
+        {tab === 'land' && (
+          <>
+            <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-4">
+              <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-amber-600" />
+                <span>
+                  {tr ? 'Arazi, Tapu ve Konum Bilgileri' : 'Land, Deed & Location Specifications'}
+                </span>
+              </h2>
+
+              <div className="space-y-3 text-sm">
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">
+                      {tr ? 'Parsel Numarası:' : 'Cadastral Plot No:'}
                     </span>
-                  </li>
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-amber-700 font-bold">•</span>
-                    <span>
-                      <strong className="text-slate-900">{tr ? '20 dönüm:' : '5 Acres:'}</strong>{' '}
-                      {tr
-                        ? 'Moli ailesi yerleşim enklavı. 9 Şubat 2026 tarihli Yargıtay (Court of Appeal) Mevcut Durum emriyle koruma altında olan sınır.'
-                        : 'Moli family residential enclave, strictly preserved under the 9 Feb 2026 Court of Appeal Status Quo order.'}
+                    <span className="font-mono font-bold text-slate-900">Plot No. MN/I/5141</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">
+                      {tr ? 'Konum / İlçe:' : 'Location / District:'}
                     </span>
-                  </li>
-                </ul>
-              </div>
-
-              <div className="pt-1">
-                <button
-                  onClick={() => navigate('/construction')}
-                  className="w-full text-center py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg font-semibold text-sm transition-colors cursor-pointer"
-                >
-                  {tr
-                    ? 'Şantiye ve İnşaat Bloklarını İncele ➔'
-                    : 'Inspect Construction Blocks & Facilities ➔'}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Founding & Partner Foundations */}
-          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-4">
-            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <HeartHandshake className="w-4 h-4 text-purple-600" />
-              <span>{tr ? 'Kurucu ve Ortak Vakıflar' : 'Founding & Partner Foundations'}</span>
-            </h2>
-
-            <div className="space-y-2.5 text-sm">
-              <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div className="font-semibold text-slate-900">
-                    Afrika Vakfı (Africa Foundation)
+                    <span className="text-slate-800 font-medium">
+                      Utange / Majaoni, Mombasa County, Kenya
+                    </span>
                   </div>
-                  <span className="font-mono text-purple-700 text-xs font-bold">
-                    6 Mütevelli (50%)
-                  </span>
-                </div>
-                <p className="text-sm text-slate-600 mt-1">
-                  {tr
-                    ? 'Merkezi Ankara ve İstanbul’da bulunan Türk hayırsever vakfı. Akademik koordinasyon ve sermaye finansmanı desteği.'
-                    : 'Turkish philanthropic foundation based in Ankara/Istanbul, providing academic steering and capital funding.'}
-                </p>
-              </div>
-
-              <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div className="font-semibold text-slate-900">Universal Education Foundation</div>
-                  <span className="font-mono text-blue-700 text-xs font-bold">
-                    3 Mütevelli (25%)
-                  </span>
-                </div>
-                <p className="text-sm text-slate-600 mt-1">
-                  {tr
-                    ? 'Mombasa merkezli eğitim vakfı. Yerel paydaş ilişkileri, arazi geliştirme ve toplumsal entegrasyon.'
-                    : 'Mombasa-based education trust managing community integration, land development and local coordination.'}
-                </p>
-              </div>
-
-              <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div className="font-semibold text-slate-900">Süleyman Shahbal Foundation</div>
-                  <span className="font-mono text-amber-700 text-xs font-bold">
-                    3 Mütevelli (25%)
-                  </span>
-                </div>
-                <p className="text-sm text-slate-600 mt-1">
-                  {tr
-                    ? 'Kıyı bölgesi kalkınma ve hayırseverlik kuruluşu. Yerel idare ve düzenleyici kurumlar koordinasyonu.'
-                    : 'Coastal region development trust liaising with county administration and regulatory bodies.'}
-                </p>
-              </div>
-
-              <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div className="font-semibold text-slate-900">
-                    Zayed Bin Sultan Al Nahyan Foundation
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">
+                      {tr ? 'Tapu Statüsü:' : 'Title Deed Nature:'}
+                    </span>
+                    <span className="text-emerald-700 font-semibold">
+                      {tr
+                        ? '60 Yıllık Tescilli Kira Tapusu (Leasehold)'
+                        : '60-Year Registered Leasehold'}
+                    </span>
                   </div>
-                  <span className="font-mono text-emerald-700 text-xs font-bold">
-                    Destekçi / Bağışçı
-                  </span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">
+                      {tr ? 'Yasal Dayanak:' : 'Statutory Act:'}
+                    </span>
+                    <span className="font-mono text-slate-700">Cap 164, Laws of Kenya</span>
+                  </div>
                 </div>
-                <p className="text-sm text-slate-600 mt-1">
-                  {tr
-                    ? 'BAE merkezli insani yardım vakfı. 807M KShs sermaye hibe sağlayıcısı ve Yargıtay temyiz başvurucusu.'
-                    : 'UAE humanitarian foundation providing primary capital grant of KShs 807M and co-appellant before Court of Appeal.'}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        {/* Right Column: Academic Faculties & Accreditation Roadmap */}
-        <div className="lg:col-span-6 space-y-6">
-          {/* Academic Faculties */}
-          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-4">
-            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <BookOpen className="w-4 h-4 text-blue-600" />
-              <span>
-                {tr
-                  ? 'Akademik Yapı ve Planlanan Fakülteler'
-                  : 'Academic Structure & Planned Faculties'}
-              </span>
-            </h2>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-              <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-1">
-                <div className="font-semibold text-slate-900">
-                  {tr ? 'Mühendislik & Teknoloji' : 'Engineering & Technology'}
-                </div>
-                <p className="text-sm text-slate-500">
-                  {tr
-                    ? 'İnşaat, Makine, Elektrik ve Bilgisayar Mühendisliği'
-                    : 'Civil, Mechanical, Electrical & Computer Engineering'}
-                </p>
-              </div>
-
-              <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-1">
-                <div className="font-semibold text-slate-900">
-                  {tr ? 'Sağlık Bilimleri & Tıp' : 'Health Sciences & Medicine'}
-                </div>
-                <p className="text-sm text-slate-500">
-                  {tr
-                    ? 'Hemşirelik, Eczacılık ve Halk Sağlığı Bölümleri'
-                    : 'Nursing, Pharmacy & Public Health Departments'}
-                </p>
-              </div>
-
-              <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-1">
-                <div className="font-semibold text-slate-900">
-                  {tr ? 'İktisadi & İdari Bilimler' : 'Business & Economics'}
-                </div>
-                <p className="text-sm text-slate-500">
-                  {tr
-                    ? 'İşletme, Uluslararası Finans ve Lojistik Yönetimi'
-                    : 'Business Admin, Global Finance & Maritime Logistics'}
-                </p>
-              </div>
-
-              <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-1">
-                <div className="font-semibold text-slate-900">
-                  {tr ? 'İslami İlimler & Kültür' : 'Islamic Studies & Culture'}
-                </div>
-                <p className="text-sm text-slate-500">
-                  {tr
-                    ? 'İlahiyat, Arap Dili ve Karşılaştırmalı Hukuk'
-                    : 'Theology, Arabic Studies & Comparative Jurisprudence'}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Statutory Accreditation & University Charter Roadmap */}
-          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-4">
-            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <Award className="w-4 h-4 text-emerald-600" />
-              <span>
-                {tr
-                  ? 'Yasal Akreditasyon ve Üniversite Beratı Yol Haritası'
-                  : 'CUE Charter & Accreditation Roadmap'}
-              </span>
-            </h2>
-
-            <div className="space-y-3 text-sm">
-              <div className="p-3 bg-emerald-50/50 border border-emerald-200 rounded-lg flex items-start gap-3">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                <div className="space-y-0.5">
-                  <div className="font-semibold text-slate-900">
+                <div className="p-3.5 bg-amber-50/60 border border-amber-200 rounded-lg space-y-2">
+                  <div className="font-semibold text-amber-900 text-sm">
                     {tr
-                      ? '1. Aşama: Vakıf Senedi Tescili & Resmî Gazete İlanı'
-                      : 'Phase 1: Trust Deed Gazette & Registration'}
+                      ? 'Arazi Fiili Kullanım Analizi (340 dönüm):'
+                      : 'Land Area Physical Allocation (84 Acres):'}
                   </div>
-                  <p className="text-sm text-slate-600">
+                  <ul className="space-y-1 text-slate-700 text-sm leading-relaxed">
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-amber-700 font-bold">•</span>
+                      <span>
+                        <strong className="text-slate-900">
+                          {tr ? '320 dönüm:' : '79 Acres:'}
+                        </strong>{' '}
+                        {tr
+                          ? 'Üniversite ana yerleşkesi, akademik fakülteler, yurtlar, laboratuvarlar, cami ve spor tesisleri.'
+                          : 'Core university campus, faculty blocks, dormitories, research labs, campus mosque, and sports grounds.'}
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-amber-700 font-bold">•</span>
+                      <span>
+                        <strong className="text-slate-900">{tr ? '20 dönüm:' : '5 Acres:'}</strong>{' '}
+                        {tr
+                          ? 'Moli ailesi yerleşim enklavı. 9 Şubat 2026 tarihli Yargıtay (Court of Appeal) Mevcut Durum emriyle koruma altında olan sınır.'
+                          : 'Moli family residential enclave, strictly preserved under the 9 Feb 2026 Court of Appeal Status Quo order.'}
+                      </span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="pt-1">
+                  <button
+                    onClick={() => navigate('/construction')}
+                    className="w-full text-center py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg font-semibold text-sm transition-colors cursor-pointer"
+                  >
                     {tr
-                      ? 'Kenya Yasaları Fasıl 164 uyarınca 27 Mayıs 2025 tarihli tadil edilmiş vakıf senedi tescil edildi ve Resmî Gazete’de ilan edildi (Ağustos 2025).'
-                      : 'Amended trust deed under Cap 164 registered and gazetted in August 2025 with 12 institutional trustees.'}
+                      ? 'Şantiye ve İnşaat Bloklarını İncele ➔'
+                      : 'Inspect Construction Blocks & Facilities ➔'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+        {tab === 'foundations' && (
+          <>
+            <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-4">
+              <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <HeartHandshake className="w-4 h-4 text-purple-600" />
+                <span>{tr ? 'Kurucu ve Ortak Vakıflar' : 'Founding & Partner Foundations'}</span>
+              </h2>
+
+              <div className="space-y-2.5 text-sm">
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div className="font-semibold text-slate-900">
+                      Afrika Vakfı (Africa Foundation)
+                    </div>
+                    <span className="font-mono text-purple-700 text-xs font-bold">
+                      6 Mütevelli (50%)
+                    </span>
+                  </div>
+                  <p className="text-sm text-slate-600 mt-1">
+                    {tr
+                      ? 'Merkezi Ankara ve İstanbul’da bulunan Türk hayırsever vakfı. Akademik koordinasyon ve sermaye finansmanı desteği.'
+                      : 'Turkish philanthropic foundation based in Ankara/Istanbul, providing academic steering and capital funding.'}
                   </p>
                 </div>
-              </div>
 
-              <div className="p-3 bg-amber-50/50 border border-amber-200 rounded-lg flex items-start gap-3">
-                <Clock className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                <div className="space-y-0.5">
-                  <div className="font-semibold text-slate-900">
-                    {tr
-                      ? '2. Aşama: CUE Altyapı Denetimi ve Müfredat İncelemesi'
-                      : 'Phase 2: CUE Infrastructure & Curriculum Review'}
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div className="font-semibold text-slate-900">
+                      Universal Education Foundation
+                    </div>
+                    <span className="font-mono text-blue-700 text-xs font-bold">
+                      3 Mütevelli (25%)
+                    </span>
                   </div>
-                  <p className="text-sm text-slate-600">
+                  <p className="text-sm text-slate-600 mt-1">
                     {tr
-                      ? 'Üniversite Eğitim Komisyonu (CUE) gereksinimlerine göre fiziksel karkas tamamlanması ve akademik müfredat uyumu devam etmektedir.'
-                      : 'Commission for University Education technical inspections and curriculum validation currently in progress.'}
+                      ? 'Mombasa merkezli eğitim vakfı. Yerel paydaş ilişkileri, arazi geliştirme ve toplumsal entegrasyon.'
+                      : 'Mombasa-based education trust managing community integration, land development and local coordination.'}
                   </p>
                 </div>
-              </div>
 
-              <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg flex items-start gap-3">
-                <ShieldCheck className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
-                <div className="space-y-0.5">
-                  <div className="font-semibold text-slate-900">
-                    {tr
-                      ? '3. Aşama: Cumhurbaşkanlığı Üniversite Beratı (Charter)'
-                      : 'Phase 3: Presidential Charter Grant'}
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div className="font-semibold text-slate-900">Süleyman Shahbal Foundation</div>
+                    <span className="font-mono text-amber-700 text-xs font-bold">
+                      3 Mütevelli (25%)
+                    </span>
                   </div>
-                  <p className="text-sm text-slate-600">
+                  <p className="text-sm text-slate-600 mt-1">
                     {tr
-                      ? 'Hedef: 2027 akademik yılına kadar üniversite beratının alınması ve ilk öğrenci alımının başlatılması.'
-                      : 'Target: Final Presidential Charter grant conferring full degree-awarding authority ahead of 2027 student intake.'}
+                      ? 'Kıyı bölgesi kalkınma ve hayırseverlik kuruluşu. Yerel idare ve düzenleyici kurumlar koordinasyonu.'
+                      : 'Coastal region development trust liaising with county administration and regulatory bodies.'}
+                  </p>
+                </div>
+
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div className="font-semibold text-slate-900">
+                      Zayed Bin Sultan Al Nahyan Foundation
+                    </div>
+                    <span className="font-mono text-emerald-700 text-xs font-bold">
+                      Destekçi / Bağışçı
+                    </span>
+                  </div>
+                  <p className="text-sm text-slate-600 mt-1">
+                    {tr
+                      ? 'BAE merkezli insani yardım vakfı. 807M KShs sermaye hibe sağlayıcısı ve Yargıtay temyiz başvurucusu.'
+                      : 'UAE humanitarian foundation providing primary capital grant of KShs 807M and co-appellant before Court of Appeal.'}
                   </p>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
+          </>
+        )}
+        {tab === 'academic' && (
+          <>
+            <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-4">
+              <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-blue-600" />
+                <span>
+                  {tr
+                    ? 'Akademik Yapı ve Planlanan Fakülteler'
+                    : 'Academic Structure & Planned Faculties'}
+                </span>
+              </h2>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-1">
+                  <div className="font-semibold text-slate-900">
+                    {tr ? 'Mühendislik & Teknoloji' : 'Engineering & Technology'}
+                  </div>
+                  <p className="text-sm text-slate-500">
+                    {tr
+                      ? 'İnşaat, Makine, Elektrik ve Bilgisayar Mühendisliği'
+                      : 'Civil, Mechanical, Electrical & Computer Engineering'}
+                  </p>
+                </div>
+
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-1">
+                  <div className="font-semibold text-slate-900">
+                    {tr ? 'Sağlık Bilimleri & Tıp' : 'Health Sciences & Medicine'}
+                  </div>
+                  <p className="text-sm text-slate-500">
+                    {tr
+                      ? 'Hemşirelik, Eczacılık ve Halk Sağlığı Bölümleri'
+                      : 'Nursing, Pharmacy & Public Health Departments'}
+                  </p>
+                </div>
+
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-1">
+                  <div className="font-semibold text-slate-900">
+                    {tr ? 'İktisadi & İdari Bilimler' : 'Business & Economics'}
+                  </div>
+                  <p className="text-sm text-slate-500">
+                    {tr
+                      ? 'İşletme, Uluslararası Finans ve Lojistik Yönetimi'
+                      : 'Business Admin, Global Finance & Maritime Logistics'}
+                  </p>
+                </div>
+
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-1">
+                  <div className="font-semibold text-slate-900">
+                    {tr ? 'İslami İlimler & Kültür' : 'Islamic Studies & Culture'}
+                  </div>
+                  <p className="text-sm text-slate-500">
+                    {tr
+                      ? 'İlahiyat, Arap Dili ve Karşılaştırmalı Hukuk'
+                      : 'Theology, Arabic Studies & Comparative Jurisprudence'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+        {tab === 'charter' && (
+          <>
+            <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-4">
+              <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <Award className="w-4 h-4 text-emerald-600" />
+                <span>
+                  {tr
+                    ? 'Yasal Akreditasyon ve Üniversite Beratı Yol Haritası'
+                    : 'CUE Charter & Accreditation Roadmap'}
+                </span>
+              </h2>
+
+              <div className="space-y-3 text-sm">
+                <div className="p-3 bg-emerald-50/50 border border-emerald-200 rounded-lg flex items-start gap-3">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <div className="space-y-0.5">
+                    <div className="font-semibold text-slate-900">
+                      {tr
+                        ? '1. Aşama: Vakıf Senedi Tescili & Resmî Gazete İlanı'
+                        : 'Phase 1: Trust Deed Gazette & Registration'}
+                    </div>
+                    <p className="text-sm text-slate-600">
+                      {tr
+                        ? 'Kenya Yasaları Fasıl 164 uyarınca 27 Mayıs 2025 tarihli tadil edilmiş vakıf senedi tescil edildi ve Resmî Gazete’de ilan edildi (Ağustos 2025).'
+                        : 'Amended trust deed under Cap 164 registered and gazetted in August 2025 with 12 institutional trustees.'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-3 bg-amber-50/50 border border-amber-200 rounded-lg flex items-start gap-3">
+                  <Clock className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <div className="space-y-0.5">
+                    <div className="font-semibold text-slate-900">
+                      {tr
+                        ? '2. Aşama: CUE Altyapı Denetimi ve Müfredat İncelemesi'
+                        : 'Phase 2: CUE Infrastructure & Curriculum Review'}
+                    </div>
+                    <p className="text-sm text-slate-600">
+                      {tr
+                        ? 'Üniversite Eğitim Komisyonu (CUE) gereksinimlerine göre fiziksel karkas tamamlanması ve akademik müfredat uyumu devam etmektedir.'
+                        : 'Commission for University Education technical inspections and curriculum validation currently in progress.'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg flex items-start gap-3">
+                  <ShieldCheck className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                  <div className="space-y-0.5">
+                    <div className="font-semibold text-slate-900">
+                      {tr
+                        ? '3. Aşama: Cumhurbaşkanlığı Üniversite Beratı (Charter)'
+                        : 'Phase 3: Presidential Charter Grant'}
+                    </div>
+                    <p className="text-sm text-slate-600">
+                      {tr
+                        ? 'Hedef: 2027 akademik yılına kadar üniversite beratının alınması ve ilk öğrenci alımının başlatılması.'
+                        : 'Target: Final Presidential Charter grant conferring full degree-awarding authority ahead of 2027 student intake.'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
