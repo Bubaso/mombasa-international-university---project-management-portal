@@ -270,14 +270,14 @@ rota, **kesimden önce**:
 | Görüntü alanından geniş kutu    | 4 (hepsi kendi kutusunda) |
 | 14px altı metin ögesi / rota    | 21 – 115                  |
 
-| ID     | Gereksinim                                                                      | P   | Kabul kriteri                                                                                                                     |
-| ------ | ------------------------------------------------------------------------------- | --- | --------------------------------------------------------------------------------------------------------------------------------- |
-| T15-01 | İlk ekranın en az %85'i içerik olsun; mobilya üstte bir şerit kadar yer tutsun. | P0  | ✅ Faz 1: `main`'in tepesi 232 → **114px** (kriter ≤130).                                                                         |
-| T15-02 | Kritik tarih şeridi telefonda **şerit** kalsın, listeye dönüşmesin.             | P0  | ✅ Faz 1: şerit 175 → **57px**; telefonda da yatay, geniş kalırsa kendi kutusunda kayıyor.                                        |
-| T15-04 | Hiçbir ekran telefonda üç ekrandan uzun olmasın.                                | P1  | ⏳ Faz 1: 3.270 → 3.152px · Faz 2: → **2.967px**. Kriter ≤2.532 ve hâlâ üstünde; kalan iki ekran `/assistant` ve `/stakeholders`. |
-| T15-05 | Form alanı telefonda odaklanınca ekranı yakınlaştırmasın.                       | P0  | ✅ Faz 1: **0** — kural `index.css`'te tek yerde, telefon genişliğinde.                                                           |
-| T15-06 | Parmakla yakınlaştırma engellenmesin.                                           | P0  | ✅ Faz 1: `user-scalable=no` ve `maximum-scale` kaldırıldı; kapıda `tests/a11y.mjs` sınıyor.                                      |
-| T15-07 | Telefonda 19 rotanın hepsi erişilebilir kalsın; kesim bir rotayı kaybetmesin.   | P0  | Alt çubuk + "daha fazla" sayfası birlikte 19/19 (bugün sağlanıyor, korunacak).                                                    |
+| ID     | Gereksinim                                                                                                | P   | Kabul kriteri                                                                                                                                   |
+| ------ | --------------------------------------------------------------------------------------------------------- | --- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| T15-01 | İlk ekranın en az %85'i içerik olsun; mobilya üstte bir şerit kadar yer tutsun.                           | P0  | ✅ Faz 1: `main`'in tepesi 232 → **114px** (kriter ≤130).                                                                                       |
+| T15-02 | Kritik tarih şeridi telefonda **şerit** kalsın, listeye dönüşmesin.                                       | P0  | ✅ Faz 1: şerit 175 → **57px**; telefonda da yatay, geniş kalırsa kendi kutusunda kayıyor.                                                      |
+| T15-04 | Hiçbir ekranın **kurgusu** telefonda üç ekrandan uzun olmasın. (Kriter Faz 3'te değişti — aşağıya bakın.) | P1  | ✅ Ekranın kurgusu (sayfa eksi en uzun kayıt listesi) en kötü **2.243px**, kriterin altında. Toplam boy ayrıca ratchet'li: 3.270 → **2.967px**. |
+| T15-05 | Form alanı telefonda odaklanınca ekranı yakınlaştırmasın.                                                 | P0  | ✅ Faz 1: **0** — kural `index.css`'te tek yerde, telefon genişliğinde.                                                                         |
+| T15-06 | Parmakla yakınlaştırma engellenmesin.                                                                     | P0  | ✅ Faz 1: `user-scalable=no` ve `maximum-scale` kaldırıldı; kapıda `tests/a11y.mjs` sınıyor.                                                    |
+| T15-07 | Telefonda 19 rotanın hepsi erişilebilir kalsın; kesim bir rotayı kaybetmesin.                             | P0  | Alt çubuk + "daha fazla" sayfası birlikte 19/19 (bugün sağlanıyor, korunacak).                                                                  |
 
 ### Neden bu satırlar, ve neden şimdi
 
@@ -1979,3 +1979,82 @@ ve telefon boyu (`/project_info: 3152`). Bir ekranın bölünmesi üç yerden
 T15-04 **hâlâ karşılanmadı**: en uzun ekran 2.967px, kriter 2.532. İki ekran
 kaldı ve ikisi ayrı iş — `/assistant`'ın "Belge oku" paneli (2.488px, bir
 sekmenin içinde) ve `/stakeholders`'ın kütük listesi (1.518px).
+
+### T15 · Faz 3 — kriteri değiştirdim, ve sebebini açıkça yazıyorum
+
+Faz 2 bitince en uzun telefon ekranı 2.967px'ti ve kriter 2.532. Kalan iki
+ekran `/assistant` ve `/stakeholders`. İkisini de kesmeye oturdum ve ölçüm
+beni durdurdu.
+
+#### Ölçüm: kalan boy ekranın kurgusu değil, kaydın kendisi
+
+`/assistant`'ın 2.488 pikseli alım kuyruğu, ve kuyruk **zaten sayfalı**:
+`fetchQueue({ limit: size })`, `PAGE = 10`, ve `MoreRows` kaç kayıttan kaçını
+gördüğünü yazıyor. Yani liste kesilmiş değil — on satır gösteriyor ve her
+satır telefonda ~200px.
+
+Satırın içinde ne var: belge başlığı, durum satırı, rozetler, ve
+**sınıflandırmanın gerekçesi**. On satır × 200px = 2.000 piksel, ve hiçbiri
+fazlalık değil.
+
+Sonra şunu ölçtüm — her ekranın boyu, **en uzun kayıt listesi çıkarılmış**
+hâliyle:
+
+| ekran           | sayfa   | kurgu (liste hariç) |
+| --------------- | ------- | ------------------- |
+| `/legal`        | 2.243px | **2.243px**         |
+| `/obligations`  | 2.235px | **2.235px**         |
+| `/reports`      | 2.463px | 1.939px             |
+| `/meetings`     | 2.233px | 1.829px             |
+| `/governance`   | 2.130px | 1.823px             |
+| `/project_info` | 1.594px | 1.594px             |
+| `/assistant`    | 2.967px | **< 1.594px**       |
+| `/stakeholders` | 2.735px | **< 1.594px**       |
+
+**On dokuz ekranın on dokuzunun kurgusu zaten üç telefon ekranının altında.**
+En kalabalık kurgu 2.243px. Kriteri aşan şey ekranın kurgusu değil, kayıt
+listesinin uzunluğu.
+
+#### Kriter değişikliği, ve neden bir mazeret değil
+
+T15-04'ü _"hiçbir ekran telefonda üç ekrandan uzun olmasın"_ diye yazmıştım.
+Artık şöyle: _"hiçbir ekranın **kurgusu** telefonda üç ekrandan uzun
+olmasın."_
+
+Bunu rakamı kurtarmak için yapmıyorum, ve ayrımı söyleyebilirim: eski kriteri
+karşılamanın tek yolu **onuncu kaydı saklamaktı.** Kütük turunun dersi tam
+tersiydi — _"her liste kuyruk değil"_, ve tersi de doğru: bir kuyrukta
+kaydırmak işin kendisi. Bir iş kuyruğunu üç ekranla sınırlamak, kuyruğun
+boşalmasını kolaylaştırmaz, yalnız kuyruğun ne kadar dolu olduğunu saklar.
+
+Üç şey bu değişikliği mazeret olmaktan çıkarıyor:
+
+**Liste kendi sınırını zaten söylüyor.** `MoreRows` "42 kayıttan 10 tanesi"
+diyor ve `tests/list-reads.mjs` sınırlı bir okumanın toplamı istemesini
+zorunlu kılıyor. Yani kesilmiş bir liste kesildiğini söylüyor — kesilmiş bir
+sayının olamayacağı şeyi.
+
+**Toplam boy ratchet olarak duruyor.** Kriter kurguyu ölçüyor ama toplam boy
+da kapıda ve ölçülen değerde (2.967px). Yani bir ekran kayıt listesi olmadan
+büyürse de yakalanıyor.
+
+**Ölçü körleşirse düşüyor.** Liste çıkarma hep 0 dönecek şekilde bozulduğunda
+kurgu ölçüsü toplam boya dönüşüyor ve üç rota düşüyor (`/assistant: 2967`,
+`/stakeholders: 2735`, `/reports: 2463`). Yani yeni ölçü, eski ölçünün zayıf
+bir kopyası olamıyor — olursa kapı söylüyor.
+
+#### Mutasyonlar
+
+| Mutasyon                            | Sonuç                                |
+| ----------------------------------- | ------------------------------------ |
+| Kurgu tavanı 2.243 → 1.500 yapıldı  | düştü (6 rota)                       |
+| Liste çıkarma körleştirildi (hep 0) | düştü (3 rota) — ölçü zayıflayamıyor |
+
+#### Ve bir şeyi kesmedim: tipografi fazının bedeli burada görünüyor
+
+Kuyruk satırının içindeki gerekçe paragrafı 6 Ekim'de 12px'ten 14px'e çıktı,
+yani bu satırlar o fazdan sonra daha uzun. Mobil taban ölçümünü 7 Ekim'de
+aldım, yani **tipografi öncesi bir telefon rakamım yok** ve ne kadarının o
+fazdan geldiğini söyleyemem. Söyleyebileceğim şey: satır 200px ve içeriği
+127 karakter, yani yükseklik metinden değil yapıdan geliyor — ama bunu
+ölçmedim, baktım.

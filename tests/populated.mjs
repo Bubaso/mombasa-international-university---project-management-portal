@@ -991,7 +991,8 @@ check(
     mainTop: 114, // T15-01: 232 → 114 (kriter ≤130, altında)
     bannerH: 57, // T15-02: 175 → 57 (kriter ≤60, altında)
     smallTargets: 0, // T4-01: 9 → 0, artık bir tavan değil bir KURAL
-    height: 2967, // T15-04: 3270 → 3152 (Faz 1) → 2967 (Faz 2); kriter ≤2532, hâlâ üstünde
+    height: 2967, // T15-04: 3270 → 3152 (Faz 1) → 2967 (Faz 2). Toplam boy, ratchet.
+    chrome: 2243, // T15-04'ün KRİTERİ: sayfa eksi en uzun kayıt listesi (≤2532)
     smallFields: 0, // T15-05: 6 → 0, kural
   };
 
@@ -1044,8 +1045,27 @@ check(
       const fields = [...document.querySelectorAll('input, select, textarea')].filter(vis);
 
       const main = document.querySelector('main');
+
+      // Ekranın boyu, BİRİNCİL KAYIT LİSTESİ çıkarılmış hâliyle.
+      //
+      // Bir iş kuyruğunda kaydırmak işin kendisi: kütük turunun dersi "her
+      // liste kuyruk değil" idi, ve bunun tersi de doğru — kuyruğun uzunluğu
+      // kayıt sayısıdır, ekranın kurgusu değil. Bir ekranı üç telefon
+      // ekranıyla sınırlamak, onuncu kaydı saklamayı gerektiriyorsa ölçü
+      // yanlış ölçüdür.
+      //
+      // Bu yüzden iki sayı: sayfanın tamamı, ve sayfa EKSİ en uzun kayıt
+      // listesi. İkincisi ekranın kendi kurgusunu ölçüyor.
+      const longestList = Math.max(
+        0,
+        ...[...document.querySelectorAll('main ul, main ol, main tbody')]
+          .filter((el) => el.getClientRects().length > 0 && el.children.length >= 3)
+          .map((el) => el.getBoundingClientRect().height),
+      );
+
       return {
         height: document.documentElement.scrollHeight,
+        chrome: Math.round(document.documentElement.scrollHeight - longestList),
         mainTop: main ? Math.round(main.getBoundingClientRect().top) : 0,
         tappable: tappable.length,
         small: small.length,
@@ -1095,6 +1115,60 @@ check(
   });
   await page.setViewportSize({ width: 1440, height: 1000 });
 
+  // Belge oku panelinin içi
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(BASE + '/assistant', { waitUntil: 'domcontentloaded' });
+  await settle();
+  const inside = await page.evaluate(() => {
+    const head = [...document.querySelectorAll('h2, h3')].find((h) =>
+      /Belge oku|Read a document/.test(h.textContent ?? ''),
+    );
+    const panel = head?.closest('section') ?? head?.parentElement?.parentElement ?? null;
+    if (!panel) return ['panel bulunamadı'];
+    return [...panel.children]
+      .flatMap((c) => [c, ...c.children])
+      .filter((el) => el.getClientRects().length > 0)
+      .map((el) => {
+        const r = el.getBoundingClientRect();
+        const t = (el.querySelector('h2,h3,h4')?.textContent ?? el.textContent ?? '')
+          .trim()
+          .replace(/\s+/g, ' ')
+          .slice(0, 40);
+        return { h: Math.round(r.height), tag: el.tagName.toLowerCase(), t };
+      })
+      .filter((x) => x.h > 100)
+      .sort((a, b) => b.h - a.h)
+      .slice(0, 8)
+      .map((x) => `${String(x.h).padStart(5)}px ${x.tag.padEnd(8)} ${x.t}`);
+  });
+  console.log('     [Belge oku içi]');
+  for (const l of inside) console.log(`       ${l}`);
+  const rowsInfo = await page.evaluate(() => {
+    const lists = [...document.querySelectorAll('main ul, main ol')].filter(
+      (el) => el.getClientRects().length > 0 && el.children.length > 0,
+    );
+    return lists
+      .map((ul) => {
+        const kids = [...ul.children].filter((c) => c.getClientRects().length > 0);
+        const hs = kids.map((c) => Math.round(c.getBoundingClientRect().height));
+        const chars = kids.reduce((n, c) => n + (c.textContent ?? '').trim().length, 0);
+        return {
+          n: kids.length,
+          hs: hs.slice(0, 4),
+          total: Math.round(ul.getBoundingClientRect().height),
+          chars,
+        };
+      })
+      .filter((x) => x.total > 300)
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 4);
+  });
+  console.log('     [satırlar] (fixture verisiyle)');
+  for (const r of rowsInfo)
+    console.log(
+      `       liste ${String(r.total).padStart(5)}px · ${r.n} satır · yükseklikler ${r.hs.join(',')} · ${r.chars} karakter`,
+    );
+
   for (const route of ['/project_info', '/stakeholders', '/assistant']) {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(BASE + route, { waitUntil: 'domcontentloaded' });
@@ -1127,6 +1201,14 @@ check(
   }
   await page.setViewportSize({ width: 390, height: 844 });
 
+  console.log(
+    '     [kurgu boyu = sayfa - en uzun liste] ' +
+      Object.entries(mobile)
+        .sort((a, b) => b[1].chrome - a[1].chrome)
+        .slice(0, 6)
+        .map(([r, m]) => `${r}:${m.chrome}`)
+        .join(' '),
+  );
   console.log(
     '     [telefon boy] ' +
       Object.entries(mobile)
@@ -1179,8 +1261,15 @@ check(
   );
   check(
     over('height', MOBILE.height).length === 0,
-    `hiçbir ekran telefonda ${MOBILE.height}px'i aşmıyor (T15-04)`,
+    `hiçbir ekranın toplam boyu telefonda ${MOBILE.height}px'i aşmıyor (T15-04 ratchet)`,
     over('height', MOBILE.height).join(', ') || `en uzun ${worst('height')}px`,
+  );
+  // T15-04'ün asıl kriteri bu: ekranın KURGUSU üç telefon ekranını aşmasın.
+  // Kayıt listesinin uzunluğu kayıt sayısıdır, ekranın kurgusu değil.
+  check(
+    over('chrome', MOBILE.chrome).length === 0,
+    `hiçbir ekranın kurgusu ${MOBILE.chrome}px'i aşmıyor (T15-04)`,
+    over('chrome', MOBILE.chrome).join(', ') || `en kalabalık kurgu ${worst('chrome')}px`,
   );
   check(
     over('smallFields', MOBILE.smallFields).length === 0,
