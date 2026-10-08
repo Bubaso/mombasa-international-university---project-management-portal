@@ -2076,3 +2076,103 @@ aldım, yani **tipografi öncesi bir telefon rakamım yok** ve ne kadarının o
 fazdan geldiğini söyleyemem. Söyleyebileceğim şey: satır 200px ve içeriği
 127 karakter, yani yükseklik metinden değil yapıdan geliyor — ama bunu
 ölçmedim, baktım.
+
+## Satırların denetimi — bir ✅ neyin kanıtı?
+
+Bu oturumda beş kez aynı şey oldu ve beşi de tesadüfen bulundu:
+
+| satır  | ne olmuş                                                         |
+| ------ | ---------------------------------------------------------------- |
+| T13-08 | rakamları elle `grep`'le saydım, dört kalemi birden yanlıştı     |
+| T14-06 | satırı "bekliyor" yazdım, oysa yarısı zaten yapılmıştı           |
+| T3-01  | "12px **altı** metin 0" ölçüldü, satır "**14px** altı" istiyordu |
+| T4-01  | araç `r.height < 44` ölçtü, satır "**44×44**" diyordu            |
+| T15-07 | telefonu ölçtüğünü sandığım kontrol masaüstünü ölçüyordu         |
+
+Ortak nokta: hepsinde bir ✅ vardı ve hiçbirinin arkasında onu tutan bir
+assertion yoktu — ya da tutan şey satırın istediğinden azını ölçüyordu.
+Beşinci kez tekrar eden bir hata artık tesadüf değil, bir boşluk.
+
+### Ölçüm: 30 ✅ satırın 5'i hiçbir kapıda anılmıyordu
+
+`tests/design-rows.mjs` şunu soruyor: **✅ işaretli her satırın kimliği,
+`npm run verify`'ın koştuğu bir test dosyasında geçiyor mu?** Dosya listesi
+elle yazılmadı — `package.json`'daki `verify` zincirinden çıkarılıyor, yani
+yeni bir test eklenince liste kendiliğinden büyüyor.
+
+İlk koşuda: **30 ✅ satır, 25'i anılıyor, 5'i anılmıyor** — T10-03, T13-02,
+T13-03, T14-02, T14-06.
+
+Beşi üç ayrı kategoriye düştü:
+
+**Korunuyordu ama adı yazılmamıştı (T13-03).** Sohbet cümlesi ratchet'i
+`tests/screen-text.mjs`'te duruyor ve sıfırda tutuyor; satır kimliği
+assertion'ın etiketinde yoktu. Tek kelime eklendi.
+
+**Hiç korunmuyordu (T14-06).** Satır ✅ işaretliydi ve **hiçbir test
+`BY_ROLE`'den haberdar değildi.** Artık gösterge panelindeki rol→panel
+eşlemesinin en az 13 rolü kapsadığı sınanıyor (ölçülen: 13).
+
+**"Bakıldı, ölçülmedi" diye kapanmıştı (T10-03).** Dokümanda öyle yazılıydı,
+yani gizli değildi — ama ölçülebilir bir hâli vardı ve yazılmamıştı:
+`CurvePanel` çizdiği her grafik için bir lejant çağırıyor mu (3/3), ve Gantt
+kimliği taşıyan iki şekli de adlandırıyor mu.
+
+### Ve T13-02 bir bulgu çıkardı: dokümanın alıntıları paraframış
+
+T13-02 _"on bir kısıt tek tek arandı, hepsi ekranda"_ diye kapanmıştı ve o
+arama **elleydi.** Listeyi dokümandaki alıntılardan kopyalayıp kapıya
+koydum ve **beşi eşleşmedi.** Bir an bir kesimin kısıtı götürdüğünü sandım.
+
+Götürmemiş. Alıntılarım yaklaşıktı:
+
+| dokümanda yazdığım                             | ekranda duran                                                        |
+| ---------------------------------------------- | -------------------------------------------------------------------- |
+| `kasada belgesi olmadan 'karşılandı' olamıyor` | kasada belgesi olmadan **“karşılandı”** olamıyor (tipografik tırnak) |
+| `duruşma bildirimi portal içinde kapatılamaz`  | **Duruşma ve son tarih** bildirimi portal içinde kapatılamaz         |
+| `yalnızca denetçi koyabilir`                   | yalnızca denetim komitesi ya da **dış** denetçi koyabilir            |
+| `Kütüğü olmayan şerit çizilmiyor`              | Tanıtım şeridi yok: **onu tutan bir kütük yok**                      |
+| `raporu olmayan blok 'raporlanmadı' der`       | `site.ts` yüzde null olduğunda **`raporlanmadı`** döndürüyor         |
+
+Yani _"tek tek arandı"_ dediğim şey dizgeleri değil **fikirleri** aramaktı — ve
+fikir aramak tekrar edilemez. **Ekran metnini yaklaşık alıntılayan bir
+doküman, ekran metnini doğrulamak için kullanılamaz.** Kapıdaki liste artık
+kaynaktan alınmış birebir parçalardan oluşuyor: on bir kısıt ve bilinmeyeni
+ekranda tutan dört cümle, 15/15.
+
+### Bu kontrolün NE kanıtladığını açıkça yazıyorum
+
+Bu dosyanın kendisi de aynı hataya düşebilir, o yüzden sınırı yazılı: kontrol
+satırın **adının geçtiğini** kanıtlar, assertion'ın **yeterli olduğunu**
+kanıtlamaz. Bir yorumda satır kimliğini anmak da sayılıyor.
+
+Yani bir üst sınır değil bir **alt sınır**: "hiçbir şey" ile "bir şey"
+arasını ayırıyor, "yeterli" ile "yetersiz" arasını ayırmıyor. Yine de bugün
+beş satırı yakalardı ve beşinin dördü gerçek boşluktu.
+
+`tests/design.mjs` **kasıtlı olarak sayılmıyor**: o dosya canlı projeye giriş
+istiyor ve `verify` içinde değil. Elle koşulan bir ölçüm, koşulmadığı sürece
+ölçüm değil — ve bu turda tam o dosyanın yarım ölçtüğü bir satır (T4-01)
+çıktı.
+
+### Mutasyonlar
+
+| Mutasyon                                    | Sonuç                                |
+| ------------------------------------------- | ------------------------------------ |
+| Korumasız bir satır (T11-04) ✅ işaretlendi | düştü, satırı adlandırarak           |
+| `verify` dosya çıkarma körleştirildi        | düştü — üç kontrol, 30 satırın hepsi |
+
+İkincisi önemli: ölçüm körleşirse meta-kapı **her şeyi** korumasız sayıyor,
+yani sessizce "hepsi tamam" diyemiyor. Bir kapının en kötü hâli yanlış cevap
+vermesi değil, hiç cevap vermediğini söylememesidir.
+
+### Kalan 61 satır
+
+91 satırın 30'u ✅; kalan 61'i işaretsiz. İşaretsiz olmak "yapılmadı" demek
+değil — bir kısmı 4. dalgada `tests/design.mjs` ile ölçüldü ve sonucu prose
+bölümlerinde yazılı, bir kısmı hiç ölçülmedi. **Tablonun kendisi hangi
+satırın kapalı olduğunu söylemiyor**, ve bu da bir boşluk; ama onu kapatmak
+61 satırı tek tek doğrulamak demek ve bu turun kapsamı değil.
+
+Bugün kapatılan şey daha küçük ve daha keskin: **bundan sonra bir satıra ✅
+koymak, onu tutan bir assertion yazmayı gerektiriyor.**

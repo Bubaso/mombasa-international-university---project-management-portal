@@ -413,7 +413,7 @@ check(
 
 check(
   chatty.length === 0,
-  'hiçbir ekran metni kullanıcıya değil yazara hitap etmiyor',
+  'hiçbir ekran metni kullanıcıya değil yazara hitap etmiyor (T13-03)',
   chatty.length ? chatty.join(', ') : '',
 );
 
