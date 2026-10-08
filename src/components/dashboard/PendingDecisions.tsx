@@ -16,6 +16,7 @@ import React from 'react';
 import {
   ArrowUpRight,
   Bell,
+  FileQuestion,
   Gavel,
   HandCoins,
   HelpCircle,
@@ -75,6 +76,13 @@ function waitedDays(since: string | null): number | null {
   return Math.floor((Date.now() - new Date(since).getTime()) / (1000 * 60 * 60 * 24));
 }
 
+/**
+ * Aynı tablo, gevşek anahtarla. `Record<DecisionKind, …>` bir `DecisionKind`
+ * ile indekslenince TypeScript sonucun kesin var olduğunu söyler; bu bir göç
+ * canlıya uygulanana kadar doğrudur.
+ */
+const SHAPE_BY_KEY: Record<string, (typeof SHAPE)[DecisionKind]> = SHAPE;
+
 export const PendingDecisions: React.FC<{ limit?: number }> = ({ limit }) => {
   const { language } = useApp();
   const tr = language === 'tr';
@@ -133,8 +141,23 @@ export const PendingDecisions: React.FC<{ limit?: number }> = ({ limit }) => {
       ) : (
         <ul className="divide-y divide-slate-100">
           {shown.map((decision) => {
-            const shape = SHAPE[decision.kind];
-            const Icon = shape.icon;
+            // Gevşek anahtar, `lib/calendarKinds.ts`'in kalıbı.
+            //
+            // ÖNCESİ `SHAPE[decision.kind]` idi ve `.icon` korumasız okunuyordu;
+            // `pending_decisions` görünümünün `kind` kolonu hesaplanmış bir
+            // `case`, yani `text` — `DecisionKind` birliği onun hakkında
+            // istemcinin bir iddiası. Bir göç yeni bir karar türü ürettiği an
+            // `shape` `undefined` olur ve gösterge paneli tamamen gider.
+            // Takvim ekranını 3 Ekim'de düşüren kusurun aynısı.
+            //
+            // 8 Ekim 2026'da ölçüldü ve çökme gerçekti: `tests/populated.mjs`
+            // tanınmayan bir değer üretiyor, ama o kapı yetkiyi hiç
+            // tanımadığı için bu panel hiç render edilmiyordu. Mock
+            // düzeltilince `/` ilk kez düştü.
+            const shape = SHAPE_BY_KEY[decision.kind];
+            // Tanınmayan tür için nötr bir ikon. Bir kategori ikonu
+            // uydurmak, türü biliyormuş gibi göstermek olurdu.
+            const Icon = shape?.icon ?? FileQuestion;
             const days = waitedDays(decision.waitingSince);
             const isMine = mine(decision);
 
@@ -142,7 +165,10 @@ export const PendingDecisions: React.FC<{ limit?: number }> = ({ limit }) => {
               <li key={`${decision.kind}-${decision.id}`}>
                 <button
                   type="button"
-                  onClick={() => navigate(shape.route)}
+                  // Rotası bilinmeyen bir karar için gösterge panelinde
+                  // kalıyor: var olmayan bir kütüğe götürmektense satır
+                  // okunur kalsın.
+                  onClick={() => navigate(shape?.route ?? '/')}
                   className="flex w-full cursor-pointer flex-wrap items-start justify-between gap-2 py-2 text-left hover:bg-slate-50"
                 >
                   <div className="flex min-w-0 flex-1 items-start gap-2">
@@ -157,7 +183,10 @@ export const PendingDecisions: React.FC<{ limit?: number }> = ({ limit }) => {
                         <span className="text-sm font-medium text-slate-900">
                           {tr ? (decision.titleTr ?? decision.titleEn) : decision.titleEn}
                         </span>
-                        <Pill>{tr ? shape.tr : shape.en}</Pill>
+                        {/* Tanınmayan tür kendi anahtarıyla görünür:
+                            uydurulmuş bir ad, tanınmayan bir değerden
+                            kötüdür (CLAUDE.md §2). */}
+                        <Pill>{(shape && (tr ? shape.tr : shape.en)) ?? decision.kind}</Pill>
                         {isMine && (
                           <Pill className="border-indigo-300 bg-indigo-100 text-indigo-900">
                             {tr ? 'sizde' : 'yours'}

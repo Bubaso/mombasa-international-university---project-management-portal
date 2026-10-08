@@ -28,6 +28,7 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import { chromium } from 'playwright';
 import { relationsIn, rowsFor } from './schema-rows.mjs';
 import { vocabulariesAcross } from './case-vocabularies.mjs';
+import { raiseChecks } from './raised.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const PORT = Number(process.env.POPULATED_PORT ?? 4174);
@@ -102,14 +103,57 @@ const PROFILE = {
   created_at: '2026-01-01T00:00:00Z',
 };
 
+/**
+ * `current_authority()`'nin döndürdüğü şekil — ve bu uyuşmazlık 8 Ekim
+ * 2026'da ölçüldü.
+ *
+ * Önceki hâli snake_case idi ve `roles` dizisi hiç yoktu:
+ *
+ *   { profile_id, role, clearance, is_internal, can_write, delegated_from }
+ *
+ * `fetchAuthority` ise `Array.isArray(value.roles)` sınıyor ve sağlamayan
+ * cevabı **yetkisizlik** sayıyor (kasıtlı: tanınmayan bir yetki, yetki
+ * değildir). Yani bu kapı boyunca `authority` null kaldı ve `/admin`'in
+ * yetkiye bağlı her bölümü — denetim kaydı, kapsam, paylaşım, devir —
+ * hiç render edilmedi. Ekranın yarısı "geçti" diye sayılıyordu.
+ *
+ * Nasıl ortaya çıktı: M1-11'in paneli eklendikten sonra `/admin`'in düğme
+ * sayısı 42'den 42'ye gitti. Bir bölüm eklenip hiçbir sayı değişmiyorsa,
+ * değişmeyen şey ekran değil ölçüdür.
+ *
+ * Alanlar artık 0005'teki `jsonb_build_object` ile birebir. Aşağıdaki
+ * assertion ikisinin ayrı düşmesini yakalıyor.
+ */
 const AUTHORITY = {
-  profile_id: PROFILE.id,
   role: 'admin',
+  roles: ['admin'],
   clearance: 'restricted',
-  is_internal: true,
-  can_write: true,
-  delegated_from: null,
+  isInternal: true,
+  isAdmin: true,
+  delegations: [],
 };
+
+{
+  // Mock'un alan adları göçten okunuyor, elle yazılan bir listeden değil.
+  const source = readFileSync(
+    join(root, 'supabase', 'migrations', '0005_effective_authority.sql'),
+    'utf8',
+  );
+  const body = source.slice(
+    source.indexOf('create or replace function public.current_authority()'),
+  );
+  const keys = [...body.slice(0, body.indexOf('$$;')).matchAll(/'([a-zA-Z]+)',/g)].map((m) => m[1]);
+  const named = [...new Set(keys)].filter((k) =>
+    ['role', 'roles', 'clearance', 'isInternal', 'isAdmin', 'delegations'].includes(k),
+  );
+  check(named.length === 6, 'current_authority alanları göçten okundu', named.join(', '));
+  const missing = named.filter((k) => !(k in AUTHORITY));
+  check(
+    missing.length === 0,
+    'sahte yetki, veritabanının döndürdüğü her alanı taşıyor',
+    missing.length ? `eksik: ${missing.join(', ')}` : `${named.length} alan`,
+  );
+}
 
 const ROUTES = [
   '/',
@@ -221,10 +265,27 @@ await page.route('**/rest/v1/**', (route) => {
   const json = (body) =>
     route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
 
+  // YETKİ, YAZMA MUHAFIZINDAN ÖNCE. Bu sıra 8 Ekim 2026'da düzeltildi.
+  //
+  // `supabase.rpc()` bir **POST** atıyor. Muhafız önce gelince aşağıdaki
+  // `current_authority` satırı ölü koddu: her çağrı `[]` alıyor,
+  // `fetchAuthority` onu tanımayıp `null` döndürüyor, ve `/admin`'in yetkiye
+  // bağlı her bölümü — denetim kaydı, kapsam, paylaşım, devir — hiç render
+  // edilmiyordu. Ekranın yarısı "geçti" sayılıyordu.
+  //
+  // Nasıl ortaya çıktı: M1-11'in bölümü eklendi ve `/admin`'in düğme sayısı
+  // 42'den 42'ye gitti. Bir bölüm eklenip hiçbir sayı değişmiyorsa,
+  // değişmeyen şey ekran değil ölçüdür.
+  if (/\/rest\/v1\/rpc\/current_authority/.test(url)) return json(AUTHORITY);
+
   // Yazmalar bir şey döndürmek zorunda değil; bu test okumayı ölçüyor.
+  //
+  // Diğer RPC okumaları (`search_records`, `translation_review`,
+  // `audit_file_backlog` …) hâlâ `[]` alıyor ve bu bilinçli: onlar liste
+  // döndürüyor, ve boş liste bu testin zaten sınadığı hâl. `current_authority`
+  // liste değil — bir nesne — ve boş hâli "yetkisiz" demek, o yüzden ayrı.
   if (request.method() !== 'GET' && request.method() !== 'HEAD') return json([]);
 
-  if (/\/rest\/v1\/rpc\/current_authority/.test(url)) return json(AUTHORITY);
   if (/\/rest\/v1\/rpc\//.test(url)) return json([]);
 
   const relation = relationOf(url);
@@ -453,25 +514,25 @@ const signedCounts = [];
  */
 
 const DENSITY = {
-  '/assistant': { buttons: 55, headings: 3, height: 2392 },
-  '/meetings': { buttons: 57, headings: 9, height: 1767 },
-  '/obligations': { buttons: 52, headings: 10, height: 1567 },
-  '/risks': { buttons: 57, headings: 4, height: 1481 },
-  '/project_info': { buttons: 47, headings: 3, height: 1044 },
-  '/stakeholders': { buttons: 50, headings: 5, height: 1356 },
-  '/plan': { buttons: 53, headings: 4, height: 1412 },
-  '/legal': { buttons: 59, headings: 4, height: 1316 },
-  '/reports': { buttons: 57, headings: 7, height: 1394 },
-  '/governance': { buttons: 59, headings: 3, height: 1196 },
+  '/admin': { buttons: 61, headings: 13, height: 4517 },
+  '/assistant': { buttons: 56, headings: 3, height: 2526 },
+  '/': { buttons: 60, headings: 8, height: 2023 },
+  '/meetings': { buttons: 58, headings: 9, height: 1767 },
+  '/obligations': { buttons: 53, headings: 10, height: 1567 },
+  '/risks': { buttons: 58, headings: 4, height: 1527 },
+  '/plan': { buttons: 63, headings: 4, height: 1424 },
+  '/reports': { buttons: 58, headings: 7, height: 1394 },
+  '/legal': { buttons: 60, headings: 4, height: 1390 },
+  '/stakeholders': { buttons: 51, headings: 5, height: 1356 },
   '/calendar': { buttons: 61, headings: 4, height: 1198 },
-  '/': { buttons: 52, headings: 4, height: 1141 },
-  '/readiness': { buttons: 50, headings: 4, height: 1110 },
-  '/documents': { buttons: 52, headings: 2, height: 1072 },
-  '/construction': { buttons: 50, headings: 2, height: 1044 },
+  '/governance': { buttons: 59, headings: 3, height: 1196 },
+  '/readiness': { buttons: 54, headings: 4, height: 1110 },
+  '/documents': { buttons: 53, headings: 2, height: 1072 },
+  '/construction': { buttons: 53, headings: 2, height: 1066 },
+  '/project_info': { buttons: 47, headings: 3, height: 1044 },
   '/procurement': { buttons: 57, headings: 3, height: 1044 },
-  '/finance': { buttons: 47, headings: 4, height: 1044 },
+  '/finance': { buttons: 48, headings: 4, height: 1044 },
   '/communication': { buttons: 83, headings: 4, height: 1044 },
-  '/admin': { buttons: 42, headings: 6, height: 1044 },
 };
 
 /**
@@ -498,40 +559,23 @@ const DENSITY = {
  * düzelttim. Bir kapı atfı doğrulayamaz, yalnızca uydurmayı yakalar.
  */
 const RAISED = [
-  { route: '/plan', field: 'buttons', from: 51, to: 53, row: 'T10-06' },
-  { route: '/reports', field: 'buttons', from: 54, to: 57, row: 'T10-06' },
-  { route: '/construction', field: 'buttons', from: 44, to: 45, row: 'T14-04' },
-  { route: '/project_info', field: 'buttons', from: 43, to: 47, row: 'T15-04' },
-  { route: '/legal', field: 'buttons', from: 58, to: 59, row: 'M5-09' },
+  { what: '/plan.buttons', from: 51, to: 53, row: 'T10-06' },
+  { what: '/reports.buttons', from: 54, to: 57, row: 'T10-06' },
+  { what: '/construction.buttons', from: 44, to: 45, row: 'T14-04' },
+  { what: '/project_info.buttons', from: 43, to: 47, row: 'T15-04' },
+  { what: '/legal.buttons', from: 58, to: 59, row: 'M5-09' },
 ];
 
-{
-  const requirements = readFileSync(join(root, 'docs', 'URUN-GEREKSINIMLERI.md'), 'utf8');
-  const design = readFileSync(join(root, 'docs', 'TASARIM-GEREKSINIMLERI.md'), 'utf8');
-  const corpus = requirements + design;
-  const unknown = RAISED.filter((r) => !corpus.includes(`| ${r.row} |`)).map((r) => r.row);
-  check(
-    unknown.length === 0,
-    'yükseltilmiş her tavan var olan bir gereksinim satırını gösteriyor',
-    unknown.length ? unknown.join(', ') : `${RAISED.length} yükseltme`,
-  );
-
-  const backwards = RAISED.filter((r) => r.to <= r.from).map((r) => r.route);
-  check(
-    backwards.length === 0,
-    've her kaydı bir bedel — düşen bir tavan bu listeye girmiyor',
-    backwards.length ? backwards.join(', ') : `${RAISED.length} yükseltme`,
-  );
-
-  // Yanlış yazılmış bir rota adı kaydı sessizce anlamsız kılar: kimse o
-  // yükseltmeyi bir daha bulamaz.
-  const nowhere = RAISED.filter((r) => DENSITY[r.route]?.[r.field] == null).map((r) => r.route);
-  check(
-    nowhere.length === 0,
-    've gösterdiği rota gerçekten ölçülen bir rota',
-    nowhere.length ? nowhere.join(', ') : `${RAISED.length} yükseltme`,
-  );
-}
+raiseChecks({
+  raises: RAISED,
+  corpus:
+    readFileSync(join(root, 'docs', 'URUN-GEREKSINIMLERI.md'), 'utf8') +
+    readFileSync(join(root, 'docs', 'TASARIM-GEREKSINIMLERI.md'), 'utf8'),
+  knownKeys: Object.entries(DENSITY).flatMap(([route, c]) =>
+    Object.keys(c).map((field) => `${route}.${field}`),
+  ),
+  check,
+});
 
 const density = {};
 const tabsFound = {};
@@ -556,6 +600,21 @@ for (const route of ROUTES) {
     headings: document.querySelectorAll('h1,h2,h3,h4').length,
     height: document.body.scrollHeight,
   }));
+
+  // M1-11'in paneli: render edildiğini ayrıca sınamak gerekiyor.
+  //
+  // Yoğunluk ölçüsü yalnızca İLK EKRANI sayıyor (yukarıdaki gerekçe) ve
+  // `/admin`'in ilk ekranı 1044px. Erişim gözden geçirme bölümü kişiler,
+  // kapsam, paylaşım ve devirden sonra geliyor, yani kıvrımın altında:
+  // hiç render edilmese `/admin` yine 42 düğme ölçerdi ve kapı susardı.
+  // Ölçüldü — bölüm eklendikten sonra sayı değişmedi, ve değişmemesi
+  // ölçünün onu görmediğinin kanıtıydı.
+  if (route === '/admin') {
+    const handles = await page.evaluate(
+      () => document.querySelectorAll('[data-access-review]').length,
+    );
+    check(handles === 1, 'erişim gözden geçirme bölümü ekranda (M1-11)', `${handles} tutamak`);
+  }
 
   // Sekmeler: ilk ekranda görünmeyen bir panel, tıklanmadan sınanmaz.
   //
@@ -1063,10 +1122,23 @@ check(
     mainTop: 114, // T15-01: 232 → 114 (kriter ≤130, altında)
     bannerH: 57, // T15-02: 175 → 57 (kriter ≤60, altında)
     smallTargets: 0, // T4-01: 9 → 0, artık bir tavan değil bir KURAL
-    height: 2967, // T15-04: 3270 → 3152 (Faz 1) → 2967 (Faz 2). Toplam boy, ratchet.
-    // M5-09'un sekmesi 2243 → 2293 (bir sekme satırı). Kriter ≤2532, hâlâ
-    // altında — yükseltme bir ölçüt ihlâli değil, yazılı bir bedel.
-    chrome: 2293, // T15-04'ün KRİTERİ: sayfa eksi en uzun kayıt listesi (≤2532)
+    // 8 EKİM 2026: İKİSİ DE ÖLÇÜM DÜZELTİLDİĞİ İÇİN YÜKSELDİ, VE T15-04 ARTIK
+    // KARŞILANMIYOR. Sahte yetki düzeltilince yönetim konsolunun yetkiye bağlı
+    // dört bölümü ve gösterge panelinin karar kuyruğu ilk kez render edildi:
+    //
+    //   /admin  toplam 1.044 → 10.743px, kurgu → 8.931px
+    //   /       kurgu → 2.552px
+    //   /legal  kurgu → 2.421px (kriterin altında, eski ratchet'in üstünde)
+    //
+    // Kriter hâlâ 2.532px ve `/admin` ile `/` onu aşıyor. Rakamları buraya
+    // ölçülen hâlleriyle yazıyorum çünkü alternatif körlüğü tavan olarak
+    // yazmak olurdu; `docs/TASARIM-GEREKSINIMLERI.md` T15-04'ü artık
+    // karşılanmış saymıyor ve sebebini rakamla söylüyor.
+    //
+    // Bu bir gerileme değil bir ifşa: ekranlar dünden beri bu boydaydı,
+    // ölçü onları görmüyordu.
+    height: 10743, // T15-04 toplam boy, ratchet. Ölçülen, hedef değil.
+    chrome: 8931, // T15-04'ün KRİTERİ 2532 — AŞILIYOR, bkz. yukarıdaki not
     smallFields: 0, // T15-05: 6 → 0, kural
   };
 

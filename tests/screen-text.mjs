@@ -31,6 +31,7 @@
 import { readFileSync, globSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { raiseChecks } from './raised.mjs';
 import {
   strip,
   stringsIn,
@@ -48,6 +49,12 @@ const check = (ok, label, detail = '') => {
 };
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+
+/** Yükselmiş tavanlar, gerekçeleriyle. Kural `tests/raised.mjs`'te, tek yerde. */
+const RAISED = [
+  { what: 'textChars', from: 57640, to: 58086, row: 'M1-11' },
+  { what: 'emptyChars', from: 2906, to: 2978, row: 'M1-11' },
+];
 process.chdir(root);
 
 // ---------------------------------------------------------------------------
@@ -66,7 +73,17 @@ process.chdir(root);
 const CEILING = {
   // Faz 5: 58.388 → 57.640 ve 28.171 → 26.994. T13-07'nin jargon
   // düzeltmeleri ve T13-08'in beş uzun boş durum açıklaması.
-  textChars: 57640,
+  //
+  // 8 Ekim 2026: 57.640 → 58.086. M1-11'in erişim gözden geçirme bölümü yeni
+  // bir ekran ve yeni metin getiriyor. Önce kesilecek bir şey arandı ve iki
+  // tane bulundu: uyuşmazlık bloğunun ikinci cümlesi başlığın altındaki
+  // cümleyi tekrar ediyordu, ve boş durum açıklaması gereğinden uzundu.
+  // İkisi kesildi; kalan metin kesilemez, çünkü her cümle bir durumu
+  // adlandırıyor (yetki yok / kayıt yok / karar uygulanmamış) ve ikisini
+  // birleştirmek bilinmeyeni bilinmiş göstermek olurdu.
+  //
+  // Yükseltme `RAISED` içinde M1-11 adına kayıtlı; kural `tests/raised.mjs`.
+  textChars: 58086,
   longChars: 26994,
   // Panel gerekçesi: T13-01'in kestiği şey. 8489 → 2753 (Faz 2).
   introChars: 2753,
@@ -130,7 +147,12 @@ const CEILING = {
    *
    * `longestEmpty` tavan değil kural: hiçbiri 120'yi aşmasın, İKİ dilde de.
    */
-  emptyChars: 2906,
+  // 8 Ekim 2026: 2.906 → 2.978. M1-11'in bölümü yeni bir boş durum getiriyor
+  // ve o boş durum iki olgu söylüyor: herkes son altı ayda gözden geçirildi,
+  // ve yaklaşan bir bitiş yok. İkisinden birini atmak listenin niçin boş
+  // olduğunu yarım bırakırdı. Açıklama bir kez kısaltıldı (116 → 71 karakter)
+  // ve kalan 72 karakter yükseltme olarak M1-11 adına kayıtlı.
+  emptyChars: 2978,
   longestEmpty: 120,
 };
 
@@ -367,6 +389,15 @@ for (const file of files) {
 }
 
 // Ölçüm aletinin kendisi: sıfır dönerse testin tamamı sessizce geçer.
+raiseChecks({
+  raises: RAISED,
+  corpus:
+    readFileSync(join(root, 'docs', 'URUN-GEREKSINIMLERI.md'), 'utf8') +
+    readFileSync(join(root, 'docs', 'TASARIM-GEREKSINIMLERI.md'), 'utf8'),
+  knownKeys: Object.keys(CEILING),
+  check,
+});
+
 check(textChars > 10000, 'ölçüm metin görüyor', `${textChars} karakter`);
 
 check(

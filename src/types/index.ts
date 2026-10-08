@@ -516,6 +516,53 @@ export interface LegalCaseSpend {
   lastPaidAt: string | null;
 }
 
+/** M1-11. Bir gözden geçirmenin verdiği karar. */
+export type AccessDecision = 'kept' | 'narrowed' | 'revoked' | 'extended';
+
+/**
+ * M1-11. Bir erişimin niçin kuyrukta olduğu.
+ *
+ * Görünümde bu bir enum değil, hesaplanmış bir `case` — yani `text`. Bu tip
+ * onun hakkında istemcinin bir **iddiası**, ve `tests/enum-drift.mjs` iddiayı
+ * göçteki dağarcıkla karşılaştırıyor. Adlandırılmış olması o kapının şartı:
+ * isimsiz bir birlik eşleştirilemez, eşleştirilemeyen de denetlenemez.
+ *
+ * Sıra kasıtlı, en güçlü ifade önce. "Hiç gözden geçirilmedi" ile "altı aydan
+ * eski" ayrı cümlelerdir, ve `null` bir tarihi "çok eski" saymak tam olarak
+ * bilinmeyeni bilinmiş göstermek olur.
+ */
+export type AccessReviewReason =
+  'never_reviewed' | 'review_overdue' | 'expired_record_open' | 'expiring_soon';
+
+/**
+ * Erişim gözden geçirme kuyruğunda bir satır (M1-11).
+ *
+ * `lastActionAt` **son giriş değil**: portalda son kayıtlı işlem
+ * (`audit_log`). Yalnız okuyan biri satır bırakmaz, yani `null` "hiç
+ * gelmedi" demek değil "kayıtlı yazma işlemi yok" demek. Göç 0055'in
+ * yorumu son girişin niçin kullanılamadığını anlatıyor.
+ *
+ * `dueReason` null ise bu kişi için yapılacak bir şey yok. `revokedButActive`
+ * null ise soru sorulmamış (hiç gözden geçirilmemiş), false ise sorulmuş ve
+ * uyuşmazlık yok.
+ */
+export interface AccessReviewRow {
+  profileId: string;
+  fullName: string;
+  email: string;
+  role: UserRole;
+  clearance: Confidentiality;
+  organization: string | null;
+  isActive: boolean;
+  expiresAt: string | null;
+  createdAt: string;
+  lastActionAt: string | null;
+  lastReviewedAt: string | null;
+  lastDecision: AccessDecision | null;
+  dueReason: AccessReviewReason | null;
+  revokedButActive: boolean | null;
+}
+
 export interface VoucherApproval {
   id: string;
   paymentVoucherId: string;

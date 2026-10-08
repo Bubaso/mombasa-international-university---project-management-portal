@@ -217,6 +217,11 @@ const COMPUTED = {
   bytes_verdict: 'BytesVerdict',
   implementation: 'ImplementationState',
   disposition: 'IntakeDisposition',
+  // M1-11. `access_review_queue.due_reason` görünümde hesaplanmış bir `case`,
+  // yani `text` — enum bile değil. Bu kapı onu adlandırılmış bir birliğe
+  // bağlanmaya zorladı, ve zorlaması doğruydu: isimsiz bir birlik
+  // eşleştirilemez, eşleştirilemeyen de denetlenemez.
+  due_reason: 'AccessReviewReason',
 };
 
 const COMPUTED_NOT_IN_THE_CLIENT = {

@@ -9,7 +9,8 @@ import { ScopeSection } from '../components/admin/ScopeSection';
 import { SharingSection } from '../components/admin/SharingSection';
 import { DelegationSection } from '../components/admin/DelegationSection';
 import { AuditSection } from '../components/admin/AuditSection';
-import { ACCESS_MANAGERS, AUDIT_READERS, actsAs } from '../lib/authority';
+import { AccessReviewSection } from '../components/admin/AccessReviewSection';
+import { ACCESS_MANAGERS, ACCESS_REVIEWERS, AUDIT_READERS, actsAs } from '../lib/authority';
 
 /**
  * Access and administration.
@@ -35,6 +36,7 @@ export const AdminConsoleView: React.FC = () => {
   const canAdminister = actsAs(authority, 'admin');
   const canManageAccess = actsAs(authority, ...ACCESS_MANAGERS);
   const canReadAudit = actsAs(authority, ...AUDIT_READERS);
+  const canReview = actsAs(authority, ...ACCESS_REVIEWERS);
   const isInternal = authority?.isInternal ?? false;
 
   return (
@@ -69,6 +71,13 @@ export const AdminConsoleView: React.FC = () => {
           <DelegationSection authority={authority} />
         </>
       )}
+
+      {/* M1-11. Denetim kaydıyla aynı kümeye açık, ve bu bir tesadüf değil:
+          kuyruk `audit_log`'dan okuyor, yani satırı gören denetim kaydını da
+          görebilmek zorunda — yoksa boş bir hücre "kayıt yok" ile
+          "göremezsin" arasında belirsiz kalır. 0055 ikisini aynı
+          fonksiyona bağlıyor. */}
+      {canReadAudit && <AccessReviewSection canReview={canReview} />}
 
       {canReadAudit && <AuditSection />}
 

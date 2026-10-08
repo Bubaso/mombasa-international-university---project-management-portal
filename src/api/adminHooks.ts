@@ -86,3 +86,11 @@ export const useRevokeDelegation = () => {
   const invalidate = useInvalidator(['delegations', 'authority', 'auditLog']);
   return useMutation({ mutationFn: admin.revokeDelegation, onSuccess: invalidate });
 };
+
+export const useAccessReviewQueue = () =>
+  useQuery({ queryKey: ['accessReviewQueue'], queryFn: admin.fetchAccessReviewQueue });
+
+export const useRecordAccessReview = () => {
+  const invalidate = useInvalidator(['accessReviewQueue', 'auditLog']);
+  return useMutation({ mutationFn: admin.recordAccessReview, onSuccess: invalidate });
+};

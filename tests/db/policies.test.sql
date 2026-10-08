@@ -9661,6 +9661,305 @@ select pg_temp.check('so the count is null for them, not the zero a filtered cou
     where legal_case_id = 'aaaa0000-0000-0000-0000-000000000002'),
   null::bigint);
 
+-- ===========================================================================
+-- Erişim gözden geçirme (M1-11, göç 0055)
+-- ===========================================================================
+
+-- ---------------------------------------------------------------------------
+-- Kuyruk dizin değil — ve kontrolü
+-- ---------------------------------------------------------------------------
+--
+-- Yüklenicinin `profiles`'ı okuyabildiğini ÖNCE sınıyorum. Okuyamıyorsa
+-- "kuyrukta 0 satır görüyor" assertion'ı kuyruğun kısıtını değil dizinin
+-- kısıtını ölçer, yani doğru sebeple değil yanlış sebeple geçer.
+
+select pg_temp.act_as('77777777-7777-7777-7777-777777777777');  -- contractor
+
+select pg_temp.check('KONTROL: the contractor reads the directory',
+  (select count(*) > 5 from profiles), true);
+
+select pg_temp.check('but the access review queue is not the directory',
+  (select count(*) from access_review_queue), 0::bigint);
+
+-- Ve aynı kişi denetim kaydını da göremiyor: iki küme birlikte hareket
+-- ediyor, çünkü aynı fonksiyonu çağırıyorlar.
+select pg_temp.check('and the audit log is closed to them by the same function',
+  (select count(*) from audit_log), 0::bigint);
+
+select pg_temp.act_as('11111111-1111-1111-1111-111111111111');  -- admin
+select pg_temp.check('the admin sees every profile in the queue',
+  (select count(*) from access_review_queue),
+  (select count(*) from profiles));
+
+-- ---------------------------------------------------------------------------
+-- Hiç bakılmamış, altı aydan eski, ve yaklaşan bitiş — üçü ayrı cümle
+-- ---------------------------------------------------------------------------
+
+select pg_temp.check('a profile nobody has ever reviewed says exactly that',
+  (select due_reason from access_review_queue
+    where profile_id = '77777777-7777-7777-7777-777777777777'),
+  'never_reviewed');
+
+insert into access_reviews (subject_id, decision)
+values ('77777777-7777-7777-7777-777777777777', 'kept');
+
+select pg_temp.check('once somebody has looked, it drops out of the queue',
+  (select due_reason from access_review_queue
+    where profile_id = '77777777-7777-7777-7777-777777777777'),
+  null::text);
+
+-- Geçmişe tarihli bir tur. Kısıt bunu bilerek bırakıyor; olgu denetim
+-- kaydında, iddia burada.
+insert into access_reviews (subject_id, decision, reviewed_at)
+values ('cccc1111-1111-1111-1111-111111111111', 'kept', now() - interval '7 months');
+
+select pg_temp.check('a review older than six months is overdue, not absent',
+  (select due_reason from access_review_queue
+    where profile_id = 'cccc1111-1111-1111-1111-111111111111'),
+  'review_overdue');
+
+do $$
+begin
+  begin
+    insert into access_reviews (subject_id, decision, reviewed_at)
+    values ('77777777-7777-7777-7777-777777777777', 'kept', now() + interval '1 day');
+    raise exception 'FAIL a review was recorded as having happened tomorrow';
+  exception
+    when check_violation then
+      raise notice 'ok   but nobody can have reviewed something tomorrow';
+  end;
+end;
+$$;
+
+-- Süresi dolmuş danışman (seed'de `expires_at` dün). Erişimi `app.authority()`
+-- zaten reddediyor; kuyruk kaydın derlenmesi gerektiğini söylüyor.
+insert into access_reviews (subject_id, decision)
+values ('99999999-9999-9999-9999-999999999999', 'kept');
+
+select pg_temp.check('an expired record that is still on the books is its own reason',
+  (select due_reason from access_review_queue
+    where profile_id = '99999999-9999-9999-9999-999999999999'),
+  'expired_record_open');
+
+-- Yaklaşan bitiş: yirmi gün sonra.
+set role postgres;
+update profiles set expires_at = now() + interval '20 days'
+where id = '99999999-9999-9999-9999-999999999999';
+set role authenticated;
+select pg_temp.act_as('11111111-1111-1111-1111-111111111111');
+
+select pg_temp.check('and one about to lapse needs a decision before it does',
+  (select due_reason from access_review_queue
+    where profile_id = '99999999-9999-9999-9999-999999999999'),
+  'expiring_soon');
+
+-- ---------------------------------------------------------------------------
+-- Anlık görüntü trigger'dan geliyor, istemciden değil
+-- ---------------------------------------------------------------------------
+
+insert into access_reviews (subject_id, decision, role_at_review, clearance_at_review,
+                            expiry_at_review)
+values ('cccc1111-1111-1111-1111-111111111111', 'kept', 'trustee', 'restricted',
+        now() + interval '10 years');
+
+select pg_temp.check('the recorded role is the one the profile had, not the one sent',
+  (select role_at_review::text from access_reviews
+    where subject_id = 'cccc1111-1111-1111-1111-111111111111'
+    order by reviewed_at desc limit 1),
+  'quantity_surveyor');
+select pg_temp.check('and so is the clearance',
+  (select clearance_at_review::text from access_reviews
+    where subject_id = 'cccc1111-1111-1111-1111-111111111111'
+    order by reviewed_at desc limit 1),
+  'internal');
+select pg_temp.check('and an open-ended profile is recorded as open-ended',
+  (select expiry_at_review from access_reviews
+    where subject_id = 'cccc1111-1111-1111-1111-111111111111'
+    order by reviewed_at desc limit 1),
+  null::timestamptz);
+
+-- ---------------------------------------------------------------------------
+-- Kimse kendine bakmaz, ve değiştiren karar gerekçe ister
+-- ---------------------------------------------------------------------------
+
+do $$
+begin
+  begin
+    insert into access_reviews (subject_id, decision)
+    values ('11111111-1111-1111-1111-111111111111', 'kept');
+    raise exception 'FAIL the admin reviewed their own access';
+  exception
+    when check_violation then
+      raise notice 'ok   nobody signs off on their own access';
+  end;
+end;
+$$;
+
+do $$
+begin
+  begin
+    insert into access_reviews (subject_id, decision)
+    values ('77777777-7777-7777-7777-777777777777', 'revoked');
+    raise exception 'FAIL an access was revoked with no reason given';
+  exception
+    when check_violation then
+      raise notice 'ok   a decision that takes something away has to say why';
+  end;
+end;
+$$;
+
+-- KONTROL: gerekçe isteyen şey kararın kendisi, insert'in tamamı değil.
+insert into access_reviews (subject_id, decision, note)
+values ('77777777-7777-7777-7777-777777777777', 'revoked', 'Contract ended in March.');
+
+select pg_temp.check('KONTROL: with a reason, the same revocation is recorded',
+  (select decision::text from access_reviews
+    where subject_id = '77777777-7777-7777-7777-777777777777'
+    order by reviewed_at desc limit 1),
+  'revoked');
+
+select pg_temp.check('a revoked access on an open account is shown as the mismatch it is',
+  (select revoked_but_active from access_review_queue
+    where profile_id = '77777777-7777-7777-7777-777777777777'),
+  true);
+
+set role postgres;
+update profiles set is_active = false
+where id = '77777777-7777-7777-7777-777777777777';
+set role authenticated;
+select pg_temp.act_as('11111111-1111-1111-1111-111111111111');
+
+select pg_temp.check('and once the account is closed the mismatch is gone',
+  (select revoked_but_active from access_review_queue
+    where profile_id = '77777777-7777-7777-7777-777777777777'),
+  false);
+
+select pg_temp.check('with no review at all the question is not asked, so the answer is null',
+  (select revoked_but_active from access_review_queue
+    where profile_id = '66666666-6666-6666-6666-666666666666'),
+  null::boolean);
+
+-- ---------------------------------------------------------------------------
+-- Yalnızca eklenir
+-- ---------------------------------------------------------------------------
+
+-- İKİ KATMAN, VE İLK DENEMEDE BİRİNCİYİ İKİNCİ SANDIM.
+--
+-- `insufficient_privilege` bekleyen bir blok yazdım ve test düştü: hata
+-- gelmiyordu. Sebep trigger'ın çalışmaması değil, **hiç ateşlenmemesi** —
+-- `access_reviews`'in UPDATE politikası yok, yani satır seviyesi güvenlik
+-- güncellemeyi sıfır satıra indiriyor ve trigger'a sıra gelmiyor.
+--
+-- İkisi ayrı ayrı sınanmak zorunda, çünkü ayrı şeyleri koruyorlar:
+-- politika `authenticated`'ı, trigger tablonun sahibini. `audit_log`'un
+-- yorumu bunu 0001'de söylüyor: "including for the table owner, so a
+-- compromised account cannot erase its own trail."
+
+do $$
+declare
+  n int;
+begin
+  update access_reviews set note = 'actually, never mind'
+  where subject_id = '77777777-7777-7777-7777-777777777777';
+  get diagnostics n = row_count;
+  if n <> 0 then
+    raise exception 'FAIL a recorded review was edited after the fact (% rows)', n;
+  end if;
+  raise notice 'ok   row level security gives a signed-in account no row to edit';
+
+  delete from access_reviews where subject_id = '77777777-7777-7777-7777-777777777777';
+  get diagnostics n = row_count;
+  if n <> 0 then
+    raise exception 'FAIL a recorded review was deleted (% rows)', n;
+  end if;
+  raise notice 'ok   nor any to delete';
+end;
+$$;
+
+-- Ve tablonun sahibi için trigger. Politikanın hiç devreye girmediği yer bu.
+set role postgres;
+do $$
+begin
+  begin
+    update access_reviews set note = 'actually, never mind'
+    where subject_id = '77777777-7777-7777-7777-777777777777';
+    raise exception 'FAIL the table owner edited a recorded review';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   and the owner is refused by trigger, not by policy';
+  end;
+  begin
+    delete from access_reviews where subject_id = '77777777-7777-7777-7777-777777777777';
+    raise exception 'FAIL the table owner deleted a recorded review';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   the date somebody looked is part of the record, for everyone';
+  end;
+end;
+$$;
+set role authenticated;
+select pg_temp.act_as('11111111-1111-1111-1111-111111111111');
+
+-- ---------------------------------------------------------------------------
+-- Yazan küme okuyandan dar
+-- ---------------------------------------------------------------------------
+
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- project director
+
+select pg_temp.check('KONTROL: the project director reads the queue',
+  (select count(*) > 0 from access_review_queue), true);
+
+do $$
+begin
+  begin
+    insert into access_reviews (subject_id, decision)
+    values ('cccc1111-1111-1111-1111-111111111111', 'kept');
+    raise exception 'FAIL the project director signed off on somebody''s access';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   but reading the queue is not the same as ruling on it';
+  end;
+end;
+$$;
+
+-- Mütevelli yazabilmek zorunda: `access_reviews_not_self` yöneticinin
+-- kendisine bakmasını engelliyor, yani yöneticiye bakacak biri olmalı.
+select pg_temp.act_as('33333333-3333-3333-3333-333333333333');  -- trustee
+insert into access_reviews (subject_id, decision, note)
+values ('11111111-1111-1111-1111-111111111111', 'narrowed', 'Clearance reduced after audit.');
+
+select pg_temp.check('a trustee can review the administrator, which is why they must be able to',
+  (select decision::text from access_reviews
+    where subject_id = '11111111-1111-1111-1111-111111111111'
+    order by reviewed_at desc limit 1),
+  'narrowed');
+
+-- ---------------------------------------------------------------------------
+-- `last_action_at` son giriş değil, son kayıtlı işlem
+-- ---------------------------------------------------------------------------
+--
+-- Yönetici bu turda satır yazdı, yani denetim kaydında işlemi var. Mütevelli
+-- iki hariç hiçbir şey yazmadıysa onun da var. Ölçülen şey: sütun denetim
+-- kaydından geliyor mu, ve hiç yazmamış biri için null mı.
+
+select pg_temp.act_as('11111111-1111-1111-1111-111111111111');
+
+select pg_temp.check('somebody who has written in the portal has a last recorded action',
+  (select last_action_at is not null from access_review_queue
+    where profile_id = '33333333-3333-3333-3333-333333333333'),
+  true);
+
+select pg_temp.check('and it is the latest row the audit log holds for them',
+  (select last_action_at from access_review_queue
+    where profile_id = '33333333-3333-3333-3333-333333333333'),
+  (select max(at) from audit_log
+    where actor_id = '33333333-3333-3333-3333-333333333333'));
+
+select pg_temp.check('somebody with no recorded write has null, which is not a claim they never came',
+  (select last_action_at from access_review_queue
+    where profile_id = '66666666-6666-6666-6666-666666666666'),
+  null::timestamptz);
+
 reset role;
 
 \echo ''

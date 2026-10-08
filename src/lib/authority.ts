@@ -26,6 +26,22 @@ export const AUDIT_READERS: UserRole[] = [
   'audit_committee',
 ];
 
+/**
+ * Kim bir erişimin hâlâ gerekli olduğuna karar verebilir (M1-11).
+ *
+ * `DELEGATION_RAISERS` ile bugün aynı iki rol ve ikisi ayrı duruyor, çünkü
+ * ayrı sorular: biri "kim yetki ödünç verebilir", öteki "kim bir erişime
+ * bakıp karar verebilir". Tek sabit yapmak ikisini birbirine bağlardı.
+ *
+ * Proje direktörü listede yok: kendi ekibinin erişimini onaylamanın tarafı.
+ * Mütevelli var, çünkü yönetici kendine bakamıyor (0055) ve yöneticiye kimse
+ * bakamazsa kural bir boşluk üretir.
+ *
+ * Bu sabit hiçbir şeye izin vermiyor, yalnızca formu gösterip göstermiyor.
+ * İzni veren `access_reviews_insert` politikası.
+ */
+export const ACCESS_REVIEWERS: UserRole[] = ['admin', 'trustee'];
+
 /** Who may raise or revoke a delegation — their own role, never a lent one. */
 export const DELEGATION_RAISERS: UserRole[] = ['trustee', 'admin'];
 

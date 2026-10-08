@@ -14,18 +14,18 @@ Yalnızca `supabase/migrations`, `supabase/functions`, `src` ve `tests`
 sayıldı — `supabase/bundled` üretilmiş çıktı olduğu için hariç, yoksa her
 desen iki kez eşleşiyor.
 
-**Tarih:** 2026-10-08 · migration 0054'e kadar. (İlk hâli: 2026-10-01, 0044'e
+**Tarih:** 2026-10-08 · migration 0055'e kadar. (İlk hâli: 2026-10-01, 0044'e
 kadar.)
 
 ## Özet
 
 | Durum      | Satır |
 | ---------- | ----- |
-| Yapıldı    | 184   |
-| Yok        | 26    |
+| Yapıldı    | 185   |
+| Yok        | 25    |
 | **Toplam** | 210   |
 
-Öncelik dağılımı: P0 22 satır (1'i yok), P1 115 satır (3'ü yok), P2 59 satır
+Öncelik dağılımı: P0 22 satır (1'i yok), P1 115 satır (2'si yok), P2 59 satır
 (22'si yok), P3 14 satır (**hepsi yapıldı**).
 
 ### 8 Ekim 2026 güncellemesi — ve başlıktaki sayı hakkında bir düzeltme
@@ -77,6 +77,41 @@ iki fiş vardı, biri bütçeli biri bütçesiz, yani "bütçesizleri say" ile
 mutasyon düştü. Ayırt edici olmayan bir fikstür, ayırt edici olmayan bir test
 demek.
 
+### M1-11 kapandı — göç 0055, ve bir kapı körlüğü
+
+Altı ayda bir erişim gözden geçirme listesi. Portalda erişimin **verilmesi**
+kayıtlıydı (davet, devir) ve **süresi** kayıtlıydı (M1-09); kayıtlı olmayan
+tek şey birinin dönüp bakmış olmasıydı.
+
+0055 bir enum, bir tablo (`access_reviews`, yalnız eklenir), iki trigger, iki
+politika ve bir görünüm (`access_review_queue`) getirdi. Kuyruk dört sebebi
+ayrı ayrı adlandırıyor ve `null` bir tarihi "çok eski" saymıyor: "hiç gözden
+geçirilmedi" ile "altı aydan eski" ayrı cümlelerdir.
+
+**Son giriş zamanı bu kuyrukta yok, ve sebebini yazdım.** Bu satırı denetime
+"`profiles.expires_at` ve son giriş zamanından türetilen bir kuyruk" diye ben
+yazmıştım ve son girişin elimde olduğunu varsaymıştım. İki sebep çıktı:
+`auth.users` istemciye kapalı (0006 bunu zaten söylüyor), ve Supabase'in
+`last_sign_in_at`'i token yenilemede güncellenmiyor — yani o sayıdan kurulan
+bir uykuda-hesap listesi en aktif kullanıcıları işaretler. Onun yerine
+portalın kendi denetim kaydı kullanıldı ve adı doğru konuldu:
+`last_action_at`, "son giriş" değil "portalda son kayıtlı işlem".
+
+Yirmi dokuz assertion, on iki mutasyon, on ikisi de düştü. Biri ilk denemede
+yanlış şeyi bekliyordu: append-only trigger'ı `authenticated` için hiç
+ateşlenmiyor, çünkü UPDATE politikası olmadığı için satır seviyesi güvenlik
+güncellemeyi sıfır satıra indiriyor. İki katman ayrı ayrı sınandı —
+politika `authenticated`'ı, trigger tablonun sahibini.
+
+**Ve bu tur bir kapı körlüğü buldu.** Paneli `/admin`'e koydum ve yoğunluk
+ölçüsü 42'den 42'ye gitti. `tests/populated.mjs`'in sahte backend'inde
+`current_authority` satırı ölü koddu (`supabase.rpc()` bir POST, yazma
+muhafızı ondan önce geliyordu), yani yetkiye bağlı her bölüm — gösterge
+panelinin karar kuyruğu, konsolun denetim/kapsam/paylaşım/devir bölümleri —
+hiç render edilmiyordu. Düzeltilince iki gerçek çökme ortaya çıktı, biri
+önceden vardı. Ayrıntısı `docs/TASARIM-GEREKSINIMLERI.md`'de; T15-04 artık
+karşılanmış sayılmıyor.
+
 ## 0045 sonrası bir düzeltme
 
 M11-05 ve M11-06 bu denetimde "yapıldı" sayılıyordu ve öyleydi: teslim kaydı
@@ -106,7 +141,7 @@ Bunlar "yapıldı" sayılır; eksik olan tek şey migration yorumundaki atıf.
 
 ## Yapılmamış satırlar
 
-25 satır. Her biri için neyin eksik olduğu ve neye bağlı olduğu yazıldı,
+24 satır. Her biri için neyin eksik olduğu ve neye bağlı olduğu yazıldı,
 çünkü bir kısmı kod değil karar ya da hesap bekliyor.
 
 ### P0 — 1 satır
@@ -115,12 +150,11 @@ Bunlar "yapıldı" sayılır; eksik olan tek şey migration yorumundaki atıf.
 | ----- | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | M1-02 | Dört rol için iki faktörlü doğrulama zorunlu | **Sizin kararınıza bağlı.** Supabase projesinde MFA'nın açılması ve rol bazlı zorunluluk gerekir; portal tarafında `aal2` kontrolü yazılır. Kimlik sağlayıcısında bir ayar olmadan kod tek başına yetmez. |
 
-### P1 — 3 satır
+### P1 — 2 satır
 
 | ID     | Gereksinim                                                    | Durum                                                                                                                                                                                                                                                                                                                                                                                                     |
 | ------ | ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | M1-10  | Oturum yönetimi: aktif cihazlar, uzaktan kapatma              | Supabase `auth.sessions` üzerinden okunur; kapatma yönetici yetkisiyle sunucu tarafı bir fonksiyon ister.                                                                                                                                                                                                                                                                                                 |
-| M1-11  | Altı ayda bir erişim gözden geçirme listesi                   | Tamamen portal içinde yapılabilir: `profiles.expires_at` ve son giriş zamanından türetilen bir kuyruk + kararın kaydı. Bağımlılığı yok.                                                                                                                                                                                                                                                                   |
 | M13-17 | Modülün kapsamı veritabanındaki kayıttan gelsin, koddan değil | **Kodun kendisi bunu söylüyor.** `supabase/functions/ai-assistant/rules.js` şöyle yazıyor: _"Faz 1 için sabit. M13-17 kapsamın veritabanındaki kayıttan gelmesini istiyor ve Faz 4 bunu `intake_targets` sorgusuyla değiştirecek."_ Bugün liste `REGISTERS` sabitinde ve teklif hedefleri `targets.js`'te; ikisi de kod. Gereken: `intake_targets` tablosu + fonksiyonun oradan okuması. Bağımlılığı yok. |
 
 ### P2 — 22 satır
@@ -173,6 +207,6 @@ yapılmamış bir şeyi yapılmış gösterir — ilk geçişte "muson" kendi ya
 0040 yorumunda eşleşti, "sap" bir başka kelimenin içinde, "retention" bir
 hakediş sütununda. Dar bir desen ise yapılmış bir şeyi kaçırır; M1-08 ilk
 taramada `supabase/functions/` dizini sayılmadığı için yok görünüyordu.
-Yukarıdaki 25 satırın her biri bu yüzden elle teyit edildi, ve "yapıldı"
-sayılan 184 satırın hepsi tek tek teyit edilmedi — yalnızca atıfı olanlar
+Yukarıdaki 24 satırın her biri bu yüzden elle teyit edildi, ve "yapıldı"
+sayılan 185 satırın hepsi tek tek teyit edilmedi — yalnızca atıfı olanlar
 atıfına, atıfı olmayan yedisi kanıtına dayanıyor.

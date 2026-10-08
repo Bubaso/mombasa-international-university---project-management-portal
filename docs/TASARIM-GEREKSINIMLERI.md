@@ -270,14 +270,14 @@ rota, **kesimden önce**:
 | Görüntü alanından geniş kutu    | 4 (hepsi kendi kutusunda) |
 | 14px altı metin ögesi / rota    | 21 – 115                  |
 
-| ID     | Gereksinim                                                                                                | P   | Kabul kriteri                                                                                                                                           |
-| ------ | --------------------------------------------------------------------------------------------------------- | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| T15-01 | İlk ekranın en az %85'i içerik olsun; mobilya üstte bir şerit kadar yer tutsun.                           | P0  | ✅ Faz 1: `main`'in tepesi 232 → **114px** (kriter ≤130).                                                                                               |
-| T15-02 | Kritik tarih şeridi telefonda **şerit** kalsın, listeye dönüşmesin.                                       | P0  | ✅ Faz 1: şerit 175 → **57px**; telefonda da yatay, geniş kalırsa kendi kutusunda kayıyor.                                                              |
-| T15-04 | Hiçbir ekranın **kurgusu** telefonda üç ekrandan uzun olmasın. (Kriter Faz 3'te değişti — aşağıya bakın.) | P1  | ✅ Ekranın kurgusu (sayfa eksi en uzun kayıt listesi) en kötü **2.293px**, kriterin (2.532) altında. Toplam boy ayrıca ratchet'li: 3.270 → **2.967px**. |
-| T15-05 | Form alanı telefonda odaklanınca ekranı yakınlaştırmasın.                                                 | P0  | ✅ Faz 1: **0** — kural `index.css`'te tek yerde, telefon genişliğinde.                                                                                 |
-| T15-06 | Parmakla yakınlaştırma engellenmesin.                                                                     | P0  | ✅ Faz 1: `user-scalable=no` ve `maximum-scale` kaldırıldı; kapıda `tests/a11y.mjs` sınıyor.                                                            |
-| T15-07 | Telefonda 19 rotanın hepsi erişilebilir kalsın; kesim bir rotayı kaybetmesin.                             | P0  | ✅ Alt çubuk (4 rota) + 'daha fazla' sayfası birlikte 19/19, ve artık KAPIDA: T14-05'in kontrolü masaüstü kenar çubuğunu ölçüyordu, telefonu değil.     |
+| ID     | Gereksinim                                                                                                | P   | Kabul kriteri                                                                                                                                                                                  |
+| ------ | --------------------------------------------------------------------------------------------------------- | --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T15-01 | İlk ekranın en az %85'i içerik olsun; mobilya üstte bir şerit kadar yer tutsun.                           | P0  | ✅ Faz 1: `main`'in tepesi 232 → **114px** (kriter ≤130).                                                                                                                                      |
+| T15-02 | Kritik tarih şeridi telefonda **şerit** kalsın, listeye dönüşmesin.                                       | P0  | ✅ Faz 1: şerit 175 → **57px**; telefonda da yatay, geniş kalırsa kendi kutusunda kayıyor.                                                                                                     |
+| T15-04 | Hiçbir ekranın **kurgusu** telefonda üç ekrandan uzun olmasın. (Kriter Faz 3'te değişti — aşağıya bakın.) | P1  | ❌ **Karşılanmıyor.** 8 Ekim'de ölçü düzeltilince `/admin` kurgusu **8.931px**, `/` **2.552px** çıktı; kriter 2.532. Ekranlar büyümedi, ölçü onları görmüyordu — aşağıdaki Faz 4 notuna bakın. |
+| T15-05 | Form alanı telefonda odaklanınca ekranı yakınlaştırmasın.                                                 | P0  | ✅ Faz 1: **0** — kural `index.css`'te tek yerde, telefon genişliğinde.                                                                                                                        |
+| T15-06 | Parmakla yakınlaştırma engellenmesin.                                                                     | P0  | ✅ Faz 1: `user-scalable=no` ve `maximum-scale` kaldırıldı; kapıda `tests/a11y.mjs` sınıyor.                                                                                                   |
+| T15-07 | Telefonda 19 rotanın hepsi erişilebilir kalsın; kesim bir rotayı kaybetmesin.                             | P0  | ✅ Alt çubuk (4 rota) + 'daha fazla' sayfası birlikte 19/19, ve artık KAPIDA: T14-05'in kontrolü masaüstü kenar çubuğunu ölçüyordu, telefonu değil.                                            |
 
 ### Neden bu satırlar, ve neden şimdi
 
@@ -2225,3 +2225,84 @@ bakıp düzelttim.
 
 Bir kapı atfı doğrulayamaz, yalnızca uydurmayı yakalar. Bunu yazıyorum çünkü
 üç yeşil assertion gördükten sonra atfın doğru olduğunu sanmak kolay.
+
+## T15-04 artık karşılanmıyor, ve sebebi ekranlar değil ölçü (8 Ekim 2026)
+
+M1-11'in panelini `/admin`'e koydum ve `tests/populated.mjs`'in düğme sayısı
+**42'den 42'ye** gitti. Bir bölüm eklenip hiçbir sayı değişmiyorsa, değişmeyen
+şey ekran değil ölçüdür.
+
+Sebep tek bir satır sırasıydı. Testin sahte backend'i şöyle başlıyordu:
+
+```js
+if (request.method() !== 'GET' && request.method() !== 'HEAD') return json([]);
+if (/rpc\/current_authority/.test(url)) return json(AUTHORITY);
+```
+
+`supabase.rpc()` bir **POST** atıyor. Yani ikinci satır ölü koddu: yetki
+çağrısı her zaman `[]` alıyor, `fetchAuthority` onu tanımayıp `null`
+döndürüyor (kasıtlı — tanınmayan bir yetki, yetki değildir), ve yetkiye bağlı
+her bölüm hiç render edilmiyordu.
+
+Neler görünmüyormuş:
+
+- **Gösterge paneli**: karar kuyruğu (`PendingDecisions`).
+- **Yönetim konsolu**: denetim kaydı, kapsam, paylaşım, devir — ekranın
+  neredeyse tamamı. `isInternal` de yetkiden geldiği için konsol, dış
+  kullanıcıya gösterilen kısa cümleyi basıyordu.
+- **Kenar çubuğu**: role göre açılan girişler (T14-06).
+
+Mock'un alan adları da yanlıştı (snake_case, `roles` dizisi hiç yok) ve bu
+ikinci kusur birinciyi gizliyordu: sıra düzeltilse bile cevap tanınmazdı.
+İkisi de düzeltildi, ve mock'un her alanı artık göçten okunup sınanıyor.
+
+### İki gerçek çökme
+
+Mock düzeltilince iki rota **ilk kez** düştü, ikisi de aynı kusurdu:
+
+```
+/       Cannot read properties of undefined (reading 'icon')
+/admin  Cannot read properties of undefined (reading 'tr')
+```
+
+Birincisi `PendingDecisions`'ta ve **önceden vardı**: `SHAPE[decision.kind]`
+yazıp `.icon` okuyordu. `pending_decisions` görünümünün `kind` kolonu
+hesaplanmış bir `case`, yani `text`; `DecisionKind` birliği onun hakkında
+istemcinin bir iddiası. Bir göç yeni bir karar türü ürettiği an gösterge
+paneli tamamen gidiyordu.
+
+İkincisi benim yeni panelimde, aynı sözdizimiyle: `DECISIONS[...].tr`.
+
+Üçü bir arada şunu söylüyor: **takvim ekranını 3 Ekim'de düşüren kusur
+düzeltilmedi, yalnızca o ekranda düzeltildi.** `tests/enum-drift.mjs` tipleri
+karşılaştırıyor — veritabanında olup istemcide olmayan değeri yakalıyor — ama
+`Record<Birlik, …>` erişiminin korumalı olup olmadığına bakmıyor. Tip bugün
+tam olsa bile, göçün canlıya uygulandığı an ile bir sonraki dağıtım
+arasındaki pencerede ekran patlıyor.
+
+İkisi de `lib/calendarKinds.ts`'in kalıbına geçirildi: gevşek anahtarlı takma
+ad, ve tanınmayan değer kendi anahtarıyla görünüyor.
+
+### On dokuz tavan yeniden yazıldı
+
+Bu bir bedel değil bir ifşa. En büyük iki fark:
+
+| Rota     | Önce                          | Sonra                          |
+| -------- | ----------------------------- | ------------------------------ |
+| `/admin` | 42 düğme · 6 başlık · 1.044px | 61 düğme · 13 başlık · 4.517px |
+| `/`      | 52 düğme · 4 başlık · 1.141px | 60 düğme · 8 başlık · 2.023px  |
+
+Kalan on yedide fark +1 ile +10 düğme arası: kenar çubuğunun role göre açılan
+girişleri. `RAISED` listesine girmiyorlar, çünkü o liste ekran başına
+**bedelleri** taşıyor ve burada ödenen bir bedel yok.
+
+### Ve kriterin kendisi
+
+Telefonda `/admin`'in kurgusu **8.931px**, toplam boyu **10.743px**. Kriter
+2.532. `/` 2.552px ile sınırın hemen üstünde, `/legal` 2.421px ile altında.
+
+T15-04'ü ✅ bırakmak, ölçünün kör olduğu bir dönemde verilmiş bir notu
+korumak olurdu. Kaldırıldı. Yönetim konsolunu özet + detay kalıbına geçirmek
+(T14-04'ün diğer ekranlarda yaptığı iş) ayrı bir faz, ve bu turun içine
+sıkıştırılmadı: M1-11 bir modül satırı, konsolun yeniden düzenlenmesi bir
+tasarım turu.

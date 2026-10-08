@@ -152,7 +152,17 @@ for (const read of bounded) {
 // Sınır koymanın anlamı yok, çünkü kesilebilecek bir şey yok — birden fazla
 // satır dönerse `maybeSingle()` hata verir, yani sessizce kesmek bu okumanın
 // yapabileceği bir şey değil.
-const UNBOUNDED_TODAY = 127;
+//
+// M1-11'den sonra 128: `fetchAccessReviewQueue` eklendi ve kasıtlı olarak
+// sınırsız. Gerekçe `fetchCaseParties` ile aynı — bu bir dilim değil bir
+// **küme**: "bu kişiler hâlâ erişmeli mi" sorusunun cevabı listenin tamamı,
+// ve kırk kişinin onunu gösteren bir liste on kişi varmış gibi okunur.
+// Gözden geçirilmeyen otuzu görünmediği için gözden geçirilmemiş kalır, ki
+// listenin var olma sebebi tam olarak o.
+//
+// Görünümün kendisi `app.can_audit_people()` ile sınırlı, yani okuma bir
+// kütüğü değil portaldaki insanları çekiyor; bugün on dört satır.
+const UNBOUNDED_TODAY = 128;
 
 // Sayan okumalar sayılmıyor: sorumuz "kaç okuma her satırı çekiyor", ve
 // `head: true` olan hiç satır çekmiyor.

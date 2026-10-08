@@ -13,13 +13,15 @@
  */
 import { supabase } from '../lib/supabase';
 import type {
-  Page,
+  AccessDecision,
+  AccessReviewRow,
   Assignment,
-  Authority,
   AuditEntry,
+  Authority,
   Confidentiality,
   Delegation,
   GrantPermission,
+  Page,
   Profile,
   RecordGrant,
   UserRole,
@@ -496,4 +498,87 @@ export async function fetchAuditLog(
     })),
     total: count ?? 0,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Erişim gözden geçirme (M1-11)
+// ---------------------------------------------------------------------------
+
+/**
+ * Gözden geçirme kuyruğu.
+ *
+ * Sınır konmuyor ve sebebi listenin bir **küme** olması: "bu kişiler hâlâ
+ * erişmeli mi" sorusunun cevabı listenin tamamı, ve kırk kişinin onunu
+ * gösteren bir liste on kişi varmış gibi okunur. Görünümün kendisi de
+ * `app.can_audit_people()` ile sınırlı, yani kütüğün tamamını değil
+ * portaldaki insanları çekiyor.
+ */
+export async function fetchAccessReviewQueue(): Promise<AccessReviewRow[]> {
+  const { data, error } = await supabase
+    .from('access_review_queue')
+    .select(
+      'profile_id, full_name, email, role, clearance, organization, is_active, ' +
+        'expires_at, created_at, last_action_at, last_reviewed_at, last_decision, ' +
+        'due_reason, revoked_but_active',
+    )
+    .order('full_name');
+  fail(error);
+  return (
+    (data ?? []) as unknown as {
+      profile_id: string;
+      full_name: string;
+      email: string;
+      role: UserRole;
+      clearance: Confidentiality;
+      organization: string | null;
+      is_active: boolean;
+      expires_at: string | null;
+      created_at: string;
+      last_action_at: string | null;
+      last_reviewed_at: string | null;
+      last_decision: AccessDecision | null;
+      due_reason: AccessReviewRow['dueReason'];
+      revoked_but_active: boolean | null;
+    }[]
+  ).map((row) => ({
+    profileId: row.profile_id,
+    fullName: row.full_name,
+    email: row.email,
+    role: row.role,
+    clearance: row.clearance,
+    organization: row.organization,
+    isActive: row.is_active,
+    expiresAt: row.expires_at,
+    createdAt: row.created_at,
+    lastActionAt: row.last_action_at,
+    lastReviewedAt: row.last_reviewed_at,
+    lastDecision: row.last_decision,
+    dueReason: row.due_reason,
+    revokedButActive: row.revoked_but_active,
+  }));
+}
+
+/**
+ * Kararı kaydeder.
+ *
+ * Anlık görüntü (karar anındaki rol, gizlilik tavanı, bitiş tarihi)
+ * GÖNDERİLMİYOR: trigger onu profilden okuyup yazıyor. İstemci gönderse hiç
+ * var olmamış bir yetkiyi "onaylandığı andaki hâli" diye kaydedebilirdi.
+ *
+ * Karar erişimi DEĞİŞTİRMİYOR, kararı kaydediyor. Değiştiren ekranlar bu
+ * konsolda zaten var; ikisini birleştirmek "kaldırıldı" kaydının hesabın
+ * kapandığını ima etmesine yol açardı. Ayrı durdukları için kuyruk ikisinin
+ * uyuşmadığı hâli gösterebiliyor.
+ */
+export async function recordAccessReview(input: {
+  subjectId: string;
+  decision: AccessDecision;
+  note: string | null;
+}): Promise<void> {
+  const { error } = await supabase.from('access_reviews').insert({
+    subject_id: input.subjectId,
+    decision: input.decision,
+    note: input.note,
+  });
+  fail(error);
 }
