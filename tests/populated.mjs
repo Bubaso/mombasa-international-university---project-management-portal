@@ -514,7 +514,6 @@ const signedCounts = [];
  */
 
 const DENSITY = {
-  '/admin': { buttons: 61, headings: 13, height: 4517 },
   '/assistant': { buttons: 56, headings: 3, height: 2526 },
   '/': { buttons: 60, headings: 8, height: 2023 },
   '/meetings': { buttons: 58, headings: 9, height: 1767 },
@@ -529,6 +528,7 @@ const DENSITY = {
   '/readiness': { buttons: 54, headings: 4, height: 1110 },
   '/documents': { buttons: 53, headings: 2, height: 1072 },
   '/construction': { buttons: 53, headings: 2, height: 1066 },
+  '/admin': { buttons: 51, headings: 6, height: 1044 },
   '/project_info': { buttons: 47, headings: 3, height: 1044 },
   '/procurement': { buttons: 57, headings: 3, height: 1044 },
   '/finance': { buttons: 48, headings: 4, height: 1044 },
@@ -580,6 +580,8 @@ raiseChecks({
 const density = {};
 const tabsFound = {};
 const tabsOpened = {};
+/** Sekme turu sırasında görülen panel tutamakları, rota başına. */
+const handles = {};
 const a11y = {};
 
 for (const route of ROUTES) {
@@ -600,21 +602,6 @@ for (const route of ROUTES) {
     headings: document.querySelectorAll('h1,h2,h3,h4').length,
     height: document.body.scrollHeight,
   }));
-
-  // M1-11'in paneli: render edildiğini ayrıca sınamak gerekiyor.
-  //
-  // Yoğunluk ölçüsü yalnızca İLK EKRANI sayıyor (yukarıdaki gerekçe) ve
-  // `/admin`'in ilk ekranı 1044px. Erişim gözden geçirme bölümü kişiler,
-  // kapsam, paylaşım ve devirden sonra geliyor, yani kıvrımın altında:
-  // hiç render edilmese `/admin` yine 42 düğme ölçerdi ve kapı susardı.
-  // Ölçüldü — bölüm eklendikten sonra sayı değişmedi, ve değişmemesi
-  // ölçünün onu görmediğinin kanıtıydı.
-  if (route === '/admin') {
-    const handles = await page.evaluate(
-      () => document.querySelectorAll('[data-access-review]').length,
-    );
-    check(handles === 1, 'erişim gözden geçirme bölümü ekranda (M1-11)', `${handles} tutamak`);
-  }
 
   // Sekmeler: ilk ekranda görünmeyen bir panel, tıklanmadan sınanmaz.
   //
@@ -652,6 +639,7 @@ for (const route of ROUTES) {
 
   const everSeen = new Set();
   const opened = new Set();
+  const handlesSeen = handles[route] ?? (handles[route] = new Set());
   const lists = await page.$$('[role="tablist"]');
   const outer = lists[0] ?? null;
   const outerLabels = outer ? await labelsOf(outer) : [];
@@ -659,6 +647,12 @@ for (const route of ROUTES) {
 
   for (const label of outerLabels) {
     if (await clickIn(outer, label)) opened.add(label);
+    // Sekme turu sırasında görülen tutamaklar. Bir panel bir sekmenin
+    // arkasındaysa açılış ekranında yok, ama tur onu açıyor.
+    for (const h of await page.evaluate(() =>
+      [...document.querySelectorAll('[data-access-review]')].map(() => 'access-review'),
+    ))
+      handlesSeen.add(h);
     // İç listeler: dış sekme açıkken ne varsa.
     const nested = (await page.$$('[role="tablist"]')).slice(1);
     for (const list of nested) {
@@ -890,6 +884,7 @@ const TABS_EXPECTED = {
   '/finance': 5,
   '/governance': 4,
   '/project_info': 4,
+  '/admin': 7,
 };
 
 {
@@ -900,6 +895,19 @@ const TABS_EXPECTED = {
     missed.length === 0,
     'her ekranda bulunan her sekme açıldı',
     missed.length ? missed.join(', ') : `${Object.keys(tabsFound).length} ekran tarandı`,
+  );
+
+  // M1-11'in paneli gerçekten çiziliyor mu.
+  //
+  // Yoğunluk ölçüsü yalnızca ilk ekranı sayıyor ve panel artık "Gözden
+  // geçirme" sekmesinin arkasında, yani orada görünmez. 8 Ekim'de bu kontrol
+  // `/admin` açılış ekranında yazılmıştı ve sekmelere geçince düştü —
+  // düşmesi doğruydu: ölçünün yeri değişen panelle birlikte değişmesi
+  // gerekiyordu.
+  check(
+    (handles['/admin'] ?? new Set()).has('access-review'),
+    'erişim gözden geçirme bölümü sekmesinde çiziliyor (M1-11)',
+    [...(handles['/admin'] ?? [])].join(', ') || '(görülmedi)',
   );
 
   const wrong = Object.entries(TABS_EXPECTED)
@@ -1137,8 +1145,23 @@ check(
     //
     // Bu bir gerileme değil bir ifşa: ekranlar dünden beri bu boydaydı,
     // ölçü onları görmüyordu.
-    height: 10743, // T15-04 toplam boy, ratchet. Ölçülen, hedef değil.
-    chrome: 8931, // T15-04'ün KRİTERİ 2532 — AŞILIYOR, bkz. yukarıdaki not
+    // T15-04 FAZ 4, 8 Ekim 2026: KRİTER KARŞILANDI VE RAKAM BURADA.
+    //
+    // Önceki hâli 10.743 / 8.931'di ve o rakamlar ölçünün körlüğü
+    // düzeltilince ortaya çıkmıştı — ekranlar büyümedi, görünmeyen görünür
+    // oldu. Bu turda `/admin` yedi sekmeye bölündü (T14-04'ün kalıbı) ve
+    // kurgu 8.931 → 2.512'ye indi; kriter 2.532.
+    //
+    // En kötü ekran artık `/admin` değil `/`: 2.512px, kriterin 20px altında.
+    // O son 20px gösterge panelinden geldi ve kesilen şey bir tekrar —
+    // "Projenin nabzı" panelinin alt başlığı, hücredeki `raporlanmadı`
+    // değerinin söylediğini prozada söylüyordu (T6-01 ve T13-02'nin 54
+    // paragrafta kaldırdığı tür, bu panelde gözden kaçmış).
+    //
+    // Ölçüt rakamı kurtarmak için değiştirilmedi ve hiçbir kayıt
+    // saklanmadı: sekme her bölümü koruyor, yeri değişiyor.
+    height: 3273, // T15-04 toplam boy, ratchet. Ölçülen, hedef değil.
+    chrome: 2512, // T15-04'ün KRİTERİ 2532 — altında (yukarıdaki not) // T15-04'ün KRİTERİ 2532 — AŞILIYOR, bkz. yukarıdaki not
     smallFields: 0, // T15-05: 6 → 0, kural
   };
 

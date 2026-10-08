@@ -348,11 +348,13 @@ export const ProjectPulse: React.FC = () => {
     <Card
       icon={TriangleAlert}
       title={tr ? 'Projenin nabzı' : 'The project, in the round'}
-      subtitle={
-        tr
-          ? 'Hepsi veriden. Hiç rapor edilmemişse rakam yok — sıfır yazmıyor.'
-          : 'All of it from the data. Where nothing has been reported there is no figure, not a zero.'
-      }
+      /* Alt başlık kaldırıldı (8 Ekim 2026). "Hiç rapor edilmemişse rakam yok
+         — sıfır yazmıyor" diyordu, ve dürüstlüğü taşıyan şey o cümle değil
+         hücredeki DEĞER: `progressLabel` null yüzde için "raporlanmadı"
+         basıyor, ve o dizge `tests/design-rows.mjs`'in koruduğu kümede.
+         Cümle, verinin zaten söylediğini prozada tekrar ediyordu — T6-01 ve
+         T13-02 turlarının 54 paragrafta kaldırdığı tür, bu panelde gözden
+         kaçmış. Telefonda kurguyu 2.552 → ölçülen değere indirdi. */
     >
       <QueryStatus queries={[progress, risks, obligations]} />
       <dl className="space-y-2 text-sm">

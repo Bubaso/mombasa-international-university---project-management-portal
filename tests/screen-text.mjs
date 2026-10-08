@@ -54,6 +54,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const RAISED = [
   { what: 'textChars', from: 57640, to: 58086, row: 'M1-11' },
   { what: 'emptyChars', from: 2906, to: 2978, row: 'M1-11' },
+  { what: 'textChars', from: 58086, to: 58257, row: 'M13-17' },
 ];
 process.chdir(root);
 
@@ -83,7 +84,15 @@ const CEILING = {
   // birleştirmek bilinmeyeni bilinmiş göstermek olurdu.
   //
   // Yükseltme `RAISED` içinde M1-11 adına kayıtlı; kural `tests/raised.mjs`.
-  textChars: 58086,
+  //
+  // 8 Ekim 2026, T14-04 Faz 4: 58.086 → 58.257. M13-17'nin konsol bölümü
+  // (`IntakeScopeSection`) yeni bir ekran ve yeni metin. İki yönde de
+  // kesildi: bölümün alt başlığının ikinci cümlesi kapatma formunun
+  // söylediğini tekrar ediyordu, formun "sebebi altı ay sonra sorulur"u ise
+  // zorunlu alanın kendisini tekrar ediyordu. Aynı turda gösterge
+  // panelinden 190 karakter de KESİLDİ (nabız panelinin alt başlığı), yani
+  // net artış bölümün kendi metni.
+  textChars: 58257,
   longChars: 26994,
   // Panel gerekçesi: T13-01'in kestiği şey. 8489 → 2753 (Faz 2).
   introChars: 2753,

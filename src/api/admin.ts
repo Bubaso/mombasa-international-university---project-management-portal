@@ -21,6 +21,7 @@ import type {
   Confidentiality,
   Delegation,
   GrantPermission,
+  IntakeTarget,
   Page,
   Profile,
   RecordGrant,
@@ -580,5 +581,59 @@ export async function recordAccessReview(input: {
     decision: input.decision,
     note: input.note,
   });
+  fail(error);
+}
+
+// ---------------------------------------------------------------------------
+// Alımın kapsamı (M13-17)
+// ---------------------------------------------------------------------------
+
+/**
+ * Kapsam satırları. Sınır konmuyor: yirmi üç satır ve listenin tamamı
+ * cevabın kendisi — kesilmiş bir kapsam, kapsamı yanlış göstermek olur.
+ */
+export async function fetchIntakeTargets(): Promise<IntakeTarget[]> {
+  const { data, error } = await supabase
+    .from('intake_targets')
+    .select('id, key, enabled, sequence, note, updated_at')
+    .order('sequence');
+  fail(error);
+  return (
+    (data ?? []) as unknown as {
+      id: string;
+      key: string;
+      enabled: boolean;
+      sequence: number;
+      note: string | null;
+      updated_at: string;
+    }[]
+  ).map((row) => ({
+    id: row.id,
+    key: row.key,
+    enabled: row.enabled,
+    sequence: row.sequence,
+    note: row.note,
+    updatedAt: row.updated_at,
+  }));
+}
+
+/**
+ * Bir hedefi kapsama alır ya da çıkarır.
+ *
+ * Kapatmak gerekçe ister, açmak istemez: kapatmak asistanın bir işi
+ * yapmasını engelliyor ve o kararın sebebi altı ay sonra sorulur. Kısıt
+ * veritabanında değil burada, çünkü bir yöneticinin SQL'le gerekçesiz
+ * kapatması meşru (bir göç de öyle yapıyor); ekranda sormamak ise o kararı
+ * kayıtsız bırakmak olurdu.
+ */
+export async function setIntakeTarget(input: {
+  id: string;
+  enabled: boolean;
+  note: string | null;
+}): Promise<void> {
+  const { error } = await supabase
+    .from('intake_targets')
+    .update({ enabled: input.enabled, note: input.note })
+    .eq('id', input.id);
   fail(error);
 }

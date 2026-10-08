@@ -516,6 +516,22 @@ export interface LegalCaseSpend {
   lastPaidAt: string | null;
 }
 
+/**
+ * M13-17. Asistanın teklif verebileceği bir kayıt türü.
+ *
+ * Alan şeması burada DEĞİL: o `supabase/functions/ai-assistant/targets.js`'te
+ * duruyor, çünkü yazan fonksiyon kodda ve alan listesini veritabanına taşımak
+ * sapan kopyayı yaratmak olurdu. Buradaki satır bir yetki kararı.
+ */
+export interface IntakeTarget {
+  id: string;
+  key: string;
+  enabled: boolean;
+  sequence: number;
+  note: string | null;
+  updatedAt: string;
+}
+
 /** M1-11. Bir gözden geçirmenin verdiği karar. */
 export type AccessDecision = 'kept' | 'narrowed' | 'revoked' | 'extended';
 

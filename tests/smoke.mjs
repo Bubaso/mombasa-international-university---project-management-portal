@@ -4547,9 +4547,24 @@ try {
   await page.goto(BASE + '/admin', { waitUntil: 'networkidle' });
   await page.waitForTimeout(400);
   const directorView = (await page.textContent('body')) ?? '';
+  // SEKMELERE GEÇİNCE BU KONTROL DÜŞTÜ VE DÜŞMESİ DOĞRUYDU.
+  //
+  // Eski hâli iki kelimenin sayfada bulunmasını sınıyordu; `/admin` yedi
+  // sekmeye bölününce (T14-04, 8 Ekim 2026) aynı anda bir bölüm çiziliyor.
+  // Yeni hâli daha güçlü: sekmenin SUNULDUĞUNU ve tıklandığında panelin
+  // GERÇEKTEN geldiğini sınıyor. Bir kelimenin sayfada olması, o bölümün
+  // çalıştığını söylemiyordu.
   check(
-    /Kapsam|Scope/.test(directorView) && /Olağanüstü yetki|Emergency delegation/.test(directorView),
-    'director sees scope and delegation',
+    /Kapsam|Scope/.test(directorView) && /Yetki devri|Delegation/.test(directorView),
+    'director is offered the scope and delegation tabs',
+  );
+  await page.click('[role="tab"]:has-text("Yetki devri"), [role="tab"]:has-text("Delegation")');
+  await page.waitForTimeout(300);
+  const directorDelegation = (await page.textContent('body')) ?? '';
+  check(
+    pageErrors.length === 0 &&
+      /Olağanüstü yetki devri|Emergency delegation/.test(directorDelegation),
+    'and opening the delegation tab really draws it',
   );
   check(
     !/Kişi davet et|Invite someone/.test(directorView),

@@ -162,7 +162,12 @@ for (const read of bounded) {
 //
 // Görünümün kendisi `app.can_audit_people()` ile sınırlı, yani okuma bir
 // kütüğü değil portaldaki insanları çekiyor; bugün on dört satır.
-const UNBOUNDED_TODAY = 128;
+//
+// M13-17'den sonra 129: `fetchIntakeTargets` eklendi ve sınırsız. Yirmi üç
+// satır, ve listenin tamamı cevabın kendisi: kesilmiş bir kapsam, kapsamı
+// yanlış göstermek olur. "Asistan şu on türe teklif verebilir" diyen bir
+// ekran, aslında yirmi üç tür varken, okuyana yanlış bir sınır öğretir.
+const UNBOUNDED_TODAY = 129;
 
 // Sayan okumalar sayılmıyor: sorumuz "kaç okuma her satırı çekiyor", ve
 // `head: true` olan hiç satır çekmiyor.

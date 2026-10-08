@@ -270,14 +270,14 @@ rota, **kesimden önce**:
 | Görüntü alanından geniş kutu    | 4 (hepsi kendi kutusunda) |
 | 14px altı metin ögesi / rota    | 21 – 115                  |
 
-| ID     | Gereksinim                                                                                                | P   | Kabul kriteri                                                                                                                                                                                  |
-| ------ | --------------------------------------------------------------------------------------------------------- | --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| T15-01 | İlk ekranın en az %85'i içerik olsun; mobilya üstte bir şerit kadar yer tutsun.                           | P0  | ✅ Faz 1: `main`'in tepesi 232 → **114px** (kriter ≤130).                                                                                                                                      |
-| T15-02 | Kritik tarih şeridi telefonda **şerit** kalsın, listeye dönüşmesin.                                       | P0  | ✅ Faz 1: şerit 175 → **57px**; telefonda da yatay, geniş kalırsa kendi kutusunda kayıyor.                                                                                                     |
-| T15-04 | Hiçbir ekranın **kurgusu** telefonda üç ekrandan uzun olmasın. (Kriter Faz 3'te değişti — aşağıya bakın.) | P1  | ❌ **Karşılanmıyor.** 8 Ekim'de ölçü düzeltilince `/admin` kurgusu **8.931px**, `/` **2.552px** çıktı; kriter 2.532. Ekranlar büyümedi, ölçü onları görmüyordu — aşağıdaki Faz 4 notuna bakın. |
-| T15-05 | Form alanı telefonda odaklanınca ekranı yakınlaştırmasın.                                                 | P0  | ✅ Faz 1: **0** — kural `index.css`'te tek yerde, telefon genişliğinde.                                                                                                                        |
-| T15-06 | Parmakla yakınlaştırma engellenmesin.                                                                     | P0  | ✅ Faz 1: `user-scalable=no` ve `maximum-scale` kaldırıldı; kapıda `tests/a11y.mjs` sınıyor.                                                                                                   |
-| T15-07 | Telefonda 19 rotanın hepsi erişilebilir kalsın; kesim bir rotayı kaybetmesin.                             | P0  | ✅ Alt çubuk (4 rota) + 'daha fazla' sayfası birlikte 19/19, ve artık KAPIDA: T14-05'in kontrolü masaüstü kenar çubuğunu ölçüyordu, telefonu değil.                                            |
+| ID     | Gereksinim                                                                                                | P   | Kabul kriteri                                                                                                                                       |
+| ------ | --------------------------------------------------------------------------------------------------------- | --- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T15-01 | İlk ekranın en az %85'i içerik olsun; mobilya üstte bir şerit kadar yer tutsun.                           | P0  | ✅ Faz 1: `main`'in tepesi 232 → **114px** (kriter ≤130).                                                                                           |
+| T15-02 | Kritik tarih şeridi telefonda **şerit** kalsın, listeye dönüşmesin.                                       | P0  | ✅ Faz 1: şerit 175 → **57px**; telefonda da yatay, geniş kalırsa kendi kutusunda kayıyor.                                                          |
+| T15-04 | Hiçbir ekranın **kurgusu** telefonda üç ekrandan uzun olmasın. (Kriter Faz 3'te değişti — aşağıya bakın.) | P1  | ✅ **Faz 4'te karşılandı.** `/admin` yedi sekmeye bölündü ve kurgu 8.931 → **2.512px**; kriter 2.532. Toplam boy ratchet'i 10.743 → **3.273px**.    |
+| T15-05 | Form alanı telefonda odaklanınca ekranı yakınlaştırmasın.                                                 | P0  | ✅ Faz 1: **0** — kural `index.css`'te tek yerde, telefon genişliğinde.                                                                             |
+| T15-06 | Parmakla yakınlaştırma engellenmesin.                                                                     | P0  | ✅ Faz 1: `user-scalable=no` ve `maximum-scale` kaldırıldı; kapıda `tests/a11y.mjs` sınıyor.                                                        |
+| T15-07 | Telefonda 19 rotanın hepsi erişilebilir kalsın; kesim bir rotayı kaybetmesin.                             | P0  | ✅ Alt çubuk (4 rota) + 'daha fazla' sayfası birlikte 19/19, ve artık KAPIDA: T14-05'in kontrolü masaüstü kenar çubuğunu ölçüyordu, telefonu değil. |
 
 ### Neden bu satırlar, ve neden şimdi
 
@@ -2306,3 +2306,77 @@ korumak olurdu. Kaldırıldı. Yönetim konsolunu özet + detay kalıbına geçi
 (T14-04'ün diğer ekranlarda yaptığı iş) ayrı bir faz, ve bu turun içine
 sıkıştırılmadı: M1-11 bir modül satırı, konsolun yeniden düzenlenmesi bir
 tasarım turu.
+
+## T15-04 · Faz 4 — `/admin` bölündü, kriter karşılandı (8 Ekim 2026)
+
+Faz 4'ün girdisi Faz 3'ün çıktısı değil, **ölçünün düzeltilmesiydi**: sahte
+yetki düzeltilince `/admin`'in kurgusu 8.931px çıktı ve kriter 2.532'ydi.
+
+**Önce ölçtüm, sonra kestim.** Yedi bölümün yedisi birden çiziliyordu:
+
+| Bölüm            | Boy (390px) | Satır |
+| ---------------- | ----------- | ----- |
+| Gözden geçirme   | 2.579px     | 14    |
+| Kapsam           | 2.285px     | 8     |
+| Paylaşım         | 1.783px     | 4     |
+| Yetki devri      | 1.563px     | 4     |
+| Denetim kaydı    | 880px       | 4     |
+| Sizin erişiminiz | 601px       | 0     |
+| Kişiler          | 517px       | 1     |
+
+Hiçbirini silmek doğru değil — hepsi birinin işi. Uygulanan şey T14-04'ün
+kalıbı ve o kalıp depoda zaten vardı (`/governance`, `/project_info`,
+`RisksView`): **sekme**. Aynı anda bir bölüm çiziliyor, hiçbir işlev
+kaybolmuyor, yeri değişiyor. Telefona özel ikinci bir düzen yazmak aynı
+ekranı iki yere yazmak olurdu (CLAUDE.md §4).
+
+"Sizin erişiminiz" sekmelerin **dışında** kaldı: okuyanın kendi yetkisi, ve
+bir sekmenin arkasına koymak "ben ne yapabiliyorum" sorusunu tıklamaya
+bağlamak olurdu. Açılış sekmesi "Kişiler" — ölçülen en hafif ve her role
+görünen bölüm (517px). Açılışı Kapsam'la (2.285px) yapmak sekmenin kazancını
+geri verirdi.
+
+Sonuç: `/admin` kurgu 8.931 → **1.044px**, düğme 61 → 51, başlık 13 → 6.
+
+### Son 20 piksel, ve olmayan bir sorunu düzeltmek üzereydim
+
+`/admin` düzelince en kötü ekran `/` oldu: 2.552px, kriterin **20px**
+üstünde. Gösterge panelini bölüm bölüm ölçtüm ve "Projenin nabzı" başlığı
+**iki kez** çıktı — bir tekrar bulduğumu sandım. Kaynağa baktım: tek bir
+tanım var, benim sondamın seçicisi hem `<section>`'ı hem iç `div`'i
+sayıyordu. Yani ölçüm bir kusur uyduruyordu, ve ona göre düzeltme yapsam
+çalışan bir şeyi bozacaktım.
+
+Gerçek 20 piksel başka yerden geldi: nabız panelinin alt başlığı "Hiç rapor
+edilmemişse rakam yok — sıfır yazmıyor" diyordu. Dürüstlüğü taşıyan şey o
+cümle değil **hücredeki değer**: `progressLabel` null yüzde için
+"raporlanmadı" basıyor ve o dizge `tests/design-rows.mjs`'in koruduğu
+kümede. Cümle, verinin zaten söylediğini prozada tekrar ediyordu — T6-01 ve
+T13-02 turlarının 54 paragrafta kaldırdığı tür, bu panelde gözden kaçmış.
+
+Kesildi, ve kurgu **2.512px** oldu: kriterin 20px altında.
+
+Ayrımı söyleyebiliyorum: rakam kesmemi sağlamadı, **kesilecek bir şeyin
+orada olduğunu söyledi**. Kriter değiştirilmedi, hiçbir kayıt saklanmadı.
+
+### M13-17'nin eksik parçası da bu fazda kapandı
+
+Geçen turda M13-17'yi kapatırken şunu açıkça yazmıştım: kapsamı değiştirmek
+bir SQL güncellemesi, ve konsola bölüm eklemek doğru olurdu ama `/admin` o
+anda 8.931px'ti. Sekmeler o engeli kaldırdı; "Asistanın kapsamı" sekmesi
+eklendi. Yirmi üç hedef, kapsamda olanı ve kapatılanı ayrı gösteriyor,
+kapatmak gerekçe istiyor.
+
+Alan şeması o ekranda **yok** ve olmaması kasıtlı: şema yazan fonksiyonun
+yanında duruyor, buraya getirmek iki yerde tutulan bir şema yaratmak olurdu.
+
+### Bir kapı da düştü, ve düşmesi doğruydu
+
+`tests/smoke.mjs` "director sees scope and delegation" diye iki kelimenin
+sayfada bulunmasını sınıyordu. Sekmelerle aynı anda bir bölüm çiziliyor, ve
+kontrol düştü. Yeni hâli daha güçlü: sekmenin sunulduğunu **ve tıklandığında
+panelin gerçekten geldiğini** sınıyor. Bir kelimenin sayfada olması, o
+bölümün çalıştığını hiç söylemiyordu.
+
+M1-11'in tutamak kontrolü de aynı sebeple taşındı: panel artık bir sekmenin
+arkasında, yani açılış ekranında yok. Kontrol sekme turunun içine alındı.

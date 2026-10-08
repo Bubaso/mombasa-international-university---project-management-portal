@@ -94,3 +94,11 @@ export const useRecordAccessReview = () => {
   const invalidate = useInvalidator(['accessReviewQueue', 'auditLog']);
   return useMutation({ mutationFn: admin.recordAccessReview, onSuccess: invalidate });
 };
+
+export const useIntakeTargets = () =>
+  useQuery({ queryKey: ['intakeTargets'], queryFn: admin.fetchIntakeTargets });
+
+export const useSetIntakeTarget = () => {
+  const invalidate = useInvalidator(['intakeTargets', 'auditLog']);
+  return useMutation({ mutationFn: admin.setIntakeTarget, onSuccess: invalidate });
+};

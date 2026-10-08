@@ -143,10 +143,12 @@ verilmezse **atıyor** — sessizce koddaki tam listeye dönmüyor. O dönüş t
 olarak M13-17'nin yasakladığı şey olurdu. Kapsam okunamazsa alım `failed`
 oluyor, sebebiyle.
 
-**Bugünün sınırı, açıkça:** kapsamı değiştirmek bir yöneticinin SQL güncellemesi.
-Konsola bir bölüm eklemek doğru olurdu ama `/admin` şu an telefonda 8.931px
-ve T15-04'ü ihlâl ediyor; oraya bir bölüm daha koymak ölçülmüş bir kusuru
-büyütmek olurdu. O bölüm `/admin` yeniden düzenleme fazına ait.
+**O turda bıraktığım sınır aynı gün kapandı.** "Kapsamı değiştirmek bir
+yöneticinin SQL güncellemesi; konsola bölüm eklemek doğru olurdu ama
+`/admin` telefonda 8.931px" diye yazmıştım. T14-04 Faz 4 `/admin`'i yedi
+sekmeye böldü (kurgu 8.931 → 1.044px) ve "Asistanın kapsamı" sekmesi eklendi:
+yirmi üç hedef, kapatmak gerekçe istiyor. Alan şeması o ekranda yok ve
+olmaması kasıtlı — şema yazan fonksiyonun yanında duruyor.
 
 ## 0045 sonrası bir düzeltme
 
