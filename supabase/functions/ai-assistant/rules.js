@@ -226,9 +226,20 @@ export function citesAnySource(text, sources) {
 /**
  * Hangi kütükleri bir belgenin ilgilendirebileceği.
  *
- * Faz 1 için sabit. M13-17 kapsamın veritabanındaki kayıttan gelmesini
- * istiyor ve Faz 4 bunu `intake_targets` sorgusuyla değiştirecek; o zamana
- * kadar liste burada, tek yerde, ve model bunun dışına çıkamıyor.
+ * BU LİSTE KAPSAM DEĞİL, VE YORUMUN ÖNCEKİ HÂLİ BUNU YANLIŞ SÖYLÜYORDU.
+ *
+ * Eski hâli "M13-17 kapsamın veritabanındaki kayıttan gelmesini istiyor ve
+ * Faz 4 bunu `intake_targets` sorgusuyla değiştirecek" diyordu, ve denetim
+ * dosyası M13-17'yi o cümleye bağlamıştı. 8 Ekim 2026'da ölçüldü: bu liste
+ * yalnızca `readClassification`'ı besliyor, o da hiçbir canlı fonksiyondan
+ * çağrılmıyor — `document-intake` `readProposals` çağırıyor. Yani kapsamı
+ * yöneten şey `targets.js`'teki `PROPOSAL_TARGETS`, ve M13-17 oraya
+ * uygulandı (göç 0056, `inScope`).
+ *
+ * Bu liste sınıflandırma geçişinin sözlüğü olarak duruyor: bir belgenin
+ * hangi kütükleri ilgilendirdiğini söylemek, o kütüklere teklif vermekten
+ * ayrı bir şey. Teklif kapsamı veritabanından gelir; bu sözlük modelin
+ * "ilgilendiriyor" diyebileceği adların listesi.
  *
  * Buradaki anahtarlar kütük adlarıdır, tablo adları değil: model "bu belge
  * yükümlülük kütüğünü ilgilendiriyor" diyebilir, "obligations tablosuna
@@ -459,6 +470,18 @@ export function readProposals(answer, documentText, registry) {
     const target = registry.targetFor(register);
     if (!target) {
       rejected.push({ register: register || null, why: 'no such register' });
+      continue;
+    }
+
+    // Kapsam kontrolü, şemadan AYRI (M13-17).
+    //
+    // `answerSchema` modele kapsamdaki anahtarları bir enum olarak veriyor,
+    // ama bir model şemasını yok sayabilir ve şema sunucu tarafı bir
+    // doğrulama değil bir ricadır. Kapsam dışı bir hedef "böyle bir kütük
+    // yok" değil: kütük var, asistanın ona teklif verme yetkisi yok. İki
+    // ayrı cümle, çünkü biri kod kusuru öteki yetki kararı.
+    if (registry.inScope && !registry.inScope(register)) {
+      rejected.push({ register, why: 'that register is not in the intake scope' });
       continue;
     }
 

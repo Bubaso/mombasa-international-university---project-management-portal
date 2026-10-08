@@ -14,18 +14,18 @@ Yalnızca `supabase/migrations`, `supabase/functions`, `src` ve `tests`
 sayıldı — `supabase/bundled` üretilmiş çıktı olduğu için hariç, yoksa her
 desen iki kez eşleşiyor.
 
-**Tarih:** 2026-10-08 · migration 0055'e kadar. (İlk hâli: 2026-10-01, 0044'e
+**Tarih:** 2026-10-08 · migration 0056'ya kadar. (İlk hâli: 2026-10-01, 0044'e
 kadar.)
 
 ## Özet
 
 | Durum      | Satır |
 | ---------- | ----- |
-| Yapıldı    | 185   |
-| Yok        | 25    |
+| Yapıldı    | 186   |
+| Yok        | 24    |
 | **Toplam** | 210   |
 
-Öncelik dağılımı: P0 22 satır (1'i yok), P1 115 satır (2'si yok), P2 59 satır
+Öncelik dağılımı: P0 22 satır (1'i yok), P1 115 satır (1'i yok), P2 59 satır
 (22'si yok), P3 14 satır (**hepsi yapıldı**).
 
 ### 8 Ekim 2026 güncellemesi — ve başlıktaki sayı hakkında bir düzeltme
@@ -112,6 +112,42 @@ hiç render edilmiyordu. Düzeltilince iki gerçek çökme ortaya çıktı, biri
 önceden vardı. Ayrıntısı `docs/TASARIM-GEREKSINIMLERI.md`'de; T15-04 artık
 karşılanmış sayılmıyor.
 
+### M13-17 kapandı — göç 0056, ve denetimin kendi alıntısı eskimişti
+
+Bu satırı bu dosyaya "**Kodun kendisi bunu söylüyor**" diye yazmıştım ve
+`rules.js`'teki şu yorumu alıntılamıştım: _"Faz 1 için sabit. M13-17 kapsamın
+veritabanındaki kayıttan gelmesini istiyor ve Faz 4 bunu `intake_targets`
+sorgusuyla değiştirecek."_
+
+**O yorum eskimişti ve alıntı beni yanlış yere gönderiyordu.** 8 Ekim'de
+ölçüldü: `REGISTERS` yalnızca `readClassification`'ı besliyor, o da hiçbir
+canlı fonksiyondan çağrılmıyor — `document-intake` `readProposals` çağırıyor.
+Yani kapsamı bugün yöneten şey `targets.js`'teki `PROPOSAL_TARGETS` (23
+hedef). `REGISTERS`'ı veritabanına taşımak hiçbir şeyi kapatmazdı: ölü bir
+listeyi taşımak olurdu. Yorum düzeltildi.
+
+Ders, bu dosyanın kendi sınırıyla aynı: **bir kod yorumu bir kanıt değil bir
+iddiadır.** Atıfı olan satırı atıfına dayandırmak, atıfın hâlâ doğru olduğunu
+varsaymaktır.
+
+0056 bir tablo (`intake_targets`), iki trigger, iki politika ve yirmi üç
+tohum satırı getirdi. Taşınan şey **hangi** kayıt türlerinin kapsamda olduğu;
+taşınmayan şey her hedefin alan şeması (1.379 satır), çünkü o şema yazan
+fonksiyonu besliyor ve yazan fonksiyon kodda. Alan listesini veritabanına
+taşımak kaçınılmaz olarak sapan kopyayı üretirdi (CLAUDE.md §4). İki yön de
+kapıya bağlandı: kapsamdaki her anahtarın kodda bir şeması, koddaki her
+hedefin kapsamda bir satırı olmak zorunda.
+
+`targetsBriefing` ve `answerSchema` artık kapsamı **argüman olarak** alıyor ve
+verilmezse **atıyor** — sessizce koddaki tam listeye dönmüyor. O dönüş tam
+olarak M13-17'nin yasakladığı şey olurdu. Kapsam okunamazsa alım `failed`
+oluyor, sebebiyle.
+
+**Bugünün sınırı, açıkça:** kapsamı değiştirmek bir yöneticinin SQL güncellemesi.
+Konsola bir bölüm eklemek doğru olurdu ama `/admin` şu an telefonda 8.931px
+ve T15-04'ü ihlâl ediyor; oraya bir bölüm daha koymak ölçülmüş bir kusuru
+büyütmek olurdu. O bölüm `/admin` yeniden düzenleme fazına ait.
+
 ## 0045 sonrası bir düzeltme
 
 M11-05 ve M11-06 bu denetimde "yapıldı" sayılıyordu ve öyleydi: teslim kaydı
@@ -141,7 +177,7 @@ Bunlar "yapıldı" sayılır; eksik olan tek şey migration yorumundaki atıf.
 
 ## Yapılmamış satırlar
 
-24 satır. Her biri için neyin eksik olduğu ve neye bağlı olduğu yazıldı,
+23 satır. Her biri için neyin eksik olduğu ve neye bağlı olduğu yazıldı,
 çünkü bir kısmı kod değil karar ya da hesap bekliyor.
 
 ### P0 — 1 satır
@@ -150,12 +186,11 @@ Bunlar "yapıldı" sayılır; eksik olan tek şey migration yorumundaki atıf.
 | ----- | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | M1-02 | Dört rol için iki faktörlü doğrulama zorunlu | **Sizin kararınıza bağlı.** Supabase projesinde MFA'nın açılması ve rol bazlı zorunluluk gerekir; portal tarafında `aal2` kontrolü yazılır. Kimlik sağlayıcısında bir ayar olmadan kod tek başına yetmez. |
 
-### P1 — 2 satır
+### P1 — 1 satır
 
-| ID     | Gereksinim                                                    | Durum                                                                                                                                                                                                                                                                                                                                                                                                     |
-| ------ | ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| M1-10  | Oturum yönetimi: aktif cihazlar, uzaktan kapatma              | Supabase `auth.sessions` üzerinden okunur; kapatma yönetici yetkisiyle sunucu tarafı bir fonksiyon ister.                                                                                                                                                                                                                                                                                                 |
-| M13-17 | Modülün kapsamı veritabanındaki kayıttan gelsin, koddan değil | **Kodun kendisi bunu söylüyor.** `supabase/functions/ai-assistant/rules.js` şöyle yazıyor: _"Faz 1 için sabit. M13-17 kapsamın veritabanındaki kayıttan gelmesini istiyor ve Faz 4 bunu `intake_targets` sorgusuyla değiştirecek."_ Bugün liste `REGISTERS` sabitinde ve teklif hedefleri `targets.js`'te; ikisi de kod. Gereken: `intake_targets` tablosu + fonksiyonun oradan okuması. Bağımlılığı yok. |
+| ID    | Gereksinim                                       | Durum                                                                                                     |
+| ----- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| M1-10 | Oturum yönetimi: aktif cihazlar, uzaktan kapatma | Supabase `auth.sessions` üzerinden okunur; kapatma yönetici yetkisiyle sunucu tarafı bir fonksiyon ister. |
 
 ### P2 — 22 satır
 
@@ -207,6 +242,6 @@ yapılmamış bir şeyi yapılmış gösterir — ilk geçişte "muson" kendi ya
 0040 yorumunda eşleşti, "sap" bir başka kelimenin içinde, "retention" bir
 hakediş sütununda. Dar bir desen ise yapılmış bir şeyi kaçırır; M1-08 ilk
 taramada `supabase/functions/` dizini sayılmadığı için yok görünüyordu.
-Yukarıdaki 24 satırın her biri bu yüzden elle teyit edildi, ve "yapıldı"
-sayılan 185 satırın hepsi tek tek teyit edilmedi — yalnızca atıfı olanlar
+Yukarıdaki 23 satırın her biri bu yüzden elle teyit edildi, ve "yapıldı"
+sayılan 186 satırın hepsi tek tek teyit edilmedi — yalnızca atıfı olanlar
 atıfına, atıfı olmayan yedisi kanıtına dayanıyor.

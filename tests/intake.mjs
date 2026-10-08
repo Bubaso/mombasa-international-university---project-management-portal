@@ -21,9 +21,13 @@ import { extract } from '../supabase/functions/document-intake/extract.js';
 import { REGISTERS, readClassification } from '../supabase/functions/ai-assistant/rules.js';
 import { readProposals } from '../supabase/functions/ai-assistant/rules.js';
 import {
+  PROPOSAL_KEYS,
   PROPOSAL_TARGETS,
+  answerSchema,
   columnOf,
+  inScope,
   modelFields,
+  scopeGap,
   targetFor,
   targetsBriefing,
 } from '../supabase/functions/ai-assistant/targets.js';
@@ -511,9 +515,144 @@ for (const target of PROPOSAL_TARGETS) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Kapsam bir kayıttan gelir, koddan değil (M13-17)
+// ---------------------------------------------------------------------------
+//
+// İki yön de sınanıyor ve ikisi ayrı şeyler söylüyor:
+//
+//   Veritabanında olup kodda olmayan bir anahtar: kapsam yazılamayacak bir
+//   hedefi içeriyor. Teklif üretilir, onaylanır, ve yazacak fonksiyon yoktur.
+//
+//   Kodda olup veritabanında olmayan bir hedef: kodda sessizce yeni bir
+//   kapsam açılmış. M13-17'nin yasakladığı şeyin ta kendisi.
+//
+// Göçün satırları METİNDEN okunuyor, elle yazılan bir listeden değil: ikinci
+// bir liste tutmak sapan kopyayı yaratmak olurdu (CLAUDE.md §4).
+
+const MIGRATION_0056 = readFileSync(
+  new URL('../supabase/migrations/0056_the_scope_is_a_record_not_a_constant.sql', import.meta.url),
+  'utf8',
+);
+
+const SCOPE_IN_THE_MIGRATION = [
+  ...MIGRATION_0056.matchAll(/^ {2}\('([a-z][a-z0-9_]*)', (true|false), \d+\)/gm),
+]
+  .filter((m) => m[2] === 'true')
+  .map((m) => m[1]);
+
+check(
+  SCOPE_IN_THE_MIGRATION.length >= 20,
+  'göçün tohumladığı kapsam okunabildi (M13-17)',
+  `${SCOPE_IN_THE_MIGRATION.length} hedef`,
+);
+
+{
+  // FİKSTÜR KENDİNİ SINAMASI, ve bu satır ölçülerek eklendi.
+  //
+  // `gap.length === 0` tek başına ayırt edici DEĞİL: her zaman `[]` döndüren
+  // bir `scopeGap` ile de geçer. Mutasyonla sınandı ve tam bunu yaptı —
+  // fonksiyonu `return []` yapınca hiçbir şey düşmedi. Bu satır olmadan
+  // aşağıdaki assertion "boşluk yok" değil "kimse bakmıyor" ölçüyordu.
+  const planted = scopeGap(['obligation', 'a_target_no_code_knows']);
+  check(
+    planted.length === 1 && planted[0] === 'a_target_no_code_knows',
+    'FİKSTÜR: scopeGap kodda olmayan bir anahtarı gerçekten bildiriyor',
+    planted.join(', ') || '(hiçbir şey)',
+  );
+
+  const gap = scopeGap(SCOPE_IN_THE_MIGRATION);
+  check(
+    gap.length === 0,
+    'kapsamdaki her anahtarın kodda bir şeması var',
+    gap.length ? `şeması yok: ${gap.join(', ')}` : `${SCOPE_IN_THE_MIGRATION.length} hedef`,
+  );
+
+  const unrecorded = PROPOSAL_KEYS.filter((k) => !SCOPE_IN_THE_MIGRATION.includes(k));
+  check(
+    unrecorded.length === 0,
+    've koddaki her hedefin kapsamda bir satırı var',
+    unrecorded.length ? `kayıtsız: ${unrecorded.join(', ')}` : `${PROPOSAL_KEYS.length} hedef`,
+  );
+}
+
+// Kapsam ZORUNLU: argüman verilmezse atıyor, koddaki tam listeye düşmüyor.
+// Düşmek tam olarak M13-17'nin yasakladığı şey olurdu, ve sessizce düşen bir
+// varsayılan bu testin hiçbir şey ölçmemesi demek olurdu.
+for (const [name, fn] of [
+  ['inScope', inScope],
+  ['targetsBriefing', targetsBriefing],
+  ['answerSchema', answerSchema],
+]) {
+  let threw = false;
+  try {
+    fn();
+  } catch {
+    threw = true;
+  }
+  check(threw, `${name} kapsam verilmeden çalışmayı reddediyor (M13-17)`);
+}
+
+// Kapsam daraltılınca brifing ve şema gerçekten daralıyor.
+{
+  const narrow = ['obligation', 'chronology'];
+  const briefing = targetsBriefing(narrow);
+  check(
+    briefing.includes('obligation —') && !briefing.includes('stakeholder —'),
+    'daraltılmış kapsam brifingden hedef çıkarıyor',
+    `${briefing.length} karakter`,
+  );
+  const schema = answerSchema(narrow);
+  const enumValues = schema.properties.proposals.items.properties.register.enum;
+  check(
+    enumValues.length === 2 && enumValues.includes('obligation'),
+    've modele gönderilen enum kapsamın kendisi',
+    enumValues.join(', '),
+  );
+}
+
+// Kapsam dışı bir hedef "böyle bir kütük yok" değil. İkisi ayrı cümle, çünkü
+// biri kod kusuru öteki yetki kararı — ve bir model şemayı yok sayabilir.
+{
+  const answer = {
+    classifiedAs: 'a letter',
+    why: 'it opens with an address block',
+    aboutEn: 'a boundary question',
+    proposals: [
+      {
+        register: 'stakeholder',
+        why: 'it names an official who acts',
+        quote: 'the County Surveyor wrote',
+        // HER ZORUNLU ALAN DOLU, ve bu kasıtlı. İlk yazışımda `category`
+        // eksikti; kapsam korumasını kaldıran mutasyon düştü ama BAŞKA bir
+        // sebeple ("category is required"). Yani ölçtüğüm şey kapsam değil
+        // alan doğrulamasıydı. Teklifi düşüren tek şey kapsam olmalı.
+        values: { fullName: 'County Surveyor', category: 'government' },
+      },
+    ],
+  };
+  const text = 'the County Surveyor wrote to us about the boundary';
+  const read = readProposals(answer, text, {
+    targetFor,
+    modelFields,
+    inScope: (key) => ['obligation'].includes(key),
+  });
+  check(read.ok, 'kapsam dışı teklif cevabın tamamını düşürmüyor');
+  check(
+    read.ok && read.value.proposals.length === 0,
+    've teklif edilmiş olarak sayılmıyor',
+    read.ok ? `${read.value.proposals.length} teklif` : read.why,
+  );
+  check(
+    read.ok && read.value.rejected.some((r) => r.why.includes('not in the intake scope')),
+    've reddin sebebi "böyle bir kütük yok" değil',
+    read.ok ? JSON.stringify(read.value.rejected) : '',
+  );
+}
+
 // Talimat hedefleri anlatmalı: anlatmayan bir alanı model dolduramaz.
 {
-  const briefing = targetsBriefing();
+  const briefing = targetsBriefing(SCOPE_IN_THE_MIGRATION);
   const missing = PROPOSAL_TARGETS.flatMap((t) =>
     modelFields(t)
       .filter((f) => !briefing.includes(f.name))

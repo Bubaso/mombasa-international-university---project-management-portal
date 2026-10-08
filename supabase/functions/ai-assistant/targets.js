@@ -1293,6 +1293,33 @@ export const columnOf = (fieldName) => fieldName.replace(/[A-Z]/g, (c) => `_${c.
 
 export const PROPOSAL_KEYS = PROPOSAL_TARGETS.map((t) => t.key);
 
+/**
+ * Kapsamdaki hedefler, veritabanının verdiği anahtar listesine göre (M13-17).
+ *
+ * Anahtar listesi `intake_targets`'tan geliyor ve **zorunlu**: argüman
+ * verilmezse bu fonksiyon atıyor, sessizce koddaki tam listeye dönmüyor. O
+ * dönüş tam olarak M13-17'nin yasakladığı şey olurdu — "tablo okunamadı, ben
+ * de listeyi koddan aldım" cümlesi, kapsamın koddan gelmesinin kendisidir.
+ *
+ * Kodda olmayan bir anahtar sessizce atlanmıyor: `scopeGap` onu ayrıca
+ * bildiriyor, çünkü veritabanı yazamayacağı bir hedefi kapsama almışsa bu
+ * görülmesi gereken bir uyuşmazlık.
+ */
+export function inScope(keys) {
+  if (!Array.isArray(keys)) {
+    throw new TypeError('the intake scope must be supplied; it comes from intake_targets (M13-17)');
+  }
+  const wanted = new Set(keys);
+  return PROPOSAL_TARGETS.filter((t) => wanted.has(t.key));
+}
+
+/** Veritabanının kapsama aldığı ama kodda şeması olmayan anahtarlar. */
+export function scopeGap(keys) {
+  if (!Array.isArray(keys)) return [];
+  const known = new Set(PROPOSAL_KEYS);
+  return keys.filter((k) => !known.has(k));
+}
+
 export const targetFor = (key) => PROPOSAL_TARGETS.find((t) => t.key === key) ?? null;
 
 /** Modelin dolduracağı alanlar. `human` olanlar onu ilgilendirmiyor. */
@@ -1305,21 +1332,23 @@ export const modelFields = (target) => target.fields.filter((f) => !f.human);
  * eklendiğinde talimatın da onu anlatması gerekiyor ve iki yerde tutulan şey
  * birinde unutulur.
  */
-export function targetsBriefing() {
-  return PROPOSAL_TARGETS.map((target) => {
-    const fields = modelFields(target)
-      .map((f) => {
-        const kind =
-          f.type === 'enum'
-            ? `one of: ${f.values.join(', ')}`
-            : f.type === 'number'
-              ? `a number ${f.min}-${f.max}`
-              : f.type;
-        return `    - ${f.name} (${kind}${f.required ? ', required' : ''}): ${f.about}`;
-      })
-      .join('\n');
-    return `  ${target.key} — ${target.what}\n${fields}`;
-  }).join('\n\n');
+export function targetsBriefing(keys) {
+  return inScope(keys)
+    .map((target) => {
+      const fields = modelFields(target)
+        .map((f) => {
+          const kind =
+            f.type === 'enum'
+              ? `one of: ${f.values.join(', ')}`
+              : f.type === 'number'
+                ? `a number ${f.min}-${f.max}`
+                : f.type;
+          return `    - ${f.name} (${kind}${f.required ? ', required' : ''}): ${f.about}`;
+        })
+        .join('\n');
+      return `  ${target.key} — ${target.what}\n${fields}`;
+    })
+    .join('\n\n');
 }
 
 /**
@@ -1339,7 +1368,8 @@ export function targetsBriefing() {
  * ait olduğunu ve değerin okunabilir olup olmadığını `readProposals`
  * doğruluyor.
  */
-export function answerSchema() {
+export function answerSchema(keys) {
+  const scoped = inScope(keys).map((t) => t.key);
   return {
     type: 'object',
     properties: {
@@ -1351,7 +1381,7 @@ export function answerSchema() {
         items: {
           type: 'object',
           properties: {
-            register: { type: 'string', enum: PROPOSAL_KEYS },
+            register: { type: 'string', enum: scoped },
             why: { type: 'string' },
             quote: { type: 'string' },
             // Ad/değer çiftleri, hedefe göre değişen bir nesne değil.

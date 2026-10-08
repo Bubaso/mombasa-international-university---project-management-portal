@@ -31,6 +31,7 @@ import {
   answerSchema,
   columnOf,
   modelFields,
+  scopeGap,
   targetFor,
   targetsBriefing,
 } from '../ai-assistant/targets.js';
@@ -181,7 +182,43 @@ const buildPrompt = (fileName: string, excerpt: string, truncated: boolean): str
   excerpt;
 
 /** Talimat her çağrıda aynı; hedef tanımlarından üretiliyor. */
-const INSTRUCTION = proposeInstruction(targetsBriefing());
+/**
+ * Alımın kapsamı: `intake_targets`'tan okunur (M13-17).
+ *
+ * TALİMAT ARTIK MODÜL SEVİYESİNDE BİR SABİT DEĞİL, ve olmaması gereken şey
+ * tam olarak oydu: `proposeInstruction(targetsBriefing())` bir kez,
+ * fonksiyon yüklenirken, koddaki tam listeden kuruluyordu. Kapsam bir
+ * kayıttan geliyorsa talimat da istek başına kurulmak zorunda.
+ *
+ * OKUNAMAZSA KODA DÜŞMEZ. "Tablo okunamadı, ben de listeyi koddan aldım"
+ * cümlesi, kapsamın koddan gelmesinin kendisidir. Okuma başarısızsa alım
+ * `failed` olur ve sebebi yazılır.
+ *
+ * Servis anahtarıyla okunuyor: kapsam çağıranın yetkisine bağlı değil, ve
+ * `intake_targets_read` politikası zaten giriş yapmış herkese açık —
+ * servis anahtarı burada bir genişletme değil, çağıranın oturumundan
+ * bağımsız olma.
+ */
+async function readScope(
+  admin: ReturnType<typeof createClient>,
+): Promise<{ ok: true; keys: string[] } | { ok: false; why: string }> {
+  const { data, error } = await admin
+    .from('intake_targets')
+    .select('key, enabled, sequence')
+    .eq('enabled', true)
+    .order('sequence');
+  if (error) {
+    return { ok: false, why: `the intake scope could not be read: ${error.message}` };
+  }
+  const keys = (data ?? []).map((row) => String((row as { key: unknown }).key));
+  if (keys.length === 0) {
+    // Boş kapsam bir hata değil bir karar olabilir — ama o karar "hiçbir şey
+    // teklif etme" demek, ve onu sessizce koddaki listeye çevirmek kararı
+    // yok saymak olurdu.
+    return { ok: false, why: 'the intake scope is empty, so there is nothing to propose' };
+  }
+  return { ok: true, keys };
+}
 
 /**
  * Kendini sınama metni.
@@ -239,10 +276,22 @@ Deno.serve(async (req: Request): Promise<Response> => {
   // yükleme aynı zamanda ilk deneme olurdu — ve başarısızlığı kullanıcı
   // keşfederdi.
   if (body.selfTest) {
+    // Kendini sınama da kapsamı GERÇEKTEN okur. Koddaki tam listeyle sınamak,
+    // üretimin yapmadığı bir şeyi sınamak olurdu — ve ölçümün işi üretimin
+    // yaptığını yapmak.
+    const selfScope = await readScope(
+      createClient(url, serviceKey, {
+        auth: { persistSession: false },
+      }),
+    );
+    if (!selfScope.ok) {
+      return json({ selfTest: true, ok: false, error: selfScope.why }, 503);
+    }
+    const selfGap = scopeGap(selfScope.keys);
     const answer = await askTheModel(
       apiKey,
-      INSTRUCTION,
-      answerSchema(),
+      proposeInstruction(targetsBriefing(selfScope.keys)),
+      answerSchema(selfScope.keys),
       buildPrompt('self-test.txt', SELF_TEST_TEXT, false),
     );
     if (!answer.ok) {
@@ -251,13 +300,21 @@ Deno.serve(async (req: Request): Promise<Response> => {
         answer.status,
       );
     }
-    const read = readProposals(answer.parsed, SELF_TEST_TEXT, { targetFor, modelFields });
+    const read = readProposals(answer.parsed, SELF_TEST_TEXT, {
+      targetFor,
+      modelFields,
+      inScope: (key: string) => selfScope.keys.includes(key),
+    });
     return json({
       selfTest: true,
       ok: read.ok,
       model: MODEL,
       inputTokens: answer.inputTokens,
       outputTokens: answer.outputTokens,
+      scope: selfScope.keys.length,
+      // Veritabanı yazamayacağı bir hedefi kapsama almışsa bu görülmesi
+      // gereken bir uyuşmazlık, sessizce atlanacak bir şey değil.
+      scopeWithoutASchema: selfGap,
       ...(read.ok
         ? {
             classifiedAs: read.value.classifiedAs,
@@ -355,10 +412,16 @@ Deno.serve(async (req: Request): Promise<Response> => {
   const excerpt = extracted.text.slice(0, READ_CHARS);
   const truncated = excerpt.length < extracted.text.length;
 
+  // Kapsam, model çağrısından ÖNCE okunuyor. Okunamazsa model hiç
+  // çağrılmıyor: kapsamı bilmeden sorulan bir soru, cevabı kapsam dışı
+  // olabilecek bir soru, ve o cevabı sonradan atmak hem para hem zaman.
+  const scope = await readScope(admin);
+  if (!scope.ok) return await givingUp(scope.why);
+
   const answer = await askTheModel(
     apiKey,
-    INSTRUCTION,
-    answerSchema(),
+    proposeInstruction(targetsBriefing(scope.keys)),
+    answerSchema(scope.keys),
     buildPrompt(version.file_name ?? '', excerpt, truncated),
   );
   if (!answer.ok) return await givingUp(answer.why, answer.status);
@@ -366,7 +429,11 @@ Deno.serve(async (req: Request): Promise<Response> => {
   // Alıntılar okunan kesite karşı doğrulanıyor, metnin tamamına karşı değil:
   // modele gönderilmeyen bir yerden alıntı yapmış olamaz, ve kesitin dışında
   // bulunan bir alıntı doğrulanmış sayılmaz.
-  const read = readProposals(answer.parsed, excerpt, { targetFor, modelFields });
+  const read = readProposals(answer.parsed, excerpt, {
+    targetFor,
+    modelFields,
+    inScope: (key: string) => scope.keys.includes(key),
+  });
   if (!read.ok) {
     // Reddedilen bir cevap saklanmaz. Sebebi saklanır: "model şunu dedi ama
     // kabul edilmedi" altı ay sonra sorulacak sorunun cevabıdır.

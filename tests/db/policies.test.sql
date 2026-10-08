@@ -9960,6 +9960,107 @@ select pg_temp.check('somebody with no recorded write has null, which is not a c
     where profile_id = '66666666-6666-6666-6666-666666666666'),
   null::timestamptz);
 
+-- ===========================================================================
+-- Alımın kapsamı bir kayıt (M13-17, göç 0056)
+-- ===========================================================================
+
+-- Bağışçı: portalın en dar yetkili aktif koltuğu (clearance `public`).
+-- İlk yazışımda yükleniciyi kullandım ve test düştü — sebebi politika değil,
+-- bu dosyanın kendisi: M1-11 bloğu yüklenicinin profilini kapatıyor ve bu
+-- blok ondan sonra koşuyor. Sıralı bir politika testi durum taşır, ve
+-- sonraki bir blok öncekinin mutasyonuna sessizce bağlanabilir.
+select pg_temp.act_as('88888888-8888-8888-8888-888888888888');  -- donor
+
+-- Kapsam bir sır değil: asistanın neye teklif verebildiğini görmek, teklifi
+-- okuyan herkesin işine yarar.
+select pg_temp.check('the scope is readable by anybody signed in',
+  (select count(*) > 20 from intake_targets), true);
+
+-- Politikanın reddi SESSİZ: `intake_targets_write` yalnızca yöneticiye satır
+-- veriyor, yani başka birinin güncellemesi sıfır satır etkiliyor ve hiç
+-- istisna atmıyor. Bu oturumda ikinci kez bu tuzağa düştüm (M1-11'in
+-- append-only bloğu birincisiydi) ve ikisinde de `insufficient_privilege`
+-- bekleyen bir blok yazmıştım. Ölçülecek şey satır sayısı.
+do $$
+declare
+  n int;
+begin
+  update intake_targets set enabled = false where key = 'obligation';
+  get diagnostics n = row_count;
+  if n <> 0 then
+    raise exception 'FAIL an outside donor narrowed the assistant''s scope (% rows)', n;
+  end if;
+  raise notice 'ok   but changing it is not theirs to do — no row to change';
+end;
+$$;
+
+-- KONTROL: reddin sebebi politika, satırın yokluğu değil. Satır gerçekten
+-- var ve yönetici onu kapatabiliyor.
+select pg_temp.act_as('11111111-1111-1111-1111-111111111111');  -- admin
+update intake_targets set enabled = false, note = 'Closed while the writer is rebuilt.'
+where key = 'exhibit';
+
+select pg_temp.check('KONTROL: an administrator can take a target out of scope',
+  (select enabled from intake_targets where key = 'exhibit'), false);
+
+-- Kapsamdan çıkarmak silmek değil: kapatılan satır kararı taşıyor.
+select pg_temp.check('and the row stays, carrying the reason',
+  (select note from intake_targets where key = 'exhibit'),
+  'Closed while the writer is rebuilt.');
+
+select pg_temp.check('so the narrowed scope is what a reader gets',
+  (select count(*) from intake_targets where enabled), 22::bigint);
+
+-- Denetim kaydı kapsamı kimin değiştirdiğini taşıyor: bir yetki kararı,
+-- kaydı olmadan verilemez.
+select pg_temp.check('and who narrowed it is in the audit trail',
+  (select count(*) from audit_log
+    where entity_type = 'intake_targets' and action = 'UPDATE'), 1::bigint);
+
+-- Ve denetim satırı HANGİ hedef olduğunu taşıyor. `record_audit` bunu `id`
+-- kolonundan okuyor; kolon olmasa ifade null döner ve hata vermez, yani
+-- kayıt var sanılır ama bir hedefin geçmişi sorgulanamaz.
+-- İki ayrı assertion, ve ikinci olmadan birinci yetmiyor.
+--
+-- `id` kolonunu kaldıran mutasyon ilk yazışımda DÜŞMEDİ: assertion
+-- `intake_targets.id`'ye bakıyordu, kolon yoksa sorgu hata veriyordu ve
+-- ölçüm betiğim hatayı düşme saymıyordu. "Null değil" kolona hiç bakmıyor,
+-- yani kolonun yokluğunda temiz bir FAIL veriyor.
+select pg_temp.check('and the audit row says WHICH target, not just that something changed',
+  (select entity_id is not null from audit_log
+    where entity_type = 'intake_targets' and action = 'UPDATE'),
+  true);
+select pg_temp.check('and it is the target that was actually narrowed',
+  (select entity_id from audit_log
+    where entity_type = 'intake_targets' and action = 'UPDATE'),
+  (select id from intake_targets where key = 'exhibit'));
+
+-- Anahtar bir kod tanımlayıcısı olmak zorunda, çünkü karşılığı bir kod
+-- anahtarı. Boşluklu ya da büyük harfli bir anahtar hiçbir şemaya eşleşmez.
+do $$
+begin
+  begin
+    insert into intake_targets (key, sequence) values ('Not A Key', 9990);
+    raise exception 'FAIL a key that cannot match a code key was accepted';
+  exception
+    when check_violation then
+      raise notice 'ok   a scope key has to be able to match a code key';
+  end;
+end;
+$$;
+
+do $$
+begin
+  begin
+    insert into intake_targets (key, sequence) values ('another_target', 10);
+    raise exception 'FAIL two targets were given the same place in the briefing';
+  exception
+    when unique_violation then
+      raise notice 'ok   and two targets cannot share one place in the briefing';
+  end;
+end;
+$$;
+
 reset role;
 
 \echo ''
