@@ -130,6 +130,105 @@ for (const kind of KINDS) {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Kapsam denetiminin kendi toplamı (docs/KAPSAM-DENETIMI.md)
+// ---------------------------------------------------------------------------
+//
+// Aynı çürüme, ikinci bir dosyada. Denetim 2026-10-01'de yazıldı, o günün
+// `M*` sayısı 197'ydi, ve başlığı "197 gereksinim satırı" diyordu. Bugün 210.
+//
+// Başlıktaki sayı YANLIŞ değildi, EKSİKTİ: hangi kümeyi saydığını
+// söylemiyordu. Dokümanın o günkü toplamı 240'tı (197 `M*` + 37 `N*` + 6
+// `G*`), ve dosyayı sonradan okuyan biri — ben — 197'yi toplam sanıp
+// "denetim 56 satır eskimiş" diye ölçtüm. Eskimişliği 13 satırdı.
+//
+// Hangi kümeyi saydığını söylemeyen bir sayı, yanlış bir sayıdan daha
+// kötüdür: ikincisi düzeltilir, birincisi her okunduğunda yeniden yanlış
+// anlaşılır.
+//
+// Bu yüzden üç şey birden sınanıyor: başlıktaki sayı ölçülen `M*` sayısına
+// eşit mi, özet tablosu kendi içinde toplanıyor mu, ve öncelik dağılımı aynı
+// toplamı veriyor mu. Üçü ayrı yerde yazılı ve üçü ayrışabilir.
+{
+  const auditPath = join('docs', 'KAPSAM-DENETIMI.md');
+  const audit = readFileSync(join(root, auditPath), 'utf8');
+  const measuredModules = rowsMatching(/^\| *M[0-9]+-[0-9]+/);
+
+  const titled = /^# Kapsam denetimi — ([0-9]+) modül gereksinimi/m.exec(audit);
+  check(titled !== null, `${auditPath} başlığında kendi toplamını söylüyor`);
+  if (titled) {
+    const n = Number(titled[1]);
+    check(
+      n === measuredModules,
+      `${auditPath} başlığı ölçülen M* sayısına eşit`,
+      n === measuredModules ? `${n}` : `başlık ${n}, ölçülen ${measuredModules}`,
+    );
+  }
+
+  const row = (label) =>
+    Number(new RegExp(`\\| ${label}\\s*\\|\\s*([0-9]+)\\s*\\|`).exec(audit)?.[1] ?? NaN);
+  const doneRows = row('Yapıldı');
+  const notRows = row('Yok');
+  // Desen boşluğa TOLERANSLI, ve sebebi bir düşüş: prettier tablo hücrelerini
+  // hizalıyor, yani `| **Toplam** | 210   |` içindeki boşluk sayısı dosyanın
+  // başka bir yerindeki en uzun hücreye bağlı. Sabit boşluk sayan bir desen,
+  // ilgisiz bir satır uzadığında kırılır.
+  const totalRows = Number(/\|\s*\*\*Toplam\*\*\s*\|\s*([0-9]+)\s*\|/.exec(audit)?.[1] ?? NaN);
+  check(
+    Number.isFinite(doneRows) && Number.isFinite(notRows) && Number.isFinite(totalRows),
+    `${auditPath} özet tablosu okunabildi`,
+    `${doneRows} + ${notRows} = ${totalRows}`,
+  );
+  check(
+    doneRows + notRows === totalRows,
+    `${auditPath} özeti kendi içinde toplanıyor`,
+    `${doneRows} + ${notRows} = ${doneRows + notRows}, yazılan ${totalRows}`,
+  );
+  check(
+    totalRows === measuredModules,
+    `${auditPath} toplamı ölçülen M* sayısına eşit`,
+    totalRows === measuredModules
+      ? `${totalRows}`
+      : `yazılan ${totalRows}, ölçülen ${measuredModules}`,
+  );
+
+  // Öncelik dağılımı cümlesi: "P0 22 satır (1'i yok), P1 115 satır (4'ü yok)…"
+  const flowedAudit = audit.replace(/\s+/g, ' ');
+  const prios = [...flowedAudit.matchAll(/P([0-3]) ([0-9]+) satır/g)].map((m) => ({
+    p: m[1],
+    n: Number(m[2]),
+  }));
+  check(prios.length >= 4, `${auditPath} öncelik dağılımı okunabildi`, `${prios.length} band`);
+  const prioTotal = prios.slice(0, 4).reduce((a, b) => a + b.n, 0);
+  check(
+    prioTotal === measuredModules,
+    `${auditPath} öncelik dağılımı aynı toplamı veriyor`,
+    prioTotal === measuredModules
+      ? `${prioTotal}`
+      : `dağılım ${prioTotal}, ölçülen ${measuredModules}`,
+  );
+
+  // Ve dağılımın her bandı dokümanda gerçekten o kadar satır mı?
+  const byPrio = {};
+  for (const line of lines) {
+    const m = /^\| *M[0-9]+-[0-9]+ *\| *(P[0-3]) *\|/.exec(line);
+    if (m) byPrio[m[1]] = (byPrio[m[1]] ?? 0) + 1;
+  }
+  const wrongBands = prios
+    .slice(0, 4)
+    .filter((x) => (byPrio[`P${x.p}`] ?? 0) !== x.n)
+    .map((x) => `P${x.p}: yazılan ${x.n}, ölçülen ${byPrio[`P${x.p}`] ?? 0}`);
+  check(
+    wrongBands.length === 0,
+    `${auditPath} her öncelik bandı dokümandaki satır sayısına eşit`,
+    wrongBands.length
+      ? wrongBands.join(' · ')
+      : Object.entries(byPrio)
+          .map(([k, v]) => `${k}:${v}`)
+          .join(' '),
+  );
+}
+
 console.log('');
 if (failures > 0) {
   console.error(`${failures} document-count check(s) failed.`);

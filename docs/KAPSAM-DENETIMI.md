@@ -1,7 +1,9 @@
-# Kapsam denetimi — 197 gereksinim satırı
+# Kapsam denetimi — 210 modül gereksinimi
 
-Bu dosya `docs/URUN-GEREKSINIMLERI.md`'nin 197 satırını **atıf değil özellik**
-olarak ölçer. Ayrımın nedeni ölçümün kendisi: satır kimliklerini depoda
+Bu dosya `docs/URUN-GEREKSINIMLERI.md`'nin **modül** satırlarını (`M*`)
+**atıf değil özellik** olarak ölçer. `N*` (fonksiyonel olmayan) ve `G*` (göç)
+satırları kapsam dışı: ilki bir özellik değil bir nitelik, ikincisi bir kerelik
+bir iş ve sonucu `docs/NOTION-GOC.md`'de. Ayrımın nedeni ölçümün kendisi: satır kimliklerini depoda
 grep'lemek yalnızca hangi migration'ın bir ID yazdığını sayar, hangi özelliğin
 var olduğunu saymaz. İlk deneme 43 satırı "atıfsız" diye bildirdi; örneklemede
 M7-05, M9-06, M2-03 ve M4-02 yapılmış ama anılmamış çıktı.
@@ -12,18 +14,41 @@ Yalnızca `supabase/migrations`, `supabase/functions`, `src` ve `tests`
 sayıldı — `supabase/bundled` üretilmiş çıktı olduğu için hariç, yoksa her
 desen iki kez eşleşiyor.
 
-**Tarih:** 2026-10-01 · migration 0044'e kadar.
+**Tarih:** 2026-10-08 · migration 0053'e kadar. (İlk hâli: 2026-10-01, 0044'e
+kadar.)
 
 ## Özet
 
 | Durum      | Satır |
 | ---------- | ----- |
-| Yapıldı    | 171   |
-| Yok        | 26    |
-| **Toplam** | 197   |
+| Yapıldı    | 183   |
+| Yok        | 27    |
+| **Toplam** | 210   |
 
-Öncelik dağılımı: P0 16 satır (1'i yok), P1 109 satır (3'ü yok), P2 58 satır
+Öncelik dağılımı: P0 22 satır (1'i yok), P1 115 satır (4'ü yok), P2 59 satır
 (22'si yok), P3 14 satır (**hepsi yapıldı**).
+
+### 8 Ekim 2026 güncellemesi — ve başlıktaki sayı hakkında bir düzeltme
+
+Bu dosyanın ilk hâli 2026-10-01 tarihliydi ve 0044'e kadar ölçüyordu. O gün
+`M*` satırı 197'ydi; bugün **210**. Aradaki **13 satır** denetimin hiç
+görmediği satırlar: belge asistanı turunun on ikisi (M13-13…M13-24) ve
+M5-17 (temyiz itirazları kütüğü).
+
+On üçü tek tek teyit edildi ve **on ikisi yapılmış**. Biri yapılmamış ve
+aşağıdaki P1 listesine eklendi: **M13-17**.
+
+Bir şeyi açıkça söylüyorum: başlıkta "197 gereksinim satırı" yazıyordu ve bu
+**eksik bir ifadeydi**, yanlış bir sayı değil. 197 o günün `M*` sayısıydı;
+dokümanın o günkü toplamı 240'tı (197 `M*` + 37 `N*` + 6 `G*`). Başlık hangi
+kümeyi saydığını söylemediği için dosyayı sonradan okuyan biri — ben — onu
+dokümanın toplamı sanıp "denetim 56 satır eskimiş" diye ölçtü. Eskimişliği 13
+satırdı. **Hangi kümeyi saydığını söylemeyen bir sayı, yanlış bir sayıdan
+daha kötüdür**: ikincisi düzeltilir, birincisi her okunduğunda yeniden yanlış
+anlaşılır.
+
+Toplam artık `tests/doc-counts.mjs` içinde ölçülüyor ve dokümanın `M*` satır
+sayısına bağlı — yani bir gereksinim eklenip burası güncellenmezse kapı düşer.
 
 ## 0045 sonrası bir düzeltme
 
@@ -63,13 +88,14 @@ Bunlar "yapıldı" sayılır; eksik olan tek şey migration yorumundaki atıf.
 | ----- | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | M1-02 | Dört rol için iki faktörlü doğrulama zorunlu | **Sizin kararınıza bağlı.** Supabase projesinde MFA'nın açılması ve rol bazlı zorunluluk gerekir; portal tarafında `aal2` kontrolü yazılır. Kimlik sağlayıcısında bir ayar olmadan kod tek başına yetmez. |
 
-### P1 — 3 satır
+### P1 — 4 satır
 
-| ID    | Gereksinim                                        | Durum                                                                                                                                   |
-| ----- | ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| M1-10 | Oturum yönetimi: aktif cihazlar, uzaktan kapatma  | Supabase `auth.sessions` üzerinden okunur; kapatma yönetici yetkisiyle sunucu tarafı bir fonksiyon ister.                               |
-| M1-11 | Altı ayda bir erişim gözden geçirme listesi       | Tamamen portal içinde yapılabilir: `profiles.expires_at` ve son giriş zamanından türetilen bir kuyruk + kararın kaydı. Bağımlılığı yok. |
-| M5-09 | Dosya bazında hukuk harcaması, M8 bütçesine bağlı | `payment_vouchers`'a `legal_case_id` ve dava başına bir görünüm gerekir. Bağımlılığı yok.                                               |
+| ID     | Gereksinim                                                    | Durum                                                                                                                                                                                                                                                                                                                                                                                                     |
+| ------ | ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M1-10  | Oturum yönetimi: aktif cihazlar, uzaktan kapatma              | Supabase `auth.sessions` üzerinden okunur; kapatma yönetici yetkisiyle sunucu tarafı bir fonksiyon ister.                                                                                                                                                                                                                                                                                                 |
+| M1-11  | Altı ayda bir erişim gözden geçirme listesi                   | Tamamen portal içinde yapılabilir: `profiles.expires_at` ve son giriş zamanından türetilen bir kuyruk + kararın kaydı. Bağımlılığı yok.                                                                                                                                                                                                                                                                   |
+| M5-09  | Dosya bazında hukuk harcaması, M8 bütçesine bağlı             | `payment_vouchers`'a `legal_case_id` ve dava başına bir görünüm gerekir. Bağımlılığı yok.                                                                                                                                                                                                                                                                                                                 |
+| M13-17 | Modülün kapsamı veritabanındaki kayıttan gelsin, koddan değil | **Kodun kendisi bunu söylüyor.** `supabase/functions/ai-assistant/rules.js` şöyle yazıyor: _"Faz 1 için sabit. M13-17 kapsamın veritabanındaki kayıttan gelmesini istiyor ve Faz 4 bunu `intake_targets` sorgusuyla değiştirecek."_ Bugün liste `REGISTERS` sabitinde ve teklif hedefleri `targets.js`'te; ikisi de kod. Gereken: `intake_targets` tablosu + fonksiyonun oradan okuması. Bağımlılığı yok. |
 
 ### P2 — 22 satır
 
