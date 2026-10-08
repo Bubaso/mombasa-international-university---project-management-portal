@@ -55,6 +55,7 @@ const RAISED = [
   { what: 'textChars', from: 57640, to: 58086, row: 'M1-11' },
   { what: 'emptyChars', from: 2906, to: 2978, row: 'M1-11' },
   { what: 'textChars', from: 58086, to: 58257, row: 'M13-17' },
+  { what: 'textChars', from: 63539, to: 63885, row: 'M8-13' },
 ];
 process.chdir(root);
 
@@ -108,7 +109,12 @@ const CEILING = {
   // Bugün bu tavan iki kez M1-11 ve M13-17 adına yükseltilmişti; o
   // yükseltmeler kör bir ölçüme göre yapılmıştı ve kayıtları duruyor, çünkü
   // o turlarda ekran metni gerçekten büyüdü. Değişen şey taban.
-  textChars: 63539,
+  //
+  // M8-13'ten sonra 63.539 → 63.885. Nakit akışı projeksiyonu yeni bir ekran
+  // ve beş ayrı "bir aya yazılamaz" başlığı taşıyor; her başlık bir cümle,
+  // ve biri ötekinin yerine geçmiyor. Alt başlığın ikinci cümlesi kesildi
+  // (aşağıdaki blok aynı şeyi rakamla söylüyor), kalanı kesilemez.
+  textChars: 63885,
   // Aynı ölçüm değişikliği: 26.994 → 27.680.
   longChars: 27680,
   // Panel gerekçesi: T13-01'in kestiği şey. 8489 → 2753 (Faz 2).

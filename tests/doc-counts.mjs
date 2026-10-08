@@ -208,6 +208,135 @@ for (const kind of KINDS) {
       : `dağılım ${prioTotal}, ölçülen ${measuredModules}`,
   );
 
+  // -------------------------------------------------------------------------
+  // Yapılmamış satır sayısı ÜÇ yerde yazılı — ve altı commit boyunca biri bir
+  // eksikti
+  // -------------------------------------------------------------------------
+  //
+  // Ölçüm, 8 Ekim 2026: "Yapılmamış satırlar" başlığının altındaki "N satır"
+  // cümlesi, o başlığın altında gerçekten listelenen satır sayısından BİR
+  // EKSİKTİ. Özet tablosu 22 diyordu, liste 22 satır taşıyordu, cümle 21.
+  //
+  // Sapma `283a662`'de başladı — yani bu dosyanın toplamını kapıya bağlayan
+  // commit'te. O commit tabloyu 26'dan 27'ye çıkardı, cümleyi 26'da bıraktı,
+  // ve kapı yalnızca tabloyu ölçüyordu. Sonraki altı commit ikisini birlikte
+  // bir azalttı: 27/26, 26/25, 25/24, 24/23, 23/22, 22/21 — yani yanlışı
+  // düzeltmeden taşıdı.
+  //
+  // Ve asıl sebep bu: M8-13 kapanınca liste 21'e düşüyor ve cümle
+  // KENDİLİĞİNDEN doğru oluyordu. Kendi kendine kapanan bir hata, bulunmamış
+  // bir hatadır — bir sonraki sapmada aynı yerden yine açılır.
+  //
+  // Bu yüzden sayının her kopyası listelenen satırlara karşı ölçülüyor, ve
+  // bant başlıkları ayrıca GEREKSİNİM DOKÜMANININ öncelik sütununa karşı:
+  // böylece bir satırı yanlış bandın altına koymak da düşer, sayılar
+  // tutuyor olsa bile.
+  {
+    const notDone = /## Yapılmamış satırlar\n([\s\S]*?)\n## /.exec(audit);
+    check(notDone !== null, `${auditPath} yapılmamış satırlar bölümü bulundu`);
+    if (notDone) {
+      const section = notDone[1];
+
+      // Gereksinim dokümanının kendi öncelik sütunu: tek kaynak.
+      const prioOf = new Map();
+      for (const line of lines) {
+        const m = /^\| *(M[0-9]+-[0-9]+) *\| *(P[0-3]) *\|/.exec(line);
+        if (m) prioOf.set(m[1], m[2]);
+      }
+
+      // Bantlara böl: `### P2 — 19 satır`, ve altındaki kimlik satırları.
+      // Bir bandın altında birden çok tablo olabiliyor ("portal içinde
+      // yapılabilenler" ile "dışarıdan bir şeye bağlı olanlar"), o yüzden
+      // tabloya değil başlığa göre bölünüyor.
+      const bands = [];
+      for (const chunk of section.split(/\n(?=### )/)) {
+        const head = /^### (P[0-3]) — ([0-9]+) satır/.exec(chunk);
+        if (!head) continue;
+        const ids = [...chunk.matchAll(/^\| *(M[0-9]+-[0-9]+) *\|/gm)].map((m) => m[1]);
+        bands.push({ p: head[1], written: Number(head[2]), ids });
+      }
+      check(bands.length > 0, `${auditPath} öncelik bantları okunabildi`, `${bands.length} bant`);
+
+      const listed = bands.reduce((a, b) => a + b.ids.length, 0);
+      check(
+        listed === notRows,
+        `${auditPath} listelenen yapılmamış satırlar özet tablosunu veriyor`,
+        listed === notRows ? `${listed}` : `listelenen ${listed}, tabloda ${notRows}`,
+      );
+
+      // Aynı sayının ikinci kopyası: bölümün ilk cümlesi. Düşen kapı buydu.
+      const prose = /^([0-9]+) satır\./m.exec(section);
+      check(prose !== null, `${auditPath} bölüm başında kendi sayısını söylüyor`);
+      if (prose) {
+        const n = Number(prose[1]);
+        check(
+          n === listed,
+          `${auditPath} bölüm başındaki sayı listelenen satırlara eşit`,
+          n === listed ? `${n}` : `cümle ${n}, listelenen ${listed}`,
+        );
+      }
+
+      // Üçüncü ve dördüncü kopya: "Bu denetimin kendi sınırı" bölümü iki
+      // sayıyı birden tekrar ediyor.
+      const closing = /Yukarıdaki ([0-9]+) satırın[\s\S]{0,80}?sayılan ([0-9]+) satırın/.exec(
+        audit,
+      );
+      check(closing !== null, `${auditPath} kapanış bölümü iki sayıyı tekrar ediyor`);
+      if (closing) {
+        check(
+          Number(closing[1]) === notRows && Number(closing[2]) === doneRows,
+          `${auditPath} kapanış bölümündeki iki sayı özet tablosuna eşit`,
+          `kapanış ${closing[1]}/${closing[2]}, tablo ${notRows}/${doneRows}`,
+        );
+      }
+
+      // Her bant: başlıktaki sayı, altındaki satır sayısı, ve dağılım
+      // cümlesinin parantezi — üçü de aynı şeyi söylüyor olmalı.
+      const parenthetical = new Map();
+      for (const m of flowedAudit.matchAll(/P([0-3]) [0-9]+ satır \(([^)]*)\)/g)) {
+        const inside = m[2];
+        parenthetical.set(
+          `P${m[1]}`,
+          /hepsi yapıldı/.test(inside) ? 0 : Number(/^([0-9]+)/.exec(inside)?.[1] ?? NaN),
+        );
+      }
+
+      const bandProblems = [];
+      for (const band of bands) {
+        if (band.written !== band.ids.length) {
+          bandProblems.push(`${band.p} başlığı ${band.written}, altında ${band.ids.length} satır`);
+        }
+        const inParen = parenthetical.get(band.p);
+        if (inParen !== band.ids.length) {
+          bandProblems.push(`${band.p} parantezi ${inParen}, altında ${band.ids.length} satır`);
+        }
+        // Ve satırın kendisi gerçekten o bantta mı? Sayılar tutup satır
+        // yanlış bandın altında durabilir.
+        for (const id of band.ids) {
+          const real = prioOf.get(id);
+          if (real === undefined) bandProblems.push(`${id} gereksinim dokümanında yok`);
+          else if (real !== band.p) bandProblems.push(`${id} ${band.p} altında ama ${real}`);
+        }
+      }
+      check(
+        bandProblems.length === 0,
+        `${auditPath} her bant başlığı, parantezi ve satırları birbirini tutuyor`,
+        bandProblems.length
+          ? bandProblems.join(' · ')
+          : bands.map((b) => `${b.p}:${b.ids.length}`).join(' '),
+      );
+
+      // Dağılımın "yok" parantezleri toplamı da aynı sayıyı vermeli: bir
+      // bandı listeden hiç yazmamak yukarıdaki bant döngüsüne görünmez.
+      const parenTotal = [...parenthetical.values()].reduce((a, b) => a + b, 0);
+      check(
+        parenTotal === notRows,
+        `${auditPath} dağılım parantezleri özet tablosunu veriyor`,
+        parenTotal === notRows ? `${parenTotal}` : `parantezler ${parenTotal}, tabloda ${notRows}`,
+      );
+    }
+  }
+
   // Ve dağılımın her bandı dokümanda gerçekten o kadar satır mı?
   const byPrio = {};
   for (const line of lines) {

@@ -630,3 +630,31 @@ export async function matchMilestoneToValuation(input: {
     .eq('id', input.id);
   fail(error);
 }
+
+/**
+ * Bütün sözleşmelerin hakediş planı (M8-13'ün girdisi).
+ *
+ * Sınır konmuyor: nakit akışı projeksiyonu bir TOPLAM, ve kesilmiş bir
+ * listeden çıkan toplam projeksiyonu olduğundan hafif gösterir. Bir eksik
+ * taksit, bir eksik ay demek — ve eksikliği okuyan göremez, çünkü rakam
+ * makul görünür.
+ *
+ * Projeksiyonun ihtiyacı yalnızca dört alan: tutar, vade, durum, kimlik.
+ * Sözleşme başına okumanın kolonlarını yeniden kullanmak çekilen veriyi üçe
+ * katlardı ve hiçbiri ekranda görünmüyor.
+ */
+export async function fetchAllContractMilestones(): Promise<
+  { id: string; dueOn: string | null; state: ContractMilestone['state']; amountKes: number }[]
+> {
+  const { data, error } = await supabase
+    .from('contract_milestones')
+    .select('id, due_on, state, amount_kes')
+    .order('due_on', { nullsFirst: false });
+  fail(error);
+  return rows<Record<string, unknown>>(data).map((row) => ({
+    id: row.id as string,
+    dueOn: row.due_on as string | null,
+    state: row.state as ContractMilestone['state'],
+    amountKes: num(row.amount_kes),
+  }));
+}

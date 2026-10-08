@@ -17,16 +17,17 @@
  * spender never can.
  */
 import React, { useState } from 'react';
-import { BadgeCheck, CalendarCheck, HandCoins, Receipt, Wallet } from 'lucide-react';
+import { BadgeCheck, CalendarCheck, HandCoins, Receipt, TrendingDown, Wallet } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useAuthority } from '../api/adminHooks';
 import { BudgetPanel } from '../components/money/BudgetPanel';
 import { VoucherPanel } from '../components/money/VoucherPanel';
+import { ProjectionPanel } from '../components/money/ProjectionPanel';
 import { LedgerPanel } from '../components/money/LedgerPanel';
 import { DonationPanel } from '../components/money/DonationPanel';
 import { ClosePanel } from '../components/money/ClosePanel';
 
-type Tab = 'budget' | 'vouchers' | 'ledger' | 'donations' | 'close';
+type Tab = 'budget' | 'vouchers' | 'projection' | 'ledger' | 'donations' | 'close';
 
 const acts = (roles: string[] | undefined, ...wanted: string[]) =>
   roles != null && wanted.some((role) => roles.includes(role));
@@ -48,6 +49,7 @@ export const FinanceAccountingView: React.FC = () => {
   const TABS: { key: Tab; icon: React.ElementType; label: string }[] = [
     { key: 'budget', icon: Wallet, label: tr ? 'Bütçe' : 'Budget' },
     { key: 'vouchers', icon: Receipt, label: tr ? 'Ödeme fişleri' : 'Vouchers' },
+    { key: 'projection', icon: TrendingDown, label: tr ? 'Projeksiyon' : 'Projection' },
     { key: 'ledger', icon: BadgeCheck, label: tr ? 'Kasa defteri' : 'Ledger' },
     { key: 'donations', icon: HandCoins, label: tr ? 'Bağışlar' : 'Donations' },
     { key: 'close', icon: CalendarCheck, label: tr ? 'Kapanış' : 'Close' },
@@ -89,6 +91,9 @@ export const FinanceAccountingView: React.FC = () => {
 
       {tab === 'budget' && <BudgetPanel canSpend={canSpend} />}
       {tab === 'vouchers' && <VoucherPanel canRule={canRule} />}
+      {/* M8-13. Bütçe ve fişlerden SONRA: projeksiyon ikisinin türevi, ve
+          türevi kaynağından önce göstermek rakamı kaynaksız bırakır. */}
+      {tab === 'projection' && <ProjectionPanel />}
       {tab === 'ledger' && <LedgerPanel canSpend={canSpend} canAudit={canAudit} />}
       {tab === 'donations' && <DonationPanel canSpend={canSpend} />}
       {/* Closing is the director's or the administrator's, and the database

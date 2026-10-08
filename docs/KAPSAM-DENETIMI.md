@@ -21,12 +21,12 @@ kadar.)
 
 | Durum      | Satır |
 | ---------- | ----- |
-| Yapıldı    | 188   |
-| Yok        | 22    |
+| Yapıldı    | 189   |
+| Yok        | 21    |
 | **Toplam** | 210   |
 
 Öncelik dağılımı: P0 22 satır (1'i yok), P1 115 satır (1'i yok), P2 59 satır
-(20'si yok), P3 14 satır (**hepsi yapıldı**).
+(19'u yok), P3 14 satır (**hepsi yapıldı**).
 
 ### 8 Ekim 2026 güncellemesi — ve başlıktaki sayı hakkında bir düzeltme
 
@@ -228,6 +228,66 @@ yalnızca sekme turunun içinde çağrılıyordu ve `/obligations` için sıfır
 döndü: o ekranda sekme yok, yani tur gövdesi hiç çalışmıyor. Açılışta da
 çağrılıyor artık, ve ikisi de mutasyonla sınandı.
 
+### M8-13 kapandı — ve "göç gerektirmeyen iş kalmadı" dediğimi düzeltiyorum
+
+M2-11'i bitirince "göç gerektirmeyen iş kalmadı sayılabilir" yazıp durmaya
+karar vermiştim. **Bunu doğrulamadan söyledim.** Kalan satırlara bakınca
+M8-13'ün girdisi zaten şemada çıktı: `contract_milestones` (0022, M14-07)
+`due_on`, `amount_kes` ve `state` taşıyor — yani tarihli bir ödeme planı. Göç
+gerekmedi.
+
+**Projeksiyonun asıl işi toplamak değil, tarihi olmayanı bir aya
+yazmamaktı.** M8-13 üç girdi sayıyor: taahhütler, hakediş planı, hukuk
+harcaması. Üçünden yalnızca biri tarihli. Onaylanmış ama ödenmemiş bir fiş
+bir borçtur, ama beklenen ödeme tarihi hiçbir yerde kayıtlı değil; bir hukuk
+vekâlet ücretinin ise kilometre taşı hiç olmaz — 0022 kendi yorumunda bunu
+söylüyor. Tarihsiz iki girdiyi aylara dağıtmanın her yolu — eşit bölmek,
+"ortalama ödeme süresi" varsaymak, sessizce bu aya yazmak — bir projeksiyon
+değil bir kurgu üretir. Yapılan şey: tarihlisi aylara, tarihsizi kendi
+başlığına.
+
+**Vadesi geçmiş gelecek değildir.** Vadesi dün olan ve ödenmemiş bir taksit
+bu ayın beklenen çıkışı değil, zaten gecikmiş bir borç. Gelecek bir aya
+yazmak projeksiyonu olduğundan hafif gösterir; bu aya yazmak gecikmeyi
+saklar. Üçüncü bir başlık aldı.
+
+**Sıfır olan ay da bir satır.** Aralıktaki her ay dönüyor, çıkışı sıfır olsa
+da: boş bir ay gerçek bir ölçümdür ("o ay için planlanmış taksit yok") ve
+atlanırsa okuyan bir sonraki dolu aya bakıp onu bir sonraki ay sanar.
+
+**Kendi yorumum bir tutarsızlığı yakaladı.** İlk yazışımda pencerenin
+ötesindeki taksitleri `undated` kutusuna koymuşum — ve aynı satırın yorumu
+"bu, tarihi yok ile aynı şey değil" diyordu. Ayırdım: tarihi yok bir
+eksiklik, pencerenin ötesinde bir seçim. Birincisi düzeltilecek bir kayıt
+kusuru, ikincisi pencereyi uzatınca görünür.
+
+Sekiz mutasyon, sekizi de düştü.
+
+### Bu dosyanın kendi sayısı altı commit boyunca bir eksikti
+
+M8-13'ü işlerken şunu ölçtüm: "Yapılmamış satırlar" başlığının altındaki
+"N satır" cümlesi, listelenen satır sayısından **bir eksikti**. Özet tablosu
+22 diyordu, liste 22 satır taşıyordu, cümle 21 diyordu.
+
+Sapma `283a662`'de başladı — yani **bu dosyanın toplamını kapıya bağladığım
+commit'te**. O commit tabloyu 26'dan 27'ye çıkardı ve cümleyi 26'da bıraktı.
+Sonraki altı commit ikisini birlikte bir azalttı, yani yanlışı düzeltmeden
+taşıdı: 27/26, 26/25, 25/24, 24/23, 23/22, 22/21.
+
+İki şey kayda değer. Birincisi: kapıyı yazdığım commit, aynı sayının kapısız
+bir ikinci kopyasını bıraktı. **Kuralı iki yere yazma** (CLAUDE.md §4) tam
+budur, ve sapan kopya her zaman ikincisidir.
+
+İkincisi, ve daha kötüsü: M8-13 kapanınca liste 21'e düşüyor ve cümle
+**kendiliğinden doğru oluyor**. Fark etmesem sayı tesadüfen doğru olacaktı ve
+bir daha kimse onun yanlış olduğunu öğrenmeyecekti. Kendi kendine kapanan bir
+hata, bulunmamış bir hatadır.
+
+Artık dört şey birden ölçülüyor: bu cümledeki sayı, kapanış bölümündeki iki
+sayı, her öncelik başlığındaki sayı, ve öncelik dağılımı parantezlerindeki
+sayı — hepsi gerçekten listelenen satırlara ve `URUN-GEREKSINIMLERI.md`'nin
+kendi öncelik sütununa karşı. Bir satır yanlış bandın altına konsa da düşer.
+
 ## 0045 sonrası bir düzeltme
 
 M11-05 ve M11-06 bu denetimde "yapıldı" sayılıyordu ve öyleydi: teslim kaydı
@@ -272,7 +332,7 @@ Bunlar "yapıldı" sayılır; eksik olan tek şey migration yorumundaki atıf.
 | ----- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
 | M1-10 | Oturum yönetimi: aktif cihazlar, uzaktan kapatma | Supabase `auth.sessions` üzerinden okunur; kapatma yönetici yetkisiyle sunucu tarafı bir fonksiyon ister. |
 
-### P2 — 20 satır
+### P2 — 19 satır
 
 Portal içinde yapılabilenler (bağımlılığı yok):
 
@@ -287,7 +347,6 @@ Portal içinde yapılabilenler (bağımlılığı yok):
 | M7-13 | Değişiklik emri (variation order)                                                                                                     |
 | M7-14 | Mevsim/iklim risk takvimi (muson uyarısı)                                                                                             |
 | M7-15 | Fotoğraf arşivi, aynı açıdan zaman serisi                                                                                             |
-| M8-13 | Nakit akışı projeksiyonu                                                                                                              |
 | M8-14 | KRA vergi muafiyeti takibi                                                                                                            |
 | M9-11 | Hukukî muhafaza (legal hold)                                                                                                          |
 | M9-13 | Saklama politikası ve arşivleme                                                                                                       |
@@ -321,5 +380,5 @@ yapılmamış bir şeyi yapılmış gösterir — ilk geçişte "muson" kendi ya
 hakediş sütununda. Dar bir desen ise yapılmış bir şeyi kaçırır; M1-08 ilk
 taramada `supabase/functions/` dizini sayılmadığı için yok görünüyordu.
 Yukarıdaki 21 satırın her biri bu yüzden elle teyit edildi, ve "yapıldı"
-sayılan 188 satırın hepsi tek tek teyit edilmedi — yalnızca atıfı olanlar
+sayılan 189 satırın hepsi tek tek teyit edilmedi — yalnızca atıfı olanlar
 atıfına, atıfı olmayan yedisi kanıtına dayanıyor.

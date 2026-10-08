@@ -531,7 +531,7 @@ const DENSITY = {
   '/admin': { buttons: 51, headings: 6, height: 1044 },
   '/project_info': { buttons: 47, headings: 3, height: 1044 },
   '/procurement': { buttons: 57, headings: 3, height: 1044 },
-  '/finance': { buttons: 48, headings: 4, height: 1044 },
+  '/finance': { buttons: 49, headings: 4, height: 1044 },
   '/communication': { buttons: 83, headings: 4, height: 1044 },
 };
 
@@ -564,6 +564,7 @@ const RAISED = [
   { what: '/construction.buttons', from: 44, to: 45, row: 'T14-04' },
   { what: '/project_info.buttons', from: 43, to: 47, row: 'T15-04' },
   { what: '/legal.buttons', from: 58, to: 59, row: 'M5-09' },
+  { what: '/finance.buttons', from: 48, to: 49, row: 'M8-13' },
 ];
 
 raiseChecks({
@@ -896,7 +897,7 @@ const TABS_EXPECTED = {
   '/readiness': 5,
   '/risks': 5,
   '/plan': 5,
-  '/finance': 5,
+  '/finance': 6,
   '/governance': 4,
   '/project_info': 4,
   '/admin': 7,

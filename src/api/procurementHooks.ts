@@ -137,3 +137,6 @@ export function useMatchMilestoneToValuation() {
     },
   });
 }
+
+export const useAllContractMilestones = () =>
+  useQuery({ queryKey: ['allContractMilestones'], queryFn: api.fetchAllContractMilestones });

@@ -178,7 +178,18 @@ for (const read of bounded) {
 // (işler, kilometre taşları, bağımlılıklar). Üçü bir arada bir ağ kurduğu
 // için tek fonksiyonda duruyorlar; üçünü ayrı okuyup ekranda birleştirmek,
 // ağın şeklini ekrana kurdurmak olurdu.
-const UNBOUNDED_TODAY = 130;
+//
+// M8-13'ten sonra 131: `fetchAllContractMilestones` eklendi ve sınırsız.
+// Nakit akışı projeksiyonu bir TOPLAM, ve kesilmiş bir listeden çıkan toplam
+// projeksiyonu olduğundan HAFİF gösterir — bir eksik taksit bir eksik ay
+// demek, ve eksikliği okuyan göremez çünkü rakam makul görünür. Kesilmiş bir
+// liste ("412 kayıttan 40 tanesi") dürüst olabilir; kesilmiş bir TOPLAM
+// olamaz.
+//
+// Okuma dört kolon çekiyor (kimlik, vade, durum, tutar): projeksiyonun
+// ihtiyacı o kadar, ve sözleşme başına okumanın kolonlarını yeniden
+// kullanmak çekilen veriyi üçe katlardı.
+const UNBOUNDED_TODAY = 131;
 
 // Sayan okumalar sayılmıyor: sorumuz "kaç okuma her satırı çekiyor", ve
 // `head: true` olan hiç satır çekmiyor.
