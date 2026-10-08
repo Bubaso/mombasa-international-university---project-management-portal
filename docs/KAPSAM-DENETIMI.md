@@ -14,18 +14,18 @@ Yalnızca `supabase/migrations`, `supabase/functions`, `src` ve `tests`
 sayıldı — `supabase/bundled` üretilmiş çıktı olduğu için hariç, yoksa her
 desen iki kez eşleşiyor.
 
-**Tarih:** 2026-10-08 · migration 0053'e kadar. (İlk hâli: 2026-10-01, 0044'e
+**Tarih:** 2026-10-08 · migration 0054'e kadar. (İlk hâli: 2026-10-01, 0044'e
 kadar.)
 
 ## Özet
 
 | Durum      | Satır |
 | ---------- | ----- |
-| Yapıldı    | 183   |
-| Yok        | 27    |
+| Yapıldı    | 184   |
+| Yok        | 26    |
 | **Toplam** | 210   |
 
-Öncelik dağılımı: P0 22 satır (1'i yok), P1 115 satır (4'ü yok), P2 59 satır
+Öncelik dağılımı: P0 22 satır (1'i yok), P1 115 satır (3'ü yok), P2 59 satır
 (22'si yok), P3 14 satır (**hepsi yapıldı**).
 
 ### 8 Ekim 2026 güncellemesi — ve başlıktaki sayı hakkında bir düzeltme
@@ -49,6 +49,33 @@ anlaşılır.
 
 Toplam artık `tests/doc-counts.mjs` içinde ölçülüyor ve dokümanın `M*` satır
 sayısına bağlı — yani bir gereksinim eklenip burası güncellenmezse kapı düşer.
+
+### M5-09 kapandı — göç 0054
+
+Dosya bazında hukuk harcaması. Eksik olan şey bir hesap değil bir **bağ**'dı:
+`payment_vouchers` bir bütçe satırına ve bir hakedişe bağlanabiliyordu, bir
+davaya bağlanamıyordu. "Bu dava bize ne kadara mal oldu" sorusu zor değildi,
+cevaplanamazdı — toplamı çıkarmak fişlerin gerekçe metnini okuyup hangisinin
+hangi dosya olduğuna karar vermek demekti, ki bu bir ölçüm değil bir tahmin.
+
+0054 bir sütun (`legal_case_id`), bir indeks, bir görünüm (`legal_case_spend`)
+ve üç politika değişikliği getirdi. Politikalar sütunun açtığı deliği
+kapatıyor: `restricted` bir davaya bağlı bir fiş, o davayı göremeyen ama
+parayı gören birine davanın varlığını söylerdi.
+
+Görünüm üç bilinmezliği ayırıyor — yetki yok, kayıt yok, kayıt var — ve
+sayıları parayı göremeyen için `null` bırakıyor, çünkü boş kümede 0 dönen bir
+`count()` "bağlı fiş yok" diye okunur ve bu yanlış cevaptır. `unbudgeted_count`
+M5-09'un "M8 bütçesine bağlı" yarısının dürüst kısmı: bir dava masrafının
+bütçe satırı yoksa o masraf bütçede değildir, ve toplamı gösterip "bütçeye
+bağlı" demek kaçının bağlı olmadığını saklamak olurdu.
+
+Onbeş assertion `tests/db/policies.test.sql`'de, yedisi mutasyonla sınandı ve
+yedisi de düştü. Yedincisi ilk denemede **düşmedi**: fikstürde davaya bağlı
+iki fiş vardı, biri bütçeli biri bütçesiz, yani "bütçesizleri say" ile
+"bütçelileri say" aynı cevabı (1) veriyordu. Üçüncü bir fiş eklendi ve
+mutasyon düştü. Ayırt edici olmayan bir fikstür, ayırt edici olmayan bir test
+demek.
 
 ## 0045 sonrası bir düzeltme
 
@@ -79,7 +106,7 @@ Bunlar "yapıldı" sayılır; eksik olan tek şey migration yorumundaki atıf.
 
 ## Yapılmamış satırlar
 
-26 satır. Her biri için neyin eksik olduğu ve neye bağlı olduğu yazıldı,
+25 satır. Her biri için neyin eksik olduğu ve neye bağlı olduğu yazıldı,
 çünkü bir kısmı kod değil karar ya da hesap bekliyor.
 
 ### P0 — 1 satır
@@ -88,13 +115,12 @@ Bunlar "yapıldı" sayılır; eksik olan tek şey migration yorumundaki atıf.
 | ----- | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | M1-02 | Dört rol için iki faktörlü doğrulama zorunlu | **Sizin kararınıza bağlı.** Supabase projesinde MFA'nın açılması ve rol bazlı zorunluluk gerekir; portal tarafında `aal2` kontrolü yazılır. Kimlik sağlayıcısında bir ayar olmadan kod tek başına yetmez. |
 
-### P1 — 4 satır
+### P1 — 3 satır
 
 | ID     | Gereksinim                                                    | Durum                                                                                                                                                                                                                                                                                                                                                                                                     |
 | ------ | ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | M1-10  | Oturum yönetimi: aktif cihazlar, uzaktan kapatma              | Supabase `auth.sessions` üzerinden okunur; kapatma yönetici yetkisiyle sunucu tarafı bir fonksiyon ister.                                                                                                                                                                                                                                                                                                 |
 | M1-11  | Altı ayda bir erişim gözden geçirme listesi                   | Tamamen portal içinde yapılabilir: `profiles.expires_at` ve son giriş zamanından türetilen bir kuyruk + kararın kaydı. Bağımlılığı yok.                                                                                                                                                                                                                                                                   |
-| M5-09  | Dosya bazında hukuk harcaması, M8 bütçesine bağlı             | `payment_vouchers`'a `legal_case_id` ve dava başına bir görünüm gerekir. Bağımlılığı yok.                                                                                                                                                                                                                                                                                                                 |
 | M13-17 | Modülün kapsamı veritabanındaki kayıttan gelsin, koddan değil | **Kodun kendisi bunu söylüyor.** `supabase/functions/ai-assistant/rules.js` şöyle yazıyor: _"Faz 1 için sabit. M13-17 kapsamın veritabanındaki kayıttan gelmesini istiyor ve Faz 4 bunu `intake_targets` sorgusuyla değiştirecek."_ Bugün liste `REGISTERS` sabitinde ve teklif hedefleri `targets.js`'te; ikisi de kod. Gereken: `intake_targets` tablosu + fonksiyonun oradan okuması. Bağımlılığı yok. |
 
 ### P2 — 22 satır
@@ -147,6 +173,6 @@ yapılmamış bir şeyi yapılmış gösterir — ilk geçişte "muson" kendi ya
 0040 yorumunda eşleşti, "sap" bir başka kelimenin içinde, "retention" bir
 hakediş sütununda. Dar bir desen ise yapılmış bir şeyi kaçırır; M1-08 ilk
 taramada `supabase/functions/` dizini sayılmadığı için yok görünüyordu.
-Yukarıdaki 26 satırın her biri bu yüzden elle teyit edildi, ve "yapıldı"
-sayılan 171 satırın hepsi tek tek teyit edilmedi — yalnızca atıfı olanlar
+Yukarıdaki 25 satırın her biri bu yüzden elle teyit edildi, ve "yapıldı"
+sayılan 184 satırın hepsi tek tek teyit edilmedi — yalnızca atıfı olanlar
 atıfına, atıfı olmayan yedisi kanıtına dayanıyor.

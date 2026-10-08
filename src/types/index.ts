@@ -466,6 +466,9 @@ export interface PaymentVoucher {
   referenceNo: string;
   budgetLineId: string | null;
   budgetLineTitle: string | null;
+  /** Hangi davanın masrafı (M5-09). Davası olmayan ödeme için null. */
+  legalCaseId: string | null;
+  legalCaseNumber: string | null;
   payee: string;
   purpose: string;
   requestedByName: string | null;
@@ -482,6 +485,35 @@ export interface PaymentVoucher {
   budgetRemainingAtDecision: number | null;
   paidAt: string | null;
   confidentiality: Confidentiality;
+}
+
+/**
+ * Dava başına hukuk harcaması (M5-09).
+ *
+ * Her sayı nullable ve bu bir rahatlık değil, görünümün kendisi öyle:
+ * `legal_case_spend` parayı göremeyen için bütün sayıları null bırakıyor,
+ * çünkü boş kümede 0 dönen bir sayım "bağlı fiş yok" diye okunur ve bu
+ * yanlış cevaptır. Ekran üç durumu ayrı ayrı söylüyor — yetki yok, kayıt
+ * yok, kayıt var.
+ */
+export interface LegalCaseSpend {
+  legalCaseId: string;
+  caseNumber: string;
+  title: string;
+  confidentiality: Confidentiality;
+  /** Veritabanının kendi cevabı; istemci kuralı tekrarlamıyor (CLAUDE.md §5). */
+  moneyVisible: boolean;
+  voucherCount: number | null;
+  awaitingCount: number | null;
+  rejectedCount: number | null;
+  withdrawnCount: number | null;
+  /** Bütçe satırı olmayan fiş sayısı — M5-09'un M8 yarısının dürüst kısmı. */
+  unbudgetedCount: number | null;
+  budgetLineCount: number | null;
+  awaitingKes: number | null;
+  committedKes: number | null;
+  paidKes: number | null;
+  lastPaidAt: string | null;
 }
 
 export interface VoucherApproval {

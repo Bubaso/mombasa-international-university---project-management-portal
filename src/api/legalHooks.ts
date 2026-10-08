@@ -141,3 +141,10 @@ export const useRecordOpinion = () => {
   const invalidate = useInvalidator(['opinions']);
   return useMutation({ mutationFn: legal.recordOpinion, onSuccess: invalidate });
 };
+
+export const useCaseSpend = (caseId: string | undefined) =>
+  useQuery({
+    queryKey: ['caseSpend', caseId],
+    queryFn: () => legal.fetchCaseSpend(caseId as string),
+    enabled: caseId != null,
+  });

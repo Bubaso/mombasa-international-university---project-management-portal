@@ -270,14 +270,14 @@ rota, **kesimden önce**:
 | Görüntü alanından geniş kutu    | 4 (hepsi kendi kutusunda) |
 | 14px altı metin ögesi / rota    | 21 – 115                  |
 
-| ID     | Gereksinim                                                                                                | P   | Kabul kriteri                                                                                                                                       |
-| ------ | --------------------------------------------------------------------------------------------------------- | --- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| T15-01 | İlk ekranın en az %85'i içerik olsun; mobilya üstte bir şerit kadar yer tutsun.                           | P0  | ✅ Faz 1: `main`'in tepesi 232 → **114px** (kriter ≤130).                                                                                           |
-| T15-02 | Kritik tarih şeridi telefonda **şerit** kalsın, listeye dönüşmesin.                                       | P0  | ✅ Faz 1: şerit 175 → **57px**; telefonda da yatay, geniş kalırsa kendi kutusunda kayıyor.                                                          |
-| T15-04 | Hiçbir ekranın **kurgusu** telefonda üç ekrandan uzun olmasın. (Kriter Faz 3'te değişti — aşağıya bakın.) | P1  | ✅ Ekranın kurgusu (sayfa eksi en uzun kayıt listesi) en kötü **2.243px**, kriterin altında. Toplam boy ayrıca ratchet'li: 3.270 → **2.967px**.     |
-| T15-05 | Form alanı telefonda odaklanınca ekranı yakınlaştırmasın.                                                 | P0  | ✅ Faz 1: **0** — kural `index.css`'te tek yerde, telefon genişliğinde.                                                                             |
-| T15-06 | Parmakla yakınlaştırma engellenmesin.                                                                     | P0  | ✅ Faz 1: `user-scalable=no` ve `maximum-scale` kaldırıldı; kapıda `tests/a11y.mjs` sınıyor.                                                        |
-| T15-07 | Telefonda 19 rotanın hepsi erişilebilir kalsın; kesim bir rotayı kaybetmesin.                             | P0  | ✅ Alt çubuk (4 rota) + 'daha fazla' sayfası birlikte 19/19, ve artık KAPIDA: T14-05'in kontrolü masaüstü kenar çubuğunu ölçüyordu, telefonu değil. |
+| ID     | Gereksinim                                                                                                | P   | Kabul kriteri                                                                                                                                           |
+| ------ | --------------------------------------------------------------------------------------------------------- | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T15-01 | İlk ekranın en az %85'i içerik olsun; mobilya üstte bir şerit kadar yer tutsun.                           | P0  | ✅ Faz 1: `main`'in tepesi 232 → **114px** (kriter ≤130).                                                                                               |
+| T15-02 | Kritik tarih şeridi telefonda **şerit** kalsın, listeye dönüşmesin.                                       | P0  | ✅ Faz 1: şerit 175 → **57px**; telefonda da yatay, geniş kalırsa kendi kutusunda kayıyor.                                                              |
+| T15-04 | Hiçbir ekranın **kurgusu** telefonda üç ekrandan uzun olmasın. (Kriter Faz 3'te değişti — aşağıya bakın.) | P1  | ✅ Ekranın kurgusu (sayfa eksi en uzun kayıt listesi) en kötü **2.293px**, kriterin (2.532) altında. Toplam boy ayrıca ratchet'li: 3.270 → **2.967px**. |
+| T15-05 | Form alanı telefonda odaklanınca ekranı yakınlaştırmasın.                                                 | P0  | ✅ Faz 1: **0** — kural `index.css`'te tek yerde, telefon genişliğinde.                                                                                 |
+| T15-06 | Parmakla yakınlaştırma engellenmesin.                                                                     | P0  | ✅ Faz 1: `user-scalable=no` ve `maximum-scale` kaldırıldı; kapıda `tests/a11y.mjs` sınıyor.                                                            |
+| T15-07 | Telefonda 19 rotanın hepsi erişilebilir kalsın; kesim bir rotayı kaybetmesin.                             | P0  | ✅ Alt çubuk (4 rota) + 'daha fazla' sayfası birlikte 19/19, ve artık KAPIDA: T14-05'in kontrolü masaüstü kenar çubuğunu ölçüyordu, telefonu değil.     |
 
 ### Neden bu satırlar, ve neden şimdi
 
@@ -393,14 +393,14 @@ istiyor ve yorumunda _"dokuzluk bir şerit listedir ve her ekranın tepesindeki
 bir liste, insanların okumayı bıraktığı mobilyadır"_ yazıyor. Dokuzu
 gösteren ürün değil, ölçüm aracıydı.
 
-| ID     | Gereksinim                                                                                                | P   | Kabul kriteri                                                                                                           |
-| ------ | --------------------------------------------------------------------------------------------------------- | --- | ----------------------------------------------------------------------------------------------------------------------- |
-| T14-01 | Ekran başlığının altı ya ekranın neyi topladığını söylesin ya da hiç olmasın; ilke beyanı olmasın.        | P0  | ✅ Faz 1: 1.323 → **677** karakter, en uzun 208 → **60**, İKİ dilde de; 14 ekran ölçülüyor.                             |
-| T14-02 | Ham teknik metin ve her ekranda tekrarlanan künye bilgisi mobilyadan çıksın — silinmeden, yeri değişerek. | P0  | ✅ Faz 1: PostgREST hata metni katlandı; parsel/fasıl kenar çubuğu, footer ve mobil menüden kaldırıldı.                 |
-| T14-03 | Yoğunluk ölçülsün ve geri büyümesin: her rotada düğme, başlık ve sayfa boyu.                              | P0  | ✅ Faz 1: 19 rotanın 19'u `tests/populated.mjs` içinde tavanlı; tavanı yazılmamış rota ayrıca düşürür.                  |
-| T14-04 | Her ekran özetle açılsın; detay istenince gelsin. Hiçbir işlev kaybolmasın, yeri değişsin.                | P0  | ✅ Faz 2: yedi ağır ekran bölündü, en uzunu 3.924 → **2.351px**; hiçbir panel silinmedi.                                |
-| T14-05 | Gezinme rolün işine yarayan kısmı açık tutsun; 20 giriş + beş büyük harf grup başlığı aynı anda durmasın. | P1  | ✅ Faz 3: gruplar katlandı, görünür gezinme girişi 19 → **3–6**; her rota bir tık arkada.                               |
-| T14-06 | Giriş, girenin rolüne göre açılsın: mütevelliye yönetişim ve para, tedarikçiye kendi işi ve hakedişi.     | P1  | ✅ Gösterge paneli bunu yapıyor (M12-01, `BY_ROLE`). Kenar çubuğu **filtrelenmeyecek** — 6 Ekim 2026, kullanıcı kararı. |
+| ID     | Gereksinim                                                                                                | P   | Kabul kriteri                                                                                                                                                                                                                 |
+| ------ | --------------------------------------------------------------------------------------------------------- | --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T14-01 | Ekran başlığının altı ya ekranın neyi topladığını söylesin ya da hiç olmasın; ilke beyanı olmasın.        | P0  | ✅ Faz 1: 1.323 → **677** karakter, en uzun 208 → **60**, İKİ dilde de; 14 ekran ölçülüyor.                                                                                                                                   |
+| T14-02 | Ham teknik metin ve her ekranda tekrarlanan künye bilgisi mobilyadan çıksın — silinmeden, yeri değişerek. | P0  | ✅ Faz 1: PostgREST hata metni katlandı; parsel/fasıl kenar çubuğu, footer ve mobil menüden kaldırıldı.                                                                                                                       |
+| T14-03 | Yoğunluk ölçülsün ve geri büyümesin: her rotada düğme, başlık ve sayfa boyu.                              | P0  | ✅ Faz 1: 19 rotanın 19'u `tests/populated.mjs` içinde tavanlı; tavanı yazılmamış rota ayrıca düşürür. Yükselen her tavan `RAISED` içinde gerekçesiyle kayıtlı ve gerekçenin var olan bir gereksinim satırı olduğu sınanıyor. |
+| T14-04 | Her ekran özetle açılsın; detay istenince gelsin. Hiçbir işlev kaybolmasın, yeri değişsin.                | P0  | ✅ Faz 2: yedi ağır ekran bölündü, en uzunu 3.924 → **2.351px**; hiçbir panel silinmedi.                                                                                                                                      |
+| T14-05 | Gezinme rolün işine yarayan kısmı açık tutsun; 20 giriş + beş büyük harf grup başlığı aynı anda durmasın. | P1  | ✅ Faz 3: gruplar katlandı, görünür gezinme girişi 19 → **3–6**; her rota bir tık arkada.                                                                                                                                     |
+| T14-06 | Giriş, girenin rolüne göre açılsın: mütevelliye yönetişim ve para, tedarikçiye kendi işi ve hakedişi.     | P1  | ✅ Gösterge paneli bunu yapıyor (M12-01, `BY_ROLE`). Kenar çubuğu **filtrelenmeyecek** — 6 Ekim 2026, kullanıcı kararı.                                                                                                       |
 
 ### T14 · Faz 2 — ölçülen sonuç
 
@@ -2176,3 +2176,52 @@ satırın kapalı olduğunu söylemiyor**, ve bu da bir boşluk; ama onu kapatma
 
 Bugün kapatılan şey daha küçük ve daha keskin: **bundan sonra bir satıra ✅
 koymak, onu tutan bir assertion yazmayı gerektiriyor.**
+
+## T14-03'ün ratchet'i ilk kez bir **modül** gereksinimine yenildi (8 Ekim 2026)
+
+M5-09 (dosya bazında hukuk harcaması) `/legal`'a bir sekme ekledi. İki tavan
+düştü: düğme 59 > 58 ve telefonda kurgu 2.293 > 2.243px.
+
+Bu turda yükseltilen tavanların öncekilerden bir farkı var ve onu söylemek
+gerekiyor: T10-06 ve T14-04 **tasarım** satırlarıydı, yani tasarım turunun
+kendi içinde bir takas. M5-09 bir modül satırı — tasarım ratchet'ini tasarım
+dışı bir iş yendi. Bu, ratchet'in kusuru değil işi: ekranın bir düğme
+ağırlaşmasının **bir sebebi** olduğunu ispatlamayı zorunlu kıldı.
+
+İkisini de yükselttim ve ikisi de kriterin altında kaldı — T15-04'ün kriteri
+2.532px, ölçüm 2.293. Yani bir ölçüt ihlâl edilmedi; ratchet'in bedeli ödendi.
+
+### Yazılı bir gelenek kapı değildir
+
+Daha önce üç tavan yükselmişti (`/plan`, `/reports`, `/construction`,
+`/project_info`) ve her birinin gerekçesi `tests/populated.mjs`'in yorumunda
+**proza olarak** duruyordu. Bu dördüncüsünde fark ettim: yorumu okumayan biri
+rakamı değiştirip geçer, ve kapı hiçbir şey demez.
+
+O yüzden gelenek bir kayda dönüştü. `RAISED` her yükseltmeyi rota, alan,
+eski değer, yeni değer ve **hangi gereksinim satırı** ile tutuyor; üç
+assertion onu sınıyor: satır dokümanda gerçekten var mı, kayıt bir bedel mi
+(yeni > eski), ve rota ölçülen bir rota mı.
+
+### Kendi kontrolüm sağlam değildi, ve ilk koşuda belli oldu
+
+Dördüncü bir kontrol yazmıştım: "kaydedilen yeni değer bugünkü tavanın
+kendisi olmalı". İlk koşuda `/construction` üzerinde düştü — **50 ≠ 45** — ve
+düşmesi doğruydu, ama kusur kayıtta değil kontrolün varsayımındaydı.
+
+Bir rotanın tavanı yalnızca o rotanın kendi yükseltmelerinin toplamı değil.
+`a9fa04c` (T14 Faz 3) kenar çubuğu gruplarını katlayınca on dokuz tavanın on
+dokuzu birden yeniden ölçüldü: grup açma düğmeleri her rotaya aynı anda bindi.
+`/construction` 45 → 50 işte o toptan yeniden ölçüm, ekranın ağırlaşması
+değil. Kontrolü kaldırdım ve sebebini dosyaya yazdım.
+
+### Ve kapının kendi sınırı
+
+Kapı satırın **var olduğunu** sınıyor, **doğru satır olduğunu** sınamıyor.
+`/construction`'ın gerekçesini ilk yazışımda T1-07 koydum; T1-07 var olduğu
+için kapı geçti, oysa o satır hukuk ekranının sekmeleriyle ilgili. Doğru satır
+T14-04 ("her ekran özetle açılsın") ve `6278c6f` tam onu yapıyordu. Dokümana
+bakıp düzelttim.
+
+Bir kapı atfı doğrulayamaz, yalnızca uydurmayı yakalar. Bunu yazıyorum çünkü
+üç yeşil assertion gördükten sonra atfın doğru olduğunu sanmak kolay.

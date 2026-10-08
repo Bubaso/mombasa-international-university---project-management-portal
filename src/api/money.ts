@@ -221,12 +221,13 @@ export async function createCategory(input: { code: string; nameEn: string }): P
 // ---------------------------------------------------------------------------
 
 const VOUCHER_COLUMNS =
-  'id, reference_no, budget_line_id, payee, purpose, requested_at, state, valuation_id, ' +
-  'amount, currency, amount_kes, decided_at, decision_note, ' +
+  'id, reference_no, budget_line_id, legal_case_id, payee, purpose, requested_at, state, ' +
+  'valuation_id, amount, currency, amount_kes, decided_at, decision_note, ' +
   'budget_remaining_at_decision, paid_at, confidentiality, ' +
   'requester:profiles!payment_vouchers_requested_by_fkey(full_name), ' +
   'decider:profiles!payment_vouchers_decided_by_fkey(full_name), ' +
-  'line:budget_lines(title_en)';
+  'line:budget_lines(title_en), ' +
+  'legal_case:legal_cases(case_number)';
 
 export async function fetchVouchers(): Promise<PaymentVoucher[]> {
   const { data, error } = await supabase
@@ -239,6 +240,7 @@ export async function fetchVouchers(): Promise<PaymentVoucher[]> {
       id: string;
       reference_no: string;
       budget_line_id: string | null;
+      legal_case_id: string | null;
       payee: string;
       purpose: string;
       requested_at: string;
@@ -255,14 +257,18 @@ export async function fetchVouchers(): Promise<PaymentVoucher[]> {
       requester: NamedRef | NamedRef[] | null;
       decider: NamedRef | NamedRef[] | null;
       line: { title_en: string } | { title_en: string }[] | null;
+      legal_case: { case_number: string } | { case_number: string }[] | null;
     }[]
   ).map((row) => {
     const line = Array.isArray(row.line) ? row.line[0] : row.line;
+    const legalCase = Array.isArray(row.legal_case) ? row.legal_case[0] : row.legal_case;
     return {
       id: row.id,
       referenceNo: row.reference_no,
       budgetLineId: row.budget_line_id,
       budgetLineTitle: line?.title_en ?? null,
+      legalCaseId: row.legal_case_id,
+      legalCaseNumber: legalCase?.case_number ?? null,
       payee: row.payee,
       purpose: row.purpose,
       requestedByName: label(row.requester),
@@ -338,6 +344,8 @@ export async function fetchThresholds(): Promise<ApprovalThreshold[]> {
 export async function requestVoucher(input: {
   referenceNo: string;
   budgetLineId: string | null;
+  /** M5-09: hukuk masrafı ise hangi dava. Değilse null. */
+  legalCaseId: string | null;
   payee: string;
   purpose: string;
   amount: number;
@@ -347,6 +355,7 @@ export async function requestVoucher(input: {
   const { error } = await supabase.from('payment_vouchers').insert({
     reference_no: input.referenceNo,
     budget_line_id: input.budgetLineId,
+    legal_case_id: input.legalCaseId,
     payee: input.payee,
     purpose: input.purpose,
     amount: input.amount,

@@ -16,6 +16,7 @@ import React, { useState } from 'react';
 import { ChevronDown, ChevronUp, Plus, Receipt, Scale } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import * as money from '../../api/moneyHooks';
+import { useLegalCases } from '../../api/hooks';
 import { QueryStatus } from '../QueryStatus';
 import { EmptyState } from '../EmptyState';
 import { ActionButton, Field, Pill, Section, Select, TextInput, WriteError } from '../ui/Controls';
@@ -33,6 +34,9 @@ export const VoucherPanel: React.FC<{ canRule: boolean }> = ({ canRule }) => {
   const vouchers = money.useVouchers();
   const thresholds = money.useThresholds();
   const lines = money.useBudgetLines();
+  // M5-09: bir dava masrafı hangi dosyanın masrafı. Liste davadan geliyor,
+  // fişin `purpose` metninden tahmin edilmiyor.
+  const cases = useLegalCases();
   const request = money.useRequestVoucher();
 
   const [adding, setAdding] = useState(false);
@@ -42,6 +46,7 @@ export const VoucherPanel: React.FC<{ canRule: boolean }> = ({ canRule }) => {
   const [payee, setPayee] = useState('');
   const [purpose, setPurpose] = useState('');
   const [lineId, setLineId] = useState('');
+  const [caseId, setCaseId] = useState('');
   const [amount, setAmount] = useState('');
   const [currency, setCurrency] = useState<CurrencyCode>('KES');
   const [rate, setRate] = useState('1');
@@ -98,6 +103,7 @@ export const VoucherPanel: React.FC<{ canRule: boolean }> = ({ canRule }) => {
                 {
                   referenceNo: reference,
                   budgetLineId: lineId || null,
+                  legalCaseId: caseId || null,
                   payee,
                   purpose,
                   amount: Number(amount),
@@ -160,6 +166,16 @@ export const VoucherPanel: React.FC<{ canRule: boolean }> = ({ canRule }) => {
                   {(lines.data ?? []).map((line) => (
                     <option key={line.id} value={line.id}>
                       {line.titleEn}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+              <Field label={tr ? 'Dava dosyası' : 'Case file'} className="min-w-[160px]">
+                <Select value={caseId} onChange={(e) => setCaseId(e.target.value)}>
+                  <option value="">{tr ? 'Hukuk masrafı değil' : 'Not a legal cost'}</option>
+                  {(cases.data ?? []).map((legalCase) => (
+                    <option key={legalCase.id} value={legalCase.id}>
+                      {legalCase.caseNumber}
                     </option>
                   ))}
                 </Select>
@@ -273,6 +289,9 @@ const VoucherRow: React.FC<{
           <div className="mt-0.5 text-xs text-slate-500">
             {voucher.purpose}
             {voucher.budgetLineTitle && ` · ${voucher.budgetLineTitle}`}
+            {/* M5-09: fişin davası, satırda. Dava başına toplam /legal'da
+                duruyor; burada ikinci bir toplam olmaması kasıtlı. */}
+            {voucher.legalCaseNumber && ` · ${voucher.legalCaseNumber}`}
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">

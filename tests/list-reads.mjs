@@ -146,7 +146,13 @@ for (const read of bounded) {
 //
 // Dördü de `legal_case_id` ile tek dosyaya bağlı, yani okuma kütüğün tamamını
 // değil bir davayı çekiyor.
-const UNBOUNDED_TODAY = 126;
+//
+// M5-09'dan sonra 127: `fetchCaseSpend` eklendi. Bu okuma **bir liste değil**,
+// bir dava için tek satır: `.eq('legal_case_id', caseId).maybeSingle()`.
+// Sınır koymanın anlamı yok, çünkü kesilebilecek bir şey yok — birden fazla
+// satır dönerse `maybeSingle()` hata verir, yani sessizce kesmek bu okumanın
+// yapabileceği bir şey değil.
+const UNBOUNDED_TODAY = 127;
 
 // Sayan okumalar sayılmıyor: sorumuz "kaç okuma her satırı çekiyor", ve
 // `head: true` olan hiç satır çekmiyor.

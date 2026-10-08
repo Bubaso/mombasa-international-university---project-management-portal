@@ -19,6 +19,7 @@ import type {
   FilingState,
   Hearing,
   HearingKind,
+  LegalCaseSpend,
   LegalOpinion,
   LegalOrder,
   OrderState,
@@ -695,4 +696,64 @@ export async function recordOpinion(input: {
     .single();
   fail(error);
   return (data as { id: string }).id;
+}
+
+// ---------------------------------------------------------------------------
+// Dava başına hukuk harcaması (M5-09)
+// ---------------------------------------------------------------------------
+
+/**
+ * `legal_case_spend` görünümünü okur.
+ *
+ * Hiçbir sayı burada 0'a çevrilmiyor. Görünüm parayı göremeyen için null
+ * döndürüyor ve o null bir bilgi: "bunu göremezsin". `?? 0` yazmak o bilgiyi
+ * silip yerine bir ölçüm iddiası koymak olurdu (CLAUDE.md §2).
+ */
+export async function fetchCaseSpend(caseId: string): Promise<LegalCaseSpend | null> {
+  const { data, error } = await supabase
+    .from('legal_case_spend')
+    .select(
+      'legal_case_id, case_number, title, confidentiality, money_visible, voucher_count, ' +
+        'awaiting_count, rejected_count, withdrawn_count, unbudgeted_count, ' +
+        'budget_line_count, awaiting_kes, committed_kes, paid_kes, last_paid_at',
+    )
+    .eq('legal_case_id', caseId)
+    .maybeSingle();
+  fail(error);
+  if (!data) return null;
+  const row = data as unknown as {
+    legal_case_id: string;
+    case_number: string;
+    title: string;
+    confidentiality: Confidentiality;
+    money_visible: boolean;
+    voucher_count: number | string | null;
+    awaiting_count: number | string | null;
+    rejected_count: number | string | null;
+    withdrawn_count: number | string | null;
+    unbudgeted_count: number | string | null;
+    budget_line_count: number | string | null;
+    awaiting_kes: number | string | null;
+    committed_kes: number | string | null;
+    paid_kes: number | string | null;
+    last_paid_at: string | null;
+  };
+  const n = (v: number | string | null) => (v == null ? null : Number(v));
+  return {
+    legalCaseId: row.legal_case_id,
+    caseNumber: row.case_number,
+    title: row.title,
+    confidentiality: row.confidentiality,
+    moneyVisible: row.money_visible,
+    voucherCount: n(row.voucher_count),
+    awaitingCount: n(row.awaiting_count),
+    rejectedCount: n(row.rejected_count),
+    withdrawnCount: n(row.withdrawn_count),
+    unbudgetedCount: n(row.unbudgeted_count),
+    budgetLineCount: n(row.budget_line_count),
+    awaitingKes: n(row.awaiting_kes),
+    committedKes: n(row.committed_kes),
+    paidKes: n(row.paid_kes),
+    lastPaidAt: row.last_paid_at,
+  };
 }

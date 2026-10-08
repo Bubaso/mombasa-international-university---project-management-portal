@@ -16,6 +16,7 @@ import { AppealGrounds } from '../components/legal/AppealGrounds';
 import { AuthorityLibrary } from '../components/legal/AuthorityLibrary';
 import { HearingBrief, BenchQuestions } from '../components/legal/HearingBrief';
 import { CaseActions } from '../components/legal/CaseActions';
+import { CaseSpendPanel } from '../components/legal/CaseSpendPanel';
 import { ChronologyPanel } from '../components/plan/ChronologyPanel';
 import { useAuthority } from '../api/adminHooks';
 import { ASSESSORS, actsAs } from '../lib/authority';
@@ -57,6 +58,7 @@ const LEGAL_SECTIONS = [
       { id: 'filings', labelTr: 'Layiha ve süreler', labelEn: 'Filings & deadlines' },
       { id: 'orders', labelTr: 'Mahkeme kararları', labelEn: 'Court orders' },
       { id: 'evidence', labelTr: 'Deliller ve zincir', labelEn: 'Evidence & custody' },
+      { id: 'spend', labelTr: 'Hukuk harcaması', labelEn: 'Legal spend' },
     ],
   },
   {
@@ -107,6 +109,7 @@ export const LegalAffairsView: React.FC = () => {
     | 'filings'
     | 'orders'
     | 'evidence'
+    | 'spend'
     | 'counsel'
     | 'hearing_brief'
     | 'bench_qa'
@@ -359,12 +362,15 @@ export const LegalAffairsView: React.FC = () => {
       {activeCase && activeSubTab === 'evidence' && (
         <EvidenceList caseId={activeCase.id} canWrite={canKeepRecord} />
       )}
+      {activeCase && activeSubTab === 'spend' && <CaseSpendPanel caseId={activeCase.id} />}
       {activeCase && activeSubTab === 'counsel' && (
         <CounselPanel caseId={activeCase.id} canManage={canManageCounsel} />
       )}
 
       {!activeCase &&
-        ['hearings', 'filings', 'orders', 'evidence', 'counsel'].includes(activeSubTab) && (
+        ['hearings', 'filings', 'orders', 'evidence', 'spend', 'counsel'].includes(
+          activeSubTab,
+        ) && (
           <div className="rounded-xl border border-slate-200 bg-white px-4 py-6 text-center text-sm text-slate-500">
             {tr
               ? 'Henüz kayıtlı dava dosyası yok. Duruşma, layiha ve karar kayıtları bir dosyaya bağlıdır.'

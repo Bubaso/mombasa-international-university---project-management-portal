@@ -439,7 +439,19 @@ const signedCounts = [];
  * Ekran masaüstünde 1.487px'ti, yani T14 turunun "ağır ekran" listesine hiç
  * girmedi — ve telefonda 3,7 ekrandı. Ölçüyü tek genişlikte almak, iki
  * genişlikten birini hiç görmemek demekti.
+ *
+ * `/legal` 8 Ekim 2026'da 58 → **59** düğme oldu: M5-09 "Hukuk harcaması"
+ * sekmesi. Bir sekme bir düğme, ve panelin kendisinde düğme yok.
+ *
+ * YUKARIDAKİ ÜÇ YÜKSELTME PROZA OLARAK YAZILIYDI, ŞİMDİ ÖLÇÜLÜYOR. Yazılı bir
+ * gelenek ile bir kapı arasındaki fark, dördüncü yükseltmeyi kimin fark
+ * edeceğidir: geleneği okumayan biri rakamı değiştirip geçer. `RAISED`
+ * aşağıda her yükseltmeyi hangi gereksinim satırının kazandığıyla birlikte
+ * tutuyor, ve o satırın ürün dokümanında gerçekten var olduğu sınanıyor —
+ * yani "bir gereksinim gerektirdi" demek için bir gereksinim göstermek
+ * gerekiyor.
  */
+
 const DENSITY = {
   '/assistant': { buttons: 55, headings: 3, height: 2392 },
   '/meetings': { buttons: 57, headings: 9, height: 1767 },
@@ -448,7 +460,7 @@ const DENSITY = {
   '/project_info': { buttons: 47, headings: 3, height: 1044 },
   '/stakeholders': { buttons: 50, headings: 5, height: 1356 },
   '/plan': { buttons: 53, headings: 4, height: 1412 },
-  '/legal': { buttons: 58, headings: 4, height: 1316 },
+  '/legal': { buttons: 59, headings: 4, height: 1316 },
   '/reports': { buttons: 57, headings: 7, height: 1394 },
   '/governance': { buttons: 59, headings: 3, height: 1196 },
   '/calendar': { buttons: 61, headings: 4, height: 1198 },
@@ -461,6 +473,66 @@ const DENSITY = {
   '/communication': { buttons: 83, headings: 4, height: 1044 },
   '/admin': { buttons: 42, headings: 6, height: 1044 },
 };
+
+/**
+ * Yükselmiş her tavan, hangi gereksinim satırı yüzünden.
+ *
+ * Bu liste tavanları gevşetmiyor: `DENSITY` hâlâ tek kapı. Bu liste
+ * yükseltmenin **gerekçesini** kayda bağlıyor, çünkü yazılı bir gelenek ile
+ * bir kapı arasındaki fark, dördüncü yükseltmeyi kimin fark edeceğidir.
+ *
+ * İLK HÂLİNDE ÜÇÜNCÜ BİR KONTROL VARDI VE SAĞLAM DEĞİLDİ. "Kaydedilen değer
+ * bugünkü tavanın kendisi olmalı" diye yazdım; ilk koşuda `/construction`
+ * üzerinde düştü (50 ≠ 45) ve düşmesi doğruydu — ama kusur kayıtta değil
+ * kontrolün varsayımındaydı. Bir rotanın tavanı yalnızca o rotanın kendi
+ * yükseltmelerinin toplamı değil: `a9fa04c` (T14 Faz 3) kenar çubuğu
+ * gruplarını katlayınca **on dokuz tavanın on dokuzu birden** yeniden
+ * ölçüldü, ve grup açma düğmeleri her rotaya aynı anda bindi.
+ * `/construction` 45 → 50 işte o toptan yeniden ölçüm; ekran ağırlaşmadığı
+ * için bu listede yok, çünkü liste ekran başına bedelleri taşıyor.
+ *
+ * Kalan iki kontrolün sınırı da yazılı olsun: satırın **var olduğunu** sınar,
+ * **doğru satır olduğunu** sınamaz. `/construction` satırını ilk yazışımda
+ * T1-07 koymuştum — T1-07 var olduğu için kapı geçti, oysa o satır hukuk
+ * ekranının sekmeleriyle ilgili; doğru satır T14-04. Dokümana bakıp
+ * düzelttim. Bir kapı atfı doğrulayamaz, yalnızca uydurmayı yakalar.
+ */
+const RAISED = [
+  { route: '/plan', field: 'buttons', from: 51, to: 53, row: 'T10-06' },
+  { route: '/reports', field: 'buttons', from: 54, to: 57, row: 'T10-06' },
+  { route: '/construction', field: 'buttons', from: 44, to: 45, row: 'T14-04' },
+  { route: '/project_info', field: 'buttons', from: 43, to: 47, row: 'T15-04' },
+  { route: '/legal', field: 'buttons', from: 58, to: 59, row: 'M5-09' },
+];
+
+{
+  const requirements = readFileSync(join(root, 'docs', 'URUN-GEREKSINIMLERI.md'), 'utf8');
+  const design = readFileSync(join(root, 'docs', 'TASARIM-GEREKSINIMLERI.md'), 'utf8');
+  const corpus = requirements + design;
+  const unknown = RAISED.filter((r) => !corpus.includes(`| ${r.row} |`)).map((r) => r.row);
+  check(
+    unknown.length === 0,
+    'yükseltilmiş her tavan var olan bir gereksinim satırını gösteriyor',
+    unknown.length ? unknown.join(', ') : `${RAISED.length} yükseltme`,
+  );
+
+  const backwards = RAISED.filter((r) => r.to <= r.from).map((r) => r.route);
+  check(
+    backwards.length === 0,
+    've her kaydı bir bedel — düşen bir tavan bu listeye girmiyor',
+    backwards.length ? backwards.join(', ') : `${RAISED.length} yükseltme`,
+  );
+
+  // Yanlış yazılmış bir rota adı kaydı sessizce anlamsız kılar: kimse o
+  // yükseltmeyi bir daha bulamaz.
+  const nowhere = RAISED.filter((r) => DENSITY[r.route]?.[r.field] == null).map((r) => r.route);
+  check(
+    nowhere.length === 0,
+    've gösterdiği rota gerçekten ölçülen bir rota',
+    nowhere.length ? nowhere.join(', ') : `${RAISED.length} yükseltme`,
+  );
+}
+
 const density = {};
 const tabsFound = {};
 const tabsOpened = {};
@@ -748,7 +820,7 @@ for (const route of ROUTES) {
  * (yeni panel) ya da gezgin körleşirse, ikisi de düşürür.
  */
 const TABS_EXPECTED = {
-  '/legal': 17,
+  '/legal': 18,
   '/communication': 5,
   '/procurement': 4,
   '/construction': 2,
@@ -992,7 +1064,9 @@ check(
     bannerH: 57, // T15-02: 175 → 57 (kriter ≤60, altında)
     smallTargets: 0, // T4-01: 9 → 0, artık bir tavan değil bir KURAL
     height: 2967, // T15-04: 3270 → 3152 (Faz 1) → 2967 (Faz 2). Toplam boy, ratchet.
-    chrome: 2243, // T15-04'ün KRİTERİ: sayfa eksi en uzun kayıt listesi (≤2532)
+    // M5-09'un sekmesi 2243 → 2293 (bir sekme satırı). Kriter ≤2532, hâlâ
+    // altında — yükseltme bir ölçüt ihlâli değil, yazılı bir bedel.
+    chrome: 2293, // T15-04'ün KRİTERİ: sayfa eksi en uzun kayıt listesi (≤2532)
     smallFields: 0, // T15-05: 6 → 0, kural
   };
 

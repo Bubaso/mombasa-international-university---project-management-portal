@@ -9481,6 +9481,186 @@ select pg_temp.check('and the reading it belongs to is settled now that a decisi
   (select disposition from intake_queue where intake_id = '1d000000-0000-0000-0000-000000000051'),
   'settled');
 
+-- ===========================================================================
+-- Dava başına hukuk harcaması (M5-09, göç 0054)
+-- ===========================================================================
+--
+-- Üç ayrı soru sorulyor ve üçü ayrı şeyler ölçüyor: fiş davaya bağlanıyor mu,
+-- bağlanan fiş davanın gizliliğini sızdırıyor mu, ve görünüm bilmediği şeyi
+-- sıfır diye mi yazıyor.
+--
+-- Sızıntı sorusunun bir **kontrolü** var ve o kontrol testin kendisi kadar
+-- önemli: denetçi davaya bağlı olmayan aynı gizlilik seviyesindeki fişi
+-- görebiliyor olmak zorunda. Görmezse, "davaya bağlı fişi görmedi"
+-- assertion'ı doğru sebeple değil yanlış sebeple geçer — denetçi hiçbir fiş
+-- göremiyordur. Bu depoda tam bu hata en az beş kez oldu (CLAUDE.md §3).
+
+set role postgres;
+insert into budget_lines (id, budget_category_id, title_en, amount, currency, fx_rate_to_kes)
+values ('1d000000-0000-0000-0000-000000000070',
+        '1d000000-0000-0000-0000-000000000002', 'Appeal counsel', 8000000, 'KES', 1);
+set role authenticated;
+
+-- Talep eden proje direktörü, karar veren admin: kimse kendi talebine karar
+-- veremez (M8-05), yani iki ayrı koltuk gerekiyor.
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');  -- project director
+
+insert into payment_vouchers
+  (id, reference_no, budget_line_id, legal_case_id, payee, purpose,
+   amount, currency, confidentiality)
+values ('1d000000-0000-0000-0000-000000000071', 'PV-5001',
+        '1d000000-0000-0000-0000-000000000070',
+        'aaaa0000-0000-0000-0000-000000000004', 'Senior Counsel',
+        'Appeal brief', 3000000, 'KES', 'internal');
+
+-- Bütçe satırı olmayan bir dava masrafı. M5-09'un "M8 bütçesine bağlı"
+-- yarısının dürüst kısmı bu: bağlı olmayanı saymak.
+insert into payment_vouchers
+  (id, reference_no, legal_case_id, payee, purpose, amount, currency, confidentiality)
+values ('1d000000-0000-0000-0000-000000000072', 'PV-5002',
+        'aaaa0000-0000-0000-0000-000000000004', 'Court registry',
+        'Filing fees', 500000, 'KES', 'internal');
+
+-- Kontrol: davası olmayan, aynı gizlilikte bir fiş.
+insert into payment_vouchers
+  (id, reference_no, payee, purpose, amount, currency, confidentiality)
+values ('1d000000-0000-0000-0000-000000000073', 'PV-5003',
+        'Office supplies', 'Stationery', 250000, 'KES', 'internal');
+
+-- Aynı bütçe satırında ikinci bir dava masrafı. Bu satır fikstürü ayırt
+-- edici yapmak için var: tek bütçeli + tek bütçesiz fişle, "bütçesizleri
+-- say" ile "bütçelileri say" aynı cevabı (1) veriyordu ve kuralı tersine
+-- çeviren mutasyon düşmüyordu. İkincisi ile bütçeli 2, bütçesiz 1 — ve
+-- `distinct` olmadan satır sayısı 2, `distinct` ile 1 (CLAUDE.md §3).
+insert into payment_vouchers
+  (id, reference_no, budget_line_id, legal_case_id, payee, purpose,
+   amount, currency, confidentiality)
+values ('1d000000-0000-0000-0000-000000000075', 'PV-5006',
+        '1d000000-0000-0000-0000-000000000070',
+        'aaaa0000-0000-0000-0000-000000000004', 'Junior Counsel',
+        'Record of appeal', 200000, 'KES', 'internal');
+
+-- İç seviyedeki davaya bağlı bir fiş: parayı göremeyen biri için sayının
+-- null mu 0 mı döndüğünü ayırt etmek için.
+insert into payment_vouchers
+  (id, reference_no, legal_case_id, payee, purpose, amount, currency, confidentiality)
+values ('1d000000-0000-0000-0000-000000000074', 'PV-5004',
+        'aaaa0000-0000-0000-0000-000000000002', 'Process server',
+        'Service of summons', 100000, 'KES', 'internal');
+
+select pg_temp.act_as('11111111-1111-1111-1111-111111111111');  -- admin
+update payment_vouchers set state = 'approved'
+where id = '1d000000-0000-0000-0000-000000000071';
+update payment_vouchers set state = 'paid'
+where id = '1d000000-0000-0000-0000-000000000071';
+
+select pg_temp.check('a paid legal voucher is the case spend',
+  (select paid_kes from legal_case_spend
+    where legal_case_id = 'aaaa0000-0000-0000-0000-000000000004'),
+  3000000.00::numeric(18, 2));
+
+select pg_temp.check('the two nobody has ruled on are awaiting, not spent',
+  (select awaiting_kes from legal_case_spend
+    where legal_case_id = 'aaaa0000-0000-0000-0000-000000000004'),
+  700000.00::numeric(18, 2));
+
+-- Fişi olan bir davada bile, olmayan durumun tutarı null. Sıfır bir ölçüm
+-- iddiasıdır: "onaylandı ve henüz ödenmedi diye bir şey var, miktarı sıfır".
+select pg_temp.check('with nothing approved and unpaid, committed is null and not zero',
+  (select committed_kes from legal_case_spend
+    where legal_case_id = 'aaaa0000-0000-0000-0000-000000000004'),
+  null::numeric(18, 2));
+
+select pg_temp.check('all three vouchers on the case are counted',
+  (select voucher_count from legal_case_spend
+    where legal_case_id = 'aaaa0000-0000-0000-0000-000000000004'),
+  3::bigint);
+
+select pg_temp.check('and the one with no budget line is named as such (M5-09, M8)',
+  (select unbudgeted_count from legal_case_spend
+    where legal_case_id = 'aaaa0000-0000-0000-0000-000000000004'),
+  1::bigint);
+
+-- İki bütçeli fiş, tek satır: sayım satırları değil satırın kendisini
+-- sayıyor. `distinct` olmasa cevap 2 olurdu.
+select pg_temp.check('the case draws on one budget line, counted once',
+  (select budget_line_count from legal_case_spend
+    where legal_case_id = 'aaaa0000-0000-0000-0000-000000000004'),
+  1::bigint);
+
+-- Bağlı fişi olmayan dava. Sayı gerçekten sıfır — bu bir ölçüm: kayıtlı fiş
+-- yok. Ama tutar null, çünkü "bu davaya hiç para harcanmadı" bir iddia ve
+-- portal onu yapamaz: bağlanmamış bir fiş de olabilir.
+select pg_temp.check('a case with no linked voucher has a count of zero',
+  (select voucher_count from legal_case_spend
+    where legal_case_id = 'aaaa0000-0000-0000-0000-000000000001'),
+  0::bigint);
+select pg_temp.check('but its spend is null, because nothing was measured',
+  (select paid_kes from legal_case_spend
+    where legal_case_id = 'aaaa0000-0000-0000-0000-000000000001'),
+  null::numeric(18, 2));
+
+-- ---------------------------------------------------------------------------
+-- Sütunun açtığı delik, kontrolüyle birlikte
+-- ---------------------------------------------------------------------------
+
+select pg_temp.act_as('dddd1111-1111-1111-1111-111111111111');  -- external auditor
+
+-- KONTROL. Bu satır geçmezse altındaki assertion hiçbir şey ölçmüyor.
+select pg_temp.check('the auditor can read an internal voucher with no case on it',
+  (select count(*) from payment_vouchers
+    where id = '1d000000-0000-0000-0000-000000000073'),
+  1::bigint);
+
+select pg_temp.check('but not the same voucher once it names a case they cannot see',
+  (select count(*) from payment_vouchers
+    where id = '1d000000-0000-0000-0000-000000000071'),
+  0::bigint);
+
+select pg_temp.check('and the restricted case is not in the spend view for them at all',
+  (select count(*) from legal_case_spend
+    where legal_case_id = 'aaaa0000-0000-0000-0000-000000000004'),
+  0::bigint);
+
+do $$
+begin
+  begin
+    insert into payment_vouchers
+      (reference_no, legal_case_id, payee, purpose, amount, currency, confidentiality)
+    values ('PV-5005', 'aaaa0000-0000-0000-0000-000000000004', 'Someone',
+            'Probing', 1000, 'KES', 'internal');
+    raise exception 'FAIL a voucher was raised against a case the account cannot see';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   nor may they raise one against it, which would be a way to ask';
+  end;
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- Parayı göremeyen için sayı null, 0 değil
+-- ---------------------------------------------------------------------------
+--
+-- `count()` boş kümede 0 döner. Satır seviyesi güvenlik fişleri sakladığı
+-- için, koruma olmasa saha ekibi "bu davaya bağlı 0 fiş var" görürdü — oysa
+-- doğru cevap "bunu göremezsin". İki durum iki ayrı cümleyi hak ediyor.
+
+select pg_temp.act_as('11111111-1111-1111-1111-111111111111');  -- admin
+select pg_temp.check('admin sees the one voucher on the internal case',
+  (select voucher_count from legal_case_spend
+    where legal_case_id = 'aaaa0000-0000-0000-0000-000000000002'),
+  1::bigint);
+
+select pg_temp.act_as('44444444-4444-4444-4444-444444444444');  -- field team
+select pg_temp.check('the field team reaches the case but not the money on it',
+  (select money_visible from legal_case_spend
+    where legal_case_id = 'aaaa0000-0000-0000-0000-000000000002'),
+  false);
+select pg_temp.check('so the count is null for them, not the zero a filtered count returns',
+  (select voucher_count from legal_case_spend
+    where legal_case_id = 'aaaa0000-0000-0000-0000-000000000002'),
+  null::bigint);
+
 reset role;
 
 \echo ''
