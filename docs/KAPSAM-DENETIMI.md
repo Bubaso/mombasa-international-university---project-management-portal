@@ -21,12 +21,12 @@ kadar.)
 
 | Durum      | Satır |
 | ---------- | ----- |
-| Yapıldı    | 187   |
-| Yok        | 23    |
+| Yapıldı    | 188   |
+| Yok        | 22    |
 | **Toplam** | 210   |
 
 Öncelik dağılımı: P0 22 satır (1'i yok), P1 115 satır (1'i yok), P2 59 satır
-(21'i yok), P3 14 satır (**hepsi yapıldı**).
+(20'si yok), P3 14 satır (**hepsi yapıldı**).
 
 ### 8 Ekim 2026 güncellemesi — ve başlıktaki sayı hakkında bir düzeltme
 
@@ -192,6 +192,42 @@ Aynı gate'in ikinci kör noktası; ilki 5 Ekim'de veri dizisi alanlarıydı
 (2.467 karakter). Ders aynı: **bir ölçü neyi görmediğini söylemez**, o yüzden
 görmediğini aramak gerekir.
 
+### M2-11 kapandı — ve yazdığım paneli ölçüm sildi
+
+Yükümlülük ısı haritası: kaynağa göre gruplu, duruma göre bantlı. Göç
+gerektirmedi.
+
+**Ayrı bir ısı haritası paneli yazdım, sınadım, sonra sildim.** Bir toplayıcı
+(`obligationHeat`), bir ızgara paneli, yirmi assertion ve dokuz mutasyon —
+hepsi çalışıyordu. Sonra ekranı bölüm bölüm ölçtüm ve `/obligations`'ın
+**zaten kaynağa göre bölümlenmiş** olduğunu gördüm: yedi kaynak, yedi bölüm.
+Panel aynı veriyi ikinci kez gruplayacaktı, ve iki gruplamanın iki sayısı her
+zaman birbirinden sapar (CLAUDE.md §4).
+
+M2-11'in gerçekten eklediği şey gruplama değil **bantlama**. Bant şeridi her
+kaynağın kendi başlığına kondu; panel ve toplayıcı silindi, testleri de
+onlarla gitti. Kullanılmayan bir fonksiyonun testi, test değil ağırlık.
+
+Kalan şey `bandOf` — hangi kaydın hangi banda düştüğü, tek yerde, ve ekranın
+her grubu onu çağırıyor. Altı bant, ve altıncısı dosyanın sebebi:
+**`undated`**, yani açık ama vadesi kayıtlı değil. O bant olmadan böyle bir
+yükümlülük ya "ileride" sayılırdı (vadesi varmış gibi) ya hiç görünmezdi;
+ikisi de bilinmeyeni bilinmiş göstermek olur.
+
+Tanınmayan bir durum için bant **uydurulmuyor** (null döner) ve okunamayan
+bir tarih "ileride" sayılmıyor. Dokuz mutasyon, dokuzu da düştü.
+
+Renk tek başına hiçbir şey söylemiyor: her bantta sayı ve ad da basılı, yani
+renk körü biri için de basılı bir kopyada da aynı bilgi okunuyor.
+
+**Ve bir kapı kusuru daha.** Bantlar `Pill` kullanıyor — ne düğme ne başlık —
+yani `/obligations`'ın yoğunluk tavanı hiç değişmedi. Tavanın değişmemesi
+"render edildi" demek değil; `/admin`'de tam bu yüzden bir bölüm hiç
+çizilmediği hâlde sayı 42'de kalmıştı. Ayrı bir tutamak eklendi. İlk hâli
+yalnızca sekme turunun içinde çağrılıyordu ve `/obligations` için sıfır
+döndü: o ekranda sekme yok, yani tur gövdesi hiç çalışmıyor. Açılışta da
+çağrılıyor artık, ve ikisi de mutasyonla sınandı.
+
 ## 0045 sonrası bir düzeltme
 
 M11-05 ve M11-06 bu denetimde "yapıldı" sayılıyordu ve öyleydi: teslim kaydı
@@ -221,7 +257,7 @@ Bunlar "yapıldı" sayılır; eksik olan tek şey migration yorumundaki atıf.
 
 ## Yapılmamış satırlar
 
-22 satır. Her biri için neyin eksik olduğu ve neye bağlı olduğu yazıldı,
+21 satır. Her biri için neyin eksik olduğu ve neye bağlı olduğu yazıldı,
 çünkü bir kısmı kod değil karar ya da hesap bekliyor.
 
 ### P0 — 1 satır
@@ -236,14 +272,13 @@ Bunlar "yapıldı" sayılır; eksik olan tek şey migration yorumundaki atıf.
 | ----- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
 | M1-10 | Oturum yönetimi: aktif cihazlar, uzaktan kapatma | Supabase `auth.sessions` üzerinden okunur; kapatma yönetici yetkisiyle sunucu tarafı bir fonksiyon ister. |
 
-### P2 — 21 satır
+### P2 — 20 satır
 
 Portal içinde yapılabilenler (bağımlılığı yok):
 
 | ID    | Gereksinim                                                                                                                            |
 | ----- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | M2-10 | Tekrarlayan yükümlülükler (yıllık tescil, dönemsel beyan) — `compliance_requirements` zaten yineleme taşıyor, yükümlülükler taşımıyor |
-| M2-11 | Yükümlülük ısı haritası (kaynağa göre gruplu)                                                                                         |
 | M4-10 | İlişki ağı görselleştirmesi                                                                                                           |
 | M4-12 | Etkileşim planı (ne istiyoruz, sıradaki adım, sorumlu)                                                                                |
 | M4-14 | Paydaş haritası anlık görüntüsü (dondurulmuş)                                                                                         |
@@ -285,6 +320,6 @@ yapılmamış bir şeyi yapılmış gösterir — ilk geçişte "muson" kendi ya
 0040 yorumunda eşleşti, "sap" bir başka kelimenin içinde, "retention" bir
 hakediş sütununda. Dar bir desen ise yapılmış bir şeyi kaçırır; M1-08 ilk
 taramada `supabase/functions/` dizini sayılmadığı için yok görünüyordu.
-Yukarıdaki 22 satırın her biri bu yüzden elle teyit edildi, ve "yapıldı"
-sayılan 187 satırın hepsi tek tek teyit edilmedi — yalnızca atıfı olanlar
+Yukarıdaki 21 satırın her biri bu yüzden elle teyit edildi, ve "yapıldı"
+sayılan 188 satırın hepsi tek tek teyit edilmedi — yalnızca atıfı olanlar
 atıfına, atıfı olmayan yedisi kanıtına dayanıyor.

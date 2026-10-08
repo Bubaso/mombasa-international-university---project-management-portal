@@ -640,6 +640,26 @@ for (const route of ROUTES) {
   const everSeen = new Set();
   const opened = new Set();
   const handlesSeen = handles[route] ?? (handles[route] = new Set());
+
+  /**
+   * Ekranda duran panel tutamakları.
+   *
+   * İLK YAZIŞIMDA YALNIZ SEKME TURUNUN İÇİNDE ÇAĞRILIYORDU ve `/obligations`
+   * için sıfır döndü — o ekranda `role="tablist"` yok, yani tur gövdesi hiç
+   * çalışmıyor. Açılışta bir kez, sonra her sekmede: bir panel ya ilk
+   * ekranda ya bir sekmenin arkasında durur, ve ölçü ikisini de görmek
+   * zorunda.
+   */
+  const collectHandles = async () => {
+    for (const h of await page.evaluate(() => [
+      ...[...document.querySelectorAll('[data-access-review]')].map(() => 'access-review'),
+      ...[...document.querySelectorAll('[data-heat-bands]')].map(
+        (el) => `heat:${el.getAttribute('data-heat-bands')}`,
+      ),
+    ]))
+      handlesSeen.add(h);
+  };
+  await collectHandles();
   const lists = await page.$$('[role="tablist"]');
   const outer = lists[0] ?? null;
   const outerLabels = outer ? await labelsOf(outer) : [];
@@ -647,12 +667,7 @@ for (const route of ROUTES) {
 
   for (const label of outerLabels) {
     if (await clickIn(outer, label)) opened.add(label);
-    // Sekme turu sırasında görülen tutamaklar. Bir panel bir sekmenin
-    // arkasındaysa açılış ekranında yok, ama tur onu açıyor.
-    for (const h of await page.evaluate(() =>
-      [...document.querySelectorAll('[data-access-review]')].map(() => 'access-review'),
-    ))
-      handlesSeen.add(h);
+    await collectHandles();
     // İç listeler: dış sekme açıkken ne varsa.
     const nested = (await page.$$('[role="tablist"]')).slice(1);
     for (const list of nested) {
@@ -895,6 +910,18 @@ const TABS_EXPECTED = {
     missed.length === 0,
     'her ekranda bulunan her sekme açıldı',
     missed.length ? missed.join(', ') : `${Object.keys(tabsFound).length} ekran tarandı`,
+  );
+
+  // M2-11'in bantları gerçekten çiziliyor mu.
+  //
+  // `/obligations`'ın yoğunluk tavanı bantlar eklendikten sonra DEĞİŞMEDİ:
+  // şerit `Pill` kullanıyor, yani ne düğme ne başlık. Tavanın değişmemesi
+  // "render edildi" demek değil — `/admin`'de tam bu yüzden bir bölüm hiç
+  // çizilmediği hâlde sayı 42'de kalmıştı. O yüzden ayrı bir tutamak.
+  check(
+    (handles['/obligations'] ?? new Set()).size >= 3,
+    'yükümlülük bantları kaynak başına çiziliyor (M2-11)',
+    `${(handles['/obligations'] ?? new Set()).size} kaynak`,
   );
 
   // M1-11'in paneli gerçekten çiziliyor mu.

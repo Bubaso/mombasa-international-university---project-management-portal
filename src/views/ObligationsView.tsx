@@ -31,6 +31,7 @@ import {
 } from '../components/ui/Controls';
 import { ObligationDetail } from '../components/obligations/ObligationDetail';
 import { ProhibitionPanel } from '../components/obligations/ProhibitionPanel';
+import { BAND_WORDS, HEAT_BANDS, HEAT_BAND_STYLES, bandOf } from '../lib/obligationHeat';
 import type {
   Confidentiality,
   Language,
@@ -95,6 +96,9 @@ export const ObligationsView: React.FC = () => {
 
   // Hangi durumun son olduğu `lib/registerStates`'te, enum başına, bir kez.
   // Burada yalnız bölme var.
+  // Bantlar bugüne göre: "vadesi geçmiş" bir tarih sorusu.
+  const today = new Date().toISOString().slice(0, 10);
+
   const waitingOf = (items: Obligation[]) =>
     splitBySettled(items, 'obligation_state', (o) => o.state).open;
   const settledOf = (items: Obligation[]) =>
@@ -206,12 +210,39 @@ export const ObligationsView: React.FC = () => {
                   <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
                     <Pill className={SOURCE_STYLES[group]}>{sourceLabel(group, language)}</Pill>
                   </h2>
-                  {/* Bekleyen sayısı önce: grubun kaç işi olduğu o. Toplam
-                      da yazıyor, yoksa geri çekilenler yok sayılmış olur. */}
-                  <span className="text-xs text-slate-500">
-                    {state === '' && settledOf(items).length > 0
-                      ? `${waitingOf(items).length} / ${items.length}`
-                      : items.length}
+                  {/* M2-11'İN BANTLARI, VE BURADA OLMALARININ SEBEBİ BİR ÖLÇÜM.
+                      Ayrı bir ısı haritası paneli yazdım, sınadım, ve ekranı
+                      ölçtüğümde gereksiz olduğunu gördüm: bu kütük ZATEN
+                      kaynağa göre bölümlenmiş (yedi kaynak, yedi bölüm).
+                      Panel aynı veriyi ikinci kez gruplayacaktı — iki
+                      gruplama, iki sayı, ve biri ötekinden sapar
+                      (CLAUDE.md §4). M2-11'in gerçekten eklediği şey
+                      gruplama değil BANTLAMA, ve bantın yeri grubun kendi
+                      başlığı. Panel silindi; `bandOf` kuralı kaldı.
+
+                      Sayılar süzgeçten geçmiş satırlardan: başlık "baktığın
+                      şeyin" bantlarını söylüyor ve süzgeç ekranda görünür. */}
+                  <span className="flex flex-wrap items-center gap-1" data-heat-bands={group}>
+                    {HEAT_BANDS.map((band) => {
+                      const n = items.filter(
+                        (o) =>
+                          bandOf(
+                            { id: o.id, source: o.source, state: o.state, dueOn: o.dueOn },
+                            today,
+                          ) === band,
+                      ).length;
+                      if (n === 0) return null;
+                      return (
+                        <Pill key={band} className={HEAT_BAND_STYLES[band]}>
+                          {n} {tr ? BAND_WORDS[band].tr : BAND_WORDS[band].en}
+                        </Pill>
+                      );
+                    })}
+                    <span className="text-xs text-slate-500">
+                      {state === '' && settledOf(items).length > 0
+                        ? `${waitingOf(items).length} / ${items.length}`
+                        : items.length}
+                    </span>
                   </span>
                 </header>
                 <ul className="divide-y divide-slate-100">
