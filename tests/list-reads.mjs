@@ -167,7 +167,18 @@ for (const read of bounded) {
 // satır, ve listenin tamamı cevabın kendisi: kesilmiş bir kapsam, kapsamı
 // yanlış göstermek olur. "Asistan şu on türe teklif verebilir" diyen bir
 // ekran, aslında yirmi üç tür varken, okuyana yanlış bir sınır öğretir.
-const UNBOUNDED_TODAY = 129;
+//
+// M7-16'dan sonra 130: `fetchPlanNetwork` eklendi ve sınırsız. Kritik yol bir
+// AĞ ve ağın bir dilimi ağ değil: eksik bir düğüm, eksik bir zincir demek, ve
+// kesilmiş bir ağdan çıkan "en uzun yol" tam bir yol gibi okunur. Bu, kesik
+// bir listenin toplamını göstermekten daha sessiz bir yanlış — sayı makul
+// görünür.
+//
+// Ayrıştırıcı bu fonksiyonu tek okuma sayıyor, oysa içinde üç sorgu var
+// (işler, kilometre taşları, bağımlılıklar). Üçü bir arada bir ağ kurduğu
+// için tek fonksiyonda duruyorlar; üçünü ayrı okuyup ekranda birleştirmek,
+// ağın şeklini ekrana kurdurmak olurdu.
+const UNBOUNDED_TODAY = 130;
 
 // Sayan okumalar sayılmıyor: sorumuz "kaç okuma her satırı çekiyor", ve
 // `head: true` olan hiç satır çekmiyor.

@@ -27,6 +27,7 @@ import { Explain } from '../components/ui/Explain';
 import { Flag, GanttChartSquare, GitBranch, History, Layers, Ruler } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { GanttPanel } from '../components/plan/GanttPanel';
+import { CriticalPathPanel } from '../components/plan/CriticalPathPanel';
 import { MilestonePanel } from '../components/plan/MilestonePanel';
 import { PhasePanel } from '../components/plan/PhasePanel';
 import { ChainPanel } from '../components/plan/ChainPanel';
@@ -103,7 +104,16 @@ export const PlanView: React.FC = () => {
 
       {tab === 'milestones' && <MilestonePanel />}
       {tab === 'phases' && <PhasePanel />}
-      {tab === 'chain' && <ChainPanel />}
+      {/* M7-16. Kritik yol ALTINCI bir sekme değil, `chain` sekmesinin içinde:
+          o sekme zaten bağımlılıkları gösteriyor ve hesap tam o veriden
+          çıkıyor. Ayrı bir sekme, aynı konuyu iki yere bölmek ve `/plan`'ın
+          düğme sayısını (uygulamanın en yükseği, 63) bir artırmak olurdu. */}
+      {tab === 'chain' && (
+        <>
+          <CriticalPathPanel />
+          <ChainPanel />
+        </>
+      )}
       {tab === 'baseline' && <BaselinePanel />}
       {tab === 'chronology' && <ChronologyPanel />}
     </div>

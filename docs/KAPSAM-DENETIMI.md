@@ -21,12 +21,12 @@ kadar.)
 
 | Durum      | Satır |
 | ---------- | ----- |
-| Yapıldı    | 186   |
-| Yok        | 24    |
+| Yapıldı    | 187   |
+| Yok        | 23    |
 | **Toplam** | 210   |
 
 Öncelik dağılımı: P0 22 satır (1'i yok), P1 115 satır (1'i yok), P2 59 satır
-(22'si yok), P3 14 satır (**hepsi yapıldı**).
+(21'i yok), P3 14 satır (**hepsi yapıldı**).
 
 ### 8 Ekim 2026 güncellemesi — ve başlıktaki sayı hakkında bir düzeltme
 
@@ -150,6 +150,48 @@ sekmeye böldü (kurgu 8.931 → 1.044px) ve "Asistanın kapsamı" sekmesi eklen
 yirmi üç hedef, kapatmak gerekçe istiyor. Alan şeması o ekranda yok ve
 olmaması kasıtlı — şema yazan fonksiyonun yanında duruyor.
 
+### M7-16 kapandı — ve bir ölçü körlüğü
+
+Kritik yol. Gantt 0028'de yapılmıştı; eksik olan hesap, ve **göç
+gerektirmedi**: `dependencies` tablosu 0016'dan beri duruyor.
+
+Önce ölçtüm. `dependencies` kütükler arası bir tablo: bir bağımlılığın tarafı
+dava, saha işi, yükümlülük, risk, kilometre taşı ya da çıplak bir etiket
+olabiliyor. Kritik yol ise süreli bir faaliyet ağı ister, yani tablonun
+tamamı yola girmiyor — ve girmeyeni sessizce atmak en tehlikelisi olurdu:
+eksik bir ağdan çıkan zincir, tam bir zincir gibi okunur.
+
+Ağa iki düğüm türü giriyor: iki tarihi de kayıtlı **saha işi** (süresi
+`bitiş - başlangıç + 1`), ve hedef tarihi kayıtlı **kilometre taşı** (süresi
+sıfır — bir olay, bir süreç değil). Panel kullanamadığı her şeyi sayıyla
+bildiriyor.
+
+**Bolluk (float) hesaplanmıyor** ve sebebi yazılı: bolluk planın
+bağımlılıklarla tutarlı olmasını ister, buradaki tarihler elle girilmiş ve
+bir bağımlının başlangıcı blokeyenin bitişinden önce olabilir. Böyle bir
+planda bolluk hesaplamak veriden fazlasını iddia etmek olur. Onun yerine o
+tutarsızlıklar bildiriliyor — bir planın kendi içinde çelişmesi, bolluk
+rakamından daha çok işe yarar.
+
+"Kritik" bu projede iki şey demek ve ikisi karıştırılmadı:
+`milestones.critical` **elle** konan bir geri sayım bayrağı (M15-04),
+buradaki kritik yol **hesaplanan** bir şey.
+
+Yirmi assertion, dokuz mutasyon, dokuzu da düştü.
+
+**Ve bu tur bir ölçü körlüğü buldu.** Panelde dört uzun cümle kestim ve ekran
+metni tavanı yalnızca **11 karakter** düştü; kesim 300 karakterdi. Sebep:
+`scripts/screen-text.mjs`'in deseni yalnızca `'` ve `"` eşleştiriyordu,
+backtick'i değil. Ölçüldü: **75 dosyada 197 iki dilli çift, 4.951 karakter**
+kör noktadaydı. Desen düzeltildi, `${…}` yer tutucuları metin sayılmıyor, ve
+iki fikstür kontrolü eklendi. Üç tavan gerçek ölçüme yazıldı (58.257 →
+63.539, 26.994 → 27.680, 2.978 → 3.046) — metin büyümedi, ölçü görmeye
+başladı.
+
+Aynı gate'in ikinci kör noktası; ilki 5 Ekim'de veri dizisi alanlarıydı
+(2.467 karakter). Ders aynı: **bir ölçü neyi görmediğini söylemez**, o yüzden
+görmediğini aramak gerekir.
+
 ## 0045 sonrası bir düzeltme
 
 M11-05 ve M11-06 bu denetimde "yapıldı" sayılıyordu ve öyleydi: teslim kaydı
@@ -179,7 +221,7 @@ Bunlar "yapıldı" sayılır; eksik olan tek şey migration yorumundaki atıf.
 
 ## Yapılmamış satırlar
 
-23 satır. Her biri için neyin eksik olduğu ve neye bağlı olduğu yazıldı,
+22 satır. Her biri için neyin eksik olduğu ve neye bağlı olduğu yazıldı,
 çünkü bir kısmı kod değil karar ya da hesap bekliyor.
 
 ### P0 — 1 satır
@@ -194,7 +236,7 @@ Bunlar "yapıldı" sayılır; eksik olan tek şey migration yorumundaki atıf.
 | ----- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
 | M1-10 | Oturum yönetimi: aktif cihazlar, uzaktan kapatma | Supabase `auth.sessions` üzerinden okunur; kapatma yönetici yetkisiyle sunucu tarafı bir fonksiyon ister. |
 
-### P2 — 22 satır
+### P2 — 21 satır
 
 Portal içinde yapılabilenler (bağımlılığı yok):
 
@@ -210,7 +252,6 @@ Portal içinde yapılabilenler (bağımlılığı yok):
 | M7-13 | Değişiklik emri (variation order)                                                                                                     |
 | M7-14 | Mevsim/iklim risk takvimi (muson uyarısı)                                                                                             |
 | M7-15 | Fotoğraf arşivi, aynı açıdan zaman serisi                                                                                             |
-| M7-16 | Gantt + **kritik yol** — `dependencies` var, kritik yol hesabı yok                                                                    |
 | M8-13 | Nakit akışı projeksiyonu                                                                                                              |
 | M8-14 | KRA vergi muafiyeti takibi                                                                                                            |
 | M9-11 | Hukukî muhafaza (legal hold)                                                                                                          |
@@ -244,6 +285,6 @@ yapılmamış bir şeyi yapılmış gösterir — ilk geçişte "muson" kendi ya
 0040 yorumunda eşleşti, "sap" bir başka kelimenin içinde, "retention" bir
 hakediş sütununda. Dar bir desen ise yapılmış bir şeyi kaçırır; M1-08 ilk
 taramada `supabase/functions/` dizini sayılmadığı için yok görünüyordu.
-Yukarıdaki 23 satırın her biri bu yüzden elle teyit edildi, ve "yapıldı"
-sayılan 186 satırın hepsi tek tek teyit edilmedi — yalnızca atıfı olanlar
+Yukarıdaki 22 satırın her biri bu yüzden elle teyit edildi, ve "yapıldı"
+sayılan 187 satırın hepsi tek tek teyit edilmedi — yalnızca atıfı olanlar
 atıfına, atıfı olmayan yedisi kanıtına dayanıyor.

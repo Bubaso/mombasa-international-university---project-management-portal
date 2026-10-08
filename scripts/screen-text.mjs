@@ -73,14 +73,44 @@ export function strip(src) {
  * T13-06 onu tekilleştirecek. O gün gelene kadar ikisi de sayılıyor; yoksa
  * ölçüm, düzeltilmesi gereken yerde kör kalır.
  */
+/**
+ * İki dilli bir metin çifti: `tr ? '...' : '...'`.
+ *
+ * TIRNAK SINIFINA BACKTICK 8 EKİM 2026'DA EKLENDİ, VE EKLENMESİ İKİNCİ KÖR
+ * NOKTAYI KAPATTI. Desen yalnızca `'` ve `"` eşleştiriyordu; template
+ * literal kullanan her iki dilli metin ölçünün dışındaydı. Ölçüldü:
+ * **75 dosyada 197 çift, 9.340 karakter** — ölçülen toplamın yaklaşık
+ * altıda biri.
+ *
+ * Nasıl ortaya çıktı: M7-16'nın panelinde dört uzun cümle kestim ve tavan
+ * yalnızca 11 karakter düştü. Kesim 300 karakterdi. Bir kesimin ölçüye
+ * yansımaması, kesimin değil ölçünün kusuru.
+ *
+ * Birincisi 5 Ekim'de veri dizisi alanlarıydı (`titleEn: '...'`, 2.467
+ * karakter). Aynı gate, ikinci kör nokta, aynı ders: bir ölçü neyi
+ * görmediğini söylemez, o yüzden görmediğini aramak gerekir.
+ */
 const PAIR = new RegExp(
   String.raw`(?:\btr|language\s*===\s*'tr')\s*\?\s*` +
-    String.raw`(['"])((?:\\.|(?!\1).)*)\1\s*:\s*(['"])((?:\\.|(?!\3).)*)\3`,
+    String.raw`(['"` +
+    '`' +
+    String.raw`])((?:\\.|(?!\1).)*)\1\s*:\s*(['"` +
+    '`' +
+    String.raw`])((?:\\.|(?!\3).)*)\3`,
   'gs',
 );
 
 /** Tek satıra indir: ölçtüğümüz şey uzunluk, girinti değil. */
-const flat = (s) => s.replace(/\\n/g, ' ').replace(/\\'/g, "'").replace(/\s+/g, ' ').trim();
+const flat = (s) =>
+  s
+    // Template literal'in `${...}` yer tutucusu ekranda metin değil, bir
+    // değer. Sabit metni ölçüyoruz; yer tutucunun kendi uzunluğu ölçüye
+    // girerse uzun bir değişken adı metni uzun gösterir.
+    .replace(/\$\{[^}]*\}/g, '')
+    .replace(/\\n/g, ' ')
+    .replace(/\\'/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
 
 /**
  * Veri dizisi içindeki iki dilli alan: `titleEn: '...'`, `detailTr: '...'`.

@@ -125,3 +125,6 @@ export function useAcknowledgeDate() {
     onSuccess: () => client.invalidateQueries({ queryKey: ['criticalDates'] }),
   });
 }
+
+export const usePlanNetwork = () =>
+  useQuery({ queryKey: ['planNetwork'], queryFn: api.fetchPlanNetwork });

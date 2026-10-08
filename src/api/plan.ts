@@ -14,6 +14,7 @@
  *   chronology.precision      'year' = the day is not known, do not print one
  */
 import { supabase } from '../lib/supabase';
+import { spanDays, type PathEdge, type PathNode } from '../lib/criticalPath';
 import type {
   Page,
   BaselineVariance,
@@ -386,4 +387,103 @@ export async function acknowledgeDate(kind: string, entryId: string): Promise<vo
     .from('calendar_acknowledgements')
     .upsert({ kind, entry_id: entryId, user_id: me }, { onConflict: 'kind,entry_id,user_id' });
   fail(error);
+}
+
+// ---------------------------------------------------------------------------
+// Kritik yol için ağ (M7-16)
+// ---------------------------------------------------------------------------
+
+/**
+ * Süreli faaliyet ağı: saha işleri, kilometre taşları, ve aralarındaki
+ * bağımlılıklar.
+ *
+ * Üç okuma tek fonksiyonda, çünkü üçü bir arada bir ağ oluşturuyor ve
+ * ayrı ayrı çekilip ekranda birleştirilmesi, ekranın ağı kurması demek
+ * olurdu. Ağın şekli bir karar ve kararın yeri burası.
+ *
+ * Hiçbirine sınır konmuyor: eksik bir düğüm, eksik bir zincir demek, ve
+ * kesilmiş bir ağdan çıkan kritik yol tam bir yol gibi okunur.
+ *
+ * TARİHİ OLMAYAN İŞ AĞA GİRMİYOR ama sayısı dönüyor. Süresi olmayan bir
+ * faaliyeti sıfır gün saymak, planı olduğundan kısa göstermek olurdu.
+ */
+export async function fetchPlanNetwork(): Promise<{
+  nodes: PathNode[];
+  edges: PathEdge[];
+  tasksWithoutDates: number;
+  milestonesWithoutATarget: number;
+}> {
+  const tasks = await supabase
+    .from('site_tasks')
+    .select('id, title_en, title_tr, planned_start, planned_end');
+  fail(tasks.error);
+  const stones = await supabase.from('milestones').select('id, title_en, title_tr, target_on');
+  fail(stones.error);
+  const links = await supabase
+    .from('dependencies')
+    .select(
+      'blocker_site_task_id, blocker_milestone_id, dependent_site_task_id, dependent_milestone_id',
+    );
+  fail(links.error);
+
+  const nodes: PathNode[] = [];
+  let tasksWithoutDates = 0;
+  for (const row of (tasks.data ?? []) as unknown as {
+    id: string;
+    title_en: string;
+    title_tr: string | null;
+    planned_start: string | null;
+    planned_end: string | null;
+  }[]) {
+    if (!row.planned_start || !row.planned_end) {
+      tasksWithoutDates++;
+      continue;
+    }
+    nodes.push({
+      id: row.id,
+      kind: 'task',
+      title: row.title_tr || row.title_en,
+      days: spanDays(row.planned_start, row.planned_end),
+      start: row.planned_start,
+      end: row.planned_end,
+    });
+  }
+
+  let milestonesWithoutATarget = 0;
+  for (const row of (stones.data ?? []) as unknown as {
+    id: string;
+    title_en: string;
+    title_tr: string | null;
+    target_on: string | null;
+  }[]) {
+    if (!row.target_on) {
+      milestonesWithoutATarget++;
+      continue;
+    }
+    nodes.push({
+      id: row.id,
+      kind: 'milestone',
+      title: row.title_tr || row.title_en,
+      days: 0,
+      start: row.target_on,
+      end: row.target_on,
+    });
+  }
+
+  const edges: PathEdge[] = [];
+  for (const row of (links.data ?? []) as unknown as {
+    blocker_site_task_id: string | null;
+    blocker_milestone_id: string | null;
+    dependent_site_task_id: string | null;
+    dependent_milestone_id: string | null;
+  }[]) {
+    const from = row.blocker_site_task_id ?? row.blocker_milestone_id;
+    const to = row.dependent_site_task_id ?? row.dependent_milestone_id;
+    // Tarafı dava, yükümlülük, risk ya da etiket olan bağımlılık buraya
+    // hiç girmiyor; `criticalPath` ağın dışındakileri ayrıca sayıyor, ama
+    // bir tarafı null olan kenar bir kenar değil.
+    if (from && to) edges.push({ from, to });
+  }
+
+  return { nodes, edges, tasksWithoutDates, milestonesWithoutATarget };
 }

@@ -92,8 +92,25 @@ const CEILING = {
   // zorunlu alanın kendisini tekrar ediyordu. Aynı turda gösterge
   // panelinden 190 karakter de KESİLDİ (nabız panelinin alt başlığı), yani
   // net artış bölümün kendi metni.
-  textChars: 58257,
-  longChars: 26994,
+  // 8 EKİM 2026, ÖLÇÜM DEĞİŞİKLİĞİ: 58.257 → 63.539. Metin BÜYÜMEDİ; ölçü
+  // görmeye başladı. `PAIR` deseni backtick eşleştirmiyordu, yani template
+  // literal kullanan iki dilli her metin dışarıdaydı — 75 dosyada 197 çift,
+  // 4.951 karakter.
+  //
+  // Nasıl çıktı: M7-16'nın panelinde dört uzun cümle kestim ve tavan 11
+  // karakter düştü. Kesim 300 karakterdi.
+  //
+  // Bu `RAISED`'a GİRMİYOR ve ayrım önemli: orada ekran başına ödenen
+  // bedeller duruyor. Burada ödenen bir bedel yok, görülmeyen görünür oldu —
+  // `populated.mjs`'in 8 Ekim'deki toptan yeniden ölçümüyle aynı ayrım.
+  // Düzeltmeden önceki sayıyı korumak, körlüğü tavan olarak yazmak olurdu.
+  //
+  // Bugün bu tavan iki kez M1-11 ve M13-17 adına yükseltilmişti; o
+  // yükseltmeler kör bir ölçüme göre yapılmıştı ve kayıtları duruyor, çünkü
+  // o turlarda ekran metni gerçekten büyüdü. Değişen şey taban.
+  textChars: 63539,
+  // Aynı ölçüm değişikliği: 26.994 → 27.680.
+  longChars: 27680,
   // Panel gerekçesi: T13-01'in kestiği şey. 8489 → 2753 (Faz 2).
   introChars: 2753,
   longestIntro: 98,
@@ -161,7 +178,8 @@ const CEILING = {
   // ve yaklaşan bir bitiş yok. İkisinden birini atmak listenin niçin boş
   // olduğunu yarım bırakırdı. Açıklama bir kez kısaltıldı (116 → 71 karakter)
   // ve kalan 72 karakter yükseltme olarak M1-11 adına kayıtlı.
-  emptyChars: 2978,
+  // Aynı ölçüm değişikliği: 2.978 → 3.046.
+  emptyChars: 3046,
   longestEmpty: 120,
 };
 
@@ -214,11 +232,34 @@ const FIXTURE = `
     title={tr ? 'İngilizcesi uzun' : 'Longer in English'}
     description={tr ? 'Kısa Türkçe.' : 'A noticeably longer English side of the very same description.'}
   />
+  <p>{tr ? \`Backtick ile yazılmış metin\` : \`Written with a backtick\`}</p>
+  <p>{tr ? \`\${n} kayıt sayıldı\` : \`\${n} records counted\`}</p>
 `;
 
 {
   const got = stringsIn(FIXTURE);
   const trs = got.map((r) => r.tr);
+  // BACKTICK, VE BU KONTROL BİR KÖR NOKTANIN ARDINDAN EKLENDİ.
+  //
+  // 8 Ekim 2026'ya kadar desen yalnızca `'` ve `"` eşleştiriyordu; template
+  // literal kullanan iki dilli her metin ölçünün dışındaydı — 75 dosyada 197
+  // çift, 4.951 karakter. Fark şöyle çıktı: bir panelde 300 karakter kestim
+  // ve tavan 11 karakter düştü. Bir kesimin ölçüye yansımaması, kesimin
+  // değil ölçünün kusuru.
+  check(
+    trs.includes('Backtick ile yazılmış metin'),
+    'ölçüm backtick ile yazılmış metni görüyor',
+    trs.filter((t) => t.includes('Backtick')).join(' | ') || '(görülmedi)',
+  );
+
+  // Ve `${...}` yer tutucusu metin sayılmıyor: ekranda duran şey bir değer,
+  // ve uzun bir değişken adı metni uzun göstermemeli.
+  check(
+    trs.includes('kayıt sayıldı'),
+    've `${…}` yer tutucusunu metin saymıyor',
+    trs.filter((t) => t.includes('sayıldı')).join(' | ') || '(görülmedi)',
+  );
+
   check(
     trs.includes('Koşullu ifadedeki Türkçe'),
     'ölçüm `tr ? …` kalıbını görüyor',
