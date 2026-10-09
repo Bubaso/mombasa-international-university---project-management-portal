@@ -2412,3 +2412,55 @@ Kapının yeni kuralı tavana değil ekranın söylediğine bakıyor: yol paneli
 seçilen her hedef için ya bir yol ya bir sebep yazılmış olmalı. Sessizlik
 kusur — çünkü sessiz bir panel "yol yok" ile "hesap çalışmadı"yı ekranda aynı
 gösterir, ve ikisi aynı şey değil.
+
+## Tutamak toplamanın dördüncü yeri, ve orada bekleyen altı adsız düğme (9 Ekim 2026)
+
+Üçüncüsü bir görünüm düğmesinin arkasıydı (M4-10). M9-11'in muhafaza paneli
+dördüncüsünü buldu: **bir kaydın detay panelinin arkası.** Panel bir satıra
+tıklanınca açılıyor, ve satır bir düğme değil — ad arayan mekanizma onu
+bulamıyor. Kaynak artık hangi listenin kayıt taşıdığını kendisi söylüyor
+(`data-record-list`). İlk hâlinde `tbody tr` arıyordum ve hiçbir şey
+bulamadım: `/documents` kütüğü bir tablo değil, düğme listesi. **Markup'a
+göre arayan bir ölçü, markup değiştiğinde sessizce sıfır bulur.**
+
+Ve detay paneli ilk kez açıldığında kapı **altı adsız düğme** buldu: sürüm
+listesindeki "görüntüle" ve "indir" ikonları, üç sürüm × iki düğme. Hiç
+ölçülmemişlerdi, çünkü o panel hiç açılmamıştı — yani T9-06'nın "sıfır adsız
+denetim" iddiası, açılmayan panellerin dışında geçerliydi. İkisine de sürüm
+numarasını taşıyan bir ad verildi: üç "Görüntüle" düğmesi arasında
+hangisinin hangisi olduğunu söylemeyen bir ad, ad değil.
+
+### Hesaplanmış bir kolonun adı yerel değil, genel
+
+M9-13'ün görünümünde hesaplanmış kolonu `state` diye adlandırdım ve dört
+ekranın yoğunluk tavanı düştü — `/meetings`, `/plan`, `/construction`,
+`/documents`. Hiçbiri o göçün dokunduğu ekran değil.
+
+Sebep ölçüde: kurgu üretici (`tests/schema-rows.mjs`) görünümlerde
+hesaplanan dağarcıkları **kolon adıyla** anahtarlıyor, yani `state` adlı bir
+kolona yazdığım altı değer `state` kolonu olan **her** tabloya satır
+ürettirmeye başladı. `tests/enum-drift.mjs`'in eşleştirme listesi de aynı
+şekilde anahtarlı.
+
+Kolon `retention_state` oldu ve dört tavan yerine döndü. Kayda geçiyor çünkü
+bir sonraki görünümde aynı tuzak var: **bir görünüm kolonunun adı bu depoda
+global bir isim alanında yaşıyor**, ve `state`, `status`, `kind`,
+`disposition` gibi adlar zaten dolu.
+
+### Ekran metni ölçüsünde üçüncü kör nokta
+
+`src/lib/retention.ts` içinden iki tekrar eden cümleyi kestim ve tavan hiç
+kıpırdamadı — 65.169'dan 65.169'a. `stringsIn` yalnızca **üçlü işleç**
+biçimini tanıyordu (`tr ? '…' : '…'`), oysa bu depodaki etiketlerin çoğu bir
+**nesne**: `{ tr: '…', en: '…' }`. 668 çift, **8.759 karakter**, 62 dosya —
+ölçülen toplamın yaklaşık yüzde on üçü.
+
+Üç kör noktanın üçünde de teşhis aynı yoldan geldi: bir şeyi kes, sayı
+değişmiyorsa kusur kesimde değil ölçüde. Faz 3'te veri dizisi alanları
+(`titleEn`), 8 Ekim'de ters tırnaklı şablon metinleri, bugün nesne biçimli
+etiket sözlükleri.
+
+Tavan 65.169 → 73.928, ve bu bir **yükseltme değil** ölçüm değişikliği:
+`RAISED` listesine girmiyor. Panellerin gerçek bedeli ayrı kaydedildi
+(64.375 → 65.169, eski ölçüyle). Ayrımı korumak şart, yoksa "tavan niçin
+yükseldi" sorusunun cevabı iki farklı şeyi aynı kutuya koyar.

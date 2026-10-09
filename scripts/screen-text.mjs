@@ -123,17 +123,49 @@ const flat = (s) =>
  * göremiyor; ikisi ayrı yazım biçimi, aynı ekran metni.
  */
 const FIELD = /\b(\w+?)(En|Tr):\s*\n?\s*(['"])((?:\\.|(?!\3).)*)\3/gs;
+/**
+ * Etiket sözlüğü: `{ tr: '...', en: '...' }`.
+ *
+ * ÜÇÜNCÜ KÖR NOKTA, ve en büyüğü. `PAIR` yalnızca ÜÇLÜ İŞLEÇ biçimini
+ * tanıyordu (`tr ? '…' : '…'`), oysa bu depodaki etiketlerin çoğu bir
+ * NESNE: `src/lib/*.ts` içindeki kategori, tutum, durum ve yönlendirme
+ * sözlükleri, `navigation.ts`'in menü adları, `reports.ts`'in rapor
+ * başlıkları — hepsi bu biçimde.
+ *
+ * Ölçüm, 9 Ekim 2026: **668 çift, 9.814 karakter, 62 dosya**, yani ölçülen
+ * toplamın yaklaşık yüzde on beşi. Nasıl ortaya çıktı: M9-13'ün
+ * `src/lib/retention.ts` içinden üç yüz karakter kestim ve tavan HİÇ
+ * kıpırdamadı. Kesilen metnin sayıyı değiştirmemesi, metnin ekranda
+ * olmadığını değil, ölçünün onu hiç görmediğini söylüyor.
+ *
+ * Aynı dersin üçüncü tekrarı: Faz 3'te veri dizisi alanları (`titleEn`)
+ * görünmezdi, M7-16'da ters tırnaklı şablon metinleri görünmezdi. Üçünde de
+ * teşhis aynı yoldan geldi — bir şeyi kesip sayının değişmemesi.
+ *
+ * `(?<![\w$.])` şart: `attr: 'x', en: 'y'` gibi bir eşleşmeyi değil
+ * `tr:` anahtarını arıyoruz, ve `.tr:` ya da `ctr:` anahtar değil.
+ */
+const OBJECT_PAIR = new RegExp(
+  String.raw`(?<![\w$.])tr\s*:\s*(['"` +
+    '`' +
+    String.raw`])((?:\\.|(?!\1).)*)\1\s*,\s*en\s*:\s*(['"` +
+    '`' +
+    String.raw`])((?:\\.|(?!\3).)*)\3`,
+  'gs',
+);
 
 /** @returns {{line: number, tr: string, en: string, len: number}[]} */
 export function stringsIn(source) {
   const src = strip(source);
   const found = [];
-  for (const m of src.matchAll(PAIR)) {
-    const tr = flat(m[2]);
-    const en = flat(m[4]);
-    if (!tr && !en) continue;
-    const line = src.slice(0, m.index).split('\n').length;
-    found.push({ line, tr, en, len: tr.length });
+  for (const pattern of [PAIR, OBJECT_PAIR]) {
+    for (const m of src.matchAll(pattern)) {
+      const tr = flat(m[2]);
+      const en = flat(m[4]);
+      if (!tr && !en) continue;
+      const line = src.slice(0, m.index).split('\n').length;
+      found.push({ line, tr, en, len: tr.length });
+    }
   }
 
   // Veri dizisi alanları: `titleEn`/`titleTr` gibi çiftler tek metin sayılır,

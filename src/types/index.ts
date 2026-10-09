@@ -327,6 +327,67 @@ export interface DocumentItem {
   versionCount: number;
 }
 
+/**
+ * M9-13. Bir kategori için verilmiş saklama kararı.
+ *
+ * `keep_forever` ile "karar verilmedi" AYNI ŞEY DEĞİL, ve bu yüzden burada
+ * üçüncü bir değer yok: kararın yokluğu bir enum değeri değil, satırın
+ * yokluğu. Buraya `undecided` diye bir değer koymak, karar verilmemiş bir
+ * kategoriyi karar verilmiş gibi kaydetmek olurdu.
+ */
+export type RetentionDisposition = 'keep_forever' | 'archive_after' | 'review_after';
+
+/**
+ * M9-13 + M9-11. `retention_due.state`: bir belgenin saklama durumu.
+ *
+ * Altı değer ve en çok karışacak ikisi ayrı: `no_policy` kimsenin karar
+ * vermediği, `not_due` kararın verildiği ama sürenin dolmadığı. İkisini tek
+ * kutuya koymak, verilmemiş bir kararı verilmiş göstermek olur.
+ */
+export type RetentionState =
+  'held' | 'already_archived' | 'no_policy' | 'keep_forever' | 'due' | 'not_due';
+
+/** M9-11. Bir belgeyi donduran karar; kaldırılmaz, kaldırıldığı kaydedilir. */
+export interface LegalHold {
+  id: string;
+  documentId: string;
+  legalCaseId: string | null;
+  caseNumber: string | null;
+  reason: string;
+  placedAt: string;
+  placedByName: string | null;
+  releasedAt: string | null;
+  releasedByName: string | null;
+  releasedReason: string | null;
+}
+
+/** M9-13 ile M9-11 bir arada: `retention_due` görünümünün bir satırı. */
+export interface RetentionRow {
+  documentId: string;
+  title: string;
+  category: DocumentCategory;
+  status: DocumentItem['status'];
+  confidentiality: Confidentiality;
+  /** Belgenin kendi tarihi DEĞİL: kütüğe yüklendiği tarih. */
+  uploadedOn: string;
+  disposition: RetentionDisposition | null;
+  afterYears: number | null;
+  activeHolds: number;
+  everHeld: number;
+  state: RetentionState;
+  dueOn: string | null;
+  /** Bir kez dondurulmuş belge kalkmış muhafazadan sonra da silinemez. */
+  deletionBarred: boolean;
+}
+
+export interface RetentionPolicy {
+  id: string;
+  category: DocumentCategory;
+  disposition: RetentionDisposition;
+  afterYears: number | null;
+  note: string | null;
+}
+
 export interface DocumentVersion {
   id: string;
   documentId: string;

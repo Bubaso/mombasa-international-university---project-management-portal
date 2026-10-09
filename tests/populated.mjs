@@ -614,7 +614,7 @@ const DENSITY = {
   '/calendar': { buttons: 61, headings: 4, height: 1198 },
   '/governance': { buttons: 59, headings: 3, height: 1196 },
   '/readiness': { buttons: 54, headings: 4, height: 1110 },
-  '/documents': { buttons: 53, headings: 2, height: 1072 },
+  '/documents': { buttons: 55, headings: 2, height: 1072 },
   '/construction': { buttons: 53, headings: 2, height: 1066 },
   '/admin': { buttons: 51, headings: 6, height: 1044 },
   '/project_info': { buttons: 47, headings: 3, height: 1044 },
@@ -654,6 +654,7 @@ const RAISED = [
   { what: '/legal.buttons', from: 58, to: 59, row: 'M5-09' },
   { what: '/finance.buttons', from: 48, to: 49, row: 'M8-13' },
   { what: '/stakeholders.buttons', from: 51, to: 52, row: 'M4-10' },
+  { what: '/documents.buttons', from: 53, to: 55, row: 'M9-13' },
 ];
 
 raiseChecks({
@@ -680,11 +681,30 @@ const handles = {};
  * bunlar `role="tab"` değil düğme — yani sekme turu onlara hiç uğramıyor.
  * Buraya yazılmayan bir görünümün arkasındaki panel, ÖLÇÜLMEMİŞ paneldir.
  */
-const EXTRA_VIEWS = { '/stakeholders': ['Yol', 'Matris'] };
+const EXTRA_VIEWS = {
+  '/stakeholders': ['Yol', 'Matris'],
+  '/documents': ['Saklama'],
+};
+
+/**
+ * DÖRDÜNCÜ YER: bir kaydın detay panelinin arkası.
+ *
+ * Üçüncüsü bir görünüm düğmesiydi (M4-10). M9-11'in muhafaza paneli ise bir
+ * SATIRA tıklanınca açılıyor — ne ilk ekranda, ne sekmede, ne görünüm
+ * düğmesinde. Satır bir düğme değil, bir `<tr onClick>`, yani ad arayan
+ * mekanizma da onu bulamıyor.
+ *
+ * Buraya yazılmayan bir ekranın detay paneli ÖLÇÜLMEMİŞ paneldir. Liste dar
+ * tutuldu: her ekranda ilk satıra tıklamak ölçülmemiş yan etkiler açar
+ * (ekran uzar, istek sayısı artar) ve bu kapı on dokuz rotayı geziyor.
+ */
+const OPEN_FIRST_ROW = new Set(['/documents']);
 /** Hangi rotada kaç düğme gerçekten basıldı: adı değişirse sayı düşer. */
 const extraViews = {};
 /** Yol panelinde denenen her hedef için ekranın verdiği cevap. */
 const reachSaid = {};
+/** Detay paneli gerçekten açıldı mı: satır bir düğme değil, bulunamayabilir. */
+const detailOpened = {};
 const a11y = {};
 
 for (const route of ROUTES) {
@@ -767,6 +787,16 @@ for (const route of ROUTES) {
       ...[...document.querySelectorAll('[data-reach-why]')].map(
         (el) => `reach-why:${el.getAttribute('data-reach-why')}`,
       ),
+      ...[...document.querySelectorAll('[data-retention-panel]')].map(() => 'retention-panel'),
+      ...[...document.querySelectorAll('[data-retention-undecided]')].map(
+        (el) => `retention-undecided:${el.getAttribute('data-retention-undecided')}`,
+      ),
+      ...[...document.querySelectorAll('[data-retention-state]')].map(
+        (el) => `retention-state:${el.getAttribute('data-retention-state')}`,
+      ),
+      ...[...document.querySelectorAll('[data-hold-panel]')].map(
+        (el) => `hold-panel:${el.getAttribute('data-hold-panel')}`,
+      ),
     ]))
       handlesSeen.add(h);
   };
@@ -842,6 +872,40 @@ for (const route of ROUTES) {
       for (const message of await boundaries()) seen.add(`[${label}] ${message}`);
       await collectHandles();
       await pickReachTargets();
+    }
+  }
+
+  if (OPEN_FIRST_ROW.has(route)) {
+    // `data-record-list` İÇİNDEKİ ilk tıklanabilir öğe.
+    //
+    // İlk hâlinde `tbody tr` arıyordum ve hiçbir şey bulamadı: `/documents`
+    // kütüğü bir TABLO DEĞİL, düğme listesi. Markup'a göre arayan bir ölçü,
+    // markup değiştiğinde sessizce sıfır bulur — o yüzden kaynak hangi
+    // listenin kayıt taşıdığını kendisi söylüyor.
+    //
+    // Önce "Kütük" görünümüne dönülüyor: yukarıdaki döngü son olarak
+    // "Saklama"ya bastı, ve gizli bir öğeye programla tıklamak çalışsa da
+    // kullanıcının yapabileceği bir şey olmazdı.
+    await page.evaluate(() => {
+      for (const b of document.querySelectorAll('button')) {
+        if ((b.textContent ?? '').trim() === 'Kütük') {
+          b.click();
+          return;
+        }
+      }
+    });
+    await settle();
+    const opened = await page.evaluate(() => {
+      const row = document.querySelector('[data-record-list] button');
+      if (!row) return false;
+      row.click();
+      return true;
+    });
+    detailOpened[route] = opened;
+    if (opened) {
+      await settle();
+      for (const message of await boundaries()) seen.add(`[detay] ${message}`);
+      await collectHandles();
     }
   }
   const lists = await page.$$('[role="tablist"]');
@@ -1146,6 +1210,45 @@ const TABS_EXPECTED = {
   // ekrana çıkar" kuralının kapı hâli — sessiz kalan bir panel, yolun
   // olmadığını değil, hesabın çalışmadığını gizler, ve ikisi ekranda aynı
   // görünür.
+  // M9-11 ve M9-13'ün panelleri.
+  //
+  // Saklama paneli bir görünüm düğmesinin, muhafaza paneli bir SATIRIN
+  // arkasında. Dört ayrı iddia, çünkü dördü ayrı şekilde bozulur: düğme
+  // bulunmazsa sayı düşer, satır tıklanmazsa `detailOpened` false olur,
+  // panel çizilmezse tutamak gelmez, ve kararı verilmemiş kategori sayısı
+  // gelmezse ekranın en önemli satırı çizilmemiş demektir.
+  const docHandles = handles['/documents'] ?? new Set();
+  check(
+    (extraViews['/documents'] ?? 0) === (EXTRA_VIEWS['/documents'] ?? []).length,
+    'saklama görünümü düğmesi adıyla bulunup basıldı (M9-13)',
+    `${extraViews['/documents'] ?? 0}/${(EXTRA_VIEWS['/documents'] ?? []).length}`,
+  );
+  check(
+    docHandles.has('retention-panel'),
+    'saklama paneli çiziliyor (M9-13)',
+    [...docHandles].join(', ') || '(görülmedi)',
+  );
+  check(
+    [...docHandles].some((h) => h.startsWith('retention-undecided:')),
+    've kararı verilmemiş kategori sayısı ekranda — panelin en önemli satırı',
+    [...docHandles].filter((h) => h.startsWith('retention-undecided:')).join(', ') || '(yok)',
+  );
+  check(
+    [...docHandles].some((h) => h.startsWith('retention-state:')),
+    've belgeler saklama durumuna göre bölünmüş',
+    [...docHandles].filter((h) => h.startsWith('retention-state:')).join(', ') || '(yok)',
+  );
+  check(
+    detailOpened['/documents'] === true,
+    'bir belgenin detay paneli açıldı (satır bir düğme değil)',
+    String(detailOpened['/documents']),
+  );
+  check(
+    [...docHandles].some((h) => h.startsWith('hold-panel:')),
+    've muhafaza paneli detayda çiziliyor (M9-11)',
+    [...docHandles].filter((h) => h.startsWith('hold-panel:')).join(', ') || '(görülmedi)',
+  );
+
   const said = reachSaid['/stakeholders'] ?? [];
   check(said.length > 0, 'yol panelinde hedef seçilebildi (M4-10)', `${said.length} hedef`);
   check(

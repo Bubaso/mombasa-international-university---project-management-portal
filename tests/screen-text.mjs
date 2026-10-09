@@ -58,6 +58,12 @@ const RAISED = [
   { what: 'textChars', from: 63539, to: 63885, row: 'M8-13' },
   { what: 'textChars', from: 63885, to: 64375, row: 'M4-10' },
   { what: 'longChars', from: 27680, to: 27860, row: 'M4-10' },
+  // M9-11 ve M9-13'ün panellerinin bedeli, ESKİ ölçüyle: muhafaza paneli,
+  // saklama listesi ve altı durumun ne demek olduğunu söyleyen notlar.
+  // Aşağıdaki ölçüm değişikliğinden ayrı tutuluyor, çünkü biri ödenen bir
+  // bedel, öbürü görünür olan bir şey.
+  { what: 'textChars', from: 64375, to: 65169, row: 'M9-11' },
+  { what: 'longChars', from: 27860, to: 28238, row: 'M9-11' },
 ];
 process.chdir(root);
 
@@ -74,6 +80,25 @@ process.chdir(root);
 // biçimdeydi. Uygulama genelinde 2.467 karakter kör noktadaydı. Bir tavanı
 // ölçüm düzeldiği için yükseltmek geri alma değil; düzeltmeden önceki sayıyı
 // korumak, körlüğü tavan olarak yazmak olurdu.
+//
+// 9 EKİM 2026: ÜÇÜNCÜ KÖR NOKTA, VE EN BÜYÜĞÜ. `stringsIn` yalnızca ÜÇLÜ
+// İŞLEÇ biçimini tanıyordu (`tr ? '…' : '…'`), oysa bu depodaki etiketlerin
+// çoğu bir NESNE: `{ tr: '…', en: '…' }`. `src/lib/*.ts` içindeki kategori,
+// tutum, durum ve yönlendirme sözlükleri, `navigation.ts`'in menü adları,
+// `reports.ts`'in rapor başlıkları — 668 çift, **8.759 karakter**, 62
+// dosya. Ölçülen toplamın yaklaşık yüzde on üçü.
+//
+// Nasıl ortaya çıktı: M9-13'ün `src/lib/retention.ts` içinden iki tekrar
+// eden cümleyi kestim ve tavan HİÇ kıpırdamadı — 65.169'dan 65.169'a.
+// Üçüncü kez aynı teşhis yolu: bir şeyi kes, sayı değişmiyorsa kusur
+// kesimde değil ölçüde.
+//
+// Tavanlar 65.169 → 73.928 ve 28.238 → 28.982. Bu bir YÜKSELTME DEĞİL,
+// ölçüm değişikliği: `RAISED` listesine girmiyor, çünkü ödenen bir bedel
+// yok — görülmeyen bir şey görünür oldu. Kör noktanın geri gelmemesi için
+// `OBJECT_FIXTURE` ile plant edilmiş bir çift sınanıyor; bir tavan körlüğü
+// yakalayamaz, yakalayan şey ölçümün bilinen bir girdide bilineni
+// bulduğunu görmektir.
 const CEILING = {
   // Faz 5: 58.388 → 57.640 ve 28.171 → 26.994. T13-07'nin jargon
   // düzeltmeleri ve T13-08'in beş uzun boş durum açıklaması.
@@ -116,9 +141,9 @@ const CEILING = {
   // ve beş ayrı "bir aya yazılamaz" başlığı taşıyor; her başlık bir cümle,
   // ve biri ötekinin yerine geçmiyor. Alt başlığın ikinci cümlesi kesildi
   // (aşağıdaki blok aynı şeyi rakamla söylüyor), kalanı kesilemez.
-  textChars: 64375,
+  textChars: 73928,
   // Aynı ölçüm değişikliği: 26.994 → 27.680.
-  longChars: 27860,
+  longChars: 28982,
   // Panel gerekçesi: T13-01'in kestiği şey. 8489 → 2753 (Faz 2).
   introChars: 2753,
   longestIntro: 98,
@@ -244,6 +269,15 @@ const FIXTURE = `
   <p>{tr ? \`\${n} kayıt sayıldı\` : \`\${n} records counted\`}</p>
 `;
 
+const OBJECT_FIXTURE = [
+  'const WORDS = {',
+  "  one: { tr: 'Sözlükteki Türkçe', en: 'The dictionary English' },",
+  '  two: { tr: `Ters tırnaklı sözlük`, en: `A backtick dictionary` },',
+  '};',
+  "// Yorumdaki sözlük: { tr: 'Sayılmamalı', en: 'Must not count' }",
+  "const other = { attr: 'x', en: 'y' };",
+].join('\n');
+
 {
   const got = stringsIn(FIXTURE);
   const trs = got.map((r) => r.tr);
@@ -287,6 +321,39 @@ const FIXTURE = `
     !trs.some((t) => t.includes('Yorumdaki')),
     'ölçüm kod yorumunu ekran metni saymıyor',
     trs.filter((t) => t.includes('Yorumdaki')).join(', '),
+  );
+
+  // ETİKET SÖZLÜĞÜ, VE BU KONTROL ÜÇÜNCÜ BİR KÖR NOKTANIN ARDINDAN EKLENDİ.
+  //
+  // 9 Ekim 2026'ya kadar desen yalnızca ÜÇLÜ İŞLEÇ biçimini tanıyordu
+  // (`tr ? '…' : '…'`), oysa bu depodaki etiketlerin çoğu bir NESNE:
+  // `src/lib/*.ts` içindeki kategori, tutum, durum sözlükleri,
+  // `navigation.ts`'in menü adları, `reports.ts`'in rapor başlıkları.
+  // Ölçüm: 668 çift, 8.759 karakter, 62 dosya — ölçülen toplamın yüzde
+  // on üçü. Teşhis yine aynı yoldan geldi: `retention.ts` içinden üç yüz
+  // karakter kestim ve tavan hiç kıpırdamadı.
+  const objects = stringsIn(OBJECT_FIXTURE).map((r) => r.tr);
+  check(
+    objects.includes('Sözlükteki Türkçe'),
+    'ölçüm `{ tr: …, en: … }` etiket sözlüğünü görüyor',
+    objects.join(' | ') || '(görülmedi)',
+  );
+  check(
+    objects.includes('Ters tırnaklı sözlük'),
+    've sözlükteki ters tırnaklı metni de',
+    objects.filter((t) => t.includes('Ters')).join(' | ') || '(görülmedi)',
+  );
+  check(
+    !objects.some((t) => t.includes('Sayılmamalı')),
+    've yorumdaki sözlüğü saymıyor',
+    objects.filter((t) => t.includes('Sayılmamalı')).join(', '),
+  );
+  // `attr: 'x', en: 'y'` bir etiket çifti DEĞİL: anahtar `tr` olmadığı
+  // sürece eşleşmemeli, yoksa desen rastgele iki alanı metin sayar.
+  check(
+    !objects.includes('x'),
+    've `tr` olmayan bir anahtarı çift saymıyor',
+    objects.includes('x') ? JSON.stringify(objects) : '',
   );
 
   // Boş durum ölçümü de fixture'la sınanıyor, aynı sebeple: `emptyStatesIn`

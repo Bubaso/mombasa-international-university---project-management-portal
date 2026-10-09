@@ -146,6 +146,19 @@ const NO_JUDGMENT_NEEDED = {
   app_role: 'Rol bir iş durumu değil.',
   delivery_state: 'Bildirim teslimi kütük değil, bir kuyruk; kendi ekranı var.',
   grant_permission: 'İzin bir iş durumu değil.',
+  // M9-13. Bir saklama kararı bir iş değil, bir KURAL: bir kategoriye bir kez
+  // yazılır ve orada durur. "Süresiz sakla" bitmiş bir iş değil, her belgeye
+  // uygulanan bir hüküm. Bitişi olan şey politikanın bir BELGEYE uygulanmış
+  // hâli, ve onun durumu `retention_due.state` — o da `tests/enum-drift.mjs`
+  // içinde adlandırılmış bir birliğe bağlı (`RetentionState`), yani
+  // denetimsiz kalmıyor.
+  //
+  // İlk hâlinde `registerStates.ts`'e boş bir hüküm yazmıştım ve kapı
+  // düştü: "her değer için bir hüküm" diyordu, haklıydı. Boş bir bölme
+  // hüküm değil, hükümden kaçmaktır — ve asıl cevap o enum'un bir kütük
+  // durumu olmadığıydı.
+  retention_disposition:
+    'Bir saklama kararı bir iş değil, bir kural; bitişi olan şey onun bir belgeye uygulanmış hâli (retention_due.state).',
 };
 
 for (const [name, values] of [...enums].sort()) {

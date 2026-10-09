@@ -222,6 +222,10 @@ const COMPUTED = {
   // bağlanmaya zorladı, ve zorlaması doğruydu: isimsiz bir birlik
   // eşleştirilemez, eşleştirilemeyen de denetlenemez.
   due_reason: 'AccessReviewReason',
+  // M9-13 + M9-11. `retention_due.state` de görünümde hesaplanmış bir `case`:
+  // muhafaza, arşiv, politikasızlık ve vade tek kolonda. Sıralaması kuralın
+  // kendisi olduğu için adlandırılmış bir birliğe bağlı.
+  retention_state: 'RetentionState',
 };
 
 const COMPUTED_NOT_IN_THE_CLIENT = {

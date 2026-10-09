@@ -4,6 +4,7 @@ import { useApp } from '../../context/AppContext';
 import * as vault from '../../api/documentHooks';
 import { CommentsAndVersions } from './CommentsAndVersions';
 import { DocumentOrigin } from './DocumentOrigin';
+import { HoldPanel } from './HoldPanel';
 import { useAuthority } from '../../api/adminHooks';
 import { AUDIT_READERS, actsAs, clearanceLabel, clearanceStyle } from '../../lib/authority';
 import { categoryLabel, fileSize, shortDigest } from '../../lib/documents';
@@ -31,6 +32,11 @@ export const DocumentDetail: React.FC<{
   const versions = vault.useVersions(doc.id);
   const authority = useAuthority();
   const canReadLog = actsAs(authority.data, ...AUDIT_READERS);
+  // Muhafaza koymak hukukî bir fiil. Veritabanı kararı kendisi veriyor
+  // (`app.can_hold_documents`); buradaki kontrol yalnızca formu gizliyor,
+  // yani kuralı tekrar etmiyor — reddi gösteriyor olurdu, ve reddi
+  // gösterecek bir form açmak kullanıcıyı boşa yoruyor.
+  const canHold = actsAs(authority.data, 'admin', 'project_director', 'trustee', 'legal_counsel');
   const ACCESS_PAGE = 40;
   const [accessLimit, setAccessLimit] = useState(ACCESS_PAGE);
   const access = vault.useAccessLog(canReadLog ? doc.id : null, accessLimit);
@@ -136,11 +142,34 @@ export const DocumentDetail: React.FC<{
                           {version.uploadedByName && <span>{version.uploadedByName}</span>}
                         </div>
                       </div>
+                      {/* İKİSİ DE ADSIZDI, ve bunu tarayıcı kapısı detay
+                          panelini ilk kez açtığında gördü (M9-11 turunda):
+                          üç sürüm × iki düğme = altı adsız düğme, hiç
+                          ölçülmemiş. Adı ikonun kendisi sanmak bu depoda
+                          tekrarlayan bir kusur (T9-06), ve adsız bir düğme
+                          görmeyen biri için olmayan bir düğmedir. Sürüm
+                          numarası ada giriyor: üç "Görüntüle" düğmesi
+                          arasında hangisinin hangisi olduğunu söylemeyen bir
+                          ad, ad değil. */}
                       <div className="flex shrink-0 gap-1">
-                        <ActionButton onClick={() => open(version.id, 'viewed')}>
+                        <ActionButton
+                          onClick={() => open(version.id, 'viewed')}
+                          aria-label={
+                            tr
+                              ? `Sürüm ${version.versionNo} görüntüle`
+                              : `View version ${version.versionNo}`
+                          }
+                        >
                           <Eye className="h-3 w-3" aria-hidden="true" />
                         </ActionButton>
-                        <ActionButton onClick={() => open(version.id, 'downloaded')}>
+                        <ActionButton
+                          onClick={() => open(version.id, 'downloaded')}
+                          aria-label={
+                            tr
+                              ? `Sürüm ${version.versionNo} indir`
+                              : `Download version ${version.versionNo}`
+                          }
+                        >
                           <Download className="h-3 w-3" aria-hidden="true" />
                         </ActionButton>
                       </div>
@@ -231,6 +260,12 @@ export const DocumentDetail: React.FC<{
             ekranının iş kuyruğu olabilmesinin sebebi bu panel — kabul edilen
             ve reddedilen, kuyrukta değil belgenin yanında duruyor. */}
         <DocumentOrigin documentId={doc.id} />
+
+        {/* Muhafaza EN SONDA değil, en sonda görünüyor diye değil: sürümler,
+            okuyanlar ve yorumlar belgenin kendisi hakkında; muhafaza belgenin
+            BAŞINA GELEN bir şey. Sırası belgeyi anlatandan belgeye yapılana
+            doğru (M9-11). */}
+        <HoldPanel documentId={doc.id} canHold={canHold} />
       </div>
     </aside>
   );

@@ -202,7 +202,25 @@ for (const read of bounded) {
 // burada duruyor. Bunu yazıyorum ki "neden istemcide" sorusunun cevabı
 // kaybolmasın: ölçüm 134 paydaş ve bugünkü görüşme kütüğü için ucuz, beş
 // yıllık bir kütük için değil.
-const UNBOUNDED_TODAY = 132;
+// M9-11 ve M9-13'ten sonra 135: üç okuma eklendi ve üçü de sınırsız, ama
+// sebepleri AYNI DEĞİL ve üçünü ayrı yazmak gerekiyor.
+//
+// `fetchHolds` bir belgenin muhafaza kayıtları. Kaç tane olabilir: bir
+// belgeye konulup kaldırılmış muhafazaların tamamı, yani on yıllık bir
+// dosyada belki beş. Sınır koymak sayıyı okunur yapmaz, kodu uzatır.
+//
+// `fetchRetentionPolicies` kategori başına BİR satır, ve kategori sayısı
+// şemadaki enum'un boyu — dokuz. Bir enum'u sayfalamak, sayfalamanın ne
+// olduğunu anlamamaktır.
+//
+// `fetchRetentionDue` her belge için bir satır, yani kütük kadar. Burada
+// sınır koymak YANLIŞ olurdu ve sebebi M4-10'daki kümeyle aynı değil: bu
+// liste "hangi belgenin süresi doldu" sorusunun cevabı, ve kesilmiş bir
+// cevap kalan belgeleri kimsenin bakmadığı yerde bırakır — süresi dolmuş
+// bir belge görünmediği için arşivlenmez, ve görünmediği de görünmez.
+// Doğru yeri durum bazlı bir süzgeç (sunucuda), ama o bir göç; bugün üç
+// göç uygulanmayı bekliyor.
+const UNBOUNDED_TODAY = 135;
 
 // Sayan okumalar sayılmıyor: sorumuz "kaç okuma her satırı çekiyor", ve
 // `head: true` olan hiç satır çekmiyor.

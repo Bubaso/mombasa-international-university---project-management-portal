@@ -29,6 +29,11 @@ import type {
   DocumentLink,
   DocumentVersion,
   DocumentVersionStep,
+  LegalHold,
+  RetentionDisposition,
+  RetentionPolicy,
+  RetentionRow,
+  RetentionState,
 } from '../types';
 
 const BUCKET = 'documents';
@@ -570,4 +575,167 @@ export async function fetchVersionSteps(documentId: string): Promise<DocumentVer
     changeNotDescribed: row.change_not_described,
     confidentiality: row.confidentiality,
   }));
+}
+
+// ---------------------------------------------------------------------------
+// Hukukî muhafaza ve saklama (M9-11, M9-13)
+// ---------------------------------------------------------------------------
+//
+// Muhafaza SİLİNMİYOR, ve bu dosyada bir `deleteHold` yok — çünkü
+// veritabanında silme politikası da yok. İstemciye olmayan bir fiil için
+// fonksiyon yazmak, kuralı istemcide tekrar etmek olurdu (CLAUDE.md §4).
+
+interface HoldRow {
+  id: string;
+  document_id: string;
+  legal_case_id: string | null;
+  reason: string;
+  created_at: string;
+  released_at: string | null;
+  released_reason: string | null;
+  matter: { case_number: string }[] | { case_number: string } | null;
+  placed_by: NamedRef | NamedRef[] | null;
+  released_by: NamedRef | NamedRef[] | null;
+}
+
+const caseNumberOf = (ref: HoldRow['matter']): string | null => {
+  if (ref == null) return null;
+  const one = Array.isArray(ref) ? ref[0] : ref;
+  return one?.case_number ?? null;
+};
+
+export async function fetchHolds(documentId: string): Promise<LegalHold[]> {
+  const { data, error } = await supabase
+    .from('legal_holds')
+    .select(
+      'id, document_id, legal_case_id, reason, created_at, released_at, released_reason, ' +
+        'matter:legal_cases(case_number), ' +
+        'placed_by:profiles!legal_holds_created_by_fkey(full_name), ' +
+        'released_by:profiles!legal_holds_released_by_fkey(full_name)',
+    )
+    .eq('document_id', documentId)
+    .order('created_at', { ascending: false });
+  fail(error);
+  return ((data ?? []) as unknown as HoldRow[]).map((row) => ({
+    id: row.id,
+    documentId: row.document_id,
+    legalCaseId: row.legal_case_id,
+    caseNumber: caseNumberOf(row.matter),
+    reason: row.reason,
+    placedAt: row.created_at,
+    placedByName: label(row.placed_by),
+    releasedAt: row.released_at,
+    releasedByName: label(row.released_by),
+    releasedReason: row.released_reason,
+  }));
+}
+
+export async function placeHold(input: {
+  documentId: string;
+  legalCaseId: string | null;
+  reason: string;
+}): Promise<void> {
+  const { error } = await supabase.from('legal_holds').insert({
+    document_id: input.documentId,
+    legal_case_id: input.legalCaseId,
+    reason: input.reason,
+  });
+  fail(error);
+}
+
+/**
+ * Kaldırmayı kim yaptığını İSTEMCİ SÖYLEMİYOR: `released_by` ve `released_at`
+ * sunucuda damgalanıyor (`app.stamp_hold_release`). Buradan gönderilen tek
+ * şey sebep ve "kaldırıldı" niyeti.
+ */
+export async function releaseHold(input: { id: string; reason: string }): Promise<void> {
+  const { error } = await supabase
+    .from('legal_holds')
+    .update({ released_at: new Date().toISOString(), released_reason: input.reason })
+    .eq('id', input.id);
+  fail(error);
+}
+
+interface RetentionDueRow {
+  document_id: string;
+  title: string;
+  category: DocumentCategory;
+  status: DocumentItem['status'];
+  confidentiality: Confidentiality;
+  uploaded_on: string;
+  // Görünümün verdiği değerler, sunucudan geldiği gibi tiplenmiş. Ekran
+  // bunları GEVŞEK okuyor (`wordFor`, `retentionStateStyle`), yani bir göç
+  // yeni bir değer ürettiğinde bölüm kaybolmuyor — değer kendi adıyla
+  // görünüyor. Tip burada dar, okuma orada gevşek: ikisi ayrı iş.
+  disposition: RetentionDisposition | null;
+  after_years: number | null;
+  active_holds: number;
+  ever_held: number;
+  retention_state: RetentionState;
+  due_on: string | null;
+  deletion_barred: boolean;
+}
+
+/**
+ * Saklama durumu, belge başına. Sınırsız ve kasten: bu bir TOPLAM değil ama
+ * bir KÜME — "hangi belgelerin süresi doldu" sorusunun kesik bir cevabı,
+ * kalan belgeleri kimsenin bakmadığı yerde bırakır.
+ */
+export async function fetchRetentionDue(): Promise<RetentionRow[]> {
+  const { data, error } = await supabase
+    .from('retention_due')
+    .select(
+      'document_id, title, category, status, confidentiality, uploaded_on, disposition, ' +
+        'after_years, active_holds, ever_held, retention_state, due_on, deletion_barred',
+    )
+    .order('uploaded_on', { ascending: true });
+  fail(error);
+  return ((data ?? []) as unknown as RetentionDueRow[]).map((row) => ({
+    documentId: row.document_id,
+    title: row.title,
+    category: row.category,
+    status: row.status,
+    confidentiality: row.confidentiality,
+    uploadedOn: row.uploaded_on,
+    disposition: row.disposition,
+    afterYears: row.after_years,
+    activeHolds: Number(row.active_holds ?? 0),
+    everHeld: Number(row.ever_held ?? 0),
+    state: row.retention_state,
+    dueOn: row.due_on,
+    deletionBarred: row.deletion_barred === true,
+  }));
+}
+
+export async function fetchRetentionPolicies(): Promise<RetentionPolicy[]> {
+  const { data, error } = await supabase
+    .from('retention_policies')
+    .select('id, category, disposition, after_years, note')
+    .order('category');
+  fail(error);
+  return ((data ?? []) as unknown as RetentionPolicy[]).map((row) => ({
+    id: row.id,
+    category: row.category,
+    disposition: row.disposition,
+    afterYears: (row as unknown as { after_years: number | null }).after_years,
+    note: row.note,
+  }));
+}
+
+export async function saveRetentionPolicy(input: {
+  category: DocumentCategory;
+  disposition: string;
+  afterYears: number | null;
+  note: string | null;
+}): Promise<void> {
+  const { error } = await supabase.from('retention_policies').upsert(
+    {
+      category: input.category,
+      disposition: input.disposition,
+      after_years: input.afterYears,
+      note: input.note,
+    },
+    { onConflict: 'category' },
+  );
+  fail(error);
 }

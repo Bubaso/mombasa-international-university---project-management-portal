@@ -107,3 +107,52 @@ export function useResolveDocumentComment() {
     onSuccess: () => void client.invalidateQueries({ queryKey: ['documentComments'] }),
   });
 }
+
+// ---------------------------------------------------------------------------
+// Hukukî muhafaza ve saklama (M9-11, M9-13)
+// ---------------------------------------------------------------------------
+//
+// Muhafaza konulduğunda ya da kaldırıldığında `retentionDue` de
+// geçersizleşiyor: görünümün `state` kolonu muhafazaya bakıyor, yani bir
+// muhafaza kaydı saklama listesini DEĞİŞTİRİYOR. İkisini ayrı ayrı
+// geçersizleştirmek, ekranda muhafazalı bir belgeyi "süresi doldu" diye
+// bırakmak olurdu.
+
+export const useHolds = (documentId: string | null) =>
+  useQuery({
+    queryKey: ['holds', documentId],
+    queryFn: () => documents.fetchHolds(documentId as string),
+    enabled: documentId != null,
+  });
+
+export const useRetentionDue = () =>
+  useQuery({ queryKey: ['retentionDue'], queryFn: documents.fetchRetentionDue });
+
+export const useRetentionPolicies = () =>
+  useQuery({ queryKey: ['retentionPolicies'], queryFn: documents.fetchRetentionPolicies });
+
+const afterAHold = (client: ReturnType<typeof useQueryClient>) => () => {
+  void client.invalidateQueries({ queryKey: ['holds'] });
+  void client.invalidateQueries({ queryKey: ['retentionDue'] });
+};
+
+export function usePlaceHold() {
+  const client = useQueryClient();
+  return useMutation({ mutationFn: documents.placeHold, onSuccess: afterAHold(client) });
+}
+
+export function useReleaseHold() {
+  const client = useQueryClient();
+  return useMutation({ mutationFn: documents.releaseHold, onSuccess: afterAHold(client) });
+}
+
+export function useSaveRetentionPolicy() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: documents.saveRetentionPolicy,
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: ['retentionPolicies'] });
+      void client.invalidateQueries({ queryKey: ['retentionDue'] });
+    },
+  });
+}

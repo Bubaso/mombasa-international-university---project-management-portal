@@ -10061,6 +10061,411 @@ begin
 end;
 $$;
 
+-- ===========================================================================
+-- Muhafazalı belge kaybedilmez, ve saklama kararı verilmemiş olabilir
+-- (M9-11, M9-13, göç 0057)
+-- ===========================================================================
+
+
+-- POSTGRES ROLÜ KULLANILMIYOR, ve bunu yazıyorum çünkü ilk hâlinde
+-- kullanıyordum: satırları `set role postgres` ile ekleyip `reset role` ile
+-- çıkıyordum. `reset role` OTURUM rolüne düşüyor ve o rol postgres — bu
+-- dosyanın konvansiyonu `set role authenticated`. Yani bloğun BÜTÜN
+-- assertion'ları süper kullanıcı olarak koştu, RLS'i atladı, ve hepsi geçti:
+-- politika çalıştığı için değil, hiç sorulmadığı için. Teşhis `current_user`
+-- basmakla çıktı.
+--
+-- Bu depoda "yanlış sebeple geçen test" altıncı kez (CLAUDE.md §3), ve bu
+-- seferkinin ayırt edici yanı şu: hiçbir assertion'ı değiştirmek
+-- gerekmedi, yalnızca rolü. Sayı tutuyordu, ölçü yoktu.
+--
+-- Yönetici `document_vault`'a ve `retention_policies`'e yazabiliyor, ve
+-- `touch_row` verilen `created_at`'i `coalesce` ile koruyor — yani eski
+-- tarihli bir satır için yükseltilmiş yetki gerekmiyor.
+select pg_temp.act_as('11111111-1111-1111-1111-111111111111');  -- admin
+
+-- VE BUNU BİR ASSERTION YAPIYORUM, çünkü yukarıdaki kusur hiçbir
+-- assertion'ı düşürmedi: süper kullanıcı RLS'i atlıyor, yani her politika
+-- kontrolü sessizce "geçiyor". Rolün kendisi sınanmazsa, politika
+-- testinin politika sınadığına dair hiçbir kanıt yok.
+select pg_temp.check('KONTROL: this block runs under RLS, not as a superuser',
+  current_user, 'authenticated'::name);
+
+-- Yaşı belli bir belge: saklama süresinin dolup dolmadığı ancak eski bir
+-- kayıtla sınanabilir, ve seed'in belgeleri bugün yüklenmiş sayılıyor.
+insert into document_vault (id, title, category, status, confidentiality, created_at)
+values
+  ('1b000000-0000-0000-0000-000000000003', 'Ten-year-old site photograph',
+   'architectural', 'approved', 'internal', now() - interval '10 years'),
+  ('1b000000-0000-0000-0000-000000000004', 'Last week''s letter',
+   'correspondence', 'approved', 'internal', now() - interval '7 days'),
+  -- Politikası YAZILMAYACAK bir kategoride bir belge. İlk yazışımda bu
+  -- assertion'ı `correspondence` belgesine bakmıştım ve düştü: o kategoriye
+  -- politika yazıyorum, yani "kararı verilmedi" diye sınadığım satır aslında
+  -- "vadesi gelmedi"ydi. Kontrolün ayırt ediciliği, baktığı satırın
+  -- gerçekten o hâlde olmasına bağlı.
+  ('1b000000-0000-0000-0000-000000000005', 'An exhibit nobody ruled on',
+   'evidence', 'approved', 'internal', now() - interval '3 years');
+
+
+-- ---------------------------------------------------------------------------
+-- Saklama: politikası olmayan kategori, sıfır yıllık politika değil
+-- ---------------------------------------------------------------------------
+
+-- Hiçbir politika yazılmadı, yani HER belge `no_policy`. Bu bir kusur olarak
+-- ekranda duruyor; varsayılan vermek, kimsenin vermediği kararı verilmiş
+-- göstermek olurdu.
+select pg_temp.check('with no policy written, every document says so',
+  (select count(*) from retention_due where retention_state <> 'no_policy'), 0::bigint);
+
+select pg_temp.check('and nothing has a due date to show',
+  (select count(*) from retention_due where due_on is not null), 0::bigint);
+
+insert into retention_policies (category, disposition, after_years, note) values
+  ('trust_deed', 'keep_forever', null, 'The deed is the institution.'),
+  ('architectural', 'archive_after', 5, 'Drawings leave the live list after five years.'),
+  ('correspondence', 'review_after', 7, 'Somebody reads before anything goes.');
+
+-- On yıllık çizim beş yıllık süreyi aşmış: vadesi gelmiş.
+select pg_temp.check('a drawing older than its policy comes up as due',
+  (select retention_state from retention_due
+    where document_id = '1b000000-0000-0000-0000-000000000003'), 'due');
+
+-- Geçen haftanın yazısı yedi yılı doldurmadı: VADESİ GELMEDİ, ve bu
+-- "politikası yok"tan farklı bir cevap.
+select pg_temp.check('and one inside its window is not due — a different answer',
+  (select retention_state from retention_due
+    where document_id = '1b000000-0000-0000-0000-000000000004'), 'not_due');
+
+select pg_temp.check('and the deed is kept forever, which is also not "no policy"',
+  (select retention_state from retention_due
+    where document_id = '1b000000-0000-0000-0000-000000000001'), 'keep_forever');
+
+-- Süresiz saklanan bir belgenin vade tarihi YOK, sıfır ya da uzak bir tarih
+-- değil: hesaplanamayan bir tarihi hesaplanmış göstermek bu portalın
+-- kaldırdığı şey.
+select pg_temp.check('keeping something forever has no due date, not a far one',
+  (select due_on is null from retention_due
+    where document_id = '1b000000-0000-0000-0000-000000000001'), true);
+
+-- Politikası yazılmamış kategori hâlâ `no_policy`: üç politika yazdık, dokuz
+-- kategori var.
+select pg_temp.check('a category nobody decided on is still unanswered',
+  (select retention_state from retention_due
+    where document_id = '1b000000-0000-0000-0000-000000000005'), 'no_policy');
+
+-- Sıfır yıllık saklama bir politika değil, bir hata.
+do $$
+begin
+  begin
+    insert into retention_policies (category, disposition, after_years)
+    values ('evidence', 'archive_after', 0);
+    raise exception 'FAIL a zero-year retention policy was accepted';
+  exception
+    when check_violation then
+      raise notice 'ok   "archive the moment it arrives" is not a retention policy';
+  end;
+end;
+$$;
+
+-- Ve süresiz saklamaya bir süre yazılamaz: ikisi birbirini yalanlar.
+do $$
+begin
+  begin
+    insert into retention_policies (category, disposition, after_years)
+    values ('evidence', 'keep_forever', 5);
+    raise exception 'FAIL "keep forever, for five years" was accepted';
+  exception
+    when check_violation then
+      raise notice 'ok   and "keep forever" cannot carry a number of years';
+  end;
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- Muhafaza: ve muhafaza saklamayı YENER
+-- ---------------------------------------------------------------------------
+
+insert into legal_holds (document_id, legal_case_id, reason) values
+  ('1b000000-0000-0000-0000-000000000003', 'aaaa0000-0000-0000-0000-000000000002',
+   'Produced in the ELC matter; frozen until the file closes.');
+
+-- Vadesi gelmiş belge artık `due` değil `held`. Sıralama kasıtlı: muhafaza
+-- her şeyi yeniyor, çünkü muhafazalı bir belgeyi "arşivlenmeye hazır" diye
+-- göstermek tam olarak kaybetmeye giden yol.
+select pg_temp.check('a held document is no longer listed as due — the hold wins',
+  (select retention_state from retention_due
+    where document_id = '1b000000-0000-0000-0000-000000000003'), 'held');
+
+select pg_temp.check('and the screen can say how many holds are live on it',
+  (select active_holds from retention_due
+    where document_id = '1b000000-0000-0000-0000-000000000003'), 1::bigint);
+
+-- VE MUHAFAZA "POLİTİKA YOK"U DA YENİYOR.
+--
+-- İlk yazışımda sıralamayı yalnızca `due`'ya karşı sınamıştım: muhafazayı
+-- listenin başından alıp `no_policy`'nin arkasına koyan mutasyon SESSİZ
+-- kaldı, çünkü muhafazalı belge politikası OLAN bir kategorideydi. Bir
+-- sıralamayı tek çiftte sınamak, sıralamayı sınamak değil.
+insert into legal_holds (document_id, reason) values
+  ('1b000000-0000-0000-0000-000000000005',
+   'Held while the exhibit list is settled — and nobody has set a policy for evidence.');
+
+select pg_temp.check('a hold outranks "no decision recorded" too',
+  (select retention_state from retention_due
+    where document_id = '1b000000-0000-0000-0000-000000000005'), 'held');
+
+-- Aynı belgeye ikinci bir AKTİF muhafaza konamaz: ikisi aynı şeyi söyler ve
+-- biri kalkınca öbürü sessizce durur, yani "kaldırdım" diyen biri yanılır.
+do $$
+begin
+  begin
+    insert into legal_holds (document_id, reason) values
+      ('1b000000-0000-0000-0000-000000000003', 'A second hold saying the same thing.');
+    raise exception 'FAIL a document was put under two live holds at once';
+  exception
+    when unique_violation then
+      raise notice 'ok   and one document cannot carry two live holds';
+  end;
+end;
+$$;
+
+-- Sebebi yazılmamış muhafaza kabul edilmiyor: sonradan kimsenin kaldırmaya
+-- cesaret edemediği muhafaza, sebebi olmayan muhafazadır.
+do $$
+begin
+  begin
+    insert into legal_holds (document_id, reason) values
+      ('1b000000-0000-0000-0000-000000000004', '   ');
+    raise exception 'FAIL a hold with no reason was accepted';
+  exception
+    when check_violation then
+      raise notice 'ok   a hold has to say why';
+  end;
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- VE ASIL KURAL: silinemez, arşivlenemez
+-- ---------------------------------------------------------------------------
+
+do $$
+begin
+  begin
+    update document_vault set status = 'archived'
+    where id = '1b000000-0000-0000-0000-000000000003';
+    raise exception 'FAIL a document under an active hold was archived';
+  exception
+    when raise_exception then
+      if position('active legal hold' in sqlerrm) = 0 then raise; end if;
+      raise notice 'ok   an active hold bars archiving';
+  end;
+end;
+$$;
+
+do $$
+begin
+  begin
+    delete from document_vault where id = '1b000000-0000-0000-0000-000000000003';
+    raise exception 'FAIL a held document was deleted';
+  exception
+    when raise_exception then
+      if position('legal hold' in sqlerrm) = 0 then raise; end if;
+      raise notice 'ok   and a held document cannot be deleted';
+  end;
+end;
+$$;
+
+-- KONTROL: ret muhafazadan geliyor, silmenin kendisinin yasak olmasından
+-- değil. Muhafazasız bir belge silinebiliyor.
+delete from document_vault where id = '1b000000-0000-0000-0000-000000000004';
+select pg_temp.check('KONTROL: a document with no hold can be deleted',
+  (select count(*) from document_vault
+    where id = '1b000000-0000-0000-0000-000000000004'), 0::bigint);
+
+-- ---------------------------------------------------------------------------
+-- Kaldırma: kaydedilir, ve silmeyi yine açmaz
+-- ---------------------------------------------------------------------------
+
+-- Muhafaza kaydı GERİYE yazılamaz: dondurulan şey ve sebebi sabit.
+do $$
+begin
+  begin
+    update legal_holds set reason = 'A different reason, written later.'
+    where document_id = '1b000000-0000-0000-0000-000000000003';
+    raise exception 'FAIL the reason a document was frozen was rewritten';
+  exception
+    when raise_exception then
+      if position('only its release' in sqlerrm) = 0 then raise; end if;
+      raise notice 'ok   a hold records what was frozen and why, and that stays';
+  end;
+end;
+$$;
+
+-- Kaldırma üç şeyi birlikte ister. Sebebi olmayan bir kaldırma, kaldırmanın
+-- gerekçesini kaybeder.
+do $$
+begin
+  begin
+    update legal_holds set released_at = now()
+    where document_id = '1b000000-0000-0000-0000-000000000003';
+    raise exception 'FAIL a hold was released with no reason given';
+  exception
+    when check_violation then
+      raise notice 'ok   releasing a hold requires saying why';
+  end;
+end;
+$$;
+
+update legal_holds
+set released_at = now(), released_reason = 'The ELC file closed; the order is final.'
+where document_id = '1b000000-0000-0000-0000-000000000003';
+
+-- Kaldıranı sunucu yazıyor: istemci kimin kaldırdığını söylemiyor.
+select pg_temp.check('the server records who released it, not the client',
+  (select released_by from legal_holds
+    where document_id = '1b000000-0000-0000-0000-000000000003'),
+  '11111111-1111-1111-1111-111111111111'::uuid);
+
+-- Kalkmış muhafaza SİLİNMİYOR: kayıt duruyor.
+select pg_temp.check('and the released hold is still on the record',
+  (select count(*) from legal_holds
+    where document_id = '1b000000-0000-0000-0000-000000000003'), 1::bigint);
+
+-- Arşivleme artık açık: arşiv geri alınabilir, muhafaza kalktı.
+update document_vault set status = 'archived'
+where id = '1b000000-0000-0000-0000-000000000003';
+select pg_temp.check('once released, archiving is allowed — archiving is reversible',
+  (select status from document_vault
+    where id = '1b000000-0000-0000-0000-000000000003'), 'archived');
+
+-- AMA SİLME AÇILMIYOR. Bir kez dondurulmuş belge, mahkemenin ilgilendiği
+-- belgedir; silmek geri alınamaz ve kalkmış bir muhafaza onu geri
+-- getirmiyor. Bedeli de görünümde yazılı (`deletion_barred`).
+do $$
+begin
+  begin
+    delete from document_vault where id = '1b000000-0000-0000-0000-000000000003';
+    raise exception 'FAIL a once-held document was deleted after release';
+  exception
+    when raise_exception then
+      if position('even after release' in sqlerrm) = 0 then raise; end if;
+      raise notice 'ok   and a released hold does not reopen deletion';
+  end;
+end;
+$$;
+
+select pg_temp.check('and the screen says deletion stays barred',
+  (select deletion_barred from retention_due
+    where document_id = '1b000000-0000-0000-0000-000000000003'), true);
+
+-- Kalkmış muhafaza yeniden açılamaz: yeniden dondurmak YENİ bir karardır ve
+-- kendi tarihini ister.
+do $$
+begin
+  begin
+    update legal_holds set released_at = null, released_reason = null
+    where document_id = '1b000000-0000-0000-0000-000000000003';
+    raise exception 'FAIL a released hold was reopened';
+  exception
+    when raise_exception then
+      if position('not reopened' in sqlerrm) = 0 then raise; end if;
+      raise notice 'ok   a released hold is not reopened; a new hold is a new decision';
+  end;
+end;
+$$;
+
+-- Ve kalkmış muhafazadan sonra ikinci bir muhafaza konabiliyor: kısmî tekil
+-- indeks yalnızca aktifleri sayıyor.
+insert into legal_holds (document_id, reason) values
+  ('1b000000-0000-0000-0000-000000000003', 'Reopened under the appeal.');
+select pg_temp.check('KONTROL: a new hold can follow a released one',
+  (select count(*) from legal_holds
+    where document_id = '1b000000-0000-0000-0000-000000000003'), 2::bigint);
+
+-- Muhafaza SİLİNEMİYOR, ve sebebi bir trigger değil: `legal_holds` için
+-- silme politikası hiç yok, yani RLS reddediyor. Ret SESSİZ — sıfır satır,
+-- istisna değil. Bu oturumda üçüncü kez: politika ile trigger ayrı katman.
+do $$
+declare
+  n int;
+begin
+  delete from legal_holds where document_id = '1b000000-0000-0000-0000-000000000003';
+  get diagnostics n = row_count;
+  if n <> 0 then
+    raise exception 'FAIL a legal hold was deleted (% rows)', n;
+  end if;
+  raise notice 'ok   a hold is released, never deleted — no policy grants the delete';
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- Kim muhafaza koyabilir
+-- ---------------------------------------------------------------------------
+
+-- Saha ekibi koyamaz: hukukî bir fiil, bir operasyon işi değil. RLS'nin
+-- INSERT reddi sessiz DEĞİL, istisna atıyor — SELECT'in tersine.
+select pg_temp.act_as('44444444-4444-4444-4444-444444444444');  -- field_team
+do $$
+begin
+  begin
+    insert into legal_holds (document_id, reason) values
+      ('1b000000-0000-0000-0000-000000000001', 'Freezing this myself.');
+    raise exception 'FAIL the field team placed a legal hold';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   placing a hold is not the field team''s to do';
+  end;
+end;
+$$;
+
+-- Ve saklama politikası da yazamaz: bir yönetişim kararı.
+do $$
+begin
+  begin
+    insert into retention_policies (category, disposition, after_years)
+    values ('evidence', 'archive_after', 3);
+    raise exception 'FAIL the field team wrote a retention policy';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   and a retention period is not theirs to set either';
+  end;
+end;
+$$;
+
+-- VAR OLAN BİR POLİTİKAYI DA DEĞİŞTİREMEZ, ve bu ayrı bir iddia: bir
+-- `for all` politikasının INSERT'i `with check`'e, UPDATE ile DELETE'i
+-- `using`'e bakıyor. Yukarıdaki blok yalnızca INSERT deniyordu, yani
+-- `using` hiç sorulmuyordu — `using (true)` yapan mutasyon sessiz kaldı.
+--
+-- Ve ret SESSİZ: RLS yetkisiz bir güncellemeyi sıfır satır olarak
+-- döndürüyor, istisna atmıyor. Bu oturumda dördüncü kez.
+do $$
+declare
+  n int;
+begin
+  update retention_policies set after_years = 1 where category = 'architectural';
+  get diagnostics n = row_count;
+  if n <> 0 then
+    raise exception 'FAIL the field team shortened a retention period (% rows)', n;
+  end if;
+  raise notice 'ok   nor shorten one somebody else set — no row to change';
+
+  delete from retention_policies where category = 'architectural';
+  get diagnostics n = row_count;
+  if n <> 0 then
+    raise exception 'FAIL the field team deleted a retention policy (% rows)', n;
+  end if;
+  raise notice 'ok   nor remove one';
+end;
+$$;
+
+-- KONTROL: ret politikadan geliyor, satırın yokluğundan değil.
+select pg_temp.check('KONTROL: the policy they could not touch is still there',
+  (select after_years from retention_policies where category = 'architectural'), 5);
+
+select pg_temp.act_as('11111111-1111-1111-1111-111111111111');
+
 reset role;
 
 \echo ''

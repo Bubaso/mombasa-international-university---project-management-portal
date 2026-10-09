@@ -1,5 +1,15 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { FolderGit2, Search, Plus, FileCheck2, FileX2, History, Eye, Link2 } from 'lucide-react';
+import {
+  FolderGit2,
+  Search,
+  Plus,
+  FileCheck2,
+  FileX2,
+  History,
+  Eye,
+  Link2,
+  Archive,
+} from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import * as vault from '../api/documentHooks';
 import { useAuthority } from '../api/adminHooks';
@@ -16,6 +26,7 @@ import {
   WriteError,
 } from '../components/ui/Controls';
 import { DocumentDetail } from '../components/documents/DocumentDetail';
+import { RetentionPanel } from '../components/documents/RetentionPanel';
 import type { Confidentiality, DocumentCategory, DocumentItem, DocumentVersion } from '../types';
 import { MoreRows } from '../components/ui/MoreRows';
 
@@ -57,6 +68,18 @@ export const DocumentVaultView: React.FC = () => {
   const [category, setCategory] = useState<DocumentCategory | ''>('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+  // M9-13. İkinci bir görünüm, ikinci bir bölüm değil: saklama listesi her
+  // belgeyi bir kez daha basıyor ve kütüğün altına kalıcı olarak koymak,
+  // ekranı her açana ödetirdi (T15-04 ölçülü bir kısıt).
+  const [view, setView] = useState<'register' | 'retention'>('register');
+  // Saklama süresi bir yönetişim kararı, bir operasyon ayarı değil — ve
+  // kararı veritabanı veriyor (`retention_policies_write`). Buradaki kontrol
+  // formu gizliyor, kuralı tekrar etmiyor.
+  const canSetPolicy =
+    authority.data != null &&
+    ['admin', 'project_director', 'audit_committee'].some((role) =>
+      authority.data?.roles.includes(role as never),
+    );
 
   const rows = documents.data?.rows ?? [];
 
@@ -164,9 +187,30 @@ export const DocumentVaultView: React.FC = () => {
         <span className="pb-1.5 text-xs text-slate-500">
           {tr ? `${shown.length} belge` : `${shown.length} documents`}
         </span>
+        <div className="flex gap-1">
+          <ActionButton
+            onClick={() => setView('register')}
+            className={view === 'register' ? 'border-amber-400 bg-amber-50 text-amber-900' : ''}
+          >
+            <FolderGit2 className="h-3.5 w-3.5" aria-hidden="true" />
+            <span className="hidden sm:inline">{tr ? 'Kütük' : 'Register'}</span>
+          </ActionButton>
+          <ActionButton
+            onClick={() => setView('retention')}
+            className={view === 'retention' ? 'border-amber-400 bg-amber-50 text-amber-900' : ''}
+          >
+            <Archive className="h-3.5 w-3.5" aria-hidden="true" />
+            <span className="hidden sm:inline">{tr ? 'Saklama' : 'Retention'}</span>
+          </ActionButton>
+        </div>
       </div>
 
-      <div className={selected ? 'grid grid-cols-1 gap-4 xl:grid-cols-[1fr_400px]' : ''}>
+      {view === 'retention' && <RetentionPanel canSetPolicy={canSetPolicy} />}
+
+      <div
+        className={selected ? 'grid grid-cols-1 gap-4 xl:grid-cols-[1fr_400px]' : ''}
+        hidden={view !== 'register'}
+      >
         <div className="min-w-0">
           {shown.length === 0 ? (
             <EmptyState
@@ -184,7 +228,10 @@ export const DocumentVaultView: React.FC = () => {
             />
           ) : (
             <div className="rounded-xl border border-slate-200 bg-white shadow-xs">
-              <ul className="divide-y divide-slate-100">
+              {/* Kayıt listesi adlandırıldı: bir belgenin detay paneli ancak
+                  bir satıra tıklanınca açılıyor, ve tarayıcı kapısı hangi
+                  listenin kayıt taşıdığını bilmek zorunda (M9-11). */}
+              <ul data-record-list className="divide-y divide-slate-100">
                 {shown.map((doc) => {
                   const version = currentVersion(doc);
                   return (

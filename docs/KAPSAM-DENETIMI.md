@@ -21,12 +21,12 @@ kadar.)
 
 | Durum      | Satır |
 | ---------- | ----- |
-| Yapıldı    | 190   |
-| Yok        | 20    |
+| Yapıldı    | 192   |
+| Yok        | 18    |
 | **Toplam** | 210   |
 
 Öncelik dağılımı: P0 22 satır (1'i yok), P1 115 satır (1'i yok), P2 59 satır
-(18'i yok), P3 14 satır (**hepsi yapıldı**).
+(16'sı yok), P3 14 satır (**hepsi yapıldı**).
 
 ### 8 Ekim 2026 güncellemesi — ve başlıktaki sayı hakkında bir düzeltme
 
@@ -411,6 +411,143 @@ değildi — o kural sorulmuyordu. Bir bağ eklendi ve mutasyon düştü.
 Yirmi üç mutasyon kuralda, yedi mutasyon tarayıcı kapısında: otuzunun
 otuzu düştü — biri ancak yukarıdaki iki uçlu iddia eklendikten sonra.
 
+### M9-11 ve M9-13 birlikte kapandı — göç 0057, ve sırası kasıtlı
+
+İkisi bir göçte, ve **muhafaza önce**. M9-13 bir saklama politikası istiyor:
+belgeler bir süre sonra arşivlenir. M9-11 bir muhafaza istiyor: davaya konu
+belge silinemez, arşivlenemez. İkincisi birincisinin istisnası, ve istisnayı
+kuraldan sonra yazmak aradaki sürede belge kaybetmek demek. `retention_due`
+görünümü muhafaza kontrolünü hesaplanırken yapıyor — "arşivlenmeye hazır"
+listesi muhafazalı bir belgeyi hiç göstermiyor. Yıkıcıyı koruyucudan önce
+yazmamak bir tercih değil, bir sıra.
+
+**Muhafaza kaldırılmaz, kaldırıldığı kaydedilir.** Bir muhafaza kaydı
+silinebilirse muhafaza bir kapı değil bir öneridir: silmek isteyen önce
+muhafazayı siler. Tablo eklemeli, kalkmış muhafaza kaydı durmaya devam
+ediyor, ve kalkmış bir muhafaza **yeniden açılamıyor** — yeniden dondurmak
+yeni bir karardır ve kendi sebebini, kendi tarihini ister. Eski kaydı yeniden
+açmak iki kararı tek satırda birleştirip ikisinin de tarihini kaybetmek olur.
+Silme politikası hiç yazılmadı: RLS'te politikası olmayan fiil reddedilir, ve
+bunu bir trigger'la tekrar yazmak kuralı iki yere yazmak olurdu.
+
+**Silme ile arşivleme aynı şey değil, ve kural ikisine farklı davranıyor.**
+Arşivleme geri alınabilir — durum geri çevrilir, belge yerinde durur — o
+yüzden arşivlemeyi yalnızca **aktif** bir muhafaza engelliyor. Silme geri
+alınamaz; bir kez muhafaza konmuş belge mahkemenin ya da bir denetçinin
+ilgilendiği belgedir, ve muhafaza kalktıktan sonra bile onu silmek bu
+portalın yapmaması gereken türden bir şey. Silmeyi muhafazanın **varlığı**
+engelliyor, aktifliği değil.
+
+Bunun bedeli var ve yazıyorum: bir kez dondurulmuş belge saklama
+politikasıyla hiç temizlenemez, ve ekran bunu `silinemez` diye söylüyor.
+Birkaç bin belgelik bir kütük için bu bedel ucuz; ters yönde yanılmanın
+bedeli geri alınamaz.
+
+Kuralı iki şey birden söylüyor ve **ikisi aynı kural**: bir trigger okunur
+sebebi veriyor, `on delete restrict` kısıtı zemini tutuyor. Trigger düşse de
+silme reddedilir. İkisinin AYNI şeyi söylemesi şart — biri aktif muhafazaya,
+öbürü varlığa bakarsa ekran "evet" derken veritabanı "hayır" der.
+
+**Politikası olmayan kategori, sıfır yıllık politika değil.** Her kategoriye
+bir varsayılan vermek kolaydı ve yanlış olurdu: kimsenin karar vermediği bir
+saklama süresi karar verilmiş gibi görünür ve o süre dolduğunda belge arşive
+gider. Göç **hiç tohum satırı yazmıyor**; dokuz kategorinin dokuzu
+`no_policy` olarak başlıyor, ve ekranın en üstünde bir kusur olarak duruyor —
+birinin önüne konmuş bir soru. Sıfır yıllık saklama da kabul edilmiyor:
+"yüklendiği an arşivle" bir politika değil, bir hata.
+
+**Yaş, belgenin tarihi değil yüklendiği tarih**, ve bunu söylemek zorunda
+olmamızın sebebi `document_vault`'un belgenin kendi tarihini hiç taşımaması.
+1998'de imzalanmış bir senet 2026'da yüklendiyse görünüm onu 2026'dan sayar.
+Düzeltmek bir kolon ister; bugün yapılan şey yanlış sayıyı doğru gibi
+göstermemek — görünümün kolonu `uploaded_on`, `dated_on` değil, ve ekran da
+"yüklendi" yazıyor.
+
+### Bloğun bütün assertion'ları RLS'i atlayarak koşmuştu
+
+Politika testinde satırları `set role postgres` ile ekleyip `reset role` ile
+çıkıyordum. **`reset role` oturum rolüne düşüyor ve o rol postgres** — bu
+dosyanın konvansiyonu `set role authenticated`. Yani bloğun bütün
+assertion'ları süper kullanıcı olarak koştu, RLS'i atladı, ve hepsi geçti:
+politika çalıştığı için değil, hiç sorulmadığı için.
+
+"Yanlış sebeple geçen test" bu depoda **altıncı kez** (CLAUDE.md §3). Bu
+seferkinin ayırt edici yanı şu: hiçbir assertion'ı değiştirmek gerekmedi,
+yalnızca rolü. Sayı tutuyordu, ölçü yoktu. Teşhis `current_user` basmakla
+çıktı — ve şimdi bir assertion olarak duruyor, çünkü yukarıdaki kusur hiçbir
+kontrolü düşürmedi.
+
+### Yirmi mutasyon, üçü düşmedi — ve üçü ayrı sebepten
+
+Biri **kötü mutasyondu**: trigger'ı kaldırmak yerine adını değiştirmişim,
+yani trigger hâlâ kuruluyordu. Mutasyon hiçbir şey yapmıyorsa düşmemesi
+kodun sağlamlığını değil mutasyonun boşluğunu gösterir.
+
+İkisi **gerçek kapı boşluğuydu.**
+
+Birincisi: "muhafaza saklamayı yener" kuralını yalnızca `due`'ya karşı
+sınamıştım. Muhafazalı belge politikası **olan** bir kategorideydi, yani
+muhafazayı sıralamanın başından alıp `no_policy`'nin arkasına koyan mutasyon
+sessiz kaldı. Bir sıralamayı tek çiftte sınamak, sıralamayı sınamak değil.
+Politikası olmayan bir kategoride muhafazalı bir belge eklendi.
+
+İkincisi: `retention_policies_write` bir `for all` politikası, ve bir `for
+all` politikasının INSERT'i `with check`'e, UPDATE ile DELETE'i `using`'e
+bakıyor. Testim yalnızca INSERT deniyordu, yani `using` hiç sorulmuyordu —
+`using (true)` yapan mutasyon sessiz kaldı. Güncelleme ve silme denemeleri
+eklendi, ve ikisi de **sessiz ret**: RLS yetkisiz bir güncellemeyi sıfır
+satır olarak döndürüyor, istisna atmıyor. Bu oturumda dördüncü kez.
+
+Düzeltmelerden sonra yirmi mutasyonun yirmisi düştü.
+
+### Görünümün kolonunu `state` adlandırmak dört ekranı düşürdü
+
+Hesaplanmış kolonu `state` diye yazdım ve `/meetings`, `/plan`,
+`/construction`, `/documents` tavanları düştü — hiçbiri benim ekranım değil.
+Sebep: kurgu üretici görünümlerde hesaplanan dağarcıkları **kolon adıyla**
+anahtarlıyor, yani `state` adlı bir kolona yazdığım altı değer `state`
+kolonu olan **her** tabloya satır ürettirmeye başladı. `enum-drift`'in
+eşleştirme listesi de aynı şekilde anahtarlı: `state: 'RetentionState'`
+yazmak, başka bir görünümün `state` kolonunu da benim birliğime bağlamış
+olurdu.
+
+**Hesaplanmış bir kolonun adı bu depoda yerel değil, genel.** Kolon
+`retention_state` oldu ve dört tavan yerine döndü.
+
+### Dördüncü yer, ve orada bekleyen altı adsız düğme
+
+M4-10 tutamak toplamanın üçüncü yerini bulmuştu (bir görünüm düğmesinin
+arkası). M9-11'in muhafaza paneli dördüncüsünü buldu: **bir kaydın detay
+panelinin arkası.** Panel bir satıra tıklanınca açılıyor, ve satır bir düğme
+değil — ad arayan mekanizma onu bulamıyor. Kaynak hangi listenin kayıt
+taşıdığını kendisi söylüyor artık (`data-record-list`); ilk hâlinde `tbody
+tr` arıyordum ve hiçbir şey bulamadı, çünkü `/documents` kütüğü bir tablo
+değil düğme listesi.
+
+Ve detay paneli ilk kez açıldığında kapı **altı adsız düğme** buldu: sürüm
+listesindeki "görüntüle" ve "indir" ikonları, üç sürüm × iki düğme. Hiç
+ölçülmemişlerdi, çünkü o panel hiç açılmamıştı. İkisine de sürüm numarasını
+taşıyan bir ad verildi — üç "Görüntüle" düğmesi arasında hangisinin hangisi
+olduğunu söylemeyen bir ad, ad değil (T9-06).
+
+### Ve ekran metni ölçüsünde üçüncü kör nokta
+
+`src/lib/retention.ts` içinden iki tekrar eden cümleyi kestim ve tavan **hiç
+kıpırdamadı** — 65.169'dan 65.169'a. Üçüncü kez aynı teşhis yolu: bir şeyi
+kes, sayı değişmiyorsa kusur kesimde değil ölçüde.
+
+`stringsIn` yalnızca **üçlü işleç** biçimini tanıyordu (`tr ? '…' : '…'`),
+oysa bu depodaki etiketlerin çoğu bir **nesne**: `{ tr: '…', en: '…' }`.
+`src/lib/*.ts` içindeki kategori, tutum, durum ve yönlendirme sözlükleri,
+`navigation.ts`'in menü adları, `reports.ts`'in rapor başlıkları — **668
+çift, 8.759 karakter, 62 dosya**, ölçülen toplamın yaklaşık yüzde on üçü.
+
+Tavan 65.169 → 73.928. Bu bir **yükseltme değil**, ölçüm değişikliği:
+`RAISED` listesine girmiyor, çünkü ödenen bir bedel yok — görülmeyen bir şey
+görünür oldu. Panellerin gerçek bedeli ayrı kaydedildi (64.375 → 65.169,
+eski ölçüyle). Kör noktanın geri gelmemesi için plant edilmiş bir sözlük
+sınanıyor; bir tavan körlüğü yakalayamaz.
+
 ## 0045 sonrası bir düzeltme
 
 M11-05 ve M11-06 bu denetimde "yapıldı" sayılıyordu ve öyleydi: teslim kaydı
@@ -440,7 +577,7 @@ Bunlar "yapıldı" sayılır; eksik olan tek şey migration yorumundaki atıf.
 
 ## Yapılmamış satırlar
 
-20 satır. Her biri için neyin eksik olduğu ve neye bağlı olduğu yazıldı,
+18 satır. Her biri için neyin eksik olduğu ve neye bağlı olduğu yazıldı,
 çünkü bir kısmı kod değil karar ya da hesap bekliyor.
 
 ### P0 — 1 satır
@@ -455,7 +592,7 @@ Bunlar "yapıldı" sayılır; eksik olan tek şey migration yorumundaki atıf.
 | ----- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
 | M1-10 | Oturum yönetimi: aktif cihazlar, uzaktan kapatma | Supabase `auth.sessions` üzerinden okunur; kapatma yönetici yetkisiyle sunucu tarafı bir fonksiyon ister. |
 
-### P2 — 18 satır
+### P2 — 16 satır
 
 Portal içinde yapılabilenler (bağımlılığı yok):
 
@@ -470,8 +607,6 @@ Portal içinde yapılabilenler (bağımlılığı yok):
 | M7-14 | Mevsim/iklim risk takvimi (muson uyarısı)                                                                                             |
 | M7-15 | Fotoğraf arşivi, aynı açıdan zaman serisi                                                                                             |
 | M8-14 | KRA vergi muafiyeti takibi                                                                                                            |
-| M9-11 | Hukukî muhafaza (legal hold)                                                                                                          |
-| M9-13 | Saklama politikası ve arşivleme                                                                                                       |
 
 Dışarıdan bir şeye bağlı olanlar:
 
@@ -501,6 +636,6 @@ yapılmamış bir şeyi yapılmış gösterir — ilk geçişte "muson" kendi ya
 0040 yorumunda eşleşti, "sap" bir başka kelimenin içinde, "retention" bir
 hakediş sütununda. Dar bir desen ise yapılmış bir şeyi kaçırır; M1-08 ilk
 taramada `supabase/functions/` dizini sayılmadığı için yok görünüyordu.
-Yukarıdaki 20 satırın her biri bu yüzden elle teyit edildi, ve "yapıldı"
-sayılan 190 satırın hepsi tek tek teyit edilmedi — yalnızca atıfı olanlar
+Yukarıdaki 18 satırın her biri bu yüzden elle teyit edildi, ve "yapıldı"
+sayılan 192 satırın hepsi tek tek teyit edilmedi — yalnızca atıfı olanlar
 atıfına, atıfı olmayan yedisi kanıtına dayanıyor.
