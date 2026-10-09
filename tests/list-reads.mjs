@@ -189,7 +189,20 @@ for (const read of bounded) {
 // Okuma dört kolon çekiyor (kimlik, vade, durum, tutar): projeksiyonun
 // ihtiyacı o kadar, ve sözleşme başına okumanın kolonlarını yeniden
 // kullanmak çekilen veriyi üçe katlardı.
-const UNBOUNDED_TODAY = 131;
+// M4-10'dan sonra 132: `fetchSpokenToIds` eklendi ve sınırsız. Burada
+// sınır KOYMAK yanlış olurdu, ve sebebi öbürlerinden farklı: dönen şey bir
+// KÜME, bir dilim değil — "hangi paydaşlarla görüşme kaydımız var". Eksik bir
+// başlangıç noktası, var olan bir yolun hiç görünmemesi demek, yani ekran
+// "kayıtlı yol yok" derken kayıt duruyor olur. Kesik bir liste kendini
+// söyleyebilir; eksik bir küme, yokluğu kanıt gibi gösterir.
+//
+// Okuma tek kolon çekiyor (`stakeholder_id`) ve kümeyi istemcide
+// tekilleştiriyor. Doğru yeri sunucu: `distinct` bir görünüm ya da bir
+// fonksiyon, yani bir göç — ve bugün üç göç uygulanmayı bekliyor, o yüzden
+// burada duruyor. Bunu yazıyorum ki "neden istemcide" sorusunun cevabı
+// kaybolmasın: ölçüm 134 paydaş ve bugünkü görüşme kütüğü için ucuz, beş
+// yıllık bir kütük için değil.
+const UNBOUNDED_TODAY = 132;
 
 // Sayan okumalar sayılmıyor: sorumuz "kaç okuma her satırı çekiyor", ve
 // `head: true` olan hiç satır çekmiyor.

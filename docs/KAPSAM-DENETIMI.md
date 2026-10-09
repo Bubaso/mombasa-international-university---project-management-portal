@@ -21,12 +21,12 @@ kadar.)
 
 | Durum      | Satır |
 | ---------- | ----- |
-| Yapıldı    | 189   |
-| Yok        | 21    |
+| Yapıldı    | 190   |
+| Yok        | 20    |
 | **Toplam** | 210   |
 
 Öncelik dağılımı: P0 22 satır (1'i yok), P1 115 satır (1'i yok), P2 59 satır
-(19'u yok), P3 14 satır (**hepsi yapıldı**).
+(18'i yok), P3 14 satır (**hepsi yapıldı**).
 
 ### 8 Ekim 2026 güncellemesi — ve başlıktaki sayı hakkında bir düzeltme
 
@@ -288,6 +288,129 @@ sayı, her öncelik başlığındaki sayı, ve öncelik dağılımı parantezler
 sayı — hepsi gerçekten listelenen satırlara ve `URUN-GEREKSINIMLERI.md`'nin
 kendi öncelik sütununa karşı. Bir satır yanlış bandın altına konsa da düşer.
 
+### M4-10 kapandı — ve kurgunun yabancı anahtarları hiçbir şeye bakmıyordu
+
+İlişki ağı. Göç gerekmedi: `stakeholder_relationships` (0006, M4-09) yönü,
+türü ve gücü zaten taşıyor.
+
+**Ne çizildi, ne çizilmedi.** Satır "ağ grafiği" diyor ve 134 paydaşın
+kuvvet-yönlü serpme çizimi **yok**. Sebebi iki tane. Birincisi: böyle bir
+çizimde düğümlerin yeri hiçbir kayıttan gelmez, algoritmanın başlangıç
+rastgeleliğinden gelir — yakın duran iki isim yakın _olduğu için_ değil,
+çizici onları oraya attığı için yakın durur. Portalın ekrandan kaldırdığı şey
+tam olarak budur. İkincisi: satırın kendi sorusu ("bakana ulaşmak için en kısa
+yol kim?") bir serpme çizimiyle cevaplanmıyor; o sorunun cevabı bir zincirdir
+ve 134 düğümlü bir bulutta zinciri gözle bulmak, hesaplayıp yazmaktan zordur.
+
+Çizilen şey ağın **soruyu cevaplayan alt grafiği**: hedefe giden zincirler,
+her halkada bağın türü ve gücü, her düğümde tutum rengi ve nüfuz sayısı. Ağın
+geri kalanı için resim değil ölçü var: kaç geçilebilir bağ, kaç hasım bağı
+yolda kullanılmadı, kaç paydaşın hiç geçilebilir bağı yok.
+
+**Üç karar, üçü de kayda dayanıyor.**
+
+_Bir bağ yol değildir — bazıları._ 0006 yönün anlamlı olduğunu söylüyor:
+"vali bakanı etkiler", tersiyle aynı iddia değil. Etkileme ve danışmanlık
+kayıtlı yönde geçilir, akrabalık ve birlikte çalışma iki yönde, hiyerarşi de
+iki yönde (bir konuşma yukarı da aşağı da taşınır). Ve `opposes` **hiçbir
+yönde** yol değil: bir hasımdan geçen zincire "en kısa yol" demek, hasmın
+mesajı ileteceğini varsaymak olur ve bunu kimse kaydetmedi. Bağ ağda duruyor,
+yolda kullanılmıyor, ve ekran kaç bağı bu yüzden atladığını söylüyor —
+saymadan atmak, bağın hiç olmadığını sandırırdı.
+
+_Yol birinden başlamak zorunda._ Zincirin ilk halkası bizim gerçekten
+konuşabildiğimiz biri olmalı, ve portalda bunun iki kaydı var: bir görüşme
+kütüğü (konuştuk) ve atanmış bir ilişki sorumlusu (konuşsun diye
+görevlendirdik). Birincisi olmuş bir şey, ikincisi niyet. Yol ikisinden de
+başlıyor ama hangisine dayandığı ekranda yazılı, ve sıralamada görüşme önce
+geliyor. "Son giriş tarihi"ne bakmadım — M1-11'de de bakmamıştım, sebebi
+aynı: o alanı bu kaptan doğrulayamıyorum.
+
+_Sıralama sözlüksel._ Önce sıçrama sayısı, sonra başlangıcın kanıtı, sonra
+zincirin en zayıf halkası. Üçünü tek bir puana karıştırmak "3,4 sıçrama" gibi
+kimsenin yorumlayamayacağı bir sayı üretirdi, ve kimsenin yorumlayamadığı bir
+sayı bu portalın kaldırdığı şeyin kendisi. Üçü ayrı basılı; okuyan sıralamaya
+katılmıyorsa bileşenleri görebiliyor.
+
+**Yol yoksa sebebi yazılı, ve "ulaşılamaz" denmiyor.** İki ayrı sebep var ve
+ayrı işler ister: hiç başlangıç kaydı yok (kütük boş, ağ eksik değil), ya da
+başlangıç var ama hedefe giden kayıtlı bir zincir yok. Üçüncü bir hâl de var
+ve o da yol sayılmıyor: zincir **göremediğiniz** birinden geçiyorsa. Adsız bir
+halkayla zincir göstermek hem bir kişinin varlığını sızdırır hem kullanılamaz
+bir yol gösterir, o yüzden ekran "görebildiğiniz kayıtlarda yol yok" diyor —
+mutlak bir yokluk değil, okuyanın vantaj noktasından bir yokluk.
+
+### Kurgu referanssızdı, ve paneli bitmiş sayacaktım
+
+Tarayıcı kapısı paneli gördü, ağ ölçüsünü gördü, altı hedefin altısı için de
+bir yol döndürdü. Hepsi **sıfır halka**. Yani oklar, bağ sözcükleri, ters yön
+işareti, aradaki düğümler — zincirin kendisi hiç çizilmedi. Yoğunluk tavanı
+tam bir düğme arttı (yeni görünüm düğmesi) ve ben M4-10'u kapattım sayacaktım.
+
+Sebep `tests/schema-rows.mjs`'in bilinçli bir tercihi: her uuid
+`tablo.kolon.satır`dan türetiliyor, yani
+`stakeholder_relationships.from_stakeholder_id.0` ile `stakeholders.id.0`
+farklı iki değer. Üreticinin işi için **doğru** — amacı her enum değerinin ve
+her null'ın render edilmesini sağlamak, ve bunun için referans gerekmiyor. Ama
+referans **takip eden** bir ekran bu kurguyla ölçülemez, ve M4-10 baştan sona
+referans takip ediyor. Pratikte olan şey: her paydaşın ilişki sorumlusu
+atanmıştı (herkes kendi başlangıcı) ve hiçbir bağ tanınan bir paydaşa işaret
+etmiyordu (hiç geçilebilir kenar yok).
+
+Üç ilişki dikildi — paydaşlar, bağlar, görüşmeler — ve dikiş dar tutuldu:
+bütün yabancı anahtarları bağlamak her ekranın verisini değiştirir ve bugünkü
+bütün ölçümleri yeniden kalibre etmeyi gerektirir. Bağ **türleri**
+dikilmiyor, yalnızca uçları: türler şemadan geldiği gibi kalıyor, yani kurgu
+hasım bağını ve "bir sonraki göçün ekleyeceği değeri" de taşımaya devam
+ediyor. Dikişin kendisi de kapıda: satır sayısı, tek sorumlu, hasım bağının ve
+tanınmayan türün varlığı. Dikiş sessizce yanlış bağlanırsa kapı düşüyor — ve
+bir kez düştü, çünkü sorumluyu null satırına atamıştım.
+
+Dikişten sonra ölçüm: **0, 1, 2, 3, 4 halka ve bir sebep.** Altı hedef, altı
+farklı hâl, ve her birinde ekran bir şey söylüyor. Kapının kuralı artık şu:
+seçilen her hedef için ya bir yol ya bir sebep yazılmış olmalı — sessizlik
+kusur, çünkü sessiz bir panel "yol yok" ile "hesap çalışmadı"yı ekranda aynı
+gösterir.
+
+**Ve o kural tek başına yetmedi.** Dikişin zincirini kasten kopardım (bir bağın
+ucunu ulaşılamayan bir düğüme taşıdım) ve kapı **sustu**: her hedef yine ya bir
+yol ya bir sebep aldı, çünkü yollar bir halkaya inmişti ve bir halka da bir
+yoldur. "Ekran bir şey söylüyor" iddiası, "zincir çiziliyor" iddiasından
+zayıf — sıfır ya da bir halkalı bir yol aradaki düğümleri, okları, bağ
+sözcüklerini ve ters yön işaretini hiç çizmez. İki uçlu bir iddia eklendi: en
+az bir hedefte **iki halkalı** bir zincir, ve en az bir hedefte yol yerine
+sebep. Kesin dizi (0·1·2·3·4·sebep) yazılmadı; kurgunun satır sayısı şemadaki
+enum'lara bağlı ve bir göç yeni bir kategori eklediğinde dizi kayar — bir
+göçle kırılan kapı, ölçtüğü şeyi değil biçimini sınıyor olur.
+
+Ve tutamak toplamanın **üçüncü yeri** buradan çıktı. 8 Ekim'de "bir panel ya
+ilk ekranda ya bir sekmenin arkasında durur" diye yazmıştım; eksikti. Bu panel
+bir görünüm düğmesinin arkasında ve `/stakeholders`'ta `role="tab"` yok — iki
+yer de onu görmedi. Düğme adıyla aranıyor, konumla değil, ve kaç düğmenin
+gerçekten basıldığı ayrı bir iddia: adı değişirse sayı düşer.
+
+### İki ölü dal, mutasyonla bulundu
+
+Yirmi bir mutasyonun ikisi düşmedi, ve ikisi de testin değil **kodun**
+fazlasını gösterdi.
+
+`routes.sort` ilk anahtarı uzunluktu. Arama yalnızca en kısa uzaklıktaki
+gelen kenarları tutuyor, yani çıkarılan her yol aynı uzunlukta —
+`a.length - b.length` hiçbir zaman ateşlenemez. Hiç ateşlenemeyen bir
+sıralama anahtarı kodun tutmadığı bir iddiadır: okuyan "demek ki farklı
+uzunlukta yollar dönüyor" sanır.
+
+"Hedefin kendisi başlangıç noktasıysa" diye bir erken dönüş vardı. Dalı
+kapattım, hiçbir şey düşmedi: genel yol onu zaten doğru veriyor. İkisi de
+silindi.
+
+Bir mutasyon da kurguyu düzeltti: "arama en kısa katmanda durmuyor" mutasyonu
+sessiz kaldı, çünkü kurguda **aynı katmandaki iki düğüm** birbirine bağlı
+değildi — o kural sorulmuyordu. Bir bağ eklendi ve mutasyon düştü.
+
+Yirmi üç mutasyon kuralda, yedi mutasyon tarayıcı kapısında: otuzunun
+otuzu düştü — biri ancak yukarıdaki iki uçlu iddia eklendikten sonra.
+
 ## 0045 sonrası bir düzeltme
 
 M11-05 ve M11-06 bu denetimde "yapıldı" sayılıyordu ve öyleydi: teslim kaydı
@@ -317,7 +440,7 @@ Bunlar "yapıldı" sayılır; eksik olan tek şey migration yorumundaki atıf.
 
 ## Yapılmamış satırlar
 
-21 satır. Her biri için neyin eksik olduğu ve neye bağlı olduğu yazıldı,
+20 satır. Her biri için neyin eksik olduğu ve neye bağlı olduğu yazıldı,
 çünkü bir kısmı kod değil karar ya da hesap bekliyor.
 
 ### P0 — 1 satır
@@ -332,14 +455,13 @@ Bunlar "yapıldı" sayılır; eksik olan tek şey migration yorumundaki atıf.
 | ----- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
 | M1-10 | Oturum yönetimi: aktif cihazlar, uzaktan kapatma | Supabase `auth.sessions` üzerinden okunur; kapatma yönetici yetkisiyle sunucu tarafı bir fonksiyon ister. |
 
-### P2 — 19 satır
+### P2 — 18 satır
 
 Portal içinde yapılabilenler (bağımlılığı yok):
 
 | ID    | Gereksinim                                                                                                                            |
 | ----- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | M2-10 | Tekrarlayan yükümlülükler (yıllık tescil, dönemsel beyan) — `compliance_requirements` zaten yineleme taşıyor, yükümlülükler taşımıyor |
-| M4-10 | İlişki ağı görselleştirmesi                                                                                                           |
 | M4-12 | Etkileşim planı (ne istiyoruz, sıradaki adım, sorumlu)                                                                                |
 | M4-14 | Paydaş haritası anlık görüntüsü (dondurulmuş)                                                                                         |
 | M5-11 | Hukukî senaryo analizi ("kaybedersek")                                                                                                |
@@ -379,6 +501,6 @@ yapılmamış bir şeyi yapılmış gösterir — ilk geçişte "muson" kendi ya
 0040 yorumunda eşleşti, "sap" bir başka kelimenin içinde, "retention" bir
 hakediş sütununda. Dar bir desen ise yapılmış bir şeyi kaçırır; M1-08 ilk
 taramada `supabase/functions/` dizini sayılmadığı için yok görünüyordu.
-Yukarıdaki 21 satırın her biri bu yüzden elle teyit edildi, ve "yapıldı"
-sayılan 189 satırın hepsi tek tek teyit edilmedi — yalnızca atıfı olanlar
+Yukarıdaki 20 satırın her biri bu yüzden elle teyit edildi, ve "yapıldı"
+sayılan 190 satırın hepsi tek tek teyit edilmedi — yalnızca atıfı olanlar
 atıfına, atıfı olmayan yedisi kanıtına dayanıyor.

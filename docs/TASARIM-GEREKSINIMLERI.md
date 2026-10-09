@@ -2380,3 +2380,35 @@ bölümün çalıştığını hiç söylemiyordu.
 
 M1-11'in tutamak kontrolü de aynı sebeple taşındı: panel artık bir sekmenin
 arkasında, yani açılış ekranında yok. Kontrol sekme turunun içine alındı.
+
+## Tutamak toplamanın üçüncü yeri (9 Ekim 2026)
+
+8 Ekim'de şunu yazmıştım: "bir panel ya ilk ekranda ya bir sekmenin arkasında
+durur, ve ölçü ikisini de görmek zorunda." **Eksikti.** Üçüncü bir yer var ve
+M4-10 onu buldu: `/stakeholders`'ın yol paneli bir **görünüm düğmesinin**
+arkasında (liste · matris · yol) ve o ekranda `role="tab"` yok. Açılışta
+toplama onu görmüyor, sekme turu hiç çalışmıyor.
+
+Düğme **adıyla** aranıyor, konumla değil — `/legal` turunda yedi sekmenin
+konuma göre sessizce atlanması tam bu yüzden olmuştu. Ve kaç düğmenin
+gerçekten basıldığı **ayrı bir iddia**: adı değişirse sayı düşer, yoksa kapı
+"panel yok" ile "düğmeye hiç basmadık"ı aynı gösterirdi.
+
+### Tavanın bir düğme artması, panelin çizildiğini söylemiyor
+
+M4-10 `/stakeholders`'ın düğme tavanını 51'den 52'ye çıkardı — yeni görünüm
+düğmesi. Tavan arttı, tutamaklar geldi, ve panel yine de **yarısı çizilmemiş**
+hâldeydi: altı hedefin altısı için de "sıfır halka" yol dönüyordu, yani
+zincirin okları, bağ sözcükleri ve ters yön işareti hiç render edilmiyordu.
+
+Sebep tasarımda değil kurguda: `tests/schema-rows.mjs` her uuid'i
+`tablo.kolon.satır`dan türetiyor, yani hiçbir yabancı anahtar bir şeye işaret
+etmiyor. Değer render etmek için doğru, referans takip etmek için yanlış.
+Ayrıntısı `docs/KAPSAM-DENETIMI.md`'de; buraya yazılan şey ölçüye dair olan
+kısmı: **bir tavanın artması bir bölümün çizildiğinin kanıtı değil.** Tavanın
+değişmemesi de değildi (M2-11), artması da değil.
+
+Kapının yeni kuralı tavana değil ekranın söylediğine bakıyor: yol panelinde
+seçilen her hedef için ya bir yol ya bir sebep yazılmış olmalı. Sessizlik
+kusur — çünkü sessiz bir panel "yol yok" ile "hesap çalışmadı"yı ekranda aynı
+gösterir, ve ikisi aynı şey değil.

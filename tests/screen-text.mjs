@@ -56,6 +56,8 @@ const RAISED = [
   { what: 'emptyChars', from: 2906, to: 2978, row: 'M1-11' },
   { what: 'textChars', from: 58086, to: 58257, row: 'M13-17' },
   { what: 'textChars', from: 63539, to: 63885, row: 'M8-13' },
+  { what: 'textChars', from: 63885, to: 64375, row: 'M4-10' },
+  { what: 'longChars', from: 27680, to: 27860, row: 'M4-10' },
 ];
 process.chdir(root);
 
@@ -114,9 +116,9 @@ const CEILING = {
   // ve beş ayrı "bir aya yazılamaz" başlığı taşıyor; her başlık bir cümle,
   // ve biri ötekinin yerine geçmiyor. Alt başlığın ikinci cümlesi kesildi
   // (aşağıdaki blok aynı şeyi rakamla söylüyor), kalanı kesilemez.
-  textChars: 63885,
+  textChars: 64375,
   // Aynı ölçüm değişikliği: 26.994 → 27.680.
-  longChars: 27680,
+  longChars: 27860,
   // Panel gerekçesi: T13-01'in kestiği şey. 8489 → 2753 (Faz 2).
   introChars: 2753,
   longestIntro: 98,

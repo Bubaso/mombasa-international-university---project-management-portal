@@ -80,6 +80,94 @@ const vocabularies = vocabulariesAcross(
 const canned = new Map();
 for (const [name, columns] of relations) canned.set(name, rowsFor(columns, vocabularies));
 
+// ---------------------------------------------------------------------------
+// Paydaş ağını DİKMEK: üretilen yabancı anahtarlar hiçbir şeye işaret etmiyor
+// ---------------------------------------------------------------------------
+//
+// `schema-rows.mjs` her uuid'i `tablo.kolon.satır`dan türetiyor, yani
+// `stakeholder_relationships.from_stakeholder_id.0` ile `stakeholders.id.0`
+// farklı iki değer. Bu, üreticinin işi için DOĞRU: amacı her enum değerinin
+// ve her null'ın ekranda render edilmesini sağlamak, ve bunun için referans
+// gerekmiyor.
+//
+// Ama referans TAKİP EDEN bir ekran bu kurguyla ölçülemez. M4-10'un yol
+// paneli tam olarak referans takip ediyor, ve ölçüm şunu gösterdi: altı
+// hedefin altısı da "sıfır halka" döndü — çünkü her paydaşın ilişki
+// sorumlusu atanmış (hepsi başlangıç noktası) ve hiçbir bağ tanınan bir
+// paydaşa işaret etmiyor (hiç geçilebilir kenar yok). Yani panelin kabuğu
+// çiziliyordu, ZİNCİRİN KENDİSİ hiç çizilmiyordu: oklar, bağ sözcükleri,
+// ters yön işareti, aradaki düğümler — hiçbiri.
+//
+// Tavan tam bir düğme arttı ve ben M4-10'u bitmiş sayacaktım. Bir bölüm
+// eklenip hiçbir sayı değişmiyorsa, değişmeyen şey ekran değil ölçüdür.
+//
+// Dikiş DAR tutuldu — üç ilişki — çünkü bütün yabancı anahtarları
+// yeniden bağlamak her ekranın verisini değiştirir ve bugünkü ölçümlerin
+// hepsini yeniden kalibre etmeyi gerektirir. Buraya eklenen her ilişki
+// kendi gerekçesini yazsın.
+//
+// Bağ TÜRLERİ dikilmiyor, yalnızca uçları: türler şemadan geldiği gibi
+// kalıyor (altı enum değeri + bir sonraki göçün ekleyeceği değer + null
+// satırı), yani kurgu hasım bağını ve tanınmayan türü de taşımaya devam
+// ediyor — ikisi de yol olmamalı ve ekran bunu söylemek zorunda.
+{
+  const people = canned.get('stakeholders') ?? [];
+  const ties = canned.get('stakeholder_relationships') ?? [];
+  const logs = canned.get('stakeholder_interactions') ?? [];
+  const id = (i) => people[i]?.id;
+
+  // Tek bir kişiyle görüşülmüş olsun: başlangıç bir tane olsun ki zincirin
+  // uzunluğu ölçülebilsin. Herkes başlangıçsa her yol sıfır halkadır.
+  for (const row of logs) row.stakeholder_id = id(0);
+
+  // Sorumlu yalnızca zincirin DIŞINDAKİ birine atanmış kalıyor: hem
+  // "görüşme yok ama sorumlu var" hâli ekranda duruyor, hem zincirdeki
+  // kimse kendi başlangıcı olmuyor.
+  // 8. satır: zincirde kullanılmayan ve sorumlusu DOLU olan tek satır. İlk
+  // yazışımda 9'u seçmiştim ve kapı düştü — 9, null satırı, yani sorumlusu
+  // zaten boş. Kapı "bir tane olsun" diyordu ve sıfır ölçtü.
+  people.forEach((row, i) => {
+    row.relationship_owner = i === 8 ? row.relationship_owner : null;
+  });
+
+  // s0 → s1 → s2 → s3 zinciri, s3'ten s6'ya bir dal, s4'e TERS yönde
+  // kayıtlı bir hiyerarşi bağı, ve yol olmaması gereken iki bağ.
+  const wiring = [
+    [0, 1], // influences
+    [1, 2], // works_with
+    [2, 3], // related_to
+    [4, 3], // reports_to — s4'e ancak ters yönde geçilerek varılır
+    [0, 5], // opposes — s5'e giden tek bağ, ve yol değil
+    [3, 6], // advises
+    [0, 7], // bir sonraki göçün ekleyeceği tür — yol değil
+  ];
+  wiring.forEach(([from, to], i) => {
+    const row = ties[i];
+    if (!row) return;
+    row.from_stakeholder_id = id(from);
+    row.to_stakeholder_id = id(to);
+  });
+  // Son satır (null satırı) dikilmiyor: uçları tanınmayan bir kenar, yani
+  // "göremediğin birine giden bağ" hâli de kurguda duruyor.
+
+  check(
+    people.length === 10 && ties.length === 8 && logs.length === 8,
+    'paydaş ağı kurgusu beklenen satır sayısında (dikiş buna bağlı)',
+    `${people.length} kişi · ${ties.length} bağ · ${logs.length} görüşme`,
+  );
+  check(
+    people.filter((r) => r.relationship_owner != null).length === 1,
+    've tek bir kişiye sorumlu atanmış',
+    `${people.filter((r) => r.relationship_owner != null).length}`,
+  );
+  check(
+    ties.filter((r) => r.kind === 'opposes').length === 1 &&
+      ties.some((r) => r.kind === 'a_value_a_later_migration_adds'),
+    've kurgu hem hasım bağını hem tanınmayan türü taşıyor',
+    ties.map((r) => r.kind).join(', '),
+  );
+}
+
 check(relations.size > 100, 'the schema dump arrived', `${relations.size} relations`);
 const withEnum = [...relations.values()].filter((cs) =>
   cs.some((c) => c.enum_values && c.enum_values.length > 1),
@@ -522,7 +610,7 @@ const DENSITY = {
   '/plan': { buttons: 63, headings: 4, height: 1424 },
   '/reports': { buttons: 58, headings: 7, height: 1394 },
   '/legal': { buttons: 60, headings: 4, height: 1390 },
-  '/stakeholders': { buttons: 51, headings: 5, height: 1356 },
+  '/stakeholders': { buttons: 52, headings: 5, height: 1356 },
   '/calendar': { buttons: 61, headings: 4, height: 1198 },
   '/governance': { buttons: 59, headings: 3, height: 1196 },
   '/readiness': { buttons: 54, headings: 4, height: 1110 },
@@ -565,6 +653,7 @@ const RAISED = [
   { what: '/project_info.buttons', from: 43, to: 47, row: 'T15-04' },
   { what: '/legal.buttons', from: 58, to: 59, row: 'M5-09' },
   { what: '/finance.buttons', from: 48, to: 49, row: 'M8-13' },
+  { what: '/stakeholders.buttons', from: 51, to: 52, row: 'M4-10' },
 ];
 
 raiseChecks({
@@ -583,6 +672,19 @@ const tabsFound = {};
 const tabsOpened = {};
 /** Sekme turu sırasında görülen panel tutamakları, rota başına. */
 const handles = {};
+
+/**
+ * Sekme olmayan görünüm anahtarları: adıyla aranıp basılacak düğmeler.
+ *
+ * `/stakeholders` kütüğü üç görünümde gösteriyor (liste, matris, yol) ve
+ * bunlar `role="tab"` değil düğme — yani sekme turu onlara hiç uğramıyor.
+ * Buraya yazılmayan bir görünümün arkasındaki panel, ÖLÇÜLMEMİŞ paneldir.
+ */
+const EXTRA_VIEWS = { '/stakeholders': ['Yol', 'Matris'] };
+/** Hangi rotada kaç düğme gerçekten basıldı: adı değişirse sayı düşer. */
+const extraViews = {};
+/** Yol panelinde denenen her hedef için ekranın verdiği cevap. */
+const reachSaid = {};
 const a11y = {};
 
 for (const route of ROUTES) {
@@ -657,10 +759,91 @@ for (const route of ROUTES) {
       ...[...document.querySelectorAll('[data-heat-bands]')].map(
         (el) => `heat:${el.getAttribute('data-heat-bands')}`,
       ),
+      ...[...document.querySelectorAll('[data-reach-panel]')].map(() => 'reach-panel'),
+      ...[...document.querySelectorAll('[data-reach-network]')].map(() => 'reach-network'),
+      ...[...document.querySelectorAll('[data-reach-routes]')].map(
+        (el) => `reach-routes:${el.getAttribute('data-reach-routes')}`,
+      ),
+      ...[...document.querySelectorAll('[data-reach-why]')].map(
+        (el) => `reach-why:${el.getAttribute('data-reach-why')}`,
+      ),
     ]))
       handlesSeen.add(h);
   };
   await collectHandles();
+
+  /**
+   * Yol panelinde hedef seçip zinciri ölçer (M4-10).
+   *
+   * Panelin KABUĞUNU görmek yeterli değil: zincir ancak bir hedef
+   * seçildiğinde çiziliyor, ve asıl hata oradadır — adı null olan bir düğüm,
+   * tanınmayan bir bağ türü, boş bir halka listesi. Seçim yapılmadan ölçülen
+   * panel, kapağı ölçülmüş bir kutudur.
+   *
+   * Her hedef için İKİ CEVAPTAN BİRİ zorunlu: ya bir yol ya bir sebep. Bu,
+   * CLAUDE.md §2'nin kapı hâli — "bilinmeyeni ekrana çıkar". Hiçbiri
+   * çizilmiyorsa ekran sessiz kalmış demektir, ve sessizlik en kötü cevap.
+   */
+  const reachOutcomes = [];
+  const pickReachTargets = async () => {
+    const select = await page.$('[data-reach-panel] select');
+    if (!select) return;
+    const count = await page.evaluate(
+      () => document.querySelector('[data-reach-panel] select')?.options.length ?? 0,
+    );
+    // İlki yer tutucu ("Seçin…"), o yüzden 1'den başlıyor. Altı hedef:
+    // kurgunun her enum satırına değmeye yeter, tur da uzamaz.
+    for (let i = 1; i < Math.min(count, 7); i++) {
+      await select.selectOption({ index: i });
+      await settle();
+      for (const message of await boundaries()) seen.add(`[yol:${i}] ${message}`);
+      await collectHandles();
+      reachOutcomes.push(
+        await page.evaluate(() => {
+          const routes = document.querySelector('[data-reach-routes]');
+          if (routes) {
+            const lengths = [...document.querySelectorAll('[data-reach-length]')].map((el) =>
+              Number(el.getAttribute('data-reach-length')),
+            );
+            return `yol:${routes.getAttribute('data-reach-routes')}/halka:${Math.max(0, ...lengths)}`;
+          }
+          const why = document.querySelector('[data-reach-why]');
+          return why ? `sebep:${why.getAttribute('data-reach-why')}` : 'SESSİZ';
+        }),
+      );
+    }
+  };
+
+  /**
+   * ÜÇÜNCÜ YER: bir görünüm düğmesinin arkası.
+   *
+   * Tutamak toplama iki yerde çalışıyordu — açılışta ve her sekmede — ve
+   * M4-10 panelini İKİSİ DE görmedi: `/stakeholders`'ta `role="tablist"` yok,
+   * panel "Yol" düğmesinin arkasında. Yani "bir panel ya ilk ekranda ya bir
+   * sekmenin arkasında durur" dediğim cümle eksikti; bir üçüncü yer var ve
+   * ölçü onu da bilmek zorunda.
+   *
+   * Düğme ADIYLA aranıyor, konumla değil: `/legal` sekme turunda tam bu
+   * yüzden yedi sekme sessizce atlanmıştı.
+   */
+  for (const label of EXTRA_VIEWS[route] ?? []) {
+    const pressed = await page.evaluate((want) => {
+      for (const b of document.querySelectorAll('button')) {
+        if ((b.textContent ?? '').trim() === want) {
+          b.click();
+          return true;
+        }
+      }
+      return false;
+    }, label);
+    extraViews[route] = (extraViews[route] ?? 0) + (pressed ? 1 : 0);
+    if (pressed) {
+      await settle();
+      for (const message of await boundaries()) seen.add(`[${label}] ${message}`);
+      await collectHandles();
+      await pickReachTargets();
+    }
+  }
   const lists = await page.$$('[role="tablist"]');
   const outer = lists[0] ?? null;
   const outerLabels = outer ? await labelsOf(outer) : [];
@@ -682,6 +865,7 @@ for (const route of ROUTES) {
 
   tabsFound[route] = everSeen.size;
   tabsOpened[route] = opened.size;
+  if (reachOutcomes.length > 0) reachSaid[route] = reachOutcomes;
 
   // Erişilebilirlik: ADSIZ bir denetim, görmeyen biri için olmayan bir
   // denetimdir (T9-06).
@@ -936,6 +1120,65 @@ const TABS_EXPECTED = {
     (handles['/admin'] ?? new Set()).has('access-review'),
     'erişim gözden geçirme bölümü sekmesinde çiziliyor (M1-11)',
     [...(handles['/admin'] ?? [])].join(', ') || '(görülmedi)',
+  );
+
+  // M4-10'un yol paneli gerçekten çiziliyor mu.
+  //
+  // Panel ne ilk ekranda ne bir sekmede: bir görünüm düğmesinin arkasında. İki
+  // ayrı iddia, çünkü ikisi ayrı şekilde bozulur — düğmenin adı değişirse
+  // basılan sayı düşer, panel çizilmezse tutamak gelmez. Birincisi olmadan
+  // ikincisi "düğmeye hiç basmadık" diye de geçebilirdi.
+  check(
+    (extraViews['/stakeholders'] ?? 0) === (EXTRA_VIEWS['/stakeholders'] ?? []).length,
+    'sekme olmayan görünüm düğmelerinin hepsi adıyla bulunup basıldı',
+    `${extraViews['/stakeholders'] ?? 0}/${(EXTRA_VIEWS['/stakeholders'] ?? []).length}`,
+  );
+  check(
+    (handles['/stakeholders'] ?? new Set()).has('reach-panel') &&
+      (handles['/stakeholders'] ?? new Set()).has('reach-network'),
+    'yol paneli ve ağ ölçüsü çiziliyor (M4-10)',
+    [...(handles['/stakeholders'] ?? [])].join(', ') || '(görülmedi)',
+  );
+
+  // Ve seçilen her hedef için ekran BİR ŞEY söylüyor mu.
+  //
+  // İki cevaptan biri zorunlu: ya bir yol ya bir sebep. Bu, "bilinmeyeni
+  // ekrana çıkar" kuralının kapı hâli — sessiz kalan bir panel, yolun
+  // olmadığını değil, hesabın çalışmadığını gizler, ve ikisi ekranda aynı
+  // görünür.
+  const said = reachSaid['/stakeholders'] ?? [];
+  check(said.length > 0, 'yol panelinde hedef seçilebildi (M4-10)', `${said.length} hedef`);
+  check(
+    said.length > 0 && said.every((x) => x !== 'SESSİZ'),
+    'seçilen her hedef için ya bir yol ya bir sebep yazıldı, sessizlik yok',
+    said.join(' · ') || '(hiç seçilmedi)',
+  );
+
+  // VE ZİNCİRİN DERİNLİĞİ. Yukarıdaki kontrol "ekran bir şey söylüyor" diyor
+  // ve bu, "zincir çiziliyor"dan zayıf: dikişin zincirini kopardım, her hedef
+  // yine ya bir yol ya bir sebep aldı, ve kapı sustu. Sıfır halkalı bir yol
+  // yalnızca başlangıç düğümünü çizer — oklar, bağ sözcükleri, ters yön
+  // işareti ve aradaki düğümler hiç render edilmez.
+  //
+  // İki uçlu bir iddia, çünkü ekranın iki ayrı hâli var ve ikisi ayrı kodla
+  // çiziliyor: en az bir hedefte iki halkalı bir zincir (aradaki düğüm
+  // render edilmiş), ve en az bir hedefte yol yerine sebep.
+  //
+  // Kesin diziyi (0·1·2·3·4·sebep) yazmıyorum: kurgunun satır sayısı şemadaki
+  // enum'lara bağlı ve bir göç yeni bir kategori eklediğinde dizi kayar. Bir
+  // göçle kırılan kapı, ölçtüğü şeyi değil biçimini sınıyor olur.
+  const depths = said
+    .filter((x) => x.startsWith('yol:'))
+    .map((x) => Number(x.split('halka:')[1] ?? 0));
+  check(
+    Math.max(0, ...depths) >= 2,
+    'zincir en az iki halkayla çiziliyor (aradaki düğümler render ediliyor)',
+    `en derin zincir: ${Math.max(0, ...depths)} halka`,
+  );
+  check(
+    said.some((x) => x.startsWith('sebep:')),
+    've en az bir hedef için yol yerine sebep yazılıyor',
+    said.filter((x) => x.startsWith('sebep:')).join(' · ') || '(hiç sebep yazılmadı)',
   );
 
   const wrong = Object.entries(TABS_EXPECTED)

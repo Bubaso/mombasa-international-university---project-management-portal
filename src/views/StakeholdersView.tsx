@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Users2, Search, LayoutGrid, List, Plus } from 'lucide-react';
+import { Users2, Search, LayoutGrid, List, Plus, Route } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import * as register from '../api/stakeholderHooks';
 import { useAuthority, useProfiles } from '../api/adminHooks';
@@ -8,6 +8,7 @@ import { EmptyState } from '../components/EmptyState';
 import { AttentionStrip } from '../components/stakeholders/AttentionStrip';
 import { ContactsExchange } from '../components/stakeholders/ContactsExchange';
 import { PowerInterestGrid } from '../components/stakeholders/PowerInterestGrid';
+import { ReachPanel } from '../components/stakeholders/ReachPanel';
 import { StakeholderDetail } from '../components/stakeholders/StakeholderDetail';
 import { ASSESSORS, MINUTE_KEEPERS, actsAs } from '../lib/authority';
 import {
@@ -53,7 +54,7 @@ export const StakeholdersView: React.FC = () => {
   const canEdit = actsAs(authority.data, ...MINUTE_KEEPERS);
   const canAssess = actsAs(authority.data, ...ASSESSORS);
 
-  const [layout, setLayout] = useState<'list' | 'grid'>('list');
+  const [layout, setLayout] = useState<'list' | 'grid' | 'reach'>('list');
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<StakeholderCategory | ''>('');
   const [stance, setStance] = useState<Stance | ''>('');
@@ -169,6 +170,16 @@ export const StakeholdersView: React.FC = () => {
             <LayoutGrid className="h-3.5 w-3.5" aria-hidden="true" />
             <span className="hidden sm:inline">{tr ? 'Matris' : 'Grid'}</span>
           </ActionButton>
+          {/* M4-10. Üçüncü bir görünüm, dördüncü bir bölüm değil: ekranın
+              telefondaki yüksekliği ölçülü bir kısıt (T15-04) ve kütüğün
+              altına kalıcı bir panel eklemek onu her okuyana ödetirdi. */}
+          <ActionButton
+            onClick={() => setLayout('reach')}
+            className={layout === 'reach' ? 'border-amber-400 bg-amber-50 text-amber-900' : ''}
+          >
+            <Route className="h-3.5 w-3.5" aria-hidden="true" />
+            <span className="hidden sm:inline">{tr ? 'Yol' : 'Route'}</span>
+          </ActionButton>
         </div>
       </div>
 
@@ -190,6 +201,11 @@ export const StakeholdersView: React.FC = () => {
             />
           ) : layout === 'grid' ? (
             <PowerInterestGrid stakeholders={shown} onOpen={setSelectedId} />
+          ) : layout === 'reach' ? (
+            // Yol hesabı SÜZÜLMEMİŞ kütükle çalışıyor: aracı, aradığınız
+            // filtreye uymayan biri olabilir ve süzgece uymayan bir aracıyı
+            // zincirden düşürmek yolu olduğundan uzun gösterir.
+            <ReachPanel stakeholders={rows} onOpen={setSelectedId} />
           ) : (
             <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
               <TableFrame

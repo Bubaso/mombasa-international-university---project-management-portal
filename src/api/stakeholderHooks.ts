@@ -10,6 +10,10 @@ export const useOrganizations = () =>
 export const useRelationships = () =>
   useQuery({ queryKey: ['relationships'], queryFn: stakeholders.fetchRelationships });
 
+/** M4-10: yolun başlayabileceği kişiler — görüşme kaydı olanlar. */
+export const useSpokenToIds = () =>
+  useQuery({ queryKey: ['spoken-to-ids'], queryFn: stakeholders.fetchSpokenToIds });
+
 export const useAttention = () =>
   useQuery({ queryKey: ['stakeholderAttention'], queryFn: stakeholders.fetchAttention });
 

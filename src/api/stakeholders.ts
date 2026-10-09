@@ -380,6 +380,27 @@ export async function fetchRelationships(): Promise<StakeholderRelationship[]> {
   }));
 }
 
+/**
+ * Görüşme kaydı bulunan paydaşların kimlikleri (M4-10).
+ *
+ * Yol birinden başlamak zorunda, ve başlangıç "bu kişiyle konuştuk" kaydına
+ * dayanıyor. Burada YALNIZCA kimlik okunuyor: `fetchInteractions()` özetleri
+ * de getiriyor ve özetler gizli olabiliyor — bir yol hesabı için gizli metni
+ * tarayıcıya indirmek, gerekmediği hâlde gizliliği gevşetmek olur
+ * (CLAUDE.md §4).
+ *
+ * RLS'nin süzdüğü görüşme buraya hiç gelmiyor, ve bu doğru davranış:
+ * okuyanın gördüğü yol, okuyanın bilmeye hakkı olan yoldur.
+ */
+export async function fetchSpokenToIds(): Promise<string[]> {
+  const { data, error } = await supabase.from('stakeholder_interactions').select('stakeholder_id');
+  fail(error);
+  const ids = new Set(
+    (data ?? []).map((row) => (row as { stakeholder_id: string }).stakeholder_id),
+  );
+  return [...ids];
+}
+
 export async function linkStakeholders(input: {
   fromStakeholderId: string;
   toStakeholderId: string;
