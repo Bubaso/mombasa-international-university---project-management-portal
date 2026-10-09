@@ -1,0 +1,741 @@
+/**
+ * The document vault (M9).
+ *
+ * Three things here are deliberately not the client's to do, and the code
+ * reflects that rather than working around it:
+ *
+ *   - the digest is computed by the verify-document function from the stored
+ *     bytes, and this file has no way to write it;
+ *   - reading a file goes through document-download, which records the
+ *     reading before it signs a link, because the bucket has no read policy
+ *     for the browser at all;
+ *   - a version is never edited or deleted, so there is no such call.
+ *
+ * Uploading is a client job, because pushing the bytes through a function
+ * would cost memory for nothing. The order matters: the version row is
+ * written first, because the storage policy authorises an upload only to a
+ * path some version already claims.
+ */
+import { supabase } from '../lib/supabase';
+import type {
+  Page,
+  BytesVerdict,
+  Confidentiality,
+  DocumentAccessEntry,
+  DocumentActionKind,
+  DocumentCategory,
+  DocumentComment,
+  DocumentItem,
+  DocumentLink,
+  DocumentVersion,
+  DocumentVersionStep,
+  LegalHold,
+  RetentionDisposition,
+  RetentionPolicy,
+  RetentionRow,
+  RetentionState,
+} from '../types';
+
+const BUCKET = 'documents';
+
+interface NamedRef {
+  full_name: string;
+}
+
+function label(ref: NamedRef | NamedRef[] | null | undefined): string | null {
+  if (!ref) return null;
+  const row = Array.isArray(ref) ? ref[0] : ref;
+  return row?.full_name ?? null;
+}
+
+function fail(error: { message: string } | null): void {
+  if (error) throw new Error(error.message);
+}
+
+// ---------------------------------------------------------------------------
+// Documents
+// ---------------------------------------------------------------------------
+
+interface DocumentRow {
+  id: string;
+  title: string;
+  category: DocumentCategory;
+  status: DocumentItem['status'];
+  description_en: string | null;
+  description_tr: string | null;
+  confidentiality: Confidentiality;
+  current_version_id: string | null;
+  versions: { count: number }[] | null;
+}
+
+const DOCUMENT_COLUMNS =
+  'id, title, category, status, description_en, description_tr, confidentiality, ' +
+  'current_version_id, ' +
+  'versions:document_versions!document_versions_document_id_fkey(count)';
+
+/**
+ * Kasadaki belgeler, yalnız kimliği ve başlığı — bir seçici için.
+ *
+ * Neden ayrı bir okuma: `fetchDocuments` artık bir dilim döndürüyor ve bu
+ * doğru, çünkü kasa listesi bir ekran. Ama **seçici bir ekran değil.** Kırk
+ * belge gösterip kırk birincisini seçilemez kılmak, listeyi kesmekten daha
+ * kötü: insan kaydı kasada olduğu hâlde bağlayamaz, ve ekran ona sebebini
+ * söylemez.
+ *
+ * Yani seçici her belgeyi görmek zorunda. Maliyeti iki sütuna indiriliyor
+ * (`id, title`) — kasa satırının tamamı değil. Kasa gerçekten büyüdüğünde
+ * doğru cevap sunucu tarafında arama (alım kuyruğundaki `ilike` kalıbı); o gün
+ * geldiğinde burası o aramaya çevrilecek, dilime değil.
+ */
+/**
+ * Özeti hesaplanmamış belge sayısı — kasanın tamamından.
+ *
+ * Bu rakam bir bütünlük iddiası: kaç belgenin yürürlükteki sürümünün SHA-256
+ * özeti **yok**. Faz 0'da ekrandan kaldırılan şeylerden biri okunmamış
+ * dosyaların üzerindeki "SHA-256 verified" rozetiydi; onun tersi olan bu sayı
+ * dilimin içinden sayılırsa aynı kusuru başka yönden yapar — az gösterir.
+ *
+ * Neden tek bir sunucu sorgusu değil: cevap bir birleştirme istiyor
+ * (`document_vault.current_version_id` → `document_versions.sha256`) ve
+ * PostgREST'in gömülü süzme sözdizimini buradan **doğrulayamıyorum** —
+ * doğrulayamadığım bir sözdizimini bütünlük rakamının altına koymak, rakamın
+ * kendisinden daha kötü olurdu. Onun yerine iki ucuz okuma: kasadan tek sütun,
+ * sürümlerden özeti olmayanlar (küçük bir küme). Aritmetik tam.
+ *
+ * Kasa gerçekten büyüdüğünde doğru çözüm, yürürlükteki özeti `document_vault`
+ * görünümüne katlamak — `fetchCurrentVersions`'ın da beklediği aynı iş.
+ */
+export async function countUndigestedDocuments(): Promise<number> {
+  const [vault, undigested] = await Promise.all([
+    supabase.from('document_vault').select('current_version_id'),
+    supabase.from('document_versions').select('id').is('sha256', null),
+  ]);
+  fail(vault.error);
+  fail(undigested.error);
+  const withoutDigest = new Set(((undigested.data ?? []) as { id: string }[]).map((row) => row.id));
+  return ((vault.data ?? []) as { current_version_id: string | null }[]).filter(
+    (row) => row.current_version_id != null && withoutDigest.has(row.current_version_id),
+  ).length;
+}
+
+export async function fetchDocumentOptions(): Promise<{ id: string; title: string }[]> {
+  const { data, error } = await supabase.from('document_vault').select('id, title').order('title');
+  fail(error);
+  return (data ?? []) as { id: string; title: string }[];
+}
+
+export async function fetchDocuments(limit = 40, offset = 0): Promise<Page<DocumentItem>> {
+  const { data, error, count } = await supabase
+    .from('document_vault')
+    .select(DOCUMENT_COLUMNS, { count: 'exact' })
+    .order('title')
+    .range(offset, offset + limit - 1);
+  fail(error);
+  return {
+    rows: ((data ?? []) as unknown as DocumentRow[]).map((row) => ({
+      id: row.id,
+      title: row.title,
+      category: row.category,
+      status: row.status,
+      descriptionEn: row.description_en,
+      descriptionTr: row.description_tr,
+      confidentiality: row.confidentiality,
+      currentVersionId: row.current_version_id,
+      versionCount: row.versions?.[0]?.count ?? 0,
+    })),
+    total: count ?? 0,
+  };
+}
+
+export async function createDocument(input: {
+  title: string;
+  category: DocumentCategory;
+  descriptionEn: string | null;
+  confidentiality: Confidentiality;
+}): Promise<DocumentItem> {
+  const { data, error } = await supabase
+    .from('document_vault')
+    .insert({
+      title: input.title,
+      category: input.category,
+      description_en: input.descriptionEn,
+      confidentiality: input.confidentiality,
+      status: 'under_review',
+    })
+    .select(DOCUMENT_COLUMNS)
+    .single();
+  fail(error);
+  const row = data as unknown as DocumentRow;
+  return {
+    id: row.id,
+    title: row.title,
+    category: row.category,
+    status: row.status,
+    descriptionEn: row.description_en,
+    descriptionTr: row.description_tr,
+    confidentiality: row.confidentiality,
+    currentVersionId: row.current_version_id,
+    versionCount: 0,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Versions
+// ---------------------------------------------------------------------------
+
+interface VersionRow {
+  id: string;
+  document_id: string;
+  version_no: number;
+  storage_path: string;
+  file_name: string;
+  content_type: string | null;
+  byte_size: number | null;
+  sha256: string | null;
+  digest_computed_at: string | null;
+  uploaded_at: string;
+  note: string | null;
+  uploader: NamedRef | NamedRef[] | null;
+}
+
+const VERSION_COLUMNS =
+  'id, document_id, version_no, storage_path, file_name, content_type, byte_size, ' +
+  'sha256, digest_computed_at, uploaded_at, note, ' +
+  'uploader:profiles!document_versions_uploaded_by_fkey(full_name)';
+
+function toVersion(row: VersionRow): DocumentVersion {
+  return {
+    id: row.id,
+    documentId: row.document_id,
+    versionNo: row.version_no,
+    storagePath: row.storage_path,
+    fileName: row.file_name,
+    contentType: row.content_type,
+    byteSize: row.byte_size,
+    sha256: row.sha256,
+    digestComputedAt: row.digest_computed_at,
+    uploadedByName: label(row.uploader),
+    uploadedAt: row.uploaded_at,
+    note: row.note,
+  };
+}
+
+export async function fetchVersions(documentId: string): Promise<DocumentVersion[]> {
+  const { data, error } = await supabase
+    .from('document_versions')
+    .select(VERSION_COLUMNS)
+    .eq('document_id', documentId)
+    .order('version_no', { ascending: false });
+  fail(error);
+  return ((data ?? []) as unknown as VersionRow[]).map(toVersion);
+}
+
+/** Every version in force, for listing documents without a query each. */
+/**
+ * Her belgenin yürürlükteki sürümü.
+ *
+ * **Bu okuma kasıtlı olarak sınırsız.** Kütük turunun ikinci sorusu "bir liste
+ * sessizce kesiyor mu" idi; burada kesmek daha kötü olurdu: bu bir liste değil,
+ * kasa listesinin yanına konulan bir arama tablosu. Dilimlenirse dilimin
+ * dışında kalan belgeler, sürümü olduğu hâlde "sürüm yok" görünür — yani
+ * yavaş olmak yerine **yanlış** söylemiş oluruz.
+ *
+ * Doğru çözüm sınır koymak değil, yürürlükteki sürümü `document_vault`
+ * görünümünün içine katlamak; o bir migration işi ve kasa büyüdüğünde
+ * yapılacak. Bugün belge sayısı bunu gerektirmiyor.
+ */
+export async function fetchCurrentVersions(): Promise<DocumentVersion[]> {
+  const { data, error } = await supabase.from('document_versions').select(VERSION_COLUMNS);
+  fail(error);
+  return ((data ?? []) as unknown as VersionRow[]).map(toVersion);
+}
+
+export interface UploadOutcome {
+  versionId: string;
+  /** Null when the digest could not be computed; the version is then unverified. */
+  sha256: string | null;
+  verificationError: string | null;
+}
+
+/**
+ * Registers the version, pushes the bytes, then asks the server to read them
+ * back and record what it found.
+ *
+ * If the last step fails the version still exists and still has no digest,
+ * which reads as unverified — the correct answer, and one the caller is told
+ * about rather than left to discover.
+ */
+export async function uploadVersion(input: {
+  documentId: string;
+  file: File;
+  note: string | null;
+}): Promise<UploadOutcome> {
+  const versionId = crypto.randomUUID();
+  const storagePath = `${input.documentId}/${versionId}`;
+
+  // First, so the storage policy has a path to authorise against.
+  const { error: rowError } = await supabase.from('document_versions').insert({
+    id: versionId,
+    document_id: input.documentId,
+    storage_path: storagePath,
+    file_name: input.file.name,
+    content_type: input.file.type || null,
+    byte_size: input.file.size,
+    note: input.note,
+  });
+  fail(rowError);
+
+  const { error: uploadError } = await supabase.storage
+    .from(BUCKET)
+    .upload(storagePath, input.file, { contentType: input.file.type || undefined });
+
+  if (uploadError) {
+    // The row stays. It has no digest, so it shows as unverified, and
+    // verify-document will say the bytes are missing if anyone asks again.
+    throw new Error(`The file did not reach storage: ${uploadError.message}`);
+  }
+
+  const { data, error } = await supabase.functions.invoke<{ sha256: string }>('verify-document', {
+    body: { versionId },
+  });
+
+  if (error) {
+    const context: unknown = (error as { context?: unknown }).context;
+    let message = error.message;
+    if (context instanceof Response) {
+      const body: unknown = await context.json().catch(() => null);
+      message = (body as { error?: string } | null)?.error ?? message;
+    }
+    return { versionId, sha256: null, verificationError: message };
+  }
+
+  return { versionId, sha256: data?.sha256 ?? null, verificationError: null };
+}
+
+// ---------------------------------------------------------------------------
+// Reading a file
+// ---------------------------------------------------------------------------
+
+export interface DownloadLink {
+  url: string;
+  fileName: string;
+  sha256: string | null;
+  expiresInSeconds: number;
+}
+
+/**
+ * The only way to the bytes. The bucket has no read policy for the browser,
+ * so this is not a convenience wrapper — it is the route, and it records the
+ * reading before it hands anything over.
+ */
+export async function requestDownload(input: {
+  versionId: string;
+  action: DocumentActionKind;
+}): Promise<DownloadLink> {
+  const { data, error } = await supabase.functions.invoke<DownloadLink>('document-download', {
+    body: { versionId: input.versionId, action: input.action },
+  });
+
+  if (error) {
+    const context: unknown = (error as { context?: unknown }).context;
+    if (context instanceof Response) {
+      const body: unknown = await context.json().catch(() => null);
+      const message = (body as { error?: string } | null)?.error;
+      if (message) throw new Error(message);
+    }
+    throw new Error(error.message);
+  }
+  if (!data) throw new Error('No link was returned.');
+  return data;
+}
+
+// ---------------------------------------------------------------------------
+// Who read it, and what it is attached to
+// ---------------------------------------------------------------------------
+
+interface AccessRow {
+  id: number;
+  document_id: string;
+  version_id: string | null;
+  profile_id: string;
+  action: DocumentActionKind;
+  at: string;
+  reader: NamedRef | NamedRef[] | null;
+}
+
+export async function fetchAccessLog(
+  documentId: string,
+  limit = 40,
+  offset = 0,
+): Promise<Page<DocumentAccessEntry>> {
+  const { data, error, count } = await supabase
+    .from('document_access')
+    .select(
+      'id, document_id, version_id, profile_id, action, at, ' +
+        'reader:profiles!document_access_profile_id_fkey(full_name)',
+      { count: 'exact' },
+    )
+    .eq('document_id', documentId)
+    .order('at', { ascending: false })
+    .range(offset, offset + limit - 1);
+  fail(error);
+  return {
+    rows: ((data ?? []) as unknown as AccessRow[]).map((row) => ({
+      id: row.id,
+      documentId: row.document_id,
+      versionId: row.version_id,
+      profileId: row.profile_id,
+      readerName: label(row.reader),
+      action: row.action,
+      at: row.at,
+    })),
+    total: count ?? 0,
+  };
+}
+
+export async function fetchLinks(documentId: string): Promise<DocumentLink[]> {
+  const { data, error } = await supabase
+    .from('document_links')
+    .select('id, document_id, entity_type, entity_id, note')
+    .eq('document_id', documentId);
+  fail(error);
+  return (
+    (data ?? []) as {
+      id: string;
+      document_id: string;
+      entity_type: string;
+      entity_id: string;
+      note: string | null;
+    }[]
+  ).map((row) => ({
+    id: row.id,
+    documentId: row.document_id,
+    entityType: row.entity_type,
+    entityId: row.entity_id,
+    note: row.note,
+  }));
+}
+
+export async function linkDocument(input: {
+  documentId: string;
+  entityType: string;
+  entityId: string;
+}): Promise<void> {
+  const { error } = await supabase.from('document_links').insert({
+    document_id: input.documentId,
+    entity_type: input.entityType,
+    entity_id: input.entityId,
+  });
+  fail(error);
+}
+
+export async function unlinkDocument(id: string): Promise<void> {
+  const { error } = await supabase.from('document_links').delete().eq('id', id);
+  fail(error);
+}
+
+// ---------------------------------------------------------------------------
+// Comments inside a document, and the step from one version to the next
+// (M9-14, M7-17)
+// ---------------------------------------------------------------------------
+
+export async function fetchDocumentComments(documentId: string): Promise<DocumentComment[]> {
+  const { data, error } = await supabase
+    .from('document_comment_register')
+    .select('*')
+    .eq('document_id', documentId)
+    .order('created_at', { ascending: false });
+  fail(error);
+  return (
+    (data ?? []) as {
+      comment_id: string;
+      document_id: string;
+      document_version_id: string;
+      version_no: number;
+      file_name: string;
+      revision_label: string | null;
+      page_no: number | null;
+      quoted_excerpt: string | null;
+      body_en: string | null;
+      body_tr: string | null;
+      resolved_at: string | null;
+      resolution_note: string | null;
+      created_by: string | null;
+      created_at: string;
+      written_against_a_superseded_version: boolean;
+      current_version_no: number | null;
+      portal_has_not_read_the_file: boolean;
+      confidentiality: DocumentComment['confidentiality'];
+    }[]
+  ).map((row) => ({
+    commentId: row.comment_id,
+    documentId: row.document_id,
+    documentVersionId: row.document_version_id,
+    versionNo: Number(row.version_no),
+    fileName: row.file_name,
+    revisionLabel: row.revision_label,
+    pageNo: row.page_no == null ? null : Number(row.page_no),
+    quotedExcerpt: row.quoted_excerpt,
+    bodyEn: row.body_en,
+    bodyTr: row.body_tr,
+    resolvedAt: row.resolved_at,
+    resolutionNote: row.resolution_note,
+    createdBy: row.created_by,
+    createdAt: row.created_at,
+    writtenAgainstASupersededVersion: row.written_against_a_superseded_version,
+    currentVersionNo: row.current_version_no == null ? null : Number(row.current_version_no),
+    portalHasNotReadTheFile: row.portal_has_not_read_the_file,
+    confidentiality: row.confidentiality,
+  }));
+}
+
+/**
+ * The comment itself. `pageNo` may be null — a remark about the whole file is
+ * a real remark — and `quotedExcerpt` is stored as what the commenter typed,
+ * never presented as the document's own text.
+ */
+export async function addDocumentComment(input: {
+  documentId: string;
+  documentVersionId: string;
+  pageNo: number | null;
+  quotedExcerpt: string | null;
+  bodyEn: string;
+  profileId: string;
+}): Promise<void> {
+  const { error } = await supabase.from('document_comments').insert({
+    document_id: input.documentId,
+    document_version_id: input.documentVersionId,
+    page_no: input.pageNo,
+    quoted_excerpt: input.quotedExcerpt,
+    body_en: input.bodyEn,
+    created_by: input.profileId,
+  });
+  fail(error);
+}
+
+/** Closing one needs an account of what answered it; the database insists. */
+export async function resolveDocumentComment(input: {
+  id: string;
+  profileId: string;
+  note: string;
+}): Promise<void> {
+  const { error } = await supabase
+    .from('document_comments')
+    .update({
+      resolved_at: new Date().toISOString(),
+      resolved_by: input.profileId,
+      resolution_note: input.note,
+    })
+    .eq('id', input.id);
+  fail(error);
+}
+
+/** Each step from one version to the next, as recorded. No geometry. */
+export async function fetchVersionSteps(documentId: string): Promise<DocumentVersionStep[]> {
+  const { data, error } = await supabase
+    .from('document_version_steps')
+    .select('*')
+    .eq('document_id', documentId)
+    .order('later_version_no', { ascending: false });
+  fail(error);
+  return (
+    (data ?? []) as {
+      document_id: string;
+      earlier_version_no: number;
+      earlier_revision_label: string | null;
+      earlier_file_name: string;
+      earlier_byte_size: number | null;
+      later_version_id: string;
+      later_version_no: number;
+      later_revision_label: string | null;
+      later_file_name: string;
+      later_byte_size: number | null;
+      later_uploaded_at: string;
+      change_summary_en: string | null;
+      change_summary_tr: string | null;
+      bytes_verdict: BytesVerdict;
+      change_not_described: boolean;
+      confidentiality: DocumentVersionStep['confidentiality'];
+    }[]
+  ).map((row) => ({
+    documentId: row.document_id,
+    earlierVersionNo: Number(row.earlier_version_no),
+    earlierRevisionLabel: row.earlier_revision_label,
+    earlierFileName: row.earlier_file_name,
+    earlierByteSize: row.earlier_byte_size == null ? null : Number(row.earlier_byte_size),
+    laterVersionId: row.later_version_id,
+    laterVersionNo: Number(row.later_version_no),
+    laterRevisionLabel: row.later_revision_label,
+    laterFileName: row.later_file_name,
+    laterByteSize: row.later_byte_size == null ? null : Number(row.later_byte_size),
+    laterUploadedAt: row.later_uploaded_at,
+    changeSummaryEn: row.change_summary_en,
+    changeSummaryTr: row.change_summary_tr,
+    bytesVerdict: row.bytes_verdict,
+    changeNotDescribed: row.change_not_described,
+    confidentiality: row.confidentiality,
+  }));
+}
+
+// ---------------------------------------------------------------------------
+// Hukukî muhafaza ve saklama (M9-11, M9-13)
+// ---------------------------------------------------------------------------
+//
+// Muhafaza SİLİNMİYOR, ve bu dosyada bir `deleteHold` yok — çünkü
+// veritabanında silme politikası da yok. İstemciye olmayan bir fiil için
+// fonksiyon yazmak, kuralı istemcide tekrar etmek olurdu (CLAUDE.md §4).
+
+interface HoldRow {
+  id: string;
+  document_id: string;
+  legal_case_id: string | null;
+  reason: string;
+  created_at: string;
+  released_at: string | null;
+  released_reason: string | null;
+  matter: { case_number: string }[] | { case_number: string } | null;
+  placed_by: NamedRef | NamedRef[] | null;
+  released_by: NamedRef | NamedRef[] | null;
+}
+
+const caseNumberOf = (ref: HoldRow['matter']): string | null => {
+  if (ref == null) return null;
+  const one = Array.isArray(ref) ? ref[0] : ref;
+  return one?.case_number ?? null;
+};
+
+export async function fetchHolds(documentId: string): Promise<LegalHold[]> {
+  const { data, error } = await supabase
+    .from('legal_holds')
+    .select(
+      'id, document_id, legal_case_id, reason, created_at, released_at, released_reason, ' +
+        'matter:legal_cases(case_number), ' +
+        'placed_by:profiles!legal_holds_created_by_fkey(full_name), ' +
+        'released_by:profiles!legal_holds_released_by_fkey(full_name)',
+    )
+    .eq('document_id', documentId)
+    .order('created_at', { ascending: false });
+  fail(error);
+  return ((data ?? []) as unknown as HoldRow[]).map((row) => ({
+    id: row.id,
+    documentId: row.document_id,
+    legalCaseId: row.legal_case_id,
+    caseNumber: caseNumberOf(row.matter),
+    reason: row.reason,
+    placedAt: row.created_at,
+    placedByName: label(row.placed_by),
+    releasedAt: row.released_at,
+    releasedByName: label(row.released_by),
+    releasedReason: row.released_reason,
+  }));
+}
+
+export async function placeHold(input: {
+  documentId: string;
+  legalCaseId: string | null;
+  reason: string;
+}): Promise<void> {
+  const { error } = await supabase.from('legal_holds').insert({
+    document_id: input.documentId,
+    legal_case_id: input.legalCaseId,
+    reason: input.reason,
+  });
+  fail(error);
+}
+
+/**
+ * Kaldırmayı kim yaptığını İSTEMCİ SÖYLEMİYOR: `released_by` ve `released_at`
+ * sunucuda damgalanıyor (`app.stamp_hold_release`). Buradan gönderilen tek
+ * şey sebep ve "kaldırıldı" niyeti.
+ */
+export async function releaseHold(input: { id: string; reason: string }): Promise<void> {
+  const { error } = await supabase
+    .from('legal_holds')
+    .update({ released_at: new Date().toISOString(), released_reason: input.reason })
+    .eq('id', input.id);
+  fail(error);
+}
+
+interface RetentionDueRow {
+  document_id: string;
+  title: string;
+  category: DocumentCategory;
+  status: DocumentItem['status'];
+  confidentiality: Confidentiality;
+  uploaded_on: string;
+  // Görünümün verdiği değerler, sunucudan geldiği gibi tiplenmiş. Ekran
+  // bunları GEVŞEK okuyor (`wordFor`, `retentionStateStyle`), yani bir göç
+  // yeni bir değer ürettiğinde bölüm kaybolmuyor — değer kendi adıyla
+  // görünüyor. Tip burada dar, okuma orada gevşek: ikisi ayrı iş.
+  disposition: RetentionDisposition | null;
+  after_years: number | null;
+  active_holds: number;
+  ever_held: number;
+  retention_state: RetentionState;
+  due_on: string | null;
+  deletion_barred: boolean;
+}
+
+/**
+ * Saklama durumu, belge başına. Sınırsız ve kasten: bu bir TOPLAM değil ama
+ * bir KÜME — "hangi belgelerin süresi doldu" sorusunun kesik bir cevabı,
+ * kalan belgeleri kimsenin bakmadığı yerde bırakır.
+ */
+export async function fetchRetentionDue(): Promise<RetentionRow[]> {
+  const { data, error } = await supabase
+    .from('retention_due')
+    .select(
+      'document_id, title, category, status, confidentiality, uploaded_on, disposition, ' +
+        'after_years, active_holds, ever_held, retention_state, due_on, deletion_barred',
+    )
+    .order('uploaded_on', { ascending: true });
+  fail(error);
+  return ((data ?? []) as unknown as RetentionDueRow[]).map((row) => ({
+    documentId: row.document_id,
+    title: row.title,
+    category: row.category,
+    status: row.status,
+    confidentiality: row.confidentiality,
+    uploadedOn: row.uploaded_on,
+    disposition: row.disposition,
+    afterYears: row.after_years,
+    activeHolds: Number(row.active_holds ?? 0),
+    everHeld: Number(row.ever_held ?? 0),
+    state: row.retention_state,
+    dueOn: row.due_on,
+    deletionBarred: row.deletion_barred === true,
+  }));
+}
+
+export async function fetchRetentionPolicies(): Promise<RetentionPolicy[]> {
+  const { data, error } = await supabase
+    .from('retention_policies')
+    .select('id, category, disposition, after_years, note')
+    .order('category');
+  fail(error);
+  return ((data ?? []) as unknown as RetentionPolicy[]).map((row) => ({
+    id: row.id,
+    category: row.category,
+    disposition: row.disposition,
+    afterYears: (row as unknown as { after_years: number | null }).after_years,
+    note: row.note,
+  }));
+}
+
+export async function saveRetentionPolicy(input: {
+  category: DocumentCategory;
+  disposition: string;
+  afterYears: number | null;
+  note: string | null;
+}): Promise<void> {
+  const { error } = await supabase.from('retention_policies').upsert(
+    {
+      category: input.category,
+      disposition: input.disposition,
+      after_years: input.afterYears,
+      note: input.note,
+    },
+    { onConflict: 'category' },
+  );
+  fail(error);
+}

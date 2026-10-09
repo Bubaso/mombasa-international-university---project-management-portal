@@ -1,0 +1,641 @@
+# Kapsam denetimi — 210 modül gereksinimi
+
+Bu dosya `docs/URUN-GEREKSINIMLERI.md`'nin **modül** satırlarını (`M*`)
+**atıf değil özellik** olarak ölçer. `N*` (fonksiyonel olmayan) ve `G*` (göç)
+satırları kapsam dışı: ilki bir özellik değil bir nitelik, ikincisi bir kerelik
+bir iş ve sonucu `docs/NOTION-GOC.md`'de. Ayrımın nedeni ölçümün kendisi: satır kimliklerini depoda
+grep'lemek yalnızca hangi migration'ın bir ID yazdığını sayar, hangi özelliğin
+var olduğunu saymaz. İlk deneme 43 satırı "atıfsız" diye bildirdi; örneklemede
+M7-05, M9-06, M2-03 ve M4-02 yapılmış ama anılmamış çıktı.
+
+**Yöntem.** Her satır için o özelliğin kanıtı arandı: bir tablo, bir enum, bir
+sütun, bir fonksiyon, bir görünüm, bir ekran bileşeni ya da bir assertion.
+Yalnızca `supabase/migrations`, `supabase/functions`, `src` ve `tests`
+sayıldı — `supabase/bundled` üretilmiş çıktı olduğu için hariç, yoksa her
+desen iki kez eşleşiyor.
+
+**Tarih:** 2026-10-08 · migration 0056'ya kadar. (İlk hâli: 2026-10-01, 0044'e
+kadar.)
+
+## Özet
+
+| Durum      | Satır |
+| ---------- | ----- |
+| Yapıldı    | 192   |
+| Yok        | 18    |
+| **Toplam** | 210   |
+
+Öncelik dağılımı: P0 22 satır (1'i yok), P1 115 satır (1'i yok), P2 59 satır
+(16'sı yok), P3 14 satır (**hepsi yapıldı**).
+
+### 8 Ekim 2026 güncellemesi — ve başlıktaki sayı hakkında bir düzeltme
+
+Bu dosyanın ilk hâli 2026-10-01 tarihliydi ve 0044'e kadar ölçüyordu. O gün
+`M*` satırı 197'ydi; bugün **210**. Aradaki **13 satır** denetimin hiç
+görmediği satırlar: belge asistanı turunun on ikisi (M13-13…M13-24) ve
+M5-17 (temyiz itirazları kütüğü).
+
+On üçü tek tek teyit edildi ve **on ikisi yapılmış**. Biri yapılmamış ve
+aşağıdaki P1 listesine eklendi: **M13-17**.
+
+Bir şeyi açıkça söylüyorum: başlıkta "197 gereksinim satırı" yazıyordu ve bu
+**eksik bir ifadeydi**, yanlış bir sayı değil. 197 o günün `M*` sayısıydı;
+dokümanın o günkü toplamı 240'tı (197 `M*` + 37 `N*` + 6 `G*`). Başlık hangi
+kümeyi saydığını söylemediği için dosyayı sonradan okuyan biri — ben — onu
+dokümanın toplamı sanıp "denetim 56 satır eskimiş" diye ölçtü. Eskimişliği 13
+satırdı. **Hangi kümeyi saydığını söylemeyen bir sayı, yanlış bir sayıdan
+daha kötüdür**: ikincisi düzeltilir, birincisi her okunduğunda yeniden yanlış
+anlaşılır.
+
+Toplam artık `tests/doc-counts.mjs` içinde ölçülüyor ve dokümanın `M*` satır
+sayısına bağlı — yani bir gereksinim eklenip burası güncellenmezse kapı düşer.
+
+### M5-09 kapandı — göç 0054
+
+Dosya bazında hukuk harcaması. Eksik olan şey bir hesap değil bir **bağ**'dı:
+`payment_vouchers` bir bütçe satırına ve bir hakedişe bağlanabiliyordu, bir
+davaya bağlanamıyordu. "Bu dava bize ne kadara mal oldu" sorusu zor değildi,
+cevaplanamazdı — toplamı çıkarmak fişlerin gerekçe metnini okuyup hangisinin
+hangi dosya olduğuna karar vermek demekti, ki bu bir ölçüm değil bir tahmin.
+
+0054 bir sütun (`legal_case_id`), bir indeks, bir görünüm (`legal_case_spend`)
+ve üç politika değişikliği getirdi. Politikalar sütunun açtığı deliği
+kapatıyor: `restricted` bir davaya bağlı bir fiş, o davayı göremeyen ama
+parayı gören birine davanın varlığını söylerdi.
+
+Görünüm üç bilinmezliği ayırıyor — yetki yok, kayıt yok, kayıt var — ve
+sayıları parayı göremeyen için `null` bırakıyor, çünkü boş kümede 0 dönen bir
+`count()` "bağlı fiş yok" diye okunur ve bu yanlış cevaptır. `unbudgeted_count`
+M5-09'un "M8 bütçesine bağlı" yarısının dürüst kısmı: bir dava masrafının
+bütçe satırı yoksa o masraf bütçede değildir, ve toplamı gösterip "bütçeye
+bağlı" demek kaçının bağlı olmadığını saklamak olurdu.
+
+Onbeş assertion `tests/db/policies.test.sql`'de, yedisi mutasyonla sınandı ve
+yedisi de düştü. Yedincisi ilk denemede **düşmedi**: fikstürde davaya bağlı
+iki fiş vardı, biri bütçeli biri bütçesiz, yani "bütçesizleri say" ile
+"bütçelileri say" aynı cevabı (1) veriyordu. Üçüncü bir fiş eklendi ve
+mutasyon düştü. Ayırt edici olmayan bir fikstür, ayırt edici olmayan bir test
+demek.
+
+### M1-11 kapandı — göç 0055, ve bir kapı körlüğü
+
+Altı ayda bir erişim gözden geçirme listesi. Portalda erişimin **verilmesi**
+kayıtlıydı (davet, devir) ve **süresi** kayıtlıydı (M1-09); kayıtlı olmayan
+tek şey birinin dönüp bakmış olmasıydı.
+
+0055 bir enum, bir tablo (`access_reviews`, yalnız eklenir), iki trigger, iki
+politika ve bir görünüm (`access_review_queue`) getirdi. Kuyruk dört sebebi
+ayrı ayrı adlandırıyor ve `null` bir tarihi "çok eski" saymıyor: "hiç gözden
+geçirilmedi" ile "altı aydan eski" ayrı cümlelerdir.
+
+**Son giriş zamanı bu kuyrukta yok, ve sebebini yazdım.** Bu satırı denetime
+"`profiles.expires_at` ve son giriş zamanından türetilen bir kuyruk" diye ben
+yazmıştım ve son girişin elimde olduğunu varsaymıştım. İki sebep çıktı:
+`auth.users` istemciye kapalı (0006 bunu zaten söylüyor), ve Supabase'in
+`last_sign_in_at`'i token yenilemede güncellenmiyor — yani o sayıdan kurulan
+bir uykuda-hesap listesi en aktif kullanıcıları işaretler. Onun yerine
+portalın kendi denetim kaydı kullanıldı ve adı doğru konuldu:
+`last_action_at`, "son giriş" değil "portalda son kayıtlı işlem".
+
+Yirmi dokuz assertion, on iki mutasyon, on ikisi de düştü. Biri ilk denemede
+yanlış şeyi bekliyordu: append-only trigger'ı `authenticated` için hiç
+ateşlenmiyor, çünkü UPDATE politikası olmadığı için satır seviyesi güvenlik
+güncellemeyi sıfır satıra indiriyor. İki katman ayrı ayrı sınandı —
+politika `authenticated`'ı, trigger tablonun sahibini.
+
+**Ve bu tur bir kapı körlüğü buldu.** Paneli `/admin`'e koydum ve yoğunluk
+ölçüsü 42'den 42'ye gitti. `tests/populated.mjs`'in sahte backend'inde
+`current_authority` satırı ölü koddu (`supabase.rpc()` bir POST, yazma
+muhafızı ondan önce geliyordu), yani yetkiye bağlı her bölüm — gösterge
+panelinin karar kuyruğu, konsolun denetim/kapsam/paylaşım/devir bölümleri —
+hiç render edilmiyordu. Düzeltilince iki gerçek çökme ortaya çıktı, biri
+önceden vardı. Ayrıntısı `docs/TASARIM-GEREKSINIMLERI.md`'de; T15-04 artık
+karşılanmış sayılmıyor.
+
+### M13-17 kapandı — göç 0056, ve denetimin kendi alıntısı eskimişti
+
+Bu satırı bu dosyaya "**Kodun kendisi bunu söylüyor**" diye yazmıştım ve
+`rules.js`'teki şu yorumu alıntılamıştım: _"Faz 1 için sabit. M13-17 kapsamın
+veritabanındaki kayıttan gelmesini istiyor ve Faz 4 bunu `intake_targets`
+sorgusuyla değiştirecek."_
+
+**O yorum eskimişti ve alıntı beni yanlış yere gönderiyordu.** 8 Ekim'de
+ölçüldü: `REGISTERS` yalnızca `readClassification`'ı besliyor, o da hiçbir
+canlı fonksiyondan çağrılmıyor — `document-intake` `readProposals` çağırıyor.
+Yani kapsamı bugün yöneten şey `targets.js`'teki `PROPOSAL_TARGETS` (23
+hedef). `REGISTERS`'ı veritabanına taşımak hiçbir şeyi kapatmazdı: ölü bir
+listeyi taşımak olurdu. Yorum düzeltildi.
+
+Ders, bu dosyanın kendi sınırıyla aynı: **bir kod yorumu bir kanıt değil bir
+iddiadır.** Atıfı olan satırı atıfına dayandırmak, atıfın hâlâ doğru olduğunu
+varsaymaktır.
+
+0056 bir tablo (`intake_targets`), iki trigger, iki politika ve yirmi üç
+tohum satırı getirdi. Taşınan şey **hangi** kayıt türlerinin kapsamda olduğu;
+taşınmayan şey her hedefin alan şeması (1.379 satır), çünkü o şema yazan
+fonksiyonu besliyor ve yazan fonksiyon kodda. Alan listesini veritabanına
+taşımak kaçınılmaz olarak sapan kopyayı üretirdi (CLAUDE.md §4). İki yön de
+kapıya bağlandı: kapsamdaki her anahtarın kodda bir şeması, koddaki her
+hedefin kapsamda bir satırı olmak zorunda.
+
+`targetsBriefing` ve `answerSchema` artık kapsamı **argüman olarak** alıyor ve
+verilmezse **atıyor** — sessizce koddaki tam listeye dönmüyor. O dönüş tam
+olarak M13-17'nin yasakladığı şey olurdu. Kapsam okunamazsa alım `failed`
+oluyor, sebebiyle.
+
+**O turda bıraktığım sınır aynı gün kapandı.** "Kapsamı değiştirmek bir
+yöneticinin SQL güncellemesi; konsola bölüm eklemek doğru olurdu ama
+`/admin` telefonda 8.931px" diye yazmıştım. T14-04 Faz 4 `/admin`'i yedi
+sekmeye böldü (kurgu 8.931 → 1.044px) ve "Asistanın kapsamı" sekmesi eklendi:
+yirmi üç hedef, kapatmak gerekçe istiyor. Alan şeması o ekranda yok ve
+olmaması kasıtlı — şema yazan fonksiyonun yanında duruyor.
+
+### M7-16 kapandı — ve bir ölçü körlüğü
+
+Kritik yol. Gantt 0028'de yapılmıştı; eksik olan hesap, ve **göç
+gerektirmedi**: `dependencies` tablosu 0016'dan beri duruyor.
+
+Önce ölçtüm. `dependencies` kütükler arası bir tablo: bir bağımlılığın tarafı
+dava, saha işi, yükümlülük, risk, kilometre taşı ya da çıplak bir etiket
+olabiliyor. Kritik yol ise süreli bir faaliyet ağı ister, yani tablonun
+tamamı yola girmiyor — ve girmeyeni sessizce atmak en tehlikelisi olurdu:
+eksik bir ağdan çıkan zincir, tam bir zincir gibi okunur.
+
+Ağa iki düğüm türü giriyor: iki tarihi de kayıtlı **saha işi** (süresi
+`bitiş - başlangıç + 1`), ve hedef tarihi kayıtlı **kilometre taşı** (süresi
+sıfır — bir olay, bir süreç değil). Panel kullanamadığı her şeyi sayıyla
+bildiriyor.
+
+**Bolluk (float) hesaplanmıyor** ve sebebi yazılı: bolluk planın
+bağımlılıklarla tutarlı olmasını ister, buradaki tarihler elle girilmiş ve
+bir bağımlının başlangıcı blokeyenin bitişinden önce olabilir. Böyle bir
+planda bolluk hesaplamak veriden fazlasını iddia etmek olur. Onun yerine o
+tutarsızlıklar bildiriliyor — bir planın kendi içinde çelişmesi, bolluk
+rakamından daha çok işe yarar.
+
+"Kritik" bu projede iki şey demek ve ikisi karıştırılmadı:
+`milestones.critical` **elle** konan bir geri sayım bayrağı (M15-04),
+buradaki kritik yol **hesaplanan** bir şey.
+
+Yirmi assertion, dokuz mutasyon, dokuzu da düştü.
+
+**Ve bu tur bir ölçü körlüğü buldu.** Panelde dört uzun cümle kestim ve ekran
+metni tavanı yalnızca **11 karakter** düştü; kesim 300 karakterdi. Sebep:
+`scripts/screen-text.mjs`'in deseni yalnızca `'` ve `"` eşleştiriyordu,
+backtick'i değil. Ölçüldü: **75 dosyada 197 iki dilli çift, 4.951 karakter**
+kör noktadaydı. Desen düzeltildi, `${…}` yer tutucuları metin sayılmıyor, ve
+iki fikstür kontrolü eklendi. Üç tavan gerçek ölçüme yazıldı (58.257 →
+63.539, 26.994 → 27.680, 2.978 → 3.046) — metin büyümedi, ölçü görmeye
+başladı.
+
+Aynı gate'in ikinci kör noktası; ilki 5 Ekim'de veri dizisi alanlarıydı
+(2.467 karakter). Ders aynı: **bir ölçü neyi görmediğini söylemez**, o yüzden
+görmediğini aramak gerekir.
+
+### M2-11 kapandı — ve yazdığım paneli ölçüm sildi
+
+Yükümlülük ısı haritası: kaynağa göre gruplu, duruma göre bantlı. Göç
+gerektirmedi.
+
+**Ayrı bir ısı haritası paneli yazdım, sınadım, sonra sildim.** Bir toplayıcı
+(`obligationHeat`), bir ızgara paneli, yirmi assertion ve dokuz mutasyon —
+hepsi çalışıyordu. Sonra ekranı bölüm bölüm ölçtüm ve `/obligations`'ın
+**zaten kaynağa göre bölümlenmiş** olduğunu gördüm: yedi kaynak, yedi bölüm.
+Panel aynı veriyi ikinci kez gruplayacaktı, ve iki gruplamanın iki sayısı her
+zaman birbirinden sapar (CLAUDE.md §4).
+
+M2-11'in gerçekten eklediği şey gruplama değil **bantlama**. Bant şeridi her
+kaynağın kendi başlığına kondu; panel ve toplayıcı silindi, testleri de
+onlarla gitti. Kullanılmayan bir fonksiyonun testi, test değil ağırlık.
+
+Kalan şey `bandOf` — hangi kaydın hangi banda düştüğü, tek yerde, ve ekranın
+her grubu onu çağırıyor. Altı bant, ve altıncısı dosyanın sebebi:
+**`undated`**, yani açık ama vadesi kayıtlı değil. O bant olmadan böyle bir
+yükümlülük ya "ileride" sayılırdı (vadesi varmış gibi) ya hiç görünmezdi;
+ikisi de bilinmeyeni bilinmiş göstermek olur.
+
+Tanınmayan bir durum için bant **uydurulmuyor** (null döner) ve okunamayan
+bir tarih "ileride" sayılmıyor. Dokuz mutasyon, dokuzu da düştü.
+
+Renk tek başına hiçbir şey söylemiyor: her bantta sayı ve ad da basılı, yani
+renk körü biri için de basılı bir kopyada da aynı bilgi okunuyor.
+
+**Ve bir kapı kusuru daha.** Bantlar `Pill` kullanıyor — ne düğme ne başlık —
+yani `/obligations`'ın yoğunluk tavanı hiç değişmedi. Tavanın değişmemesi
+"render edildi" demek değil; `/admin`'de tam bu yüzden bir bölüm hiç
+çizilmediği hâlde sayı 42'de kalmıştı. Ayrı bir tutamak eklendi. İlk hâli
+yalnızca sekme turunun içinde çağrılıyordu ve `/obligations` için sıfır
+döndü: o ekranda sekme yok, yani tur gövdesi hiç çalışmıyor. Açılışta da
+çağrılıyor artık, ve ikisi de mutasyonla sınandı.
+
+### M8-13 kapandı — ve "göç gerektirmeyen iş kalmadı" dediğimi düzeltiyorum
+
+M2-11'i bitirince "göç gerektirmeyen iş kalmadı sayılabilir" yazıp durmaya
+karar vermiştim. **Bunu doğrulamadan söyledim.** Kalan satırlara bakınca
+M8-13'ün girdisi zaten şemada çıktı: `contract_milestones` (0022, M14-07)
+`due_on`, `amount_kes` ve `state` taşıyor — yani tarihli bir ödeme planı. Göç
+gerekmedi.
+
+**Projeksiyonun asıl işi toplamak değil, tarihi olmayanı bir aya
+yazmamaktı.** M8-13 üç girdi sayıyor: taahhütler, hakediş planı, hukuk
+harcaması. Üçünden yalnızca biri tarihli. Onaylanmış ama ödenmemiş bir fiş
+bir borçtur, ama beklenen ödeme tarihi hiçbir yerde kayıtlı değil; bir hukuk
+vekâlet ücretinin ise kilometre taşı hiç olmaz — 0022 kendi yorumunda bunu
+söylüyor. Tarihsiz iki girdiyi aylara dağıtmanın her yolu — eşit bölmek,
+"ortalama ödeme süresi" varsaymak, sessizce bu aya yazmak — bir projeksiyon
+değil bir kurgu üretir. Yapılan şey: tarihlisi aylara, tarihsizi kendi
+başlığına.
+
+**Vadesi geçmiş gelecek değildir.** Vadesi dün olan ve ödenmemiş bir taksit
+bu ayın beklenen çıkışı değil, zaten gecikmiş bir borç. Gelecek bir aya
+yazmak projeksiyonu olduğundan hafif gösterir; bu aya yazmak gecikmeyi
+saklar. Üçüncü bir başlık aldı.
+
+**Sıfır olan ay da bir satır.** Aralıktaki her ay dönüyor, çıkışı sıfır olsa
+da: boş bir ay gerçek bir ölçümdür ("o ay için planlanmış taksit yok") ve
+atlanırsa okuyan bir sonraki dolu aya bakıp onu bir sonraki ay sanar.
+
+**Kendi yorumum bir tutarsızlığı yakaladı.** İlk yazışımda pencerenin
+ötesindeki taksitleri `undated` kutusuna koymuşum — ve aynı satırın yorumu
+"bu, tarihi yok ile aynı şey değil" diyordu. Ayırdım: tarihi yok bir
+eksiklik, pencerenin ötesinde bir seçim. Birincisi düzeltilecek bir kayıt
+kusuru, ikincisi pencereyi uzatınca görünür.
+
+Sekiz mutasyon, sekizi de düştü.
+
+### Bu dosyanın kendi sayısı altı commit boyunca bir eksikti
+
+M8-13'ü işlerken şunu ölçtüm: "Yapılmamış satırlar" başlığının altındaki
+"N satır" cümlesi, listelenen satır sayısından **bir eksikti**. Özet tablosu
+22 diyordu, liste 22 satır taşıyordu, cümle 21 diyordu.
+
+Sapma `283a662`'de başladı — yani **bu dosyanın toplamını kapıya bağladığım
+commit'te**. O commit tabloyu 26'dan 27'ye çıkardı ve cümleyi 26'da bıraktı.
+Sonraki altı commit ikisini birlikte bir azalttı, yani yanlışı düzeltmeden
+taşıdı: 27/26, 26/25, 25/24, 24/23, 23/22, 22/21.
+
+İki şey kayda değer. Birincisi: kapıyı yazdığım commit, aynı sayının kapısız
+bir ikinci kopyasını bıraktı. **Kuralı iki yere yazma** (CLAUDE.md §4) tam
+budur, ve sapan kopya her zaman ikincisidir.
+
+İkincisi, ve daha kötüsü: M8-13 kapanınca liste 21'e düşüyor ve cümle
+**kendiliğinden doğru oluyor**. Fark etmesem sayı tesadüfen doğru olacaktı ve
+bir daha kimse onun yanlış olduğunu öğrenmeyecekti. Kendi kendine kapanan bir
+hata, bulunmamış bir hatadır.
+
+Artık dört şey birden ölçülüyor: bu cümledeki sayı, kapanış bölümündeki iki
+sayı, her öncelik başlığındaki sayı, ve öncelik dağılımı parantezlerindeki
+sayı — hepsi gerçekten listelenen satırlara ve `URUN-GEREKSINIMLERI.md`'nin
+kendi öncelik sütununa karşı. Bir satır yanlış bandın altına konsa da düşer.
+
+### M4-10 kapandı — ve kurgunun yabancı anahtarları hiçbir şeye bakmıyordu
+
+İlişki ağı. Göç gerekmedi: `stakeholder_relationships` (0006, M4-09) yönü,
+türü ve gücü zaten taşıyor.
+
+**Ne çizildi, ne çizilmedi.** Satır "ağ grafiği" diyor ve 134 paydaşın
+kuvvet-yönlü serpme çizimi **yok**. Sebebi iki tane. Birincisi: böyle bir
+çizimde düğümlerin yeri hiçbir kayıttan gelmez, algoritmanın başlangıç
+rastgeleliğinden gelir — yakın duran iki isim yakın _olduğu için_ değil,
+çizici onları oraya attığı için yakın durur. Portalın ekrandan kaldırdığı şey
+tam olarak budur. İkincisi: satırın kendi sorusu ("bakana ulaşmak için en kısa
+yol kim?") bir serpme çizimiyle cevaplanmıyor; o sorunun cevabı bir zincirdir
+ve 134 düğümlü bir bulutta zinciri gözle bulmak, hesaplayıp yazmaktan zordur.
+
+Çizilen şey ağın **soruyu cevaplayan alt grafiği**: hedefe giden zincirler,
+her halkada bağın türü ve gücü, her düğümde tutum rengi ve nüfuz sayısı. Ağın
+geri kalanı için resim değil ölçü var: kaç geçilebilir bağ, kaç hasım bağı
+yolda kullanılmadı, kaç paydaşın hiç geçilebilir bağı yok.
+
+**Üç karar, üçü de kayda dayanıyor.**
+
+_Bir bağ yol değildir — bazıları._ 0006 yönün anlamlı olduğunu söylüyor:
+"vali bakanı etkiler", tersiyle aynı iddia değil. Etkileme ve danışmanlık
+kayıtlı yönde geçilir, akrabalık ve birlikte çalışma iki yönde, hiyerarşi de
+iki yönde (bir konuşma yukarı da aşağı da taşınır). Ve `opposes` **hiçbir
+yönde** yol değil: bir hasımdan geçen zincire "en kısa yol" demek, hasmın
+mesajı ileteceğini varsaymak olur ve bunu kimse kaydetmedi. Bağ ağda duruyor,
+yolda kullanılmıyor, ve ekran kaç bağı bu yüzden atladığını söylüyor —
+saymadan atmak, bağın hiç olmadığını sandırırdı.
+
+_Yol birinden başlamak zorunda._ Zincirin ilk halkası bizim gerçekten
+konuşabildiğimiz biri olmalı, ve portalda bunun iki kaydı var: bir görüşme
+kütüğü (konuştuk) ve atanmış bir ilişki sorumlusu (konuşsun diye
+görevlendirdik). Birincisi olmuş bir şey, ikincisi niyet. Yol ikisinden de
+başlıyor ama hangisine dayandığı ekranda yazılı, ve sıralamada görüşme önce
+geliyor. "Son giriş tarihi"ne bakmadım — M1-11'de de bakmamıştım, sebebi
+aynı: o alanı bu kaptan doğrulayamıyorum.
+
+_Sıralama sözlüksel._ Önce sıçrama sayısı, sonra başlangıcın kanıtı, sonra
+zincirin en zayıf halkası. Üçünü tek bir puana karıştırmak "3,4 sıçrama" gibi
+kimsenin yorumlayamayacağı bir sayı üretirdi, ve kimsenin yorumlayamadığı bir
+sayı bu portalın kaldırdığı şeyin kendisi. Üçü ayrı basılı; okuyan sıralamaya
+katılmıyorsa bileşenleri görebiliyor.
+
+**Yol yoksa sebebi yazılı, ve "ulaşılamaz" denmiyor.** İki ayrı sebep var ve
+ayrı işler ister: hiç başlangıç kaydı yok (kütük boş, ağ eksik değil), ya da
+başlangıç var ama hedefe giden kayıtlı bir zincir yok. Üçüncü bir hâl de var
+ve o da yol sayılmıyor: zincir **göremediğiniz** birinden geçiyorsa. Adsız bir
+halkayla zincir göstermek hem bir kişinin varlığını sızdırır hem kullanılamaz
+bir yol gösterir, o yüzden ekran "görebildiğiniz kayıtlarda yol yok" diyor —
+mutlak bir yokluk değil, okuyanın vantaj noktasından bir yokluk.
+
+### Kurgu referanssızdı, ve paneli bitmiş sayacaktım
+
+Tarayıcı kapısı paneli gördü, ağ ölçüsünü gördü, altı hedefin altısı için de
+bir yol döndürdü. Hepsi **sıfır halka**. Yani oklar, bağ sözcükleri, ters yön
+işareti, aradaki düğümler — zincirin kendisi hiç çizilmedi. Yoğunluk tavanı
+tam bir düğme arttı (yeni görünüm düğmesi) ve ben M4-10'u kapattım sayacaktım.
+
+Sebep `tests/schema-rows.mjs`'in bilinçli bir tercihi: her uuid
+`tablo.kolon.satır`dan türetiliyor, yani
+`stakeholder_relationships.from_stakeholder_id.0` ile `stakeholders.id.0`
+farklı iki değer. Üreticinin işi için **doğru** — amacı her enum değerinin ve
+her null'ın render edilmesini sağlamak, ve bunun için referans gerekmiyor. Ama
+referans **takip eden** bir ekran bu kurguyla ölçülemez, ve M4-10 baştan sona
+referans takip ediyor. Pratikte olan şey: her paydaşın ilişki sorumlusu
+atanmıştı (herkes kendi başlangıcı) ve hiçbir bağ tanınan bir paydaşa işaret
+etmiyordu (hiç geçilebilir kenar yok).
+
+Üç ilişki dikildi — paydaşlar, bağlar, görüşmeler — ve dikiş dar tutuldu:
+bütün yabancı anahtarları bağlamak her ekranın verisini değiştirir ve bugünkü
+bütün ölçümleri yeniden kalibre etmeyi gerektirir. Bağ **türleri**
+dikilmiyor, yalnızca uçları: türler şemadan geldiği gibi kalıyor, yani kurgu
+hasım bağını ve "bir sonraki göçün ekleyeceği değeri" de taşımaya devam
+ediyor. Dikişin kendisi de kapıda: satır sayısı, tek sorumlu, hasım bağının ve
+tanınmayan türün varlığı. Dikiş sessizce yanlış bağlanırsa kapı düşüyor — ve
+bir kez düştü, çünkü sorumluyu null satırına atamıştım.
+
+Dikişten sonra ölçüm: **0, 1, 2, 3, 4 halka ve bir sebep.** Altı hedef, altı
+farklı hâl, ve her birinde ekran bir şey söylüyor. Kapının kuralı artık şu:
+seçilen her hedef için ya bir yol ya bir sebep yazılmış olmalı — sessizlik
+kusur, çünkü sessiz bir panel "yol yok" ile "hesap çalışmadı"yı ekranda aynı
+gösterir.
+
+**Ve o kural tek başına yetmedi.** Dikişin zincirini kasten kopardım (bir bağın
+ucunu ulaşılamayan bir düğüme taşıdım) ve kapı **sustu**: her hedef yine ya bir
+yol ya bir sebep aldı, çünkü yollar bir halkaya inmişti ve bir halka da bir
+yoldur. "Ekran bir şey söylüyor" iddiası, "zincir çiziliyor" iddiasından
+zayıf — sıfır ya da bir halkalı bir yol aradaki düğümleri, okları, bağ
+sözcüklerini ve ters yön işaretini hiç çizmez. İki uçlu bir iddia eklendi: en
+az bir hedefte **iki halkalı** bir zincir, ve en az bir hedefte yol yerine
+sebep. Kesin dizi (0·1·2·3·4·sebep) yazılmadı; kurgunun satır sayısı şemadaki
+enum'lara bağlı ve bir göç yeni bir kategori eklediğinde dizi kayar — bir
+göçle kırılan kapı, ölçtüğü şeyi değil biçimini sınıyor olur.
+
+Ve tutamak toplamanın **üçüncü yeri** buradan çıktı. 8 Ekim'de "bir panel ya
+ilk ekranda ya bir sekmenin arkasında durur" diye yazmıştım; eksikti. Bu panel
+bir görünüm düğmesinin arkasında ve `/stakeholders`'ta `role="tab"` yok — iki
+yer de onu görmedi. Düğme adıyla aranıyor, konumla değil, ve kaç düğmenin
+gerçekten basıldığı ayrı bir iddia: adı değişirse sayı düşer.
+
+### İki ölü dal, mutasyonla bulundu
+
+Yirmi bir mutasyonun ikisi düşmedi, ve ikisi de testin değil **kodun**
+fazlasını gösterdi.
+
+`routes.sort` ilk anahtarı uzunluktu. Arama yalnızca en kısa uzaklıktaki
+gelen kenarları tutuyor, yani çıkarılan her yol aynı uzunlukta —
+`a.length - b.length` hiçbir zaman ateşlenemez. Hiç ateşlenemeyen bir
+sıralama anahtarı kodun tutmadığı bir iddiadır: okuyan "demek ki farklı
+uzunlukta yollar dönüyor" sanır.
+
+"Hedefin kendisi başlangıç noktasıysa" diye bir erken dönüş vardı. Dalı
+kapattım, hiçbir şey düşmedi: genel yol onu zaten doğru veriyor. İkisi de
+silindi.
+
+Bir mutasyon da kurguyu düzeltti: "arama en kısa katmanda durmuyor" mutasyonu
+sessiz kaldı, çünkü kurguda **aynı katmandaki iki düğüm** birbirine bağlı
+değildi — o kural sorulmuyordu. Bir bağ eklendi ve mutasyon düştü.
+
+Yirmi üç mutasyon kuralda, yedi mutasyon tarayıcı kapısında: otuzunun
+otuzu düştü — biri ancak yukarıdaki iki uçlu iddia eklendikten sonra.
+
+### M9-11 ve M9-13 birlikte kapandı — göç 0057, ve sırası kasıtlı
+
+İkisi bir göçte, ve **muhafaza önce**. M9-13 bir saklama politikası istiyor:
+belgeler bir süre sonra arşivlenir. M9-11 bir muhafaza istiyor: davaya konu
+belge silinemez, arşivlenemez. İkincisi birincisinin istisnası, ve istisnayı
+kuraldan sonra yazmak aradaki sürede belge kaybetmek demek. `retention_due`
+görünümü muhafaza kontrolünü hesaplanırken yapıyor — "arşivlenmeye hazır"
+listesi muhafazalı bir belgeyi hiç göstermiyor. Yıkıcıyı koruyucudan önce
+yazmamak bir tercih değil, bir sıra.
+
+**Muhafaza kaldırılmaz, kaldırıldığı kaydedilir.** Bir muhafaza kaydı
+silinebilirse muhafaza bir kapı değil bir öneridir: silmek isteyen önce
+muhafazayı siler. Tablo eklemeli, kalkmış muhafaza kaydı durmaya devam
+ediyor, ve kalkmış bir muhafaza **yeniden açılamıyor** — yeniden dondurmak
+yeni bir karardır ve kendi sebebini, kendi tarihini ister. Eski kaydı yeniden
+açmak iki kararı tek satırda birleştirip ikisinin de tarihini kaybetmek olur.
+Silme politikası hiç yazılmadı: RLS'te politikası olmayan fiil reddedilir, ve
+bunu bir trigger'la tekrar yazmak kuralı iki yere yazmak olurdu.
+
+**Silme ile arşivleme aynı şey değil, ve kural ikisine farklı davranıyor.**
+Arşivleme geri alınabilir — durum geri çevrilir, belge yerinde durur — o
+yüzden arşivlemeyi yalnızca **aktif** bir muhafaza engelliyor. Silme geri
+alınamaz; bir kez muhafaza konmuş belge mahkemenin ya da bir denetçinin
+ilgilendiği belgedir, ve muhafaza kalktıktan sonra bile onu silmek bu
+portalın yapmaması gereken türden bir şey. Silmeyi muhafazanın **varlığı**
+engelliyor, aktifliği değil.
+
+Bunun bedeli var ve yazıyorum: bir kez dondurulmuş belge saklama
+politikasıyla hiç temizlenemez, ve ekran bunu `silinemez` diye söylüyor.
+Birkaç bin belgelik bir kütük için bu bedel ucuz; ters yönde yanılmanın
+bedeli geri alınamaz.
+
+Kuralı iki şey birden söylüyor ve **ikisi aynı kural**: bir trigger okunur
+sebebi veriyor, `on delete restrict` kısıtı zemini tutuyor. Trigger düşse de
+silme reddedilir. İkisinin AYNI şeyi söylemesi şart — biri aktif muhafazaya,
+öbürü varlığa bakarsa ekran "evet" derken veritabanı "hayır" der.
+
+**Politikası olmayan kategori, sıfır yıllık politika değil.** Her kategoriye
+bir varsayılan vermek kolaydı ve yanlış olurdu: kimsenin karar vermediği bir
+saklama süresi karar verilmiş gibi görünür ve o süre dolduğunda belge arşive
+gider. Göç **hiç tohum satırı yazmıyor**; dokuz kategorinin dokuzu
+`no_policy` olarak başlıyor, ve ekranın en üstünde bir kusur olarak duruyor —
+birinin önüne konmuş bir soru. Sıfır yıllık saklama da kabul edilmiyor:
+"yüklendiği an arşivle" bir politika değil, bir hata.
+
+**Yaş, belgenin tarihi değil yüklendiği tarih**, ve bunu söylemek zorunda
+olmamızın sebebi `document_vault`'un belgenin kendi tarihini hiç taşımaması.
+1998'de imzalanmış bir senet 2026'da yüklendiyse görünüm onu 2026'dan sayar.
+Düzeltmek bir kolon ister; bugün yapılan şey yanlış sayıyı doğru gibi
+göstermemek — görünümün kolonu `uploaded_on`, `dated_on` değil, ve ekran da
+"yüklendi" yazıyor.
+
+### Bloğun bütün assertion'ları RLS'i atlayarak koşmuştu
+
+Politika testinde satırları `set role postgres` ile ekleyip `reset role` ile
+çıkıyordum. **`reset role` oturum rolüne düşüyor ve o rol postgres** — bu
+dosyanın konvansiyonu `set role authenticated`. Yani bloğun bütün
+assertion'ları süper kullanıcı olarak koştu, RLS'i atladı, ve hepsi geçti:
+politika çalıştığı için değil, hiç sorulmadığı için.
+
+"Yanlış sebeple geçen test" bu depoda **altıncı kez** (CLAUDE.md §3). Bu
+seferkinin ayırt edici yanı şu: hiçbir assertion'ı değiştirmek gerekmedi,
+yalnızca rolü. Sayı tutuyordu, ölçü yoktu. Teşhis `current_user` basmakla
+çıktı — ve şimdi bir assertion olarak duruyor, çünkü yukarıdaki kusur hiçbir
+kontrolü düşürmedi.
+
+### Yirmi mutasyon, üçü düşmedi — ve üçü ayrı sebepten
+
+Biri **kötü mutasyondu**: trigger'ı kaldırmak yerine adını değiştirmişim,
+yani trigger hâlâ kuruluyordu. Mutasyon hiçbir şey yapmıyorsa düşmemesi
+kodun sağlamlığını değil mutasyonun boşluğunu gösterir.
+
+İkisi **gerçek kapı boşluğuydu.**
+
+Birincisi: "muhafaza saklamayı yener" kuralını yalnızca `due`'ya karşı
+sınamıştım. Muhafazalı belge politikası **olan** bir kategorideydi, yani
+muhafazayı sıralamanın başından alıp `no_policy`'nin arkasına koyan mutasyon
+sessiz kaldı. Bir sıralamayı tek çiftte sınamak, sıralamayı sınamak değil.
+Politikası olmayan bir kategoride muhafazalı bir belge eklendi.
+
+İkincisi: `retention_policies_write` bir `for all` politikası, ve bir `for
+all` politikasının INSERT'i `with check`'e, UPDATE ile DELETE'i `using`'e
+bakıyor. Testim yalnızca INSERT deniyordu, yani `using` hiç sorulmuyordu —
+`using (true)` yapan mutasyon sessiz kaldı. Güncelleme ve silme denemeleri
+eklendi, ve ikisi de **sessiz ret**: RLS yetkisiz bir güncellemeyi sıfır
+satır olarak döndürüyor, istisna atmıyor. Bu oturumda dördüncü kez.
+
+Düzeltmelerden sonra yirmi mutasyonun yirmisi düştü.
+
+### Görünümün kolonunu `state` adlandırmak dört ekranı düşürdü
+
+Hesaplanmış kolonu `state` diye yazdım ve `/meetings`, `/plan`,
+`/construction`, `/documents` tavanları düştü — hiçbiri benim ekranım değil.
+Sebep: kurgu üretici görünümlerde hesaplanan dağarcıkları **kolon adıyla**
+anahtarlıyor, yani `state` adlı bir kolona yazdığım altı değer `state`
+kolonu olan **her** tabloya satır ürettirmeye başladı. `enum-drift`'in
+eşleştirme listesi de aynı şekilde anahtarlı: `state: 'RetentionState'`
+yazmak, başka bir görünümün `state` kolonunu da benim birliğime bağlamış
+olurdu.
+
+**Hesaplanmış bir kolonun adı bu depoda yerel değil, genel.** Kolon
+`retention_state` oldu ve dört tavan yerine döndü.
+
+### Dördüncü yer, ve orada bekleyen altı adsız düğme
+
+M4-10 tutamak toplamanın üçüncü yerini bulmuştu (bir görünüm düğmesinin
+arkası). M9-11'in muhafaza paneli dördüncüsünü buldu: **bir kaydın detay
+panelinin arkası.** Panel bir satıra tıklanınca açılıyor, ve satır bir düğme
+değil — ad arayan mekanizma onu bulamıyor. Kaynak hangi listenin kayıt
+taşıdığını kendisi söylüyor artık (`data-record-list`); ilk hâlinde `tbody
+tr` arıyordum ve hiçbir şey bulamadı, çünkü `/documents` kütüğü bir tablo
+değil düğme listesi.
+
+Ve detay paneli ilk kez açıldığında kapı **altı adsız düğme** buldu: sürüm
+listesindeki "görüntüle" ve "indir" ikonları, üç sürüm × iki düğme. Hiç
+ölçülmemişlerdi, çünkü o panel hiç açılmamıştı. İkisine de sürüm numarasını
+taşıyan bir ad verildi — üç "Görüntüle" düğmesi arasında hangisinin hangisi
+olduğunu söylemeyen bir ad, ad değil (T9-06).
+
+### Ve ekran metni ölçüsünde üçüncü kör nokta
+
+`src/lib/retention.ts` içinden iki tekrar eden cümleyi kestim ve tavan **hiç
+kıpırdamadı** — 65.169'dan 65.169'a. Üçüncü kez aynı teşhis yolu: bir şeyi
+kes, sayı değişmiyorsa kusur kesimde değil ölçüde.
+
+`stringsIn` yalnızca **üçlü işleç** biçimini tanıyordu (`tr ? '…' : '…'`),
+oysa bu depodaki etiketlerin çoğu bir **nesne**: `{ tr: '…', en: '…' }`.
+`src/lib/*.ts` içindeki kategori, tutum, durum ve yönlendirme sözlükleri,
+`navigation.ts`'in menü adları, `reports.ts`'in rapor başlıkları — **668
+çift, 8.759 karakter, 62 dosya**, ölçülen toplamın yaklaşık yüzde on üçü.
+
+Tavan 65.169 → 73.928. Bu bir **yükseltme değil**, ölçüm değişikliği:
+`RAISED` listesine girmiyor, çünkü ödenen bir bedel yok — görülmeyen bir şey
+görünür oldu. Panellerin gerçek bedeli ayrı kaydedildi (64.375 → 65.169,
+eski ölçüyle). Kör noktanın geri gelmemesi için plant edilmiş bir sözlük
+sınanıyor; bir tavan körlüğü yakalayamaz.
+
+## 0045 sonrası bir düzeltme
+
+M11-05 ve M11-06 bu denetimde "yapıldı" sayılıyordu ve öyleydi: teslim kaydı
+vardı, push `unconfigured` olarak yazılıyordu ve ekran bunu söylüyordu. 0045
+ile push **gerçekten** teslim ediyor — VAPID anahtarı kayıtlıysa. Satır sayısı
+değişmedi; değişen şey, o iki satırın artık "kaydı var" değil "gönderiyor"
+anlamına gelmesi. Kurulumu ve doğrulanamayan kısmı `docs/BILDIRIM-KURULUMU.md`
+anlatıyor.
+
+E-posta ve WhatsApp hâlâ `unconfigured`: biri bir sağlayıcı API anahtarı,
+diğeri bir Meta işletme hesabı istiyor. İkisi de bu depoda çözülecek şeyler
+değil.
+
+## Yapılmış ama ID'si anılmamış satırlar
+
+Bunlar "yapıldı" sayılır; eksik olan tek şey migration yorumundaki atıf.
+
+| ID    | P   | Kanıt                                                                                          |
+| ----- | --- | ---------------------------------------------------------------------------------------------- |
+| M2-03 | P1  | `obligation_state` enum (0010): açık · devam · yerine getirildi · ihlâl riski · ihlâl · askıda |
+| M4-02 | P1  | `stakeholder_category` enum (0006), on iki değer                                               |
+| M4-08 | P1  | `obligations.owner_stakeholder_id` (0010) — bağ veritabanında var                              |
+| M7-05 | P1  | `work_state` enum (0013), altı değer, `legally_suspended` dahil                                |
+| M3-14 | P2  | `governance_organs.quorum_members` / `quorum_fraction` (0021) + oturum kontrolü ekranda        |
+| M5-12 | P2  | `hearing_brief` sekmesi (LegalAffairsView)                                                     |
+| M5-14 | P2  | `chronology_entries` (0030) + `ChronologyPanel`                                                |
+
+## Yapılmamış satırlar
+
+18 satır. Her biri için neyin eksik olduğu ve neye bağlı olduğu yazıldı,
+çünkü bir kısmı kod değil karar ya da hesap bekliyor.
+
+### P0 — 1 satır
+
+| ID    | Gereksinim                                   | Durum                                                                                                                                                                                                     |
+| ----- | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M1-02 | Dört rol için iki faktörlü doğrulama zorunlu | **Sizin kararınıza bağlı.** Supabase projesinde MFA'nın açılması ve rol bazlı zorunluluk gerekir; portal tarafında `aal2` kontrolü yazılır. Kimlik sağlayıcısında bir ayar olmadan kod tek başına yetmez. |
+
+### P1 — 1 satır
+
+| ID    | Gereksinim                                       | Durum                                                                                                     |
+| ----- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| M1-10 | Oturum yönetimi: aktif cihazlar, uzaktan kapatma | Supabase `auth.sessions` üzerinden okunur; kapatma yönetici yetkisiyle sunucu tarafı bir fonksiyon ister. |
+
+### P2 — 16 satır
+
+Portal içinde yapılabilenler (bağımlılığı yok):
+
+| ID    | Gereksinim                                                                                                                            |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| M2-10 | Tekrarlayan yükümlülükler (yıllık tescil, dönemsel beyan) — `compliance_requirements` zaten yineleme taşıyor, yükümlülükler taşımıyor |
+| M4-12 | Etkileşim planı (ne istiyoruz, sıradaki adım, sorumlu)                                                                                |
+| M4-14 | Paydaş haritası anlık görüntüsü (dondurulmuş)                                                                                         |
+| M5-11 | Hukukî senaryo analizi ("kaybedersek")                                                                                                |
+| M5-13 | İçtihat/mevzuat kütüphanesi                                                                                                           |
+| M7-13 | Değişiklik emri (variation order)                                                                                                     |
+| M7-14 | Mevsim/iklim risk takvimi (muson uyarısı)                                                                                             |
+| M7-15 | Fotoğraf arşivi, aynı açıdan zaman serisi                                                                                             |
+| M8-14 | KRA vergi muafiyeti takibi                                                                                                            |
+
+Dışarıdan bir şeye bağlı olanlar:
+
+| ID    | Gereksinim                                   | Neye bağlı                                                                   |
+| ----- | -------------------------------------------- | ---------------------------------------------------------------------------- |
+| M1-12 | Tek oturum açma (Google Workspace)           | Workspace tarafında OAuth istemcisi                                          |
+| M1-13 | IP/coğrafya anomali uyarısı                  | Bir IP coğrafya kaynağı; `audit_log` IP tutmuyor, önce o eklenir             |
+| M3-12 | Sesli not → metin → tutanak önerisi          | Bir konuşma tanıma servisi; AI proxy'si üzerinden, anahtar sunucuda          |
+| M5-15 | Mahkemeye hazır tek PDF (numaralı, indeksli) | Sunucu tarafı PDF birleştirme — M9-12 ile aynı bağımlılık                    |
+| M8-11 | Muhasebe entegrasyonu (QuickBooks/Xero/SAP)  | Satıcı hesabı ve OAuth; M8-10 sahte entegrasyonu kaldırdı, yerine gerçeği bu |
+| M9-10 | TR/EN OCR (taranmış mahkeme evrakı)          | Bir OCR servisi                                                              |
+| M9-12 | İndirmede kullanıcı adı filigranı            | Sunucu tarafı PDF işleme; M9-14'te konuştuğumuz pdf bağımlılığının aynısı    |
+
+## Bu denetimin ilk hâlindeki hata
+
+Bu dosyanın ilk hâli özetinde "P3 14 satır, hepsi yapıldı" yazıyordu. Yanlıştı:
+**M11-13** (mesaja dosya ekleme, alıntılama, tepki) yapılmamıştı ve 0027 bunu
+kendi yorumunda açıkça söylüyordu. Satırları saymak yerine hangilerini
+yaptığımı hatırlamaya güvenmişim. Hata, P3 listesini tek tek bastırmakla
+ortaya çıktı — ve M11-13 o yüzden 0044'te yapıldı, yani şimdi o cümle doğru.
+Denetim dosyasının kendi iddiası da denetlenmek zorundaydı.
+
+## Bu denetimin kendi sınırı
+
+Kanıt araması desen eşlemesidir ve iki yönde yanılabilir. Gevşek bir desen
+yapılmamış bir şeyi yapılmış gösterir — ilk geçişte "muson" kendi yazdığım
+0040 yorumunda eşleşti, "sap" bir başka kelimenin içinde, "retention" bir
+hakediş sütununda. Dar bir desen ise yapılmış bir şeyi kaçırır; M1-08 ilk
+taramada `supabase/functions/` dizini sayılmadığı için yok görünüyordu.
+Yukarıdaki 18 satırın her biri bu yüzden elle teyit edildi, ve "yapıldı"
+sayılan 192 satırın hepsi tek tek teyit edilmedi — yalnızca atıfı olanlar
+atıfına, atıfı olmayan yedisi kanıtına dayanıyor.
