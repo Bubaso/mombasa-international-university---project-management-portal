@@ -308,8 +308,13 @@ export const RequestPanel: React.FC = () => {
                 head={
                   <tr>
                     <Th>{tr ? 'Aday' : 'Candidate'}</Th>
-                    <Th className="text-right">{tr ? 'Ücret' : 'Fee'}</Th>
-                    <Th className="text-right">{tr ? 'Puan' : 'Score'}</Th>
+                    {/* T5-02. Ücret ile puan TEK kolonda: ikisi de teklifin
+                        sayısı ve karşılaştırma zaten ikisini birlikte okuyor
+                        ("şu kadara şu puan"). Telefonda kütük karta
+                        dönüşüyor ve kartta en çok dört alan duruyor.
+                        Teklif vermemiş adayın ücreti `null` kalıyor (0029) —
+                        birleşim onu 0 göstermiyor. */}
+                    <Th className="text-right">{tr ? 'Ücret · puan' : 'Fee · score'}</Th>
                     <Th>{tr ? 'Güçlü / zayıf' : 'Strengths / weaknesses'}</Th>
                     <Th>{tr ? 'Karar' : 'Decision'}</Th>
                   </tr>
@@ -331,9 +336,9 @@ export const RequestPanel: React.FC = () => {
                         <span className="block text-xs text-slate-500">
                           {feeBasisLabel(c.feeBasis, language)}
                         </span>
-                      </Td>
-                      <Td className="text-right">
-                        <span className="font-mono text-xs text-slate-700">{c.score ?? '—'}</span>
+                        <span className="block font-mono text-xs text-slate-700">
+                          {c.score === null ? (tr ? 'puan yok' : 'no score') : `${c.score} / 100`}
+                        </span>
                       </Td>
                       <Td>
                         {c.strengthsEn && (

@@ -188,8 +188,13 @@ export const AccessReviewSection: React.FC<{ canReview: boolean }> = ({ canRevie
                 <Th>{tr ? 'Kişi' : 'Person'}</Th>
                 <Th>{tr ? 'Sebep' : 'Why'}</Th>
                 <Th>{tr ? 'Portalda son işlem' : 'Last recorded action'}</Th>
-                <Th>{tr ? 'Bitiş' : 'Expiry'}</Th>
-                <Th>{tr ? 'Son bakış' : 'Last reviewed'}</Th>
+                {/* T5-02. Bitiş ile son bakış TEK kolonda: telefonda kütük
+                    karta dönüşüyor ve kartta en çok dört alan duruyor.
+                    İkisi de hesabın takvimi hakkında ve birlikte okunuyor —
+                    "ne zaman bitiyor, en son kim baktı". Telefonda birini
+                    gizlemek, erişim gözden geçirmesinin iki ucundan birini
+                    görünmez yapardı. */}
+                <Th>{tr ? 'Bitiş · son bakış' : 'Expiry · last reviewed'}</Th>
               </tr>
             }
           >
@@ -218,24 +223,20 @@ export const AccessReviewSection: React.FC<{ canReview: boolean }> = ({ canRevie
                       ? formatDate(row.lastActionAt, language)
                       : unknown(tr ? 'kayıtlı yazma işlemi yok' : 'no recorded write')}
                   </Td>
+                  {/* TEK SATIRDA: telefon kartında iki satırlık bir hücre
+                      ayrı bir alan kadar yer tutuyor, yani alan sayısını
+                      düşürüp boyu düşürmemek T5-02'nin yarısını
+                      karşılamıyor. */}
                   <Td>
                     {row.expiresAt
                       ? formatDate(row.expiresAt, language)
                       : unknown(tr ? 'süresiz' : 'open-ended')}
-                  </Td>
-                  <Td>
-                    {row.lastReviewedAt ? (
-                      <>
-                        {formatDate(row.lastReviewedAt, language)}
-                        {row.lastDecision && (
-                          <span className="block text-sm text-slate-500">
-                            {decisionWord(row.lastDecision, tr)}
-                          </span>
-                        )}
-                      </>
-                    ) : (
-                      unknown(tr ? 'hiç' : 'never')
-                    )}
+                    <span className="text-slate-400"> · </span>
+                    <span className="text-slate-500">
+                      {row.lastReviewedAt
+                        ? formatDate(row.lastReviewedAt, language)
+                        : unknown(tr ? 'hiç bakılmadı' : 'never reviewed')}
+                    </span>
                   </Td>
                 </tr>
               );

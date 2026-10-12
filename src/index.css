@@ -328,12 +328,20 @@ body {
     padding: 0.25rem 0.5rem;
   }
 
+  /* T5-02. Dolgu 0.375rem'den 0.25rem'e indi, VE SEBEBİ ÖLÇÜLDÜ: dört
+     etiketli alan 0.375rem dolguyla 142px yapıyordu, yani kriterin iki
+     yarısı ("en çok dört alan" ve "≤140px") mevcut dolguda birbiriyle
+     çelişiyordu. Dört alan hiçbir zaman sığmayacaksa, kriterin biri
+     ölçülemez.
+
+     Bir hücre bir DOKUNMA HEDEFİ değil (hedef satırın kendisi), yani T4'ün
+     44px tabanı burada geçerli değil. */
   table.register td {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
     gap: 0.75rem;
-    padding: 0.375rem 0;
+    padding: 0.25rem 0;
     text-align: right;
   }
 

@@ -212,8 +212,13 @@ export const BaselinePanel: React.FC = () => {
             head={
               <tr>
                 <Th>{tr ? 'Kilometre taşı' : 'Milestone'}</Th>
-                <Th>{tr ? 'O günkü hedef' : 'Target then'}</Th>
-                <Th>{tr ? 'Bugünkü hedef' : 'Target now'}</Th>
+                {/* T5-02. İki hedef TEK kolonda, ve bu bir kayıp değil
+                    kazanç: tablonun bütün sorusu "tarih oynadı mı", ve iki
+                    tarihi yan yana bir okla göstermek hareketin kendisini
+                    gösteriyor. Yanındaki kolon o hareketi gün olarak
+                    sayıyor. Telefonda kütük karta dönüşüyor ve kartta en çok
+                    dört alan duruyor. */}
+                <Th>{tr ? 'Hedef: o gün → bugün' : 'Target: then → now'}</Th>
                 <Th>{tr ? 'Tarih ne kadar oynadı' : 'How far the date moved'}</Th>
                 <Th>{tr ? 'Teslim gecikmesi' : 'Delivery slip'}</Th>
               </tr>
@@ -245,10 +250,7 @@ export const BaselinePanel: React.FC = () => {
                   <Td>
                     <span className="font-mono text-xs text-slate-600">
                       {row.baselineTarget ? formatDate(row.baselineTarget, language) : '—'}
-                    </span>
-                  </Td>
-                  <Td>
-                    <span className="font-mono text-xs text-slate-600">
+                      {' → '}
                       {row.currentTarget ? formatDate(row.currentTarget, language) : '—'}
                     </span>
                   </Td>

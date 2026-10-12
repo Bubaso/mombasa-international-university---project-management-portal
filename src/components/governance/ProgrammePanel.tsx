@@ -68,11 +68,14 @@ export const ProgrammePanel: React.FC = () => {
         <TableFrame
           head={
             <tr>
-              <Th>{tr ? 'Program' : 'Programme'}</Th>
-              <Th>{tr ? 'Derece' : 'Degree'}</Th>
+              {/* T5-02. Altı kolondan dörde, İKİ birleşimle — ve ikisi de
+                  doğal. Derece programın kimliğinin parçası ("BSc Nursing"),
+                  ayrı bir olgu değil. Kadro ile müfredat ise programın aynı
+                  sorusunun iki yarısı: açılmaya hazır mı. Telefonda kütük
+                  karta dönüşüyor ve kartta en çok dört alan duruyor. */}
+              <Th>{tr ? 'Program · derece' : 'Programme · degree'}</Th>
               <Th>{tr ? 'Durum' : 'State'}</Th>
-              <Th className="text-right">{tr ? 'Kadro' : 'Staff'}</Th>
-              <Th>{tr ? 'Müfredat' : 'Curriculum'}</Th>
+              <Th>{tr ? 'Kadro · müfredat' : 'Staff · curriculum'}</Th>
               <Th className="text-right">{tr ? 'Hedef alım' : 'Target intake'}</Th>
             </tr>
           }
@@ -83,15 +86,15 @@ export const ProgrammePanel: React.FC = () => {
                 <span className="text-sm font-medium text-slate-900">
                   {(tr ? p.nameTr : p.nameEn) ?? p.nameEn}
                 </span>
-                {p.faculty && <span className="block text-xs text-slate-500">{p.faculty}</span>}
-              </Td>
-              <Td>
-                <span className="font-mono text-xs text-slate-600">{p.degree}</span>
+                <span className="block font-mono text-xs text-slate-600">
+                  {p.degree}
+                  {p.faculty && ` · ${p.faculty}`}
+                </span>
               </Td>
               <Td>
                 <Pill>{programmeLabel(p.state, language)}</Pill>
               </Td>
-              <Td className="text-right">
+              <Td>
                 {p.requiredAcademicStaff == null ? (
                   <span className="flex items-center justify-end gap-1 text-xs text-amber-800">
                     <CircleHelp className="h-3 w-3" aria-hidden="true" />
@@ -106,8 +109,6 @@ export const ProgrammePanel: React.FC = () => {
                     )}
                   </span>
                 )}
-              </Td>
-              <Td>
                 {p.curriculumDocumentId ? (
                   <button
                     type="button"
@@ -115,10 +116,12 @@ export const ProgrammePanel: React.FC = () => {
                     className="flex cursor-pointer items-center gap-1 text-xs text-indigo-700 hover:underline"
                   >
                     <FileCheck2 className="h-3.5 w-3.5" aria-hidden="true" />
-                    {tr ? 'kasada' : 'in the vault'}
+                    {tr ? 'müfredat kasada' : 'curriculum in the vault'}
                   </button>
                 ) : (
-                  <span className="text-xs text-slate-500">{tr ? 'yok' : 'none'}</span>
+                  <span className="block text-xs text-slate-500">
+                    {tr ? 'müfredat yok' : 'no curriculum'}
+                  </span>
                 )}
               </Td>
               <Td className="text-right">

@@ -232,8 +232,14 @@ export const BudgetPanel: React.FC<{ canSpend: boolean }> = ({ canSpend }) => {
               <tr>
                 <Th>{tr ? 'Kalem' : 'Line'}</Th>
                 <Th className="text-right">{tr ? 'Bütçe' : 'Budget'}</Th>
-                <Th className="text-right">{tr ? 'Taahhüt' : 'Committed'}</Th>
-                <Th className="text-right">{tr ? 'Harcanan' : 'Spent'}</Th>
+                {/* T5-02. Taahhüt ile harcanan TEK kolonda: telefonda kütük
+                    karta dönüşüyor ve kartta en çok dört alan duruyor.
+                    Telefonda gizlemek yerine birleştirildi, çünkü gizlenen
+                    bir sayı telefonda ulaşılamayan bir sayı olurdu ve bu
+                    kalemin detay görünümü yok. İkisi aynı paranın iki
+                    aşaması — taahhüt edilen, sonra ödenen — ve birlikte
+                    okunuyorlar. */}
+                <Th className="text-right">{tr ? 'Harcanan · taahhüt' : 'Spent · committed'}</Th>
                 <Th className="text-right">{tr ? 'Kalan' : 'Remaining'}</Th>
               </tr>
             }
@@ -251,10 +257,16 @@ export const BudgetPanel: React.FC<{ canSpend: boolean }> = ({ canSpend }) => {
                   <RecordOrigin origin={origins.of(row.budgetLineId)} />
                 </Td>
                 <Td className="text-right font-mono">{fmt(row.budgetKes, 'KES')}</Td>
-                <Td className="text-right font-mono text-sky-800">
-                  {fmt(row.committedKes, 'KES')}
+                {/* TEK SATIRDA, iki satırda değil: ilk yazışımda alt alta
+                    koymuştum ve kolon sayısı düştü ama KART BOYU düşmedi —
+                    telefon kartında iki satırlık bir hücre, ayrı bir alan
+                    kadar yer tutuyor. T5-02'nin iki yarısı (alan sayısı ve
+                    yükseklik) aynı yöne çekilmek zorunda. */}
+                <Td className="text-right font-mono">
+                  {fmt(row.spentKes, 'KES')}
+                  <span className="text-slate-400"> / </span>
+                  <span className="text-sky-800">{fmt(row.committedKes, 'KES')}</span>
                 </Td>
-                <Td className="text-right font-mono">{fmt(row.spentKes, 'KES')}</Td>
                 <Td
                   className={`text-right font-mono font-semibold ${
                     row.remainingKes < 0 ? 'text-rose-700' : 'text-slate-900'
@@ -267,8 +279,11 @@ export const BudgetPanel: React.FC<{ canSpend: boolean }> = ({ canSpend }) => {
             <tr className="border-t-2 border-slate-300 font-semibold">
               <Td>{tr ? 'Toplam' : 'Total'}</Td>
               <Td className="text-right font-mono">{fmt(totals.budget, 'KES')}</Td>
-              <Td className="text-right font-mono text-sky-800">{fmt(totals.committed, 'KES')}</Td>
-              <Td className="text-right font-mono">{fmt(totals.spent, 'KES')}</Td>
+              <Td className="text-right font-mono">
+                {fmt(totals.spent, 'KES')}
+                <span className="text-slate-400"> / </span>
+                <span className="text-sky-800">{fmt(totals.committed, 'KES')}</span>
+              </Td>
               <Td
                 className={`text-right font-mono ${
                   totals.remaining < 0 ? 'text-rose-700' : 'text-slate-900'

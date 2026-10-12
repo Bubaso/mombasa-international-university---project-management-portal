@@ -137,8 +137,12 @@ export const SharingSection: React.FC<{ canManage: boolean }> = ({ canManage }) 
             <tr>
               <Th>{tr ? 'Kişi' : 'Person'}</Th>
               <Th>{tr ? 'Kayıt' : 'Record'}</Th>
-              <Th>{tr ? 'İzin' : 'Permission'}</Th>
-              <Th>{tr ? 'Süre' : 'Lapses'}</Th>
+              {/* T5-02. İzin ile süresi TEK kolonda. Bir paylaşımın ne
+                  olduğu "okuma, 12 Mart'a kadar" cümlesidir — izni süresinden
+                  ayırmak, süresiz bir izinle dolmuş bir izni aynı anda
+                  okumayı zorlaştırıyordu. Telefonda kütük karta dönüşüyor ve
+                  kartta en çok dört alan duruyor. */}
+              <Th>{tr ? 'İzin · süre' : 'Permission · lapses'}</Th>
               <Th>{tr ? 'Gerekçe' : 'Reason'}</Th>
               <Th className="text-right">{canManage ? (tr ? 'İşlem' : 'Action') : ''}</Th>
             </tr>
@@ -173,19 +177,19 @@ export const SharingSection: React.FC<{ canManage: boolean }> = ({ canManage }) 
                         ? 'Okuma'
                         : 'Read'}
                   </Pill>
-                </Td>
-                <Td>
-                  {grant.expiresAt ? (
-                    lapsed ? (
-                      <Pill className="border-slate-300 bg-slate-100 text-slate-500">
-                        {tr ? 'Doldu' : 'Lapsed'}
-                      </Pill>
-                    ) : (
-                      grant.expiresAt.slice(0, 10)
-                    )
-                  ) : (
-                    <span className="text-slate-500">{tr ? 'Süresiz' : 'Open-ended'}</span>
-                  )}
+                  {/* Aynı satırda: telefon kartında ikinci bir satır,
+                      ayrı bir alan kadar yer tutuyor. */}
+                  <span className="ml-1.5 text-slate-500">
+                    {grant.expiresAt
+                      ? lapsed
+                        ? tr
+                          ? 'doldu'
+                          : 'lapsed'
+                        : grant.expiresAt.slice(0, 10)
+                      : tr
+                        ? 'süresiz'
+                        : 'open-ended'}
+                  </span>
                 </Td>
                 <Td className="max-w-[220px] truncate text-slate-500">{grant.reason ?? '—'}</Td>
                 <Td className="text-right">

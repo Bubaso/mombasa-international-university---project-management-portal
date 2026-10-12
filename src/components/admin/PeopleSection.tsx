@@ -180,7 +180,24 @@ export const PeopleSection: React.FC<{ canAdminister: boolean }> = ({ canAdminis
                 const expired = isExpired(person.expiresAt);
                 return (
                   <React.Fragment key={person.id}>
-                    <tr className={editing ? 'bg-amber-50/50' : undefined}>
+                    {/* T5-03. SATIRIN TAMAMI HEDEF. Ölçüm, 12 Ekim 2026:
+                        "Düzenle" düğmesi satır başından 820px uzaktaydı ve
+                        satırın kendisi hedef değildi — yani bir kişiyi
+                        düzenlemek için masaüstünde bütün genişliği geçmek
+                        gerekiyordu. Kriterin iki yarısından ikincisi,
+                        `/stakeholders` ile `/documents`'ta zaten kullanılan
+                        kalıp.
+
+                        DÜĞME KALDI, ve bu kasıtlı: tıklanabilir bir `<tr>`
+                        klavyeyle ulaşılamıyor, ve adı olan bir denetim
+                        T9-06'nın istediği şey. Satır kısayol, düğme ise
+                        eylemin adı ve klavye yolu. */}
+                    <tr
+                      onClick={canAdminister && !editing ? () => beginEdit(person) : undefined}
+                      className={`${editing ? 'bg-amber-50/50' : ''} ${
+                        canAdminister && !editing ? 'cursor-pointer hover:bg-slate-50' : ''
+                      }`}
+                    >
                       <Td>
                         <div className="font-medium text-slate-900">{person.fullName}</div>
                         <div className="text-xs text-slate-500">{person.email}</div>

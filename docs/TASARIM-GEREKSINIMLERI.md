@@ -113,14 +113,14 @@ Kullanıcı veriye bakmaya geliyor.
 
 ## T5 — Kütükler, tablolar, listeler
 
-| ID    | Gereksinim                                                                                                | P   | Kabul kriteri                                                                 |
-| ----- | --------------------------------------------------------------------------------------------------------- | --- | ----------------------------------------------------------------------------- |
-| T5-01 | `TableFrame`'in koşulsuz `min-w-[640px]`'i kalksın; telefonda tablo **kart listesine** dönüşsün.          | P0  | 390px'te hiçbir kütükte yatay kaydırıcı yok.                                  |
-| T5-02 | Telefon kartında en çok 4 alan görünür: ne, kim, ne zaman, durum. Gerisi detayda.                         | P1  | Kart yüksekliği ≤ 140px.                                                      |
-| T5-03 | Satır eylemleri masaüstünde satırın sonunda değil, **satıra yakın** ya da satır tıklanabilir olsun.       | P1  | Eylem hedefi satır başlığından ≤480px uzakta ya da satırın tamamı hedef.      |
-| T5-04 | Uzun listelerde filtre ve sayım üstte ve yapışkan olsun.                                                  | P2  | Kaydırırken filtre çubuğu görünür kalır.                                      |
-| T5-05 | Boş durum, bugünkü gibi **neden boş olduğunu** söylemeye devam etsin — bu zaten doğru yapılmış, korunsun. | P0  | Her boş durumda sebep cümlesi var (mevcut smoke testleri bunu zaten koruyor). |
-| T5-06 | Gruplanmış kütüklerde grup başlığı ve sayısı kalsın (yükümlülüklerde iyi çalışıyor).                      | P2  | Grup başlıklarında sayı görünür.                                              |
+| ID    | Gereksinim                                                                                                | P   | Kabul kriteri                                                                                                                                                                                                                                                                           |
+| ----- | --------------------------------------------------------------------------------------------------------- | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T5-01 | `TableFrame`'in koşulsuz `min-w-[640px]`'i kalksın; telefonda tablo **kart listesine** dönüşsün.          | P0  | 390px'te hiçbir kütükte yatay kaydırıcı yok.                                                                                                                                                                                                                                            |
+| T5-02 | Telefon kartında en çok 4 alan görünür: ne, kim, ne zaman, durum. Gerisi detayda.                         | P1  | **Yarısı kapandı.** Alan sayısı: 16 kütüğün hepsi ≤4 **veri** alanı, kapı `tests/registers.mjs` (kaynaktan sayıyor, sekme arkasındakini de görür). Yükseklik: 16 kartın 14'ü ≤140px; `/finance` 145px ve `/admin` 182px rota başına tavanla rachet'te. Aşağıdaki 5. dalga notuna bakın. |
+| T5-03 | Satır eylemleri masaüstünde satırın sonunda değil, **satıra yakın** ya da satır tıklanabilir olsun.       | P1  | ✅ Ölçüm: `/admin`'de "Düzenle" satır başından **820px** uzaktaydı ve satır hedef değildi. Satır artık hedef (tıklanabilir satır 10 → **11**), düğme adı ve klavye yolu için kaldı. Kapı `tests/populated.mjs` içinde, masaüstü genişliğinde.                                           |
+| T5-04 | Uzun listelerde filtre ve sayım üstte ve yapışkan olsun.                                                  | P2  | Kaydırırken filtre çubuğu görünür kalır.                                                                                                                                                                                                                                                |
+| T5-05 | Boş durum, bugünkü gibi **neden boş olduğunu** söylemeye devam etsin — bu zaten doğru yapılmış, korunsun. | P0  | Her boş durumda sebep cümlesi var (mevcut smoke testleri bunu zaten koruyor).                                                                                                                                                                                                           |
+| T5-06 | Gruplanmış kütüklerde grup başlığı ve sayısı kalsın (yükümlülüklerde iyi çalışıyor).                      | P2  | Grup başlıklarında sayı görünür.                                                                                                                                                                                                                                                        |
 
 ## T6 — Açıklama metinleri
 
@@ -1172,11 +1172,14 @@ Her iki durumda da değiştirdiğim **kriter**, ölçüm değil.
 
 ### Henüz yapılmayan
 
-- **T5-02** (telefon kartında en çok 4 alan, yükseklik ≤140px): ölçüldü, bugün
-  /stakeholders'ta 4, /admin'de 1 kart 140px'i geçiyor. Küçük; yapılmadı.
-- **T5-03** (satır eylemi satıra yakın ya da satır tıklanabilir): yapılmadı.
-- **T6-04** mekanizması hazır (`Explain tone="warning"`) ve iki yerde
-  kullanılıyor; kalan uyarı şeritleri taranmadı.
+- **T5-02**'nin yükseklik yarısı: 16 kartın 2'si hedefin üstünde
+  (`/finance` 145px, `/admin` 182px), ikisi de bir hücresi ikinci satıra
+  sardığı için. Rota başına tavanla kayıtlı ve yalnızca düşebilir. Alan
+  sayısı yarısı kapandı — 5. dalga notu.
+- **T6-04** (uyarı şeridi telefonda ≤3 satır): mekanizma hazır
+  (`Explain tone="warning"`) ve iki yerde kullanılıyor; şeridin KENDİSİNİ
+  bulan bir ölçü yok ve renkten bulmak bu palette mümkün değil — 5. dalga
+  notu sebebini ölçümle anlatıyor.
 
 ## 4. Dalga — ölçülen sonuç
 
@@ -2464,3 +2467,116 @@ Tavan 65.169 → 73.928, ve bu bir **yükseltme değil** ölçüm değişikliği
 `RAISED` listesine girmiyor. Panellerin gerçek bedeli ayrı kaydedildi
 (64.375 → 65.169, eski ölçüyle). Ayrımı korumak şart, yoksa "tavan niçin
 yükseldi" sorusunun cevabı iki farklı şeyi aynı kutuya koyar.
+
+## 5. Dalga — T5-02, T5-03, T6-04 ve bir erişim sınırı
+
+### Önce bir olgu: bu üç satır bugüne kadar hiçbir kapıda yoktu
+
+Üçünün kabul kriteri 390px'te ölçülüyor ve bu depodaki telefon ölçümü
+`tests/design.mjs`. O betik **canlı projeye giriş yapıyor** — gerçek
+kayıtların üzerinde ölçüyor, `DESIGN_EMAIL`/`DESIGN_PASSWORD` istiyor, ve
+`npm run verify` onu çağırmıyor. Yani üç kriter yazılıydı, bir kez elle
+ölçülmüştü, ama bozulduğunda hiçbir şey düşmüyordu.
+
+Ölçüm kurguyla çalışan ve verify'ın içinde olan `tests/populated.mjs`'e
+taşındı: ikinci bir genişlik turu (390×844), dar tutulmuş — sekme turu yok,
+görünüm düğmesi yok, detay açma yok. Ölçtüğü veri gerçek değil; ölçtüğü
+**kural** aynı kural, ve kurgu her enum değerini ve her null'ı taşıdığı için
+en uzun hücre metni zaten ekranda.
+
+| Ölçüm                                          | Önce        | Sonra       | Kriter |
+| ---------------------------------------------- | ----------- | ----------- | ------ |
+| Dörtten fazla **veri** alanlı kütük            | **11 / 16** | 0 / 16      | T5-02  |
+| 140px'i geçen telefon kartı                    | **6**       | 2 (kayıtlı) | T5-02  |
+| En uzun kart (`/admin`)                        | **202px**   | 182px       | T5-02  |
+| Satır eylemi 480px'ten uzak, satır hedef değil | **1**       | 0           | T5-03  |
+| Tıklanabilir kütük satırı                      | 10 / 16     | **11 / 16** | T5-03  |
+
+### T5-02: kriterin iki yarısı iki ayrı kapıda, ve zorunlu olarak
+
+**Alan sayısı kaynaktan ölçülüyor** (`tests/registers.mjs`). Önce tarayıcıda
+ölçtüm ve iki kütük buldu; kaynağı taradığımda **on bir** çıktı. Aradaki
+dokuz, bir sekmenin arkasındaydı ve telefon turu sekmelere dokunmuyor. Bir
+ölçü yalnızca render edileni görür; kaynak taraması hepsini görür.
+
+**Yükseklik ancak çizildiğinde bilinir**, o yüzden o yarı çalışma zamanında
+kaldı. İkisini tek kapıya sıkıştırmak, birini ölçülemez yapardı.
+
+### Kriterde yaptığım iki değişikliği açıkça söylüyorum
+
+**Bir.** "Alan" veri alanı sayılıyor, kontrol değil. Kütüklerin çoğunda
+beşinci kolon bir eylem kolonu: başlığı boş ya da yetkiye bağlı
+(`{canManage ? 'İşlem' : ''}`), içinde bir düğme var. Onu alan saymak,
+kriteri dört veri alanından üçe indirirdi — kriterin söylemediği bir şey.
+Eylem kolonunun **son** kolon olması ayrıca sınanıyor, çünkü ortada duran bir
+düğme kolonu kartta veriyi ikiye böler.
+
+İlk hâlinde eylem kolonunu "İşlem"/"Action" kelimesinden tanıyordum ve yanlış
+pozitif verdi: `AuditSection`'ın "İşlem" kolonu denetim kütüğünün kaydettiği
+**fiil** — insert, update, delete — yani bir veri alanı. Ayıran şey kelime
+değil **koşulluluk**: bir kontrol kolonunun başlığı yetkiye bağlıdır, bir veri
+kolonunun başlığı koşulsuz durur.
+
+**İki.** 140px düz bir eşik değil, rota başına bir tavan (`DENSITY`
+kalıbının aynısı). Sebebi ölçüldü: telefon kartında dört etiketli alan
+0.375rem dolguyla **142px** yapıyordu, yani kriterin iki yarısı birbiriyle
+çelişiyordu — dört alan hiçbir zaman sığmayacaksa biri ölçülemez. Dolgu
+0.25rem'e indi (bir hücre dokunma hedefi değil, hedef satırın kendisi) ve on
+altı kartın on dördü sığdı. Kalan ikisi bir hücresi **ikinci satıra sardığı**
+için sığmıyor, ve sarma veriye bağlı: uzun bir başlık bir satır daha ekler.
+"Hiçbir kart 140px'i geçmez" cümlesi, başlığı saran bir kayıt geldiği gün
+yanlış olurdu.
+
+`/finance` 145px ve `/admin` 182px kayıtlı; sayılar yalnızca **düşebilir**, ve
+kayıtlı bir tavanın bugün gerçekten ölçülen bir tavan olduğu ayrıca sınanıyor
+— düzelen bir rotanın kaydı listede kalırsa, geçmiş bir kusuru sonsuza taşır.
+
+Bu yüzden **T5-02 ✅ işaretli değil**: yarısı kapandı, yarısı ölçüldü ve
+hedefin üstünde.
+
+### T6-04 ölçülemedi, ve sebebi ölçüldü
+
+Kriter "hiçbir uyarı şeridi telefonda 3 satırdan uzun değil" diyor, yani önce
+"uyarı şeridi" bulunmalı. Renkten bulmayı denedim ve **iki kez ters yöne
+kaçtı**:
+
+1. İlk hâli yalnızca kendi metin düğümü olan tintli öğeyi gördü — 19 rotada
+   **1 şerit**. Şeritlerin çoğu tintli bir `div` ve metin onun içindeki
+   tintsiz bir `<p>`'de.
+2. Düzeltilince en dıştaki tintli kutu **sayfanın kendisi** çıktı — 19 rotada
+   19 "şerit", 76 ile 196 satır arası.
+
+Asıl sebep paletin kendisi: bu proje solarized-light tonlarında ve
+`slate-50` `rgb(253,246,227)`, `bg-white` ise `rgb(252,249,238)`. Ekrandaki
+**her yüzey sıcak**. Kenarlık koşulu sayfayı dışarıda bıraktı ama sıradan
+beyaz kartları bırakmadı: 49 "uzun şerit"in 45'i normal bir karttı.
+
+Bir eşik bu palette uyarı tintini yüzeyden ayıramaz. Doğru yol çalışma zamanı
+değil **kaynak**: `bg-amber-*`/`bg-rose-*` taşıyan ve prosa render eden her
+öğeyi kaynaktan saymak (ekran metni ölçüsünün yaptığı gibi), sonra satır
+sayısını yalnızca o kümede ölçmek. Kaynak taraması şeridi kaçırmaz; renk
+ölçüsü kaçırır. Bu kendi başına bir iş ve ayrı yapılacak — yarım bir ölçüyü
+kapı yapmak, bilinen bir boşluğu geçmiş gibi göstermek olurdu.
+
+### Ve ölçümün kendisinde dört kusur
+
+Üçü bu turda bulundu, dördüncüsü mutasyonla:
+
+1. **Gezinmedeki "Plan" düğmesi.** Kapı görünüm düğmelerini adıyla ve bütün
+   sayfada arıyordu; `/plan` rotasının gezinme düğmesi DOM'da önce geliyor.
+   Kapı ona bastı ve ölçümü **başka ekranda** sürdürdü. Kaynak artık hangi
+   grubun görünüm düğmesi olduğunu kendisi söylüyor (`data-view-switch`).
+2. **`dist` ile `dist-smoke`.** Ölçümü `npm run build` sonrası koşturdum; kapı
+   `dist-smoke` sunuyor. Yeni düğmeler paketlenmemişti ve "panel çizilmiyor"
+   diye raporlandı.
+3. **Genişlik geri alınmıyordu.** Telefon turundan sonra T14-05 kenar
+   çubuğunu okuyor ve telefonda kenar çubuğu gizli: "19 rotanın 0'ı
+   erişilebilir". Bir ölçüm turunun yan etkisi, kendisinden sonraki her
+   ölçümün girdisidir.
+4. **`<Th />` bir sonraki kolonu yutuyordu.** `<Th[^>]*>[\s\S]*?</Th>`
+   deseni kendi kendini kapatan etiketi de "açılış" sayıp bir sonraki
+   kolonun `</Th>`'sine kadar eşleşiyordu: iki kolon tek eşleşme, sayım bir
+   eksik, ve eylem kolonunun sırası kayıyor. Mutasyonla çıktı — eylem
+   kolonunu başa aldım ve kapı düşmedi. Orijinal dizilimde `<Th />` son
+   kolon olduğu için ölçüm **tesadüfen** doğruydu, ve sayının doğru olması
+   ölçünün doğru olduğunu göstermiyor.

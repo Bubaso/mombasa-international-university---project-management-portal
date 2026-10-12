@@ -244,9 +244,12 @@ export const CorrespondencePanel: React.FC = () => {
             <tr>
               <Th>{tr ? 'Konu' : 'Subject'}</Th>
               <Th>{tr ? 'Muhatap' : 'Counterparty'}</Th>
-              <Th>{tr ? 'Yol' : 'Route'}</Th>
+              {/* T5-02. Yol ile teslim TEK kolonda: ikisi de yazının
+                  GİDİŞİ hakkında ("elden, teyitli"), ve bir mecrayı teslim
+                  durumundan ayrı okumak bir anlam katmıyordu. Telefonda
+                  kütük karta dönüşüyor ve kartta en çok dört alan duruyor. */}
               <Th>{tr ? 'Tarih' : 'Sent'}</Th>
-              <Th>{tr ? 'Teslim' : 'Delivery'}</Th>
+              <Th>{tr ? 'Yol · teslim' : 'Route · delivery'}</Th>
             </tr>
           }
         >
@@ -277,14 +280,12 @@ export const CorrespondencePanel: React.FC = () => {
                 </span>
               </Td>
               <Td>
-                <span className="text-xs text-slate-600">{routeName(row.route, tr)}</span>
-              </Td>
-              <Td>
                 <span className="font-mono text-xs text-slate-600">
                   {formatDate(row.sentOn, language)}
                 </span>
               </Td>
               <Td>
+                <span className="block text-xs text-slate-600">{routeName(row.route, tr)}</span>
                 {row.deliveryConfirmedOn ? (
                   <span className="text-xs text-emerald-800">
                     {tr ? 'teyitli ' : 'confirmed '}

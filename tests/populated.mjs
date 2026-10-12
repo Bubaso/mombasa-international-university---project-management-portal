@@ -791,6 +791,8 @@ const detailOpened = {};
 /** Dondurulmuş haritanın içi açıldı mı (M4-14). */
 const snapshotOpened = {};
 const a11y = {};
+/** T5-03: her kütük satırının eylem mesafesi ve kendisi hedef mi (masaüstü). */
+const rowTargets = {};
 
 for (const route of ROUTES) {
   pageErrors = [];
@@ -810,6 +812,36 @@ for (const route of ROUTES) {
     headings: document.querySelectorAll('h1,h2,h3,h4').length,
     height: document.body.scrollHeight,
   }));
+
+  // T5-03, VE MASAÜSTÜNDE ÖLÇÜLÜYOR çünkü kriter orada: "satır eylemleri
+  // masaüstünde satırın sonunda değil, satıra yakın ya da satır
+  // tıklanabilir olsun". 390px'te satır zaten karta dönüşüyor ve mesafe
+  // sorusu ortadan kalkıyor.
+  //
+  // "Satırın tamamı hedef" DOM'dan nasıl bilinir: React'in dinleyicisi
+  // `onclick` özelliğinde durmuyor, kökte duruyor. Ama kullanıcıya söylenen
+  // şey imleç, ve ölçülmesi gereken de o — imleci işaretçi olmayan bir
+  // satır, tıklanabilir olsa da tıklanabilir GÖRÜNMÜYOR.
+  rowTargets[route] = await page.evaluate(() => {
+    const vis = (el) => {
+      const b = el.getBoundingClientRect();
+      return (b.width > 0 || b.height > 0) && getComputedStyle(el).visibility !== 'hidden';
+    };
+    const out = [];
+    for (const row of document.querySelectorAll('table.register tbody tr')) {
+      if (!vis(row)) continue;
+      const left = row.getBoundingClientRect().left;
+      const actions = [...row.querySelectorAll('button, a[href]')].filter(vis);
+      out.push({
+        actions: actions.length,
+        dx: actions.length
+          ? Math.max(...actions.map((a) => Math.round(a.getBoundingClientRect().left - left)))
+          : null,
+        pointer: getComputedStyle(row).cursor === 'pointer',
+      });
+    }
+    return out;
+  });
 
   // Sekmeler: ilk ekranda görünmeyen bir panel, tıklanmadan sınanmaz.
   //
@@ -1139,6 +1171,193 @@ for (const route of ROUTES) {
   for (const message of seen) found.push(`${route} ${message}`);
   for (const name of [...new Set(culprits)]) found.push(`${route} ← ${name}`);
 }
+
+// ---------------------------------------------------------------------------
+// İKİNCİ GENİŞLİK: telefon (T5-02, T5-03, T6-04)
+// ---------------------------------------------------------------------------
+//
+// NEDEN BURADA, VE NEDEN BUGÜNE KADAR HİÇ ÖLÇÜLMEDİ.
+//
+// Bu üç kriterin kabul ölçüsü 390px'te alınıyor. Depodaki telefon ölçümü
+// `tests/design.mjs` ve o betik CANLI projeye giriş yapıyor — gerçek
+// kayıtların üzerinde ölçüyor, kimlik bilgisi istiyor, ve `npm run verify`
+// onu çağırmıyor. Yani üç kriter yazılıydı, ölçülmüştü, ama bir KAPI'ya hiç
+// bağlanmamıştı: tasarım dokümanı onları "henüz yapılmayan" diye sayıyordu
+// ve kimse bozulduğunu göremezdi.
+//
+// Buradaki tur kurguyla çalışıyor ve verify'ın içinde. Ölçtüğü veri gerçek
+// değil; ölçtüğü KURAL aynı kural, ve bir kuralın bozulduğunu görmek için
+// gerçek veri gerekmiyor — kurgu her enum değerini ve her null'ı taşıyor,
+// yani en uzun hücre metni zaten ekranda.
+//
+// Tur DAR: sekme turu yok, görünüm düğmesi yok, detay açma yok. Eklenen şey
+// bir genişlik, bütün bir ölçüm değil. Aynı sayfa yeniden boyutlandırılıyor,
+// çünkü kurgu yönlendirmeleri sayfaya bağlı ve ikinci bir sayfa o
+// yönlendirmeleri yeniden kurmak demekti (aynı kuralı iki yere yazmak).
+await page.setViewportSize({ width: 390, height: 844 });
+
+/** @type {Record<string, {cards: {h: number, fields: number}[]}>} */
+const phone = {};
+for (const route of ROUTES) {
+  pageErrors = [];
+  await page.goto(BASE + route, { waitUntil: 'domcontentloaded' });
+  await settle();
+  phone[route] = await page.evaluate(() => {
+    const visible = (el) => {
+      const b = el.getBoundingClientRect();
+      if (b.width === 0 && b.height === 0) return false;
+      const st = getComputedStyle(el);
+      return st.visibility !== 'hidden' && st.display !== 'none' && st.opacity !== '0';
+    };
+
+    // T5-02. Telefonda kütük satırı bir KART: `table.register tbody tr`
+    // `display: block` oluyor (T5-01). Kartın boyu ve kaç alanı göründüğü.
+    const cards = [];
+    for (const row of document.querySelectorAll('table.register tbody tr')) {
+      if (!visible(row)) continue;
+      if (getComputedStyle(row).display !== 'block') continue;
+      const cells = [...row.querySelectorAll('td:not([colspan])')].filter(visible);
+      cards.push({ h: Math.round(row.getBoundingClientRect().height), fields: cells.length });
+    }
+
+    // T5-03. Satır eylemi satırdan ne kadar uzakta — ya da satırın tamamı
+    // hedef mi.
+    //
+    // "Satırın tamamı hedef" DOM'dan nasıl bilinir: React'in olay
+    // dinleyicisi `onclick` özelliğinde durmuyor, kökte duruyor. Ama
+    // kullanıcıya söylenen şey imleç, ve ölçülmesi gereken de o — imleci
+    // işaretçi olmayan bir satır, tıklanabilir olsa da tıklanabilir
+    // GÖRÜNMÜYOR.
+    // T6-04 BURADA ÖLÇÜLMÜYOR, VE SEBEBİ ÖLÇÜLDÜ.
+    //
+    // Kriter "hiçbir uyarı şeridi telefonda 3 satırdan uzun değil" diyor,
+    // yani önce "uyarı şeridi" bulunmalı. Renkten bulmayı denedim ve iki kez
+    // ters yöne kaçtı: ilk hâli yalnızca kendi metin düğümü olan tintli
+    // öğeyi gördü (19 rotada 1 şerit), düzeltilince en dıştaki tintli kutu
+    // SAYFANIN KENDİSİ çıktı (19 rotada 19 şerit, 76–196 satır).
+    //
+    // Asıl sebep paletin kendisi: bu proje solarized-light tonlarında ve
+    // `slate-50` `rgb(253,246,227)`, `bg-white` ise `rgb(252,249,238)`.
+    // Yani ekrandaki HER yüzey sıcak. Kenarlık koşulu sayfayı dışarıda
+    // bıraktı ama sıradan beyaz kartları bırakmadı — 49 "uzun şerit"in 45'i
+    // normal bir karttı. Bir eşik bu palette uyarı tintini yüzeyden
+    // ayıramaz.
+    //
+    // Doğru yol çalışma zamanı değil KAYNAK: `bg-amber-*`/`bg-rose-*`
+    // taşıyan ve prosa render eden her öğeyi kaynaktan saymak (ekran metni
+    // ölçüsünün yaptığı gibi), sonra satır sayısını yalnızca o kümede
+    // ölçmek. Kaynak taraması şeridi KAÇIRMAZ; renk ölçüsü kaçırır. Bu
+    // kendi başına bir iş ve ayrı yapılacak — yarım bir ölçüyü kapı yapmak,
+    // bilinen bir boşluğu geçmiş gibi göstermek olurdu.
+    return { cards };
+  });
+}
+
+// T5-02'nin ÇALIŞMA ZAMANI YARISI: kart yüksekliği.
+//
+// Kriterin iki yarısı iki ayrı kapıda, ve ayrılması zorunlu: alan sayısı
+// kaynaktan ölçülüyor (`tests/registers.mjs` — sekme arkasındaki kütüğü de
+// görür), yükseklik ise ancak çizildiğinde bilinir.
+//
+// TABAN sayısı kuralın kendisi kadar önemli: seçici bir gün eşleşmez olursa
+// "aşan yok" kendiliğinden geçer ve kapı körleşir.
+//
+// VE KRİTERİN 140px'İ HER KÜTÜKTE TUTMUYOR — bunu açıkça söylüyorum.
+//
+// Dolgu 0.375rem'den 0.25rem'e indirildikten sonra on altı kartın on
+// dördü sığdı. Kalan ikisi, bir hücresi İKİNCİ SATIRA sardığı için
+// sığmıyor, ve sarma veriye bağlı: uzun bir başlık bir satır daha
+// ekliyor. Yani "hiçbir kart 140px'i geçmez" cümlesi, başlığı saran bir
+// kayıt geldiği gün yanlış olur — ve o gün gelecek.
+//
+//   `/finance` 145px — bütçe kaleminin adı sarıyor.
+//   `/admin` 182px — erişim gözden geçirme satırı kişinin adını, e-postasını
+//   ve kurumunu bir arada taşıyor; üçü bir hücrede üç satır.
+//
+// Bu yüzden kapı DÜZ BİR EŞİK DEĞİL, rota başına bir tavan — bu depodaki
+// `DENSITY` kalıbının aynısı. Kriterin 140px'i varsayılan tavan; iki rota
+// bugünkü ölçümüyle kayıtlı ve o sayılar yalnızca DÜŞEBİLİR. Düz eşik
+// yazmak ya kapıyı kırmızı bırakmak ya da ölçüyü gevşetmek olurdu;
+// ikisi de bu satırı kapatmıyor.
+//
+// T5-02 bu yüzden tasarım dokümanında ✅ İŞARETLİ DEĞİL: alan sayısı yarısı
+// kapandı ve `tests/registers.mjs` ile kapıya bağlandı, yükseklik yarısı
+// ölçüldü ve iki kütükte hedefin üstünde.
+const CARD_HEIGHT = { '/finance': 145, '/admin': 182 };
+const CARD_HEIGHT_DEFAULT = 140;
+
+{
+  const over = [];
+  let cards = 0;
+  for (const [route, m] of Object.entries(phone)) {
+    const cap = CARD_HEIGHT[route] ?? CARD_HEIGHT_DEFAULT;
+    for (const c of m.cards) {
+      cards++;
+      if (c.h > cap) over.push(`${route} ${c.h}>${cap}px`);
+    }
+  }
+  check(cards >= 10, 'telefonda kütük kartları ölçüldü', `${cards} kart`);
+  check(
+    over.length === 0,
+    'T5-02 her telefon kartı kayıtlı tavanının altında (hedef 140px)',
+    over.join(' · ') || `${cards} kart, ikisi hedefin üstünde ve kayıtlı`,
+  );
+  // KAYITLI TAVAN GERÇEKTEN ÖLÇÜLEN BİR TAVAN OLMALI: bir rota düzeldiyse
+  // kaydı da düşmeli, yoksa liste geçmiş bir kusuru sonsuza taşır.
+  const stale = Object.entries(CARD_HEIGHT).filter(([route, cap]) => {
+    const seen = (phone[route]?.cards ?? []).map((c) => c.h);
+    return seen.length === 0 || Math.max(...seen) < cap;
+  });
+  check(
+    stale.length === 0,
+    've kayıtlı her tavan bugün gerçekten ölçülen bir tavan',
+    stale
+      .map(
+        ([r, c]) =>
+          `${r} kayıtlı ${c}, ölçülen ${Math.max(0, ...(phone[r]?.cards ?? []).map((x) => x.h))}`,
+      )
+      .join(' · ') || 'ikisi de ölçüldü',
+  );
+}
+
+// T5-03: satır eylemi satıra yakın, ya da satırın tamamı hedef.
+//
+// EYLEMSİZ SATIR KUSUR DEĞİL, ve bunu yazıyorum çünkü ilk ölçümümde kusur
+// saymıştım: kriter "satır EYLEMLERİ" hakkında, ve eylemi olmayan bir
+// satırın yerleştirilecek eylemi yok. O ölçüm `/finance`'ta beş "uzak
+// eylem" bildirdi ve beşi de eylemsiz satırdı — yani rapor ettiğim şey
+// kriterin sormadığı bir soruydu.
+{
+  const farAway = [];
+  let rows = 0;
+  let withActions = 0;
+  let pointer = 0;
+  for (const [route, list] of Object.entries(rowTargets)) {
+    for (const r of list) {
+      rows++;
+      if (r.pointer) pointer++;
+      if (r.actions === 0) continue;
+      withActions++;
+      if (!r.pointer && r.dx !== null && r.dx > 480) farAway.push(`${route} ${r.dx}px`);
+    }
+  }
+  check(
+    rows >= 10,
+    'masaüstünde kütük satırları ölçüldü',
+    `${rows} satır, ${pointer} tıklanabilir, ${withActions} eylemli`,
+  );
+  check(
+    farAway.length === 0,
+    'T5-03 her satır ya kendisi hedef ya eylemi 480px içinde',
+    farAway.join(' · ') || `${withActions} eylemli satırın hepsi yakın`,
+  );
+}
+
+// GENİŞLİK GERİ ALINIYOR. İlk yazışımda almıyordum ve sonraki bir kontrol
+// düştü: T14-05 kenar çubuğunu okuyor, telefonda kenar çubuğu gizli, ve
+// kapı "19 rotanın 0'ı erişilebilir" dedi. Bir ölçüm turunun yan etkisi,
+// kendisinden sonraki her ölçümün girdisidir.
+await page.setViewportSize({ width: 1440, height: 1000 });
 
 // Ölçülen yoğunluk, en ağırdan hafife. Tavan yazılmamış bir ekran da
 // raporlanıyor: sessizce ölçülmeyen bir ekran, geçmiş gibi görünür.

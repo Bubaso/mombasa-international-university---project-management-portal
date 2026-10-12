@@ -80,6 +80,13 @@ const RAISED = [
   { what: 'longChars', from: 28238, to: 29210, row: 'M4-12' },
   { what: 'textChars', from: 74750, to: 75473, row: 'M4-14' },
   { what: 'longChars', from: 29210, to: 29610, row: 'M4-14' },
+  // T5-02'nin bedeli, ve küçük: birleştirilen kolonların başlıkları iki adı
+  // birlikte taşıyor ("Harcanan · taahhüt", "Bitiş · son bakış",
+  // "Yol · teslim"), ve birleşen hücrelerde gizli kalan değer kendi adıyla
+  // yazılıyor ("müfredat kasada", "puan yok"). Kırk altı karakter — kolonu
+  // telefonda GİZLEMEK bedava olurdu, ama gizlenen bir sayı telefonda
+  // ulaşılamayan bir sayıdır.
+  { what: 'textChars', from: 75473, to: 75519, row: 'T5-02' },
 ];
 process.chdir(root);
 
@@ -163,7 +170,9 @@ const CEILING = {
   // ve dondurulmuş haritanın her satırında duran "bu harita şu rolün
   // gördüğü kadar" uyarısı. Üç tekrar kesildikten SONRAKİ sayı; bölünmesi
   // `RAISED` içinde ölçülerek yazılı.
-  textChars: 75473,
+  // T5-02'den sonra 75.473 → 75.519: birleştirilen kolonların iki adlı
+  // başlıkları ve birleşen hücrelerde kendi adıyla yazılan değerler.
+  textChars: 75519,
   // Aynı ölçüm değişikliği: 26.994 → 27.680.
   // M4-12 ve M4-14'ten sonra 28.982 → 29.610.
   longChars: 29610,
