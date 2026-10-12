@@ -81,6 +81,87 @@ const canned = new Map();
 for (const [name, columns] of relations) canned.set(name, rowsFor(columns, vocabularies));
 
 // ---------------------------------------------------------------------------
+// Dondurulmuş haritayı DİKMEK: üretici bir jsonb'nin şeklini bilmiyor
+// ---------------------------------------------------------------------------
+//
+// `schema-rows.mjs` jsonb için `null` dönüyor ve bu doğru: şema o kolonun bir
+// dizi mi nesne mi tuttuğunu söylemiyor. Ama M4-14'ün dondurulmuş haritası
+// TAM OLARAK o jsonb'nin içinde, yani kurgu dikilmezse panel açılır, satır
+// listesi boş gelir, ve ekran "o gün kimse yoktu" der — oysa ölçü hiç
+// bakmamıştır.
+//
+// M4-10'un dersi burada ikinci kez geçerli: bir panel eklenip hiçbir sayı
+// değişmiyorsa, değişmeyen şey ekran değil ölçüdür. O yüzden harita, üretilen
+// paydaş satırlarından türetiliyor — adlar ve tutumlar kurgunun kendi
+// değerleri, yani panel gerçek bir dağarcıkla sınanıyor.
+//
+// Satırların İLKİ sahipsiz bırakılıyor: "sorumlu atanmamış" ile "sorumlusu o
+// gün görülemiyordu" ekranda iki ayrı cümle (kimlik null / ad null), ve ikisi
+// de çizilmezse ayrım ölçülmemiş olur.
+{
+  const people = canned.get('stakeholders') ?? [];
+  const maps = canned.get('stakeholder_map_snapshots') ?? [];
+  const frozen = people.slice(0, 4).map((row, i) => ({
+    id: row.id,
+    full_name: row.full_name,
+    title: row.title,
+    organization: null,
+    category: row.category,
+    stance: row.stance,
+    influence: row.influence,
+    interest: row.interest,
+    relationship_owner_id: i === 0 ? null : row.relationship_owner,
+    relationship_owner_name: i === 1 ? null : 'Project Director',
+    last_contact_at: null,
+    has_gone_quiet: i === 2,
+  }));
+  for (const row of maps) row.payload = frozen;
+
+  // VE KÜTÜĞÜN CANLI DALI. Üretici her `timestamptz`'e bir değer yazıyor,
+  // yani kurgunun BÜTÜN anlık görüntüleri "geçersiz sayılmış" görünüyordu:
+  // panel açıldı, canlı liste boş geldi, satır tıklanamadı ve harita hiç
+  // çizilmedi. Ölçüm "hiç anlık görüntü alınmamış" cümlesini ölçüyordu.
+  //
+  // İlk satır canlıya çevriliyor, ötekiler geçersiz kalıyor — ekranın iki
+  // dalı da çizilsin. Bir kurgu yalnızca tek dalı taşıyorsa, öbür dal
+  // ölçülmemiş daldır.
+  // VE PANONUN EN ÖNEMLİ SATIRI. `engagement_plan_board`'ın
+  // `no_plan_recorded` satırı dağarcıktan geliyor ama `plan_id`'si DOLU:
+  // üretici her uuid'e bir değer yazıyor. Yani ekran "görebildiğiniz her
+  // paydaş için bir plan yazılı" dalını çiziyordu ve boşluk sayısı 0
+  // ölçülüyordu — oysa panonun var olma sebebi o sayı.
+  //
+  // Satır kendi durumuyla tutarlı hâle getiriliyor: planı yoksa plan
+  // alanları da yok. Ve nüfuzu 4'e çekiliyor ki "nüfuzu yüksek olup planı
+  // olmayan" uyarı dalı da çizilsin; o dal çizilmezse en acil bulgu
+  // ölçülmemiş olur.
+  for (const row of canned.get('engagement_plan_board') ?? []) {
+    if (row.step_state !== 'no_plan_recorded') continue;
+    row.plan_id = null;
+    row.objective = null;
+    row.message = null;
+    row.next_step = null;
+    row.next_step_owner = null;
+    row.next_step_owner_name = null;
+    row.next_step_due = null;
+    row.status = null;
+    row.days_to_step = null;
+    row.influence = 4;
+  }
+
+  const index = canned.get('stakeholder_map_snapshot_index') ?? [];
+  const first = index[0];
+  if (first) {
+    first.discarded_at = null;
+    first.discarded_by = null;
+    first.discarded_reason = null;
+    // Tutum dağılımı da jsonb, yani üreticiden `null` geliyor. Dağılımın
+    // kendisi M4-14'ün sunum değeri: "o gün üç şampiyon, beş muhalif".
+    first.stance_tally = { champion: 1, sceptic: 2, unknown: 1 };
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Paydaş ağını DİKMEK: üretilen yabancı anahtarlar hiçbir şeye işaret etmiyor
 // ---------------------------------------------------------------------------
 //
@@ -610,7 +691,7 @@ const DENSITY = {
   '/plan': { buttons: 63, headings: 4, height: 1424 },
   '/reports': { buttons: 58, headings: 7, height: 1394 },
   '/legal': { buttons: 60, headings: 4, height: 1390 },
-  '/stakeholders': { buttons: 52, headings: 5, height: 1356 },
+  '/stakeholders': { buttons: 54, headings: 5, height: 1356 },
   '/calendar': { buttons: 61, headings: 4, height: 1198 },
   '/governance': { buttons: 59, headings: 3, height: 1196 },
   '/readiness': { buttons: 54, headings: 4, height: 1110 },
@@ -654,6 +735,8 @@ const RAISED = [
   { what: '/legal.buttons', from: 58, to: 59, row: 'M5-09' },
   { what: '/finance.buttons', from: 48, to: 49, row: 'M8-13' },
   { what: '/stakeholders.buttons', from: 51, to: 52, row: 'M4-10' },
+  { what: '/stakeholders.buttons', from: 52, to: 53, row: 'M4-12' },
+  { what: '/stakeholders.buttons', from: 53, to: 54, row: 'M4-14' },
   { what: '/documents.buttons', from: 53, to: 55, row: 'M9-13' },
 ];
 
@@ -682,7 +765,7 @@ const handles = {};
  * Buraya yazılmayan bir görünümün arkasındaki panel, ÖLÇÜLMEMİŞ paneldir.
  */
 const EXTRA_VIEWS = {
-  '/stakeholders': ['Yol', 'Matris'],
+  '/stakeholders': ['Yol', 'Matris', 'Plan', 'Anlık'],
   '/documents': ['Saklama'],
 };
 
@@ -705,6 +788,8 @@ const extraViews = {};
 const reachSaid = {};
 /** Detay paneli gerçekten açıldı mı: satır bir düğme değil, bulunamayabilir. */
 const detailOpened = {};
+/** Dondurulmuş haritanın içi açıldı mı (M4-14). */
+const snapshotOpened = {};
 const a11y = {};
 
 for (const route of ROUTES) {
@@ -797,6 +882,23 @@ for (const route of ROUTES) {
       ...[...document.querySelectorAll('[data-hold-panel]')].map(
         (el) => `hold-panel:${el.getAttribute('data-hold-panel')}`,
       ),
+      ...[...document.querySelectorAll('[data-plan-board]')].map(() => 'plan-board'),
+      ...[...document.querySelectorAll('[data-plan-gaps]')].map(
+        (el) => `plan-gaps:${el.getAttribute('data-plan-gaps')}`,
+      ),
+      ...[...document.querySelectorAll('[data-plan-state]')].map(
+        (el) => `plan-state:${el.getAttribute('data-plan-state')}`,
+      ),
+      ...[...document.querySelectorAll('[data-snapshot-panel]')].map(() => 'snapshot-panel'),
+      ...[...document.querySelectorAll('[data-snapshot-count]')].map(
+        (el) => `snapshot-count:${el.getAttribute('data-snapshot-count')}`,
+      ),
+      ...[...document.querySelectorAll('[data-snapshot-role]')].map(
+        (el) => `snapshot-role:${el.getAttribute('data-snapshot-role')}`,
+      ),
+      ...[...document.querySelectorAll('[data-snapshot-frozen]')].map(
+        (el) => `snapshot-frozen:${el.getAttribute('data-snapshot-frozen')}`,
+      ),
     ]))
       handlesSeen.add(h);
   };
@@ -845,6 +947,28 @@ for (const route of ROUTES) {
   };
 
   /**
+   * Dondurulmuş haritanın İÇİNİ açar (M4-14).
+   *
+   * Kütük satırı açılmadan harita çizilmiyor, ve M4-10'un dersi aynen
+   * geçerli: panelin kabuğunu ölçmek kapağı ölçülmüş bir kutudur. Burada
+   * ölçülen şey o günün kopyasının gerçekten render edildiği —
+   * `data-snapshot-frozen` kaç kişi çizildiğini söylüyor.
+   */
+  const openFirstSnapshot = async () => {
+    const opened = await page.evaluate(() => {
+      const first = document.querySelector('[data-snapshot-panel] li button');
+      if (!first) return false;
+      first.click();
+      return true;
+    });
+    if (!opened) return;
+    snapshotOpened[route] = true;
+    await settle();
+    for (const message of await boundaries()) seen.add(`[anlık] ${message}`);
+    await collectHandles();
+  };
+
+  /**
    * ÜÇÜNCÜ YER: bir görünüm düğmesinin arkası.
    *
    * Tutamak toplama iki yerde çalışıyordu — açılışta ve her sekmede — ve
@@ -857,8 +981,17 @@ for (const route of ROUTES) {
    * yüzden yedi sekme sessizce atlanmıştı.
    */
   for (const label of EXTRA_VIEWS[route] ?? []) {
+    // ARAMA `data-view-switch` İÇİNDE, bütün sayfada değil.
+    //
+    // İlk hâli bütün `button`ları dolaşıyordu ve M4-12'nin "Plan" düğmesinde
+    // düştü: gezinmede de "Plan" adlı bir düğme var, DOM'da önce geliyor, ve
+    // kapı ona bastı. Sonuç sessiz değildi ama yanıltıcıydı — ölçüm
+    // `/plan` ekranında devam etti, dört düğmenin üçü basılmış sayıldı ve
+    // panel "çizilmiyor" diye raporlandı. Panel çiziliyordu; ölçü başka
+    // ekranda bakıyordu.
     const pressed = await page.evaluate((want) => {
-      for (const b of document.querySelectorAll('button')) {
+      const group = document.querySelector('[data-view-switch]');
+      for (const b of (group ?? document).querySelectorAll('button')) {
         if ((b.textContent ?? '').trim() === want) {
           b.click();
           return true;
@@ -872,6 +1005,7 @@ for (const route of ROUTES) {
       for (const message of await boundaries()) seen.add(`[${label}] ${message}`);
       await collectHandles();
       await pickReachTargets();
+      await openFirstSnapshot();
     }
   }
 
@@ -1202,6 +1336,70 @@ const TABS_EXPECTED = {
       (handles['/stakeholders'] ?? new Set()).has('reach-network'),
     'yol paneli ve ağ ölçüsü çiziliyor (M4-10)',
     [...(handles['/stakeholders'] ?? [])].join(', ') || '(görülmedi)',
+  );
+
+  // M4-12'nin plan panosu.
+  //
+  // ÜÇ AYRI İDDİA, çünkü üçü ayrı şekilde bozulur: panel çizilmezse tutamak
+  // gelmez, boşluk sayısı gelmezse panonun en önemli satırı çizilmemiştir, ve
+  // satırlar tek bir duruma düşüyorsa `step_state`'in beş değeri ayrı ayrı
+  // render edilmiyor demektir.
+  const shHandles = handles['/stakeholders'] ?? new Set();
+  check(
+    shHandles.has('plan-board'),
+    'plan panosu çiziliyor (M4-12)',
+    [...shHandles].join(', ') || '(görülmedi)',
+  );
+  // SAYI VAR OLMASIN, SIFIRDAN BÜYÜK OLSUN. Sıfır ölçen bir kapı, satırın
+  // çizildiğini söyler ama hangi dalının çizildiğini söylemez: "hepsi
+  // planlı" dalı da bir satırdır ve asıl bulguyu hiç göstermez.
+  const gaps = [...shHandles]
+    .filter((h) => h.startsWith('plan-gaps:'))
+    .map((h) => Number(h.slice(10)));
+  check(
+    gaps.length > 0 && Math.max(...gaps) > 0,
+    've planı olmayan paydaş sayısı ekranda, sıfırdan büyük — panonun en önemli satırı',
+    gaps.join(', ') || '(yok)',
+  );
+  // VE AYRIMIN KENDİSİ. "Plan yok" ile "sıradaki adım yok" iki ayrı boşluk, ve
+  // ikisi birlikte çizilmiyorsa pano o ayrımı göstermiyor — yani var olma
+  // sebebini yerine getirmiyor. Tek duruma düşmüş bir pano, geçen bir
+  // kontrolle birlikte sessizce yanlış olur.
+  const planStates = new Set(
+    [...shHandles].filter((h) => h.startsWith('plan-state:')).map((h) => h.slice(11)),
+  );
+  check(
+    planStates.has('no_plan_recorded') && planStates.has('no_step_recorded'),
+    've iki boşluk ayrı ayrı çizilmiş: plan yok ile adım yok',
+    [...planStates].join(', ') || '(hiçbiri)',
+  );
+
+  // M4-14'ün dondurulmuş harita kütüğü.
+  check(
+    shHandles.has('snapshot-panel'),
+    'anlık görüntü kütüğü çiziliyor (M4-14)',
+    [...shHandles].join(', ') || '(görülmedi)',
+  );
+  check(
+    [...shHandles].some((h) => h.startsWith('snapshot-role:')),
+    've her haritanın hangi rolün gördüğü kadar olduğu yazılı — eksikliğin tek dayanağı',
+    [...shHandles].filter((h) => h.startsWith('snapshot-role:')).join(', ') || '(yok)',
+  );
+  check(
+    snapshotOpened['/stakeholders'] === true,
+    'bir haritanın içi açıldı (kütük satırı bir düğme)',
+    String(snapshotOpened['/stakeholders']),
+  );
+  // VE İÇİ BOŞ DEĞİL. Bu kontrol M4-10'un kurgu dersinden doğdu: jsonb için
+  // üretici `null` dönüyor, yani dikiş olmadan harita açılır ve BOŞ gelir —
+  // ekran "o gün kimse yoktu" der, ölçü ise hiç bakmamış olur.
+  const frozen = [...shHandles]
+    .filter((h) => h.startsWith('snapshot-frozen:'))
+    .map((h) => Number(h.slice(16)));
+  check(
+    frozen.length > 0 && Math.max(...frozen) > 0,
+    've o günün kopyası gerçekten çizildi, boş bir liste değil',
+    frozen.join(', ') || '(yok)',
   );
 
   // Ve seçilen her hedef için ekran BİR ŞEY söylüyor mu.

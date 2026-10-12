@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Users2, Search, LayoutGrid, List, Plus, Route } from 'lucide-react';
+import { Users2, Search, LayoutGrid, List, Plus, Route, Target, Snowflake } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import * as register from '../api/stakeholderHooks';
 import { useAuthority, useProfiles } from '../api/adminHooks';
@@ -7,8 +7,10 @@ import { QueryStatus } from '../components/QueryStatus';
 import { EmptyState } from '../components/EmptyState';
 import { AttentionStrip } from '../components/stakeholders/AttentionStrip';
 import { ContactsExchange } from '../components/stakeholders/ContactsExchange';
+import { PlanBoard } from '../components/stakeholders/PlanBoard';
 import { PowerInterestGrid } from '../components/stakeholders/PowerInterestGrid';
 import { ReachPanel } from '../components/stakeholders/ReachPanel';
+import { SnapshotPanel } from '../components/stakeholders/SnapshotPanel';
 import { StakeholderDetail } from '../components/stakeholders/StakeholderDetail';
 import { ASSESSORS, MINUTE_KEEPERS, actsAs } from '../lib/authority';
 import {
@@ -54,7 +56,7 @@ export const StakeholdersView: React.FC = () => {
   const canEdit = actsAs(authority.data, ...MINUTE_KEEPERS);
   const canAssess = actsAs(authority.data, ...ASSESSORS);
 
-  const [layout, setLayout] = useState<'list' | 'grid' | 'reach'>('list');
+  const [layout, setLayout] = useState<'list' | 'grid' | 'reach' | 'plan' | 'snapshot'>('list');
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<StakeholderCategory | ''>('');
   const [stance, setStance] = useState<Stance | ''>('');
@@ -155,7 +157,15 @@ export const StakeholdersView: React.FC = () => {
             ))}
           </Select>
         </Field>
-        <div className="flex gap-1">
+        {/* Görünüm düğmeleri BURADA olduğunu kendisi söylüyor.
+            Tarayıcı kapısı bu düğmeleri ADIYLA arıyor ve ilk hâlinde
+            bütün sayfada arıyordu: "Plan" adlı bir gezinme bağlantısı
+            da var, kapı ona bastı ve ÖLÇÜMÜ BAŞKA EKRANDA sürdürdü —
+            dört düğmenin üçü basıldı, dördüncüsü bulunamadı ve panel
+            hiç çizilmedi. `data-record-list` ile aynı gerekçe:
+            markup'a ya da ada göre arayan bir ölçü sessizce yanlış
+            şeyi bulur. */}
+        <div data-view-switch className="flex gap-1">
           <ActionButton
             onClick={() => setLayout('list')}
             className={layout === 'list' ? 'border-amber-400 bg-amber-50 text-amber-900' : ''}
@@ -180,12 +190,37 @@ export const StakeholdersView: React.FC = () => {
             <Route className="h-3.5 w-3.5" aria-hidden="true" />
             <span className="hidden sm:inline">{tr ? 'Yol' : 'Route'}</span>
           </ActionButton>
+          {/* M4-12 ve M4-14. Dördüncü ve beşinci görünüm, altıncı ve yedinci
+              bölüm değil — aynı gerekçe: ekranın telefondaki yüksekliği
+              ölçülü bir kısıt (T15-04). */}
+          <ActionButton
+            onClick={() => setLayout('plan')}
+            className={layout === 'plan' ? 'border-amber-400 bg-amber-50 text-amber-900' : ''}
+          >
+            <Target className="h-3.5 w-3.5" aria-hidden="true" />
+            <span className="hidden sm:inline">{tr ? 'Plan' : 'Plan'}</span>
+          </ActionButton>
+          <ActionButton
+            onClick={() => setLayout('snapshot')}
+            className={layout === 'snapshot' ? 'border-amber-400 bg-amber-50 text-amber-900' : ''}
+          >
+            <Snowflake className="h-3.5 w-3.5" aria-hidden="true" />
+            <span className="hidden sm:inline">{tr ? 'Anlık' : 'Snapshot'}</span>
+          </ActionButton>
         </div>
       </div>
 
       <div className={selected ? 'grid grid-cols-1 gap-4 xl:grid-cols-[1fr_400px]' : ''}>
         <div className="min-w-0">
-          {shown.length === 0 ? (
+          {/* Plan panosu ve anlık görüntü kütüğü SÜZGEÇTEN BAĞIMSIZ: ikisi de
+              kütüğün tamamı hakkında bir şey söylüyor. "Planı olmayan kaç
+              paydaş var" sorusunun cevabı, bir süzgeçle daraltılmış kütükte
+              yanlıştır — ve yanlış olduğu görünmez. */}
+          {layout === 'plan' ? (
+            <PlanBoard onOpen={setSelectedId} />
+          ) : layout === 'snapshot' ? (
+            <SnapshotPanel canTake={canAssess} />
+          ) : shown.length === 0 ? (
             <EmptyState
               icon={Users2}
               title={tr ? 'Kayıt yok' : 'Nobody here'}

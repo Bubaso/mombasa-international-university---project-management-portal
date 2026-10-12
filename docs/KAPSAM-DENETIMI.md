@@ -21,12 +21,12 @@ kadar.)
 
 | Durum      | Satır |
 | ---------- | ----- |
-| Yapıldı    | 192   |
-| Yok        | 18    |
+| Yapıldı    | 194   |
+| Yok        | 16    |
 | **Toplam** | 210   |
 
 Öncelik dağılımı: P0 22 satır (1'i yok), P1 115 satır (1'i yok), P2 59 satır
-(16'sı yok), P3 14 satır (**hepsi yapıldı**).
+(14'ü yok), P3 14 satır (**hepsi yapıldı**).
 
 ### 8 Ekim 2026 güncellemesi — ve başlıktaki sayı hakkında bir düzeltme
 
@@ -561,6 +561,141 @@ E-posta ve WhatsApp hâlâ `unconfigured`: biri bir sağlayıcı API anahtarı,
 diğeri bir Meta işletme hesabı istiyor. İkisi de bu depoda çözülecek şeyler
 değil.
 
+### M4-12 ve M4-14 kapandı — göç 0058
+
+Etkileşim planı ve dondurulmuş paydaş haritası. İkisi aynı göçte, çünkü
+ikincisi birincisini de donduruyor: plan tablosu haritadan sonra eklenseydi, o
+tarihe kadar alınmış her anlık görüntü planları içermeyen bir harita olurdu ve
+eksikliği hiçbir yerde yazmazdı.
+
+**M4-12.** `stakeholder_engagement_plans`: amaç, mesaj, ve sıradaki adım.
+Sıradaki adımın üç parçası — metin, sorumlu, tarih — bir bütün olarak
+kısıtlanıyor: ya üçü var ya hiçbiri. Bu kısıt Notion'dan taşınan 103 aksiyon
+satırının dersi; sorumlusu ve tarihi olmayan bir adım metni takip edildiğini
+sandırır. Paydaş başına tek YÜRÜYEN plan var (kısmî tekil indeks): iki yürüyen
+plan bir plan değil bir anlaşmazlıktır.
+
+Pano (`engagement_plan_board`) **paydaştan** başlıyor, plandan değil. Plan
+tablosundan okunan bir pano "yapılacak işler" listesi olurdu ve hiç plan
+yazılmamış bir bakan o listede görünmezdi — oysa asıl bulgu tam olarak o.
+Ekran iki boşluğu ayrı tutuyor: `no_plan_recorded` (kimse yazmadı) ve
+`no_step_recorded` (amaç var, hamle kararlaşmadı).
+
+Kapanış sonucu olarak `outcome_unknown` kasıtlı bir seçenek: bir plan çoğu
+zaman bir kararla değil ilgisizlikle kapanır, ve beş sonuçtan birini seçmeye
+zorlamak olmayan bir cevabı icat etmek olurdu.
+
+**M4-14.** `stakeholder_map_snapshots`: mütevelli sunumları için tarihli,
+dondurulmuş görünüm. Yazılmamış hâlindeki kusur şu olurdu — anlık görüntü canlı
+satırlara referans tutar, Mart'ta alınmış "tarihli" bir harita Nisan'da
+açıldığında Nisan'ın tutumlarını gösterir ve üzerinde hâlâ Mart tarihi yazar.
+Hiçbir hata çıkmaz; yalnızca mütevelliye gösterilen tarih yalan olur.
+
+O yüzden üç şey sunucuda damgalanıyor ve hiçbiri istemciden gelmiyor: **tarih**
+(`created_at := now()`, şema genelindeki `coalesce` konvansiyonunun kasıtlı
+ihlâli), **rol** (`taken_as_role`), ve **haritanın kendisi** (tetikleyici
+`app.stakeholder_map_payload()` ile kopyalıyor, gönderilen `payload`'ı okumuyor
+bile). Donmuş olan değiştirilemiyor; silinemiyor, gerekçesiyle geçersiz
+sayılıyor. Etiketi — başlık ve not — düzeltilebiliyor: donmuş olan şey veri,
+yazım hatası değil.
+
+`taken_as_role` bu göçün en önemli kolonu olabilir. Anlık görüntü, alanın RLS
+altında **görebildiği** kadardır; daha dar yetkiyle alınmış bir harita daha
+küçüktür, ve bunu söylemezse okuyan onu tam harita sanar. Rol bugünkü profilden
+okunamaz — roller değişir, anlık görüntünün tarihi geçmişte kalır.
+
+Harita fonksiyonu `security definer` **değil**, ve bu bir eksiklik değil
+fonksiyonun bütün anlamı: tanımlayıcı yetkisiyle çalışsaydı RLS'i atlar ve
+çağıranın göremediği paydaşları da kopyalardı — anlık görüntü bir sızıntı
+aracına dönerdi.
+
+#### Testi yazarken bulunan bir kusur: okunamayacak kayıt yazmak
+
+`can_assess` proje direktörünü içeriyor, varsayılan gizlilik `restricted`, ve
+yetkisi `confidential` olan bir proje direktörü (vekil direktör tam olarak bu)
+kendi aldığı haritayı **sonradan okuyamıyordu**. İstisna da çıkmıyordu: kayıt
+yazılıyor, ekranda görünmüyor, ve alan kişi haritanın kaybolduğunu sanıyordu.
+
+Kural artık genel ve iki tabloda da yazılı: **kimse kendi yetkisinin üstüne
+kayıt yazamaz.** `can_read` yeniden kullanılıyor, ikinci bir seviye
+karşılaştırması yazılmıyor.
+
+#### Ateşlenemeyen bir kısıt silindi
+
+İlk hâlinde `payload`'ın bir dizi olduğunu sınayan bir check constraint vardı.
+Mutasyon listesini yazarken onu bozacak bir test bulamadım, sonra sebebini
+gördüm: kısıt hiç ateşlenemez. Tetikleyici her INSERT'te `payload`'ı kendisi
+yazıyor, UPDATE'te de değişemiyor. İki garanti yazmak, ikincisinin sınanmadığını
+ve bir gün yanlış yere güvenileceğini kabul etmek olurdu.
+
+#### Yedinci kez: yanlış sebeple geçen test
+
+Bloğun dış-rol assertion'ları müteahhide bakıyordu ve ikisi de geçiyordu — dış
+rol oldukları için değil, **hesabı kapalı olduğu için**: bu dosyanın 9827.
+satırı M1-11 bloğunda müteahhidin hesabını kapatıyor ve bir daha açmıyor.
+`app.can_read` ilk satırında `clearance is not null` diyor, yani politika hiç
+sorulmuyordu. Teşhis yine bozmakla çıktı: okuma politikasındaki `is_internal()`
+kaldırıldığında mutasyon sessiz kaldı.
+
+Assertion'lar hesabı açık bir dış role (Avukat İki) taşındı, ve iki fikstür
+eklendi: müteahhidin yetkisinin **içinde** sınıflandırılmış bir plan, ve
+yanlış sınıflandırılmış (`internal`) bir siyasî harita. İkisi de o kuralın
+koruduğu durum, ve ikisi de fikstürde yoktu.
+
+#### Otuz üç mutasyon, üçü düşmedi — ikisi gerçek kurgu boşluğu
+
+İlk süpürmede 28/31 düştü. Üçünün biri benim bozuk çapamdı; ikisi gerçek
+ölçüm boşluğuydu ve ikisi de aynı biçimdeydi: **ret yanlış yerden geliyordu.**
+`is_internal()` kaldırıldığında müteahhit planı yine okuyamıyordu, ama sebep
+seviyeydi; `can_assess` gevşetildiğinde saha ekibi anlık görüntü alamıyordu,
+ama sebep yine seviyeydi. Fikstür o soruyu hiç sormuyordu. Üçü kapatıldıktan
+ve iki yeni kural (`can_plan` kolonu) eklendikten sonra **33/33** düştü.
+
+#### Tarayıcı kapısında dört ölçüm tuzağı
+
+Panellerin çizildiğini ölçmek dört ayrı kusur ortaya çıkardı, ve dördü de
+"kapı geçiyor ama bakmıyor" biçimindeydi:
+
+1. **Gezinmedeki "Plan" düğmesi.** Kapı görünüm düğmelerini adıyla arıyordu ve
+   bütün sayfada arıyordu; `/plan` rotasının gezinme düğmesi DOM'da önce
+   geliyor. Kapı ona bastı ve ölçümü **başka ekranda** sürdürdü. Kaynak artık
+   hangi grubun görünüm düğmesi olduğunu kendisi söylüyor (`data-view-switch`),
+   `data-record-list` ile aynı gerekçe.
+2. **`dist` ile `dist-smoke`.** Ölçümü `npm run build` sonrası koşturdum; kapı
+   `dist-smoke`'u sunuyor. Yeni düğmeler paketlenmiş hâlde yoktu ve "panel
+   çizilmiyor" diye raporlandı. Panel çiziliyordu.
+3. **Kurgunun bütün anlık görüntüleri geçersiz sayılmış görünüyordu.** Üretici
+   her `timestamptz`'e bir değer yazıyor, yani `discarded_at` hep dolu;
+   kütüğün canlı dalı hiç çizilmedi. Dikiş ilk satırı canlıya çeviriyor.
+   Aynı sebeple `payload` da dikiliyor: jsonb için üretici `null` dönüyor
+   (doğru, çünkü şema dizinin şeklini söylemiyor), ve dikilmezse harita açılıp
+   **boş** geliyor — ekran "o gün kimse yoktu" der, ölçü ise hiç bakmamıştır.
+4. **`maybeSingle()`.** O çağrı PostgREST'e "bana bir nesne ver" başlığı
+   göndermiyor; diziyi alıp istemcide çözüyor ve birden fazla satır gelirse
+   hata veriyor. Gerçek veritabanında `eq('id', …)` tek satır döndürdüğü için
+   sorun görünmüyor; satırları süzmeyen bir kurguda bütün harita sessizce boş
+   geldi. Birincil anahtara eşitlikle gelen diziden ilk satırı almak iki
+   dünyada da aynı cevabı veriyor.
+
+Pano boşluk sayısı da ayrıca dikildi: `no_plan_recorded` satırının `plan_id`'si
+doluydu, yani ekran "görebildiğiniz her paydaş için bir plan yazılı" dalını
+çiziyor ve boşluk sayısı **0** ölçülüyordu — oysa panonun var olma sebebi o
+sayı. Kapı artık sayının sıfırdan büyük olmasını istiyor; sıfır ölçen bir kapı,
+satırın çizildiğini söyler ama hangi dalının çizildiğini söylemez.
+
+#### Bir yanlış pozitif: `.message` her zaman bir hata değil
+
+T9-04'ün kapısı `{…\.message}` basan satırları arıyor — ekran reddini
+`<WriteError>` dışında basmasın diye. M4-12 bir plan kaydına `message` alanı
+getirdi ("bu paydaşa hangi mesajı veriyoruz") ve kapı üç satırı hata basımı
+sandı. Aynı sınır sorunu ikinci kez; ilk hâlinde `t.messages` ve
+`answer.messageTr` yakalanmıştı.
+
+Ayırt eden şey alıcının adı: bu depoda hata nesneleri hata gibi adlandırılıyor
+(`save.error`, `(e as Error)`). Desen daraltıldı ve **iki biçimde de** mutasyonla
+sınandı — `{save.error.message}` ve `{(save.error as Error).message}`; ikisi de
+yakalanıyor.
+
 ## Yapılmış ama ID'si anılmamış satırlar
 
 Bunlar "yapıldı" sayılır; eksik olan tek şey migration yorumundaki atıf.
@@ -577,7 +712,7 @@ Bunlar "yapıldı" sayılır; eksik olan tek şey migration yorumundaki atıf.
 
 ## Yapılmamış satırlar
 
-18 satır. Her biri için neyin eksik olduğu ve neye bağlı olduğu yazıldı,
+16 satır. Her biri için neyin eksik olduğu ve neye bağlı olduğu yazıldı,
 çünkü bir kısmı kod değil karar ya da hesap bekliyor.
 
 ### P0 — 1 satır
@@ -592,15 +727,13 @@ Bunlar "yapıldı" sayılır; eksik olan tek şey migration yorumundaki atıf.
 | ----- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
 | M1-10 | Oturum yönetimi: aktif cihazlar, uzaktan kapatma | Supabase `auth.sessions` üzerinden okunur; kapatma yönetici yetkisiyle sunucu tarafı bir fonksiyon ister. |
 
-### P2 — 16 satır
+### P2 — 14 satır
 
 Portal içinde yapılabilenler (bağımlılığı yok):
 
 | ID    | Gereksinim                                                                                                                            |
 | ----- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | M2-10 | Tekrarlayan yükümlülükler (yıllık tescil, dönemsel beyan) — `compliance_requirements` zaten yineleme taşıyor, yükümlülükler taşımıyor |
-| M4-12 | Etkileşim planı (ne istiyoruz, sıradaki adım, sorumlu)                                                                                |
-| M4-14 | Paydaş haritası anlık görüntüsü (dondurulmuş)                                                                                         |
 | M5-11 | Hukukî senaryo analizi ("kaybedersek")                                                                                                |
 | M5-13 | İçtihat/mevzuat kütüphanesi                                                                                                           |
 | M7-13 | Değişiklik emri (variation order)                                                                                                     |
@@ -636,6 +769,6 @@ yapılmamış bir şeyi yapılmış gösterir — ilk geçişte "muson" kendi ya
 0040 yorumunda eşleşti, "sap" bir başka kelimenin içinde, "retention" bir
 hakediş sütununda. Dar bir desen ise yapılmış bir şeyi kaçırır; M1-08 ilk
 taramada `supabase/functions/` dizini sayılmadığı için yok görünüyordu.
-Yukarıdaki 18 satırın her biri bu yüzden elle teyit edildi, ve "yapıldı"
-sayılan 192 satırın hepsi tek tek teyit edilmedi — yalnızca atıfı olanlar
+Yukarıdaki 16 satırın her biri bu yüzden elle teyit edildi, ve "yapıldı"
+sayılan 194 satırın hepsi tek tek teyit edilmedi — yalnızca atıfı olanlar
 atıfına, atıfı olmayan yedisi kanıtına dayanıyor.

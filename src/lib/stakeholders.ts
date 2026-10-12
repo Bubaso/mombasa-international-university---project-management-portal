@@ -42,7 +42,17 @@ const STANCE_LABELS: Record<Stance, Bilingual> = {
 
 export const STANCES = Object.keys(STANCE_LABELS) as Stance[];
 
-export function stanceLabel(stance: Stance, language: Language): string {
+/**
+ * Tutumun adı; paket değeri bilmiyorsa değerin kendisi.
+ *
+ * Parametre `Stance` DEĞİL `string`, ve bunu M4-14 zorladı: dondurulmuş bir
+ * paydaş haritası, alındığı günün `stance` değerini taşıyor ve o harita
+ * enum'dan daha uzun yaşıyor. Bir göç bir değeri kaldırırsa, altı ay önce
+ * alınmış bir harita hâlâ onu içerir — ve `Record<Stance, …>` üzerinde
+ * korumasız bir erişim o ekranı düşürürdü. Bu depoda tam olarak böyle
+ * düşmüştü (0047, on bir rota).
+ */
+export function stanceLabel(stance: string, language: Language): string {
   return wordFor(STANCE_LABELS, stance, language);
 }
 
@@ -59,8 +69,14 @@ const STANCE_STYLES: Record<Stance, string> = {
   unknown: 'border-slate-300 bg-white text-slate-500',
 };
 
-export function stanceStyle(stance: Stance): string {
-  return STANCE_STYLES[stance];
+/**
+ * Tanınmayan bir tutum için renk uydurulmuyor: nötr dönüyor. Dondurulmuş bir
+ * harita, enum'da artık olmayan bir değer taşıyabilir (M4-14).
+ */
+const UNKNOWN_STANCE_TONE = 'border-slate-300 bg-slate-100 text-slate-700';
+
+export function stanceStyle(stance: string): string {
+  return (STANCE_STYLES as Record<string, string | undefined>)[stance] ?? UNKNOWN_STANCE_TONE;
 }
 
 const CHANNEL_LABELS: Record<ContactChannel, Bilingual> = {

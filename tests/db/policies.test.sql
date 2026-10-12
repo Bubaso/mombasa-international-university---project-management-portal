@@ -10466,6 +10466,712 @@ select pg_temp.check('KONTROL: the policy they could not touch is still there',
 
 select pg_temp.act_as('11111111-1111-1111-1111-111111111111');
 
+-- ===========================================================================
+-- Etkileşim planı, ve dondurulmuş bir harita kımıldamaz
+-- (M4-12, M4-14, göç 0058)
+-- ===========================================================================
+
+select pg_temp.act_as('11111111-1111-1111-1111-111111111111');  -- admin
+
+-- M9-11'in dersi kalıcı bir assertion: bu blok RLS altında mı koşuyor?
+-- Süper kullanıcı her politikayı sessizce "geçirir".
+select pg_temp.check('KONTROL: this block runs under RLS, not as a superuser',
+  current_user, 'authenticated'::name);
+
+-- ---------------------------------------------------------------------------
+-- Sıradaki adım: üçü bir arada ya da hiçbiri (M4-12)
+-- ---------------------------------------------------------------------------
+--
+-- Bu kısıt, Notion'dan taşınan 103 aksiyon satırının dersinden geliyor:
+-- sorumlusu ve tarihi olmayan bir adım metni takip edildiğini sandırır.
+
+do $$
+begin
+  begin
+    insert into stakeholder_engagement_plans (stakeholder_id, objective, next_step)
+    values ('0b000000-0000-0000-0000-000000000001', 'A meeting before the hearing.',
+            'Call the chief of staff.');
+    raise exception 'FAIL a next step with nobody on it was accepted';
+  exception
+    when check_violation then
+      raise notice 'ok   a next step with no owner is not a next step';
+  end;
+end;
+$$;
+
+do $$
+begin
+  begin
+    insert into stakeholder_engagement_plans
+      (stakeholder_id, objective, next_step, next_step_owner)
+    values ('0b000000-0000-0000-0000-000000000001', 'A meeting before the hearing.',
+            'Call the chief of staff.', '22222222-2222-2222-2222-222222222222');
+    raise exception 'FAIL a next step with no date was accepted';
+  exception
+    when check_violation then
+      raise notice 'ok   and one with no date is not either';
+  end;
+end;
+$$;
+
+-- VE TERS YÖNDE: sorumlusu ve tarihi olup metni olmayan bir adım da eksik.
+-- Tek yönlü sınanan bir bütünlük kısıtı, yarısı sınanmamış bir kısıttır.
+do $$
+begin
+  begin
+    insert into stakeholder_engagement_plans
+      (stakeholder_id, objective, next_step_owner, next_step_due)
+    values ('0b000000-0000-0000-0000-000000000001', 'A meeting before the hearing.',
+            '22222222-2222-2222-2222-222222222222', current_date + 3);
+    raise exception 'FAIL an owner and a date with no step were accepted';
+  exception
+    when check_violation then
+      raise notice 'ok   nor a date and an owner with nothing to do';
+  end;
+end;
+$$;
+
+do $$
+begin
+  begin
+    insert into stakeholder_engagement_plans (stakeholder_id, objective)
+    values ('0b000000-0000-0000-0000-000000000001', '   ');
+    raise exception 'FAIL a plan with no objective was accepted';
+  exception
+    when check_violation then
+      raise notice 'ok   and a plan with no objective is a habit, not a plan';
+  end;
+end;
+$$;
+
+-- Tam bir plan, vadesi geçmiş bir adımla.
+insert into stakeholder_engagement_plans
+  (id, stakeholder_id, objective, message, next_step, next_step_owner, next_step_due)
+values
+  ('2b000000-0000-0000-0000-000000000001', '0b000000-0000-0000-0000-000000000001',
+   'A written assurance that the title will not be revisited.',
+   'The university opens in 2027 either way; the question is whose name is on it.',
+   'Ask the chief of staff for a date.', '22222222-2222-2222-2222-222222222222',
+   current_date - 10);
+
+select pg_temp.check('a whole plan is accepted, and shows as overdue',
+  (select step_state from engagement_plan_board
+    where stakeholder_id = '0b000000-0000-0000-0000-000000000001'), 'overdue');
+
+select pg_temp.check('and the board counts the days against it, as a negative',
+  (select days_to_step from engagement_plan_board
+    where stakeholder_id = '0b000000-0000-0000-0000-000000000001'), -10);
+
+-- Adımı olmayan bir plan meşru: amaç yazılmış, sıradaki hamle henüz
+-- kararlaşmamış. Pano bunu bir eksiklik olarak söylüyor.
+insert into stakeholder_engagement_plans (id, stakeholder_id, objective)
+values ('2b000000-0000-0000-0000-000000000002', '0b000000-0000-0000-0000-000000000002',
+        'Keep the elder informed enough that nobody can tell him otherwise.');
+
+select pg_temp.check('a plan with no next step says so',
+  (select step_state from engagement_plan_board
+    where stakeholder_id = '0b000000-0000-0000-0000-000000000002'), 'no_step_recorded');
+
+-- VE GÜNÜ `null`, 0 DEĞİL: sıfır "bugün vadesi geliyor" demek olurdu.
+select pg_temp.check('and its day count is null, not zero',
+  (select days_to_step is null from engagement_plan_board
+    where stakeholder_id = '0b000000-0000-0000-0000-000000000002'), true);
+
+-- PANONUN ASIL BULGUSU: hiç planı olmayan paydaş. Plan tablosundan başlayan
+-- bir pano bu satırı hiç göstermezdi.
+select pg_temp.check('a stakeholder nobody planned for is on the board anyway',
+  (select step_state from engagement_plan_board
+    where stakeholder_id = '0b000000-0000-0000-0000-000000000005'), 'no_plan_recorded');
+
+select pg_temp.check('and the board has one row per stakeholder, not per plan',
+  (select count(*) from engagement_plan_board),
+  (select count(*) from stakeholders));
+
+insert into stakeholder_engagement_plans
+  (id, stakeholder_id, objective, next_step, next_step_owner, next_step_due)
+values
+  ('2b000000-0000-0000-0000-000000000003', '0b000000-0000-0000-0000-000000000003',
+   'A written opinion on the appeal window.', 'Send the brief.',
+   '22222222-2222-2222-2222-222222222222', current_date + 7),
+  ('2b000000-0000-0000-0000-000000000004', '0b000000-0000-0000-0000-000000000004',
+   'Site access on the eastern boundary.', 'Walk the line together.',
+   '22222222-2222-2222-2222-222222222222', current_date + 30);
+
+select pg_temp.check('a step inside two weeks is due soon',
+  (select step_state from engagement_plan_board
+    where stakeholder_id = '0b000000-0000-0000-0000-000000000003'), 'due_soon');
+
+select pg_temp.check('and one further out is merely scheduled — a different answer',
+  (select step_state from engagement_plan_board
+    where stakeholder_id = '0b000000-0000-0000-0000-000000000004'), 'scheduled');
+
+-- ---------------------------------------------------------------------------
+-- Bir paydaşın tek yürüyen planı olur
+-- ---------------------------------------------------------------------------
+
+do $$
+begin
+  begin
+    insert into stakeholder_engagement_plans (stakeholder_id, objective)
+    values ('0b000000-0000-0000-0000-000000000001', 'Something else entirely.');
+    raise exception 'FAIL a stakeholder was given two live plans at once';
+  exception
+    when unique_violation then
+      raise notice 'ok   two live plans for one person is a disagreement, not a plan';
+  end;
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- Kapanış bir bütün
+-- ---------------------------------------------------------------------------
+
+do $$
+begin
+  begin
+    update stakeholder_engagement_plans
+       set status = 'achieved', closed_at = now()
+     where id = '2b000000-0000-0000-0000-000000000001';
+    raise exception 'FAIL a plan was closed with no note';
+  exception
+    when check_violation then
+      raise notice 'ok   a plan cannot close without saying why';
+  end;
+end;
+$$;
+
+do $$
+begin
+  begin
+    update stakeholder_engagement_plans
+       set status = 'achieved', closed_at = created_at - interval '1 day',
+           closed_note = 'Done before it began.'
+     where id = '2b000000-0000-0000-0000-000000000001';
+    raise exception 'FAIL a plan closed before it was opened';
+  exception
+    when check_violation then
+      raise notice 'ok   nor close before it was opened';
+  end;
+end;
+$$;
+
+-- `outcome_unknown` KASITLI BİR SEÇENEK: plan kapandı, sonucu kimsede
+-- yazılı değil. Beş sonuçtan birini seçmeye zorlamak, olmayan bir cevabı
+-- icat etmek olurdu.
+update stakeholder_engagement_plans
+   set status = 'outcome_unknown', closed_at = now(),
+       closed_note = 'The hearing moved and nobody wrote down what came of it.'
+ where id = '2b000000-0000-0000-0000-000000000001';
+
+select pg_temp.check('a closed plan leaves the board, and the gap shows',
+  (select step_state from engagement_plan_board
+    where stakeholder_id = '0b000000-0000-0000-0000-000000000001'), 'no_plan_recorded');
+
+-- Ve kapanınca yeni bir plan yazılabiliyor: kısmî indeks yalnızca YÜRÜYEN
+-- planı tutuyor, yoksa bir kez planlanmış paydaş bir daha planlanamazdı.
+insert into stakeholder_engagement_plans (id, stakeholder_id, objective)
+values ('2b000000-0000-0000-0000-000000000005', '0b000000-0000-0000-0000-000000000001',
+        'The same assurance, asked again after the adjournment.');
+
+select pg_temp.check('and a new plan can start once the old one closed',
+  (select step_state from engagement_plan_board
+    where stakeholder_id = '0b000000-0000-0000-0000-000000000001'), 'no_step_recorded');
+
+-- ---------------------------------------------------------------------------
+-- Planı ilişki sahibi yazar (M4-05 ile M4-12'nin kesişimi)
+-- ---------------------------------------------------------------------------
+
+update stakeholders set relationship_owner = '44444444-4444-4444-4444-444444444444'
+ where id = '0b000000-0000-0000-0000-000000000006';
+
+select pg_temp.act_as('44444444-4444-4444-4444-444444444444');  -- field team
+
+insert into stakeholder_engagement_plans (id, stakeholder_id, objective)
+values ('2b000000-0000-0000-0000-000000000006', '0b000000-0000-0000-0000-000000000006',
+        'Find out who this contact actually is before the next import.');
+
+select pg_temp.check('the relationship owner plans for their own stakeholder',
+  (select objective is not null from stakeholder_engagement_plans
+    where id = '2b000000-0000-0000-0000-000000000006'), true);
+
+-- Ama başkasının paydaşı için yazamıyor.
+do $$
+begin
+  begin
+    insert into stakeholder_engagement_plans (stakeholder_id, objective)
+    values ('0b000000-0000-0000-0000-000000000004', 'What we want from the contractor.');
+    raise exception 'FAIL the field team planned for a stakeholder that is not theirs';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   but not for somebody else''s';
+  end;
+end;
+$$;
+
+-- VE PANO AYNI CEVABI TAŞIYOR. Düğmeyi gösterip gösterme kararı istemcide
+-- yeniden hesaplanmıyor; görünüm `app.can_plan_engagement()`'ı satır başına
+-- çağırıyor, yani politikanın cevabıyla ekranın cevabı aynı fonksiyondan
+-- geliyor.
+select pg_temp.check('the board tells this reader which rows are theirs to plan',
+  (select can_plan from engagement_plan_board
+    where stakeholder_id = '0b000000-0000-0000-0000-000000000006'), true);
+
+select pg_temp.check('KONTROL: and which are not — the answer differs by row',
+  (select can_plan from engagement_plan_board
+    where stakeholder_id = '0b000000-0000-0000-0000-000000000004'), false);
+
+-- Aynı kural planda da: yetkisinin üstüne sınıflandırılmış bir planı
+-- yazan, o planı bir daha açamaz.
+do $$
+begin
+  begin
+    insert into stakeholder_engagement_plans (stakeholder_id, objective, confidentiality)
+    values ('0b000000-0000-0000-0000-000000000006', 'Kept from myself.', 'restricted');
+    raise exception 'FAIL a plan was classified above its own author''s clearance';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   and not a plan they could not read back either';
+  end;
+end;
+$$;
+
+-- VE `using` AYRI BİR İDDİA. M9-11'de tam bu boşluk vardı: yalnızca INSERT
+-- deneyen bir test, politikanın `using` tarafını hiç sormaz. Ret de SESSİZ —
+-- RLS yetkisiz güncellemeyi sıfır satır olarak döndürüyor, istisna atmıyor.
+do $$
+declare
+  n int;
+begin
+  update stakeholder_engagement_plans set objective = 'Rewritten by the wrong hands.'
+   where id = '2b000000-0000-0000-0000-000000000004';
+  get diagnostics n = row_count;
+  if n <> 0 then
+    raise exception 'FAIL the field team rewrote another owner''s plan (% rows)', n;
+  end if;
+  raise notice 'ok   nor rewrite one — no row to change';
+
+  delete from stakeholder_engagement_plans
+   where id = '2b000000-0000-0000-0000-000000000004';
+  get diagnostics n = row_count;
+  if n <> 0 then
+    raise exception 'FAIL the field team deleted another owner''s plan (% rows)', n;
+  end if;
+  raise notice 'ok   nor delete it';
+end;
+$$;
+
+-- KONTROL: ret kuraldan geliyor, satırı okuyamamaktan değil. Aynı satır
+-- okunabiliyor, ve KENDİ paydaşının planı güncellenebiliyor.
+select pg_temp.check('KONTROL: the plan they could not touch is one they can read',
+  (select count(*) from stakeholder_engagement_plans
+    where id = '2b000000-0000-0000-0000-000000000004'), 1::bigint);
+
+do $$
+declare
+  n int;
+begin
+  update stakeholder_engagement_plans set message = 'Ask at the next import review.'
+   where id = '2b000000-0000-0000-0000-000000000006';
+  get diagnostics n = row_count;
+  if n <> 1 then
+    raise exception 'FAIL the owner could not update their own plan (% rows)', n;
+  end if;
+  raise notice 'ok   KONTROL: and their own plan is theirs to change';
+end;
+$$;
+
+-- DIŞ ROL PLANI HİÇ GÖRMÜYOR, VE KURGU BUNU SORMAK ZORUNDA.
+--
+-- İlk hâlinde sormuyordu: bütün planlar varsayılan `confidential` idi,
+-- müteahhidin yetkisi `internal`, yani ret SEVİYEDEN geliyordu. Okuma
+-- politikasındaki `is_internal()`'ı kaldıran mutasyon sessiz kaldı — çünkü
+-- kuralın koruduğu durum fikstürde yoktu. Müteahhidin yetkisinin İÇİNDE
+-- sınıflandırılmış bir plan gerekiyor.
+select pg_temp.act_as('11111111-1111-1111-1111-111111111111');  -- admin
+
+update stakeholder_engagement_plans set confidentiality = 'internal'
+ where id = '2b000000-0000-0000-0000-000000000002';
+
+select pg_temp.check('KONTROL: that plan is classified inside the contractor''s clearance',
+  (select confidentiality from stakeholder_engagement_plans
+    where id = '2b000000-0000-0000-0000-000000000002'),
+  'internal'::confidentiality);
+
+-- DIŞ ROL OLARAK MÜTEAHHİT KULLANILMIYOR, VE SEBEBİ BİR KUSUR:
+-- bu dosyanın 9827. satırı müteahhidin hesabını KAPATIYOR (`is_active =
+-- false`, M1-11'in erişim gözden geçirme bloğu) ve bir daha açmıyor. İlk
+-- yazışımda buradaki iki assertion müteahhide bakıyordu ve ikisi de
+-- geçiyordu — dış rol oldukları için değil, hesabı kapalı olduğu için.
+-- `app.can_read` ilk satırında `clearance is not null` diyor ve kapalı bir
+-- hesabın yetkisi yok, yani POLİTİKA HİÇ SORULMUYORDU.
+--
+-- Bu depoda yedinci kez aynı şey: sayı tutuyor, ölçü yok (CLAUDE.md §3).
+-- Teşhis yine bozmakla çıktı — okuma politikasındaki `is_internal()`'ı
+-- kaldıran mutasyon sessiz kalmayı sürdürdü.
+--
+-- Avukat İki hâlâ açık bir dış rol, hiçbir kaydı paylaşılmamış, yetkisi
+-- `internal`.
+select pg_temp.act_as('66666666-6666-6666-6666-666666666666');  -- advocate two
+
+select pg_temp.check(
+  'KONTROL: that external role has an open account and reads the public register',
+  (select count(*) from stakeholders
+    where id = '0b000000-0000-0000-0000-000000000002'), 1::bigint);
+
+select pg_temp.check('an external role reads no engagement plan at all',
+  (select count(*) from stakeholder_engagement_plans), 0::bigint);
+
+-- ---------------------------------------------------------------------------
+-- Dondurulmuş harita: tarih, rol ve harita sunucudan (M4-14)
+-- ---------------------------------------------------------------------------
+
+select pg_temp.act_as('11111111-1111-1111-1111-111111111111');  -- admin
+
+-- Yalnızca en üst yetkinin gördüğü bir paydaş. Aşağıdaki daraltma
+-- assertion'ının ayırt ediciliği buna bağlı.
+insert into stakeholders (id, full_name, category, stance, influence, interest,
+                          confidentiality)
+values ('4c000000-0000-0000-0000-000000000001', 'The Named Intermediary', 'other',
+        'sceptic', 4, 2, 'restricted');
+
+-- Adı olmayan bir anlık görüntü, kütükte ayırt edilemez bir satırdır.
+do $$
+begin
+  begin
+    insert into stakeholder_map_snapshots (title) values ('   ');
+    raise exception 'FAIL a snapshot with no name was accepted';
+  exception
+    when check_violation then
+      raise notice 'ok   a snapshot nobody named cannot be told from another';
+  end;
+end;
+$$;
+
+-- İSTEMCİ ÜÇ ŞEYİ UYDURUYOR: geçmiş bir tarih, sahte bir harita, yanlış bir
+-- rol. Üçü de atılıyor.
+insert into stakeholder_map_snapshots
+  (id, title, note, payload, taken_as_role, created_at)
+values ('4c000000-0000-0000-0000-000000000010', 'Trustee board, March 2026',
+        'Prepared for the quarterly meeting.',
+        '[{"full_name": "Nobody At All", "stance": "champion"}]'::jsonb,
+        'donor', now() - interval '1 year');
+
+select pg_temp.check('the date on a snapshot is the server''s, not the sender''s',
+  (select taken_at > now() - interval '1 minute' from stakeholder_map_snapshot_index
+    where id = '4c000000-0000-0000-0000-000000000010'), true);
+
+select pg_temp.check('and the role it was taken under is stamped, not claimed',
+  (select taken_as_role from stakeholder_map_snapshot_index
+    where id = '4c000000-0000-0000-0000-000000000010'), 'admin'::app_role);
+
+select pg_temp.check('and the map is the register, not what the sender sent',
+  (select stakeholder_count from stakeholder_map_snapshot_index
+    where id = '4c000000-0000-0000-0000-000000000010'),
+  (select count(*)::int from stakeholders));
+
+-- KONTROL: sayı tutuyor diye harita gerçek değil — içine bakıyoruz.
+select pg_temp.check('KONTROL: a real name from the register is in the frozen map',
+  (select count(*) from stakeholder_map_snapshots sn,
+     jsonb_array_elements(sn.payload) e
+    where sn.id = '4c000000-0000-0000-0000-000000000010'
+      and e ->> 'full_name' = 'The Minister'), 1::bigint);
+
+select pg_temp.check('KONTROL: and the name the sender invented is not',
+  (select count(*) from stakeholder_map_snapshots sn,
+     jsonb_array_elements(sn.payload) e
+    where sn.id = '4c000000-0000-0000-0000-000000000010'
+      and e ->> 'full_name' = 'Nobody At All'), 0::bigint);
+
+-- İKİ AYRI BİLİNMEZLİK, İKİ AYRI KOLON: sahipsiz paydaşın kimliği de adı da
+-- null; sahibi görülemeyen birinin kimliği var, adı yok.
+select pg_temp.check('KONTROL: a stakeholder nobody keeps is frozen as having nobody',
+  (select e ->> 'relationship_owner_id' is null and e ->> 'relationship_owner_name' is null
+     from stakeholder_map_snapshots sn, jsonb_array_elements(sn.payload) e
+    where sn.id = '4c000000-0000-0000-0000-000000000010'
+      and e ->> 'full_name' = 'Unattended Senator'), true);
+
+-- VE SAHİBİ OLANIN ADI YAZILI. Bu satır olmadan yukarıdaki assertion ayırt
+-- edici değildi: ad kolonunu haritadan tamamen silen bir mutasyon da
+-- "ikisi de null" cevabını verirdi, yani mutasyon sessiz kalırdı.
+select pg_temp.check('KONTROL: and one who is kept carries the keeper''s name',
+  (select e ->> 'relationship_owner_name'
+     from stakeholder_map_snapshots sn, jsonb_array_elements(sn.payload) e
+    where sn.id = '4c000000-0000-0000-0000-000000000010'
+      and e ->> 'full_name' = 'The Minister'), 'Project Director');
+
+-- Tutum dağılımı haritanın kendisinden toplanıyor, ayrı bir sayaçtan değil.
+select pg_temp.check('the stance tally adds up to the map it was counted from',
+  (select sum(value::int) from stakeholder_map_snapshot_index i,
+     jsonb_each_text(i.stance_tally)
+    where i.id = '4c000000-0000-0000-0000-000000000010'),
+  (select stakeholder_count::bigint from stakeholder_map_snapshot_index
+    where id = '4c000000-0000-0000-0000-000000000010'));
+
+-- ---------------------------------------------------------------------------
+-- VE ASIL KURAL: donmuş olan kımıldamaz
+-- ---------------------------------------------------------------------------
+
+do $$
+begin
+  begin
+    update stakeholder_map_snapshots
+       set payload = '[]'::jsonb
+     where id = '4c000000-0000-0000-0000-000000000010';
+    raise exception 'FAIL a frozen map was rewritten';
+  exception
+    when raise_exception then
+      if position('frozen stakeholder map' in sqlerrm) = 0 then raise; end if;
+      raise notice 'ok   a frozen map cannot be rewritten';
+  end;
+end;
+$$;
+
+do $$
+begin
+  begin
+    update stakeholder_map_snapshots
+       set created_at = now() - interval '6 months'
+     where id = '4c000000-0000-0000-0000-000000000010';
+    raise exception 'FAIL a snapshot was backdated after the fact';
+  exception
+    when raise_exception then
+      if position('frozen stakeholder map' in sqlerrm) = 0 then raise; end if;
+      raise notice 'ok   nor backdated afterwards';
+  end;
+end;
+$$;
+
+do $$
+begin
+  begin
+    update stakeholder_map_snapshots set taken_as_role = 'trustee'
+     where id = '4c000000-0000-0000-0000-000000000010';
+    raise exception 'FAIL the role a snapshot was taken under was changed';
+  exception
+    when raise_exception then
+      if position('frozen stakeholder map' in sqlerrm) = 0 then raise; end if;
+      raise notice 'ok   nor reattributed to a wider role';
+  end;
+end;
+$$;
+
+-- AMA ETİKETİ DÜZELTİLEBİLİYOR, ve bu ayrımı bir assertion yapıyorum:
+-- donmuş olan şey veri, başlık değil. Her güncellemeyi reddeden bir kural,
+-- bir yazım hatasını kalıcı kılardı.
+update stakeholder_map_snapshots
+   set title = 'Trustee board, March 2026 (corrected)',
+       note = 'Prepared for the quarterly meeting; circulated 12 March.'
+ where id = '4c000000-0000-0000-0000-000000000010';
+
+select pg_temp.check('KONTROL: the label is not the data — a typo is fixable',
+  (select title from stakeholder_map_snapshot_index
+    where id = '4c000000-0000-0000-0000-000000000010'),
+  'Trustee board, March 2026 (corrected)');
+
+select pg_temp.check('KONTROL: and fixing it moved nothing in the map',
+  (select stakeholder_count from stakeholder_map_snapshot_index
+    where id = '4c000000-0000-0000-0000-000000000010'),
+  (select count(*)::int from stakeholders));
+
+-- ---------------------------------------------------------------------------
+-- Silinmez, geçersiz sayılır — ve geçersiz saymak bir gerekçe ister
+-- ---------------------------------------------------------------------------
+
+do $$
+begin
+  begin
+    delete from stakeholder_map_snapshots
+     where id = '4c000000-0000-0000-0000-000000000010';
+    raise exception 'FAIL a snapshot shown to trustees was deleted';
+  exception
+    when raise_exception then
+      if position('not deletable' in sqlerrm) = 0 then raise; end if;
+      raise notice 'ok   a snapshot is not deletable';
+  end;
+end;
+$$;
+
+do $$
+begin
+  begin
+    update stakeholder_map_snapshots set discarded_at = now()
+     where id = '4c000000-0000-0000-0000-000000000010';
+    raise exception 'FAIL a snapshot was discarded with no reason';
+  exception
+    when check_violation then
+      raise notice 'ok   and discarding one takes a reason';
+  end;
+end;
+$$;
+
+-- Geçersiz saymanın damgası da sunucudan: istemci geçmiş bir tarih
+-- gönderiyor, şimdiki zaman yazılıyor.
+update stakeholder_map_snapshots
+   set discarded_at = now() - interval '3 months',
+       discarded_reason = 'Taken before the April stance changes; superseded.'
+ where id = '4c000000-0000-0000-0000-000000000010';
+
+select pg_temp.check('the discard is stamped by the server too',
+  (select discarded_at > now() - interval '1 minute' from stakeholder_map_snapshot_index
+    where id = '4c000000-0000-0000-0000-000000000010'), true);
+
+select pg_temp.check('and it records who did it without being told',
+  (select discarded_by from stakeholder_map_snapshot_index
+    where id = '4c000000-0000-0000-0000-000000000010'),
+  '11111111-1111-1111-1111-111111111111'::uuid);
+
+do $$
+begin
+  begin
+    update stakeholder_map_snapshots
+       set discarded_reason = 'On reflection, a tidier reason.'
+     where id = '4c000000-0000-0000-0000-000000000010';
+    raise exception 'FAIL a discard reason was rewritten after the fact';
+  exception
+    when raise_exception then
+      if position('keeps the reason' in sqlerrm) = 0 then raise; end if;
+      raise notice 'ok   a discarded snapshot keeps the reason it was discarded for';
+  end;
+end;
+$$;
+
+do $$
+begin
+  begin
+    delete from stakeholder_map_snapshots
+     where id = '4c000000-0000-0000-0000-000000000010';
+    raise exception 'FAIL a discarded snapshot was deleted';
+  exception
+    when raise_exception then
+      if position('not deletable' in sqlerrm) = 0 then raise; end if;
+      raise notice 'ok   and discarding it does not make it deletable';
+  end;
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- HARİTA, ALANIN GÖRDÜĞÜ KADARDIR — ve bunu söylüyor
+-- ---------------------------------------------------------------------------
+--
+-- Bu bloğun en önemli assertion'ı. Daha dar yetkiyle alınmış bir anlık
+-- görüntü daha küçük bir haritadır, ve eksikliğini söylemezse mütevelli onu
+-- tam harita sanır. `taken_as_role` o cümlenin tek dayanağı.
+
+select pg_temp.act_as('a9900000-0000-0000-0000-000000000001');  -- deputy director
+
+select pg_temp.check('KONTROL: the deputy genuinely cannot see the named intermediary',
+  (select count(*) from stakeholders
+    where id = '4c000000-0000-0000-0000-000000000001'), 0::bigint);
+
+-- KİMSE KENDİ YETKİSİNİN ÜSTÜNE KAYIT YAZAMAZ. Bu assertion bu göçün
+-- testini yazarken bulunan bir kusurdan doğdu: vekil direktörün yetkisi
+-- `confidential`, varsayılan gizlilik `restricted`, yani kendi aldığı
+-- haritayı bir daha açamıyordu — ve hiçbir istisna çıkmıyordu, kayıt
+-- yazılıyor, ekranda görünmüyordu.
+do $$
+begin
+  begin
+    insert into stakeholder_map_snapshots (title) values ('Above my own ceiling.');
+    raise exception 'FAIL a record was written above the writer''s own clearance';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   nobody writes a snapshot they could not read back';
+  end;
+end;
+$$;
+
+insert into stakeholder_map_snapshots (id, title, confidentiality)
+values ('4c000000-0000-0000-0000-000000000011', 'Deputy''s working map', 'confidential');
+
+select pg_temp.check('KONTROL: classified at their own ceiling, it is theirs to read',
+  (select count(*) from stakeholder_map_snapshot_index
+    where id = '4c000000-0000-0000-0000-000000000011'), 1::bigint);
+
+select pg_temp.check('a narrower role takes a smaller map',
+  (select stakeholder_count from stakeholder_map_snapshot_index
+    where id = '4c000000-0000-0000-0000-000000000011'),
+  (select count(*)::int from stakeholders));
+
+-- Ve eksikliğin SEBEBİ kayıtlı: bu harita bir proje direktörünün gördüğü
+-- kadar. Rol yazılmasa, iki haritanın neden farklı olduğu hiçbir yerde
+-- durmazdı.
+select pg_temp.check('and the map says which role''s sight it was taken under',
+  (select taken_as_role from stakeholder_map_snapshot_index
+    where id = '4c000000-0000-0000-0000-000000000011'), 'project_director'::app_role);
+
+-- İKİ HARİTANIN KARŞILAŞTIRMASI YÖNETİCİ OLARAK YAPILIYOR, ve bunun kendisi
+-- bir bulgu: vekil direktör kendi haritasını yöneticinin haritasıyla
+-- KARŞILAŞTIRAMIYOR, çünkü öbürünü göremiyor. İlk yazışımda bu assertion
+-- vekilin oturumundaydı ve beklenen taraf `null` döndü — yani "iki harita
+-- eşit" diye okunabilecek bir karşılaştırma. Eksikliği ölçebilen tek kişi,
+-- ikisini de görebilen kişi.
+select pg_temp.act_as('11111111-1111-1111-1111-111111111111');  -- admin
+
+select pg_temp.check('KONTROL: and it is smaller by exactly the row they cannot see',
+  (select i.stakeholder_count + 1 from stakeholder_map_snapshot_index i
+    where i.id = '4c000000-0000-0000-0000-000000000011'),
+  (select stakeholder_count from stakeholder_map_snapshot_index
+    where id = '4c000000-0000-0000-0000-000000000010'));
+
+-- ---------------------------------------------------------------------------
+-- Anlık görüntüyü kim alır, kim okur
+-- ---------------------------------------------------------------------------
+
+select pg_temp.act_as('44444444-4444-4444-4444-444444444444');  -- field team
+
+-- GİZLİLİK AÇIKÇA YAZILIYOR, ve bu gerekli: varsayılan `restricted`, saha
+-- ekibinin yetkisi `confidential`. Varsayılanla denenen bir INSERT, rolden
+-- değil SEVİYEDEN reddedilirdi — ve `can_assess`'i `is_internal`'a çeviren
+-- mutasyon ilk koşumda tam bu yüzden sessiz kaldı. Yetkisinin içinde bir
+-- seviye seçilince soru rol hakkında oluyor.
+do $$
+begin
+  begin
+    insert into stakeholder_map_snapshots (title, confidentiality)
+    values ('Mine, surely.', 'confidential');
+    raise exception 'FAIL the field team froze the political map';
+  exception
+    when insufficient_privilege then
+      raise notice 'ok   freezing the political map is not the field team''s to do';
+  end;
+end;
+$$;
+
+-- VE OKUMA SEVİYEDEN GELİYOR, YASAKTAN DEĞİL. İlk yazışımda buraya "saha
+-- ekibi hiçbir anlık görüntü okumaz" yazmıştım ve düştü: vekilin
+-- `confidential` haritasını okuyordu. Ölçü yanlıştı, kod değil — bir
+-- kademenin anlamı tam olarak bu. Doğru iddia iki satır:
+select pg_temp.check('nor reading the restricted map the admin took',
+  (select count(*) from stakeholder_map_snapshot_index
+    where id = '4c000000-0000-0000-0000-000000000010'), 0::bigint);
+
+select pg_temp.check(
+  'KONTROL: but the one classified confidential is readable — the tier is the rule',
+  (select count(*) from stakeholder_map_snapshot_index
+    where id = '4c000000-0000-0000-0000-000000000011'), 1::bigint);
+
+-- VE DIŞ ROL İÇİN AYRI BİR KURGU GEREKİYOR, çünkü aksi hâlde soru
+-- sorulmuyor: dış rollerin yetki tavanı `internal`, yani `confidential` bir
+-- haritayı seviye zaten reddediyor ve okuma politikasındaki `is_internal()`
+-- hiç sınanmıyor. Yanlış sınıflandırılmış bir harita — `internal` bir
+-- siyasî harita — tam olarak o kuralın koruduğu durum.
+select pg_temp.act_as('11111111-1111-1111-1111-111111111111');  -- admin
+
+insert into stakeholder_map_snapshots (id, title, confidentiality)
+values ('4c000000-0000-0000-0000-000000000012', 'Misfiled map', 'internal');
+
+select pg_temp.act_as('66666666-6666-6666-6666-666666666666');  -- advocate two
+
+select pg_temp.check(
+  'KONTROL: its tier is inside that role''s clearance, so only the fence stops them',
+  (select count(*) from stakeholders
+    where id = '0b000000-0000-0000-0000-000000000002'), 1::bigint);
+
+select pg_temp.check('and an external role sees no snapshot at all, even a misfiled one',
+  (select count(*) from stakeholder_map_snapshot_index), 0::bigint);
+
+select pg_temp.act_as('11111111-1111-1111-1111-111111111111');
+
 reset role;
 
 \echo ''

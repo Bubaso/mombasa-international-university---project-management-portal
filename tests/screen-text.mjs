@@ -64,6 +64,22 @@ const RAISED = [
   // bedel, öbürü görünür olan bir şey.
   { what: 'textChars', from: 64375, to: 65169, row: 'M9-11' },
   { what: 'longChars', from: 27860, to: 28238, row: 'M9-11' },
+  // M4-12 ve M4-14'ün bedeli, VE BÖLÜNMESİ ÖLÇÜLDÜ, tahmin edilmedi:
+  // `stringsIn` iki dosya kümesine ayrı ayrı koşuldu
+  // (`engagement.ts` + `PlanBoard` = 818 / uzun 228; `SnapshotPanel` = 718 /
+  // uzun 400), üstüne iki görünüm düğmesinin etiketi (4 ve 5 karakter).
+  //
+  // Önce kesilecek bir şey arandı ve üç tane bulundu, üçü de TEKRAR:
+  // boşluk şeridinin ikinci cümlesi `stepStateNote('no_plan_recorded')`'ı
+  // tekrar ediyordu, kapanış formunun gerekçesi seçeneğin kendi adını,
+  // geçersiz sayma formunun üçüncü cümlesi ise ilk ikisini. 252 karakter
+  // kesildi; kalanı kesilemez, çünkü her cümle bir durumu adlandırıyor —
+  // beş adım hâli, iki ayrı boşluk, ve haritanın hangi rolün gördüğü kadar
+  // olduğu.
+  { what: 'textChars', from: 65169, to: 74750, row: 'M4-12' },
+  { what: 'longChars', from: 28238, to: 29210, row: 'M4-12' },
+  { what: 'textChars', from: 74750, to: 75473, row: 'M4-14' },
+  { what: 'longChars', from: 29210, to: 29610, row: 'M4-14' },
 ];
 process.chdir(root);
 
@@ -141,9 +157,16 @@ const CEILING = {
   // ve beş ayrı "bir aya yazılamaz" başlığı taşıyor; her başlık bir cümle,
   // ve biri ötekinin yerine geçmiyor. Alt başlığın ikinci cümlesi kesildi
   // (aşağıdaki blok aynı şeyi rakamla söylüyor), kalanı kesilemez.
-  textChars: 73928,
+  //
+  // M4-12 ve M4-14'ten sonra 73.928 → 75.473. Plan panosunun beş adım hâli
+  // (her birinin adı ve ne demek olduğu), iki ayrı boşluğu ayıran cümleler,
+  // ve dondurulmuş haritanın her satırında duran "bu harita şu rolün
+  // gördüğü kadar" uyarısı. Üç tekrar kesildikten SONRAKİ sayı; bölünmesi
+  // `RAISED` içinde ölçülerek yazılı.
+  textChars: 75473,
   // Aynı ölçüm değişikliği: 26.994 → 27.680.
-  longChars: 28982,
+  // M4-12 ve M4-14'ten sonra 28.982 → 29.610.
+  longChars: 29610,
   // Panel gerekçesi: T13-01'in kestiği şey. 8489 → 2753 (Faz 2).
   introChars: 2753,
   longestIntro: 98,

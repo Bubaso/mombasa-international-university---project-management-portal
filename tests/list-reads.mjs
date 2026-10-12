@@ -220,7 +220,26 @@ for (const read of bounded) {
 // bir belge görünmediği için arşivlenmez, ve görünmediği de görünmez.
 // Doğru yeri durum bazlı bir süzgeç (sunucuda), ama o bir göç; bugün üç
 // göç uygulanmayı bekliyor.
-const UNBOUNDED_TODAY = 135;
+// M4-12 ve M4-14'ten sonra 139: dört okuma eklendi, dördü de sınırsız.
+//
+// `fetchEngagementBoard` paydaş başına bir satır, yani kütük kadar — ve
+// burada sınır koymak M9-13'ün saklama listesiyle aynı sebeple yanlış
+// olurdu: panonun cevabı "kimin planı YOK", ve kesilmiş bir cevap plansız
+// paydaşları kimsenin bakmadığı yerde bırakır. Görünmeyen boşluk,
+// görünmediği de görünmeyen boşluktur.
+//
+// `fetchEngagementPlans` tek bir paydaşın plan geçmişi: bir ilişkinin
+// ömründe belki beş plan.
+//
+// `fetchMapSnapshots` anlık görüntü kütüğü, haritaların kendisi HARİÇ —
+// görünüm `payload`'ı taşımıyor, yani satır başına maliyet bir başlık ve
+// bir sayı. Çeyrekte birkaç satır birikiyor; sınır koymak eski bir sunumu
+// kimsenin bulamadığı yere iterdi.
+//
+// `fetchMapSnapshotPeople` birincil anahtara eşitlikle TEK satır. `limit(1)`
+// bile yazılmıyor: bir `limit` bu kapıya "dilim" diye görünür ve dilim
+// kaçını sakladığını söylemek zorundadır — sakladığı bir şey yok.
+const UNBOUNDED_TODAY = 139;
 
 // Sayan okumalar sayılmıyor: sorumuz "kaç okuma her satırı çekiyor", ve
 // `head: true` olan hiç satır çekmiyor.

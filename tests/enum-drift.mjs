@@ -226,6 +226,11 @@ const COMPUTED = {
   // muhafaza, arşiv, politikasızlık ve vade tek kolonda. Sıralaması kuralın
   // kendisi olduğu için adlandırılmış bir birliğe bağlı.
   retention_state: 'RetentionState',
+  // M4-12. `engagement_plan_board.step_state` da görünümde hesaplanmış bir
+  // `case`. İlk iki değeri ayrı tutmak panonun bütün sebebi
+  // (`no_plan_recorded` ile `no_step_recorded`), yani sıralaması kuralın
+  // kendisi — adlandırılmış bir birliğe bağlı olmak zorunda.
+  step_state: 'EngagementStepState',
 };
 
 const COMPUTED_NOT_IN_THE_CLIENT = {

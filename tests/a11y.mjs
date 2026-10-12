@@ -76,8 +76,20 @@ const SPEAKERS = [
 // `\.message` tam olarak eşleşiyor: `t.messages` bir sayı, `answer.messageTr`
 // bir cevap metni. İlk yazımda sınır konmamıştı ve ikisi de kusur gibi
 // göründü — eşleşmenin kendisi değil, sınırı önemliydi.
+//
+// AYNI SINIR SORUNU İKİNCİ KEZ, 12 Ekim 2026: M4-12 bir plan kaydına
+// `message` alanı getirdi — "bu paydaşa hangi mesajı veriyoruz" — ve desen
+// `{row.message}` satırlarını hata basımı sandı. Üç yanlış pozitif.
+//
+// Ayırt eden şey ALICININ ADI. Bu depoda hata nesneleri hata gibi
+// adlandırılıyor: `save.error`, `discard.error`, `(e as Error)`. Hata gibi
+// adlandırılmamış bir `message` alanı bir VERİ alanıdır, ve bir veri alanını
+// `<WriteError>` ile basmak anlamsız olurdu — o bileşen bir reddi duyuruyor.
+//
+// Parantez isteğe bağlı bırakıldı ki `(e as Error).message` biçimi de
+// yakalanmaya devam etsin; ikisi de aşağıda mutasyonla sınandı.
 {
-  const DIRECT = /\{[^{}]*\.message([^A-Za-z]|$)/;
+  const DIRECT = /\{[^{}]*\b[\w$]*(?:err|error)[\w$]*\)?\.message([^A-Za-z]|$)/i;
   const bypasses = [];
   let scanned = 0;
   for (const file of globSync('src/{views,components}/**/*.tsx').sort()) {

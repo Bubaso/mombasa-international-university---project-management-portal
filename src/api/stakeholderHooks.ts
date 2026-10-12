@@ -85,3 +85,53 @@ export const useUnlinkStakeholders = () => {
   const invalidate = useInvalidator(['relationships']);
   return useMutation({ mutationFn: stakeholders.unlinkStakeholders, onSuccess: invalidate });
 };
+
+// ---------------------------------------------------------------------------
+// Etkileşim planı ve dondurulmuş harita (M4-12, M4-14)
+// ---------------------------------------------------------------------------
+
+export const useEngagementBoard = () =>
+  useQuery({ queryKey: ['engagementBoard'], queryFn: stakeholders.fetchEngagementBoard });
+
+export const useEngagementPlans = (stakeholderId: string | null) =>
+  useQuery({
+    queryKey: ['engagementPlans', stakeholderId],
+    queryFn: () => stakeholders.fetchEngagementPlans(stakeholderId as string),
+    enabled: stakeholderId != null,
+  });
+
+export const useSaveEngagementPlan = () => {
+  const invalidate = useInvalidator(['engagementBoard', 'engagementPlans']);
+  return useMutation({ mutationFn: stakeholders.saveEngagementPlan, onSuccess: invalidate });
+};
+
+export const useCloseEngagementPlan = () => {
+  const invalidate = useInvalidator(['engagementBoard', 'engagementPlans']);
+  return useMutation({ mutationFn: stakeholders.closeEngagementPlan, onSuccess: invalidate });
+};
+
+export const useMapSnapshots = () =>
+  useQuery({ queryKey: ['mapSnapshots'], queryFn: stakeholders.fetchMapSnapshots });
+
+/**
+ * Haritanın kendisi yalnızca açıldığında okunuyor.
+ *
+ * Kütük zaten sayımı taşıyor; haritayı listeyle birlikte indirmek, bir
+ * listeyi okumanın bedelini bütün verinin bedeli yapardı.
+ */
+export const useMapSnapshotPeople = (id: string | null) =>
+  useQuery({
+    queryKey: ['mapSnapshotPeople', id],
+    queryFn: () => stakeholders.fetchMapSnapshotPeople(id as string),
+    enabled: id != null,
+  });
+
+export const useTakeMapSnapshot = () => {
+  const invalidate = useInvalidator(['mapSnapshots']);
+  return useMutation({ mutationFn: stakeholders.takeMapSnapshot, onSuccess: invalidate });
+};
+
+export const useDiscardMapSnapshot = () => {
+  const invalidate = useInvalidator(['mapSnapshots']);
+  return useMutation({ mutationFn: stakeholders.discardMapSnapshot, onSuccess: invalidate });
+};

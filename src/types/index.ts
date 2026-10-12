@@ -1222,6 +1222,128 @@ export interface StakeholderAttention {
   hasGoneQuiet: boolean;
 }
 
+/**
+ * M4-12. Bir etkileşim planının durduğu yer.
+ *
+ * `outcome_unknown` kolay atılacak bir değer değil: bir plan çoğu zaman bir
+ * kararla değil ilgisizlikle kapanır, ve kapanırken sonucunun ne olduğu
+ * kimsede yazılı olmaz. Dört sonuçtan birini seçmeye zorlamak, olmayan bir
+ * cevabı icat etmek olurdu.
+ */
+export type EngagementPlanStatus =
+  'active' | 'achieved' | 'partly_achieved' | 'not_achieved' | 'abandoned' | 'outcome_unknown';
+
+/**
+ * M4-12. `engagement_plan_board.step_state`: panodaki bir satırın hâli.
+ *
+ * İlk iki değer iki AYRI boşluk, ve ayrı tutulmaları bu panonun sebebi:
+ * `no_plan_recorded` kimsenin plan yazmadığı, `no_step_recorded` plan
+ * yazılmış ama sıradaki hamlenin kararlaşmadığı. İkisini tek kutuya koymak,
+ * ilgilenilmemiş bir paydaşı ilgilenilmiş göstermek olurdu.
+ */
+export type EngagementStepState =
+  'no_plan_recorded' | 'no_step_recorded' | 'overdue' | 'due_soon' | 'scheduled';
+
+/** M4-12. Plan panosunun bir satırı: paydaş, ve varsa yürüyen planı. */
+export interface EngagementBoardRow {
+  stakeholderId: string;
+  fullName: string;
+  category: StakeholderCategory;
+  stance: Stance;
+  influence: number;
+  interest: number;
+  relationshipOwner: string | null;
+  /** `null` ise bu paydaş için hiç plan yazılmamış. */
+  planId: string | null;
+  objective: string | null;
+  /** Mesajın kararlaşmamış olması gerçek bir hâl; ekran bunu söylüyor. */
+  message: string | null;
+  nextStep: string | null;
+  nextStepOwner: string | null;
+  nextStepOwnerName: string | null;
+  nextStepDue: string | null;
+  status: EngagementPlanStatus | null;
+  planConfidentiality: Confidentiality | null;
+  stepState: EngagementStepState;
+  /** Adım yoksa `null`, 0 değil: sıfır "bugün vadesi geliyor" demek olurdu. */
+  daysToStep: number | null;
+  /**
+   * Bu okuyan, bu paydaş için plan yazabilir mi?
+   *
+   * Görünüm `app.can_plan_engagement()`'ı — yani POLİTİKANIN ÇAĞIRDIĞI
+   * fonksiyonun ta kendisini — satır başına hesaplıyor. İstemci kuralı
+   * tekrarlamıyor, cevabını okuyor (CLAUDE.md §5). Tekrarlanmış hâli
+   * `canAssess` olurdu ve ilişki sahibi olan bir saha ekibi üyesinden
+   * gerçekten sahip olduğu yetkiyi saklardı.
+   */
+  canPlan: boolean;
+}
+
+/** M4-12. Bir paydaşın plan geçmişindeki tek kayıt. */
+export interface EngagementPlan {
+  id: string;
+  stakeholderId: string;
+  objective: string;
+  message: string | null;
+  nextStep: string | null;
+  nextStepOwner: string | null;
+  nextStepDue: string | null;
+  status: EngagementPlanStatus;
+  closedAt: string | null;
+  closedNote: string | null;
+  confidentiality: Confidentiality;
+}
+
+/**
+ * M4-14. Dondurulmuş haritadaki tek kişi.
+ *
+ * `relationshipOwnerId` ile `relationshipOwnerName` İKİ AYRI
+ * BİLİNMEZLİK: ikisi de null ise sahip atanmamış, kimlik var ama ad yoksa
+ * sahibin profili o an görülemiyordu.
+ *
+ * 2×2 matris çeyreği BURADA YOK: o kural `quadrantOf` ile tek yerde yazılı
+ * ve nüfuz/ilgi puanlarından türüyor. Haritaya da yazmak, aynı kuralın
+ * sapacak ikinci kopyası olurdu.
+ */
+export interface MapSnapshotPerson {
+  id: string;
+  full_name: string;
+  title: string | null;
+  organization: string | null;
+  category: StakeholderCategory;
+  stance: Stance;
+  influence: number;
+  interest: number;
+  relationship_owner_id: string | null;
+  relationship_owner_name: string | null;
+  last_contact_at: string | null;
+  has_gone_quiet: boolean | null;
+}
+
+/**
+ * M4-14. Dondurulmuş bir paydaş haritası, haritanın kendisi hariç.
+ *
+ * `takenAsRole` bu kaydın en önemli alanı: anlık görüntü, alanın RLS altında
+ * GÖREBİLDİĞİ kadardır. Daha dar yetkiyle alınmış bir harita daha küçüktür,
+ * ve bunu söylemezse okuyan onu tam harita sanar.
+ */
+export interface MapSnapshot {
+  id: string;
+  title: string;
+  note: string | null;
+  confidentiality: Confidentiality;
+  takenAt: string;
+  takenBy: string | null;
+  takenByName: string | null;
+  takenAsRole: UserRole;
+  stakeholderCount: number;
+  /** Tutum → sayı, o günkü hâliyle. Boş haritada `null`. */
+  stanceTally: Partial<Record<Stance, number>> | null;
+  discardedAt: string | null;
+  discardedByName: string | null;
+  discardedReason: string | null;
+}
+
 // ---------------------------------------------------------------------------
 // Meetings, decisions and actions (M3)
 //

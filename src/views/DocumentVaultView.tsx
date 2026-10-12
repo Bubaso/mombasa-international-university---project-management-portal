@@ -187,7 +187,15 @@ export const DocumentVaultView: React.FC = () => {
         <span className="pb-1.5 text-xs text-slate-500">
           {tr ? `${shown.length} belge` : `${shown.length} documents`}
         </span>
-        <div className="flex gap-1">
+        {/* Görünüm düğmeleri BURADA olduğunu kendisi söylüyor.
+            Tarayıcı kapısı bu düğmeleri ADIYLA arıyor ve ilk hâlinde
+            bütün sayfada arıyordu: "Plan" adlı bir gezinme bağlantısı
+            da var, kapı ona bastı ve ÖLÇÜMÜ BAŞKA EKRANDA sürdürdü —
+            dört düğmenin üçü basıldı, dördüncüsü bulunamadı ve panel
+            hiç çizilmedi. `data-record-list` ile aynı gerekçe:
+            markup'a ya da ada göre arayan bir ölçü sessizce yanlış
+            şeyi bulur. */}
+        <div data-view-switch className="flex gap-1">
           <ActionButton
             onClick={() => setView('register')}
             className={view === 'register' ? 'border-amber-400 bg-amber-50 text-amber-900' : ''}

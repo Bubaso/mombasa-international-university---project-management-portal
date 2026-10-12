@@ -82,6 +82,11 @@ export const REGISTER_STATES: Record<string, RegisterStateRule> = {
     settled: ['received', 'lapsed'],
     why: 'Kısmen alınmış bağış takip gerektirir; tamamen alınmış ya da düşmüş olan gerektirmez.',
   },
+  engagement_plan_status: {
+    open: ['active'],
+    settled: ['achieved', 'partly_achieved', 'not_achieved', 'abandoned', 'outcome_unknown'],
+    why: 'Bir plan ya yürüyor ya kapandı; kapanmış olması işi bitirir, sonucunun bilinmesi değil. `outcome_unknown` tam olarak bu yüzden "bitmiş" tarafta: plan kapandı, ve kapanırken sonucunu kimse yazmadı — takip edilecek bir şey kalmadığı için ekranda geri çekilebilir, ama boşluğu kendi adıyla duruyor.',
+  },
   filing_state: {
     open: ['planned', 'drafting', 'filed', 'late'],
     settled: ['served', 'withdrawn'],
