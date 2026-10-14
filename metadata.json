@@ -1,6 +1,0 @@
-{
-  "name": "Mombasa International University - Project Management Portal",
-  "description": "Executive project management, legal tracking, construction monitoring, and stakeholder collaboration platform for the Mombasa International University Project under African University Trust of Kenya.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}

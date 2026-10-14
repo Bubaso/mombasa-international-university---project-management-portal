@@ -1,8 +1,8 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
-import {defineConfig} from 'vite';
-import {VitePWA} from 'vite-plugin-pwa';
+import { defineConfig } from 'vite';
+import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig(() => {
   return {
@@ -16,7 +16,8 @@ export default defineConfig(() => {
           id: '/',
           name: 'Mombasa International University Portal',
           short_name: 'MIU Portal',
-          description: 'Project Management & Stakeholder Platform for Mombasa International University (AUTK)',
+          description:
+            'Project Management & Stakeholder Platform for Mombasa International University (AUTK)',
           theme_color: '#0f172a',
           background_color: '#0f172a',
           display: 'standalone',
@@ -42,6 +43,12 @@ export default defineConfig(() => {
               purpose: 'maskable',
             },
           ],
+        },
+        // The push and notificationclick handlers (M11-05). Imported into the
+        // generated Workbox worker rather than replacing it, so the offline
+        // meeting capture built for M3-11 keeps its precache untouched.
+        workbox: {
+          importScripts: ['push-sw.js'],
         },
         devOptions: {
           enabled: true,

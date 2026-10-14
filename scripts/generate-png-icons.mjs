@@ -29,12 +29,12 @@ function createSolidPNG(width, height, r, g, b, a = 255) {
       const isBorder = x < 4 || x >= width - 4 || y < 4 || y >= height - 4;
       const isCenter = Math.hypot(x - width / 2, y - height / 2) < width * 0.35;
       if (isBorder) {
-        rawData[pxOffset] = 217;     // gold
+        rawData[pxOffset] = 217; // gold
         rawData[pxOffset + 1] = 119;
         rawData[pxOffset + 2] = 6;
         rawData[pxOffset + 3] = 255;
       } else if (isCenter) {
-        rawData[pxOffset] = 16;      // emerald / teal accent
+        rawData[pxOffset] = 16; // emerald / teal accent
         rawData[pxOffset + 1] = 185;
         rawData[pxOffset + 2] = 129;
         rawData[pxOffset + 3] = 255;
@@ -72,7 +72,7 @@ function crc32(buf) {
   for (let n = 0; n < 256; n++) {
     let c = n;
     for (let k = 0; k < 8; k++) {
-      c = (c & 1) ? 0xedb88320 ^ (c >>> 1) : (c >>> 1);
+      c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
     }
     table[n] = c >>> 0;
   }
